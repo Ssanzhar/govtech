@@ -1,0 +1,108 @@
+"""SMOKE tests for `qorgan.classifier.predict` — backend routing, never hits a network."""
+
+from types import SimpleNamespace
+
+import pytest
+
+from qorgan.classifier import predict
+from qorgan.data.demo_transcripts import DEMO_TRANSCRIPTS
+from qorgan.data.schema import ScoreResult
+
+
+def test_score_mock_backend_returns_deterministic_result_for_demo_transcript():
+    text = DEMO_TRANSCRIPTS["scam_bank_ru"]
+    first = predict.score(text, backend="mock")
+    second = predict.score(text, backend="mock")
+
+    assert first == second
+    assert first.backend == "mock"
+    assert first.risk == pytest.approx(0.96)
+    tag_ids = {tag.id for tag in first.tags}
+    assert "otp_request" in tag_ids
+    assert "safe_account" in tag_ids
+    for span in first.attributions:
+        assert text[span.start : span.end] == span.text
+
+
+def test_score_mock_backend_hard_negative_low_risk():
+    text = DEMO_TRANSCRIPTS["hard_negative_bank_call_ru"]
+    result = predict.score(text, backend="mock")
+
+    assert result.risk < 0.5
+    assert result.tags == ()
+    assert result.attributions == ()
+
+
+def test_score_mock_heuristic_fallback_for_arbitrary_text_with_hard_signal():
+    text = "Здравствуйте. Продиктуйте код из SMS, чтобы подтвердить операцию."
+    result = predict.score(text, backend="mock")
+
+    assert result.backend == "mock"
+    assert result.risk >= 0.9
+    assert any(tag.id == "otp_request" for tag in result.tags)
+    assert result.attributions
+    for span in result.attributions:
+        assert text[span.start : span.end] == span.text
+
+
+def test_score_mock_heuristic_fallback_no_match_low_risk():
+    text = "Привет, как дела? Давай встретимся в кафе завтра вечером."
+    result = predict.score(text, backend="mock")
+
+    assert result.risk < 0.2
+    assert result.tags == ()
+    assert result.attributions == ()
+
+
+def test_score_llm_backend_routes_to_llm_classifier(monkeypatch):
+    sentinel = ScoreResult(risk=0.42, backend="llm")
+    calls = []
+
+    def fake_classify(transcript, **kwargs):
+        calls.append(transcript)
+        return sentinel
+
+    monkeypatch.setattr(predict.llm_classifier, "classify", fake_classify)
+
+    result = predict.score("some transcript", backend="llm")
+
+    assert result is sentinel
+    assert calls == ["some transcript"]
+
+
+def test_score_xlmr_backend_raises_not_implemented():
+    with pytest.raises(NotImplementedError):
+        predict.score("some transcript", backend="xlmr")
+
+
+def test_score_unknown_backend_raises_unknown_backend_error():
+    with pytest.raises(predict.UnknownBackendError):
+        predict.score("some transcript", backend="bogus")
+
+
+def test_score_empty_transcript_raises_value_error():
+    with pytest.raises(ValueError):
+        predict.score("   ", backend="mock")
+
+
+def test_score_uses_config_default_backend_when_not_specified(monkeypatch):
+    fake_cfg = SimpleNamespace(classifier_backend="mock")
+    monkeypatch.setattr(predict, "get_config", lambda: fake_cfg)
+
+    result = predict.score(DEMO_TRANSCRIPTS["hard_negative_bank_call_ru"])
+
+    assert result.backend == "mock"
+
+
+def test_score_backend_override_beats_config_default(monkeypatch):
+    fake_cfg = SimpleNamespace(classifier_backend="llm")
+    monkeypatch.setattr(predict, "get_config", lambda: fake_cfg)
+    monkeypatch.setattr(
+        predict.llm_classifier, "classify", lambda transcript, **kwargs: (_ for _ in ()).throw(
+            AssertionError("llm backend should not be called when override is 'mock'")
+        )
+    )
+
+    result = predict.score(DEMO_TRANSCRIPTS["hard_negative_bank_call_ru"], backend="mock")
+
+    assert result.backend == "mock"

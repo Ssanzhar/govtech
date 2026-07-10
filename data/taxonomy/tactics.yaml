@@ -74,7 +74,7 @@ tactics:
 
   - id: safe_account
     ru: Перевод на "безопасный/резервный/страховой" счёт
-    kk: "Қауіпсіз/резервтік" шотқа аудару
+    kk: Қауіпсіз/резервтік шотқа аудару
     description: The classic "move your money to a safe account" instruction.
     hard_signal: true
     examples_ru: ["Переведите деньги на безопасный счёт", "Это резервный счёт Нацбанка"]

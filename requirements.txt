@@ -9,7 +9,7 @@ pandas>=2.2
 numpy>=1.26
 
 # --- LLM (synthetic data gen + LLM classifier baseline/fallback) ---
-anthropic>=0.40
+google-genai>=1.0
 
 # --- Classifier (fine-tuned XLM-R) + attribution ---
 torch>=2.2

@@ -1,0 +1,29 @@
+# Synthetic corpus generation config (D1-10 scaffolding; full run lands D2-1).
+# Consumed by `qorgan.data.generate.load_corpus_config()`. Every knob here is a constant
+# that generate.py reads through config -- never hardcode these in code.
+
+version: 1
+
+# Deterministic generation seed (also the default fallback for `config.default_seed`).
+seed: 42
+
+# Languages to generate dialogues in. "mixed" = natural Kazakh-Russian code-switching.
+languages: ["ru", "kk", "mixed"]
+
+# Which model route to use for bulk generation: "quality" (gemini-2.5-pro, higher fidelity)
+# or "bulk" (gemini-2.5-flash, cheaper/faster -- the default for large-batch synthesis).
+model_route: bulk
+
+# How many synthetic dialogues to generate per (tactic x language) combination, and per
+# hard-negative category x language. D1-10 keeps these small (scaffolding); D2-1 raises
+# them to hit the ~500-incident target for Level 2.
+dialogues_per_tactic: 3
+hard_negatives_per_category: 3
+
+# Bounds on utterance count per generated dialogue (a short but plausible phone call).
+min_utterances: 4
+max_utterances: 10
+
+# Where generated dialogues are written (JSONL, one Dialogue per line). Gitignored --
+# regenerated deterministically from this config + the taxonomy.
+output_path: data/synthetic/dialogues.jsonl

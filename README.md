@@ -25,7 +25,7 @@ the full mobile / on-device vision lives in [`DOCUMENTATION.md`](DOCUMENTATION.m
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 pip install -e .                # src-layout: puts `qorgan` on the path
-cp .env.example .env            # add ANTHROPIC_API_KEY
+cp .env.example .env            # add GEMINI_API_KEY (data-gen + LLM backend; not needed for the mock demo)
 
 # 2. Build the demo corpus + seed Level-2 incidents
 python -m qorgan.data.build_corpus --config configs/corpus.yaml

@@ -17,6 +17,7 @@ models/
 data/raw/
 data/synthetic/
 data/processed/
+data/cache/
 *.faiss
 *.sqlite
 *.db
