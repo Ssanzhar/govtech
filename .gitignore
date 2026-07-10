@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Secrets
+.env
+
+# Data & models (large / regenerated / consented — keep out of git)
+models/
+data/raw/
+data/synthetic/
+data/processed/
+*.faiss
+*.sqlite
+*.db
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Notebooks
+.ipynb_checkpoints/

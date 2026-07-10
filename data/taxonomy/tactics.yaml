@@ -1,0 +1,149 @@
+# Scam-tactic taxonomy — seed for corpus generation, labeling, classifier tags, and
+# explainability. Multi-label: a single call typically exhibits several tactics.
+# `hard_signal: true` = strong standalone indicator; others are contextual.
+# Extend freely, but keep ids stable (they are the classifier's label space).
+# examples are illustrative trigger phrases (RU + KK); the LLM generator/labeler should
+# produce far more variety, not copy these verbatim.
+
+version: 1
+
+tactics:
+  - id: impersonation_bank
+    ru: Выдаёт себя за банк / службу безопасности банка
+    kk: Банк / банк қауіпсіздік қызметі болып таныстыру
+    description: Caller claims to be from the bank's security or fraud department.
+    hard_signal: false
+    examples_ru: ["Это служба безопасности вашего банка", "Зафиксирована подозрительная операция по вашей карте"]
+    examples_kk: ["Бұл сіздің банкіңіздің қауіпсіздік қызметі", "Картаңыз бойынша күдікті операция тіркелді"]
+
+  - id: impersonation_gov_police
+    ru: Выдаёт себя за госорган (полиция/КНБ/финпол/суд/прокуратура/Нацбанк)
+    kk: Мемлекеттік орган болып таныстыру (полиция/ҰҚК/қаржыпол/сот/прокуратура)
+    description: Caller claims authority as police, national security, financial police, court, etc.
+    hard_signal: false
+    examples_ru: ["Вас беспокоит следователь", "На ваше имя оформлено уголовное дело"]
+    examples_kk: ["Сізді тергеуші мазалап тұр", "Сіздің атыңызға қылмыстық іс ашылған"]
+
+  - id: impersonation_telecom_delivery
+    ru: Выдаёт себя за оператора связи / почту / доставку / госуслуги
+    kk: Байланыс операторы / пошта / жеткізу / мемқызмет болып таныстыру
+    description: Caller poses as a telecom operator, postal/delivery service, or e-gov helpdesk.
+    hard_signal: false
+    examples_ru: ["Ваш номер будет отключён", "Нужно продлить договор обслуживания"]
+    examples_kk: ["Нөміріңіз өшіріледі", "Қызмет көрсету шартын ұзарту қажет"]
+
+  - id: urgency
+    ru: Искусственная срочность / давление временем
+    kk: Жасанды жеделдік / уақытпен қысым
+    description: Manufactured time pressure ("act now or lose money").
+    hard_signal: false
+    examples_ru: ["Действовать нужно прямо сейчас", "У вас есть только пять минут"]
+    examples_kk: ["Дәл қазір әрекет ету керек", "Сізде бес-ақ минут бар"]
+
+  - id: fear_threat
+    ru: Запугивание (блокировка счёта, уголовное дело, утечка данных)
+    kk: Қорқыту (шот бұғаттау, қылмыстық іс, дерек ағуы)
+    description: Threats of account loss, prosecution, or data leak to induce panic.
+    hard_signal: false
+    examples_ru: ["Ваши деньги под угрозой", "Если не подтвердите — счёт заблокируют"]
+    examples_kk: ["Ақшаңызға қауіп төніп тұр", "Растамасаңыз шот бұғатталады"]
+
+  - id: secrecy
+    ru: Требование сохранять тайну ("никому не говорите")
+    kk: Құпия сақтауды талап ету ("ешкімге айтпаңыз")
+    description: Instructs the victim to tell no one, including bank staff or family.
+    hard_signal: true
+    examples_ru: ["Никому не говорите, это секретная операция", "Не сообщайте сотрудникам банка"]
+    examples_kk: ["Ешкімге айтпаңыз, бұл құпия операция", "Банк қызметкерлеріне айтпаңыз"]
+
+  - id: otp_request
+    ru: Просьба назвать код из SMS / push / приложения
+    kk: SMS / push / қосымшадағы кодты сұрау
+    description: Asks for a one-time code — a near-certain fraud marker.
+    hard_signal: true
+    examples_ru: ["Продиктуйте код из SMS", "Назовите шесть цифр из push-уведомления"]
+    examples_kk: ["SMS-тегі кодты айтыңыз", "Push-хабарламадағы алты санды атаңыз"]
+
+  - id: credentials_request
+    ru: Запрос реквизитов (номер карты, CVV, ИИН, логин/пароль)
+    kk: Дерекқұжат сұрау (карта нөмірі, CVV, ЖСН, логин/құпиясөз)
+    description: Requests card number, CVV, national ID, or login credentials.
+    hard_signal: true
+    examples_ru: ["Назовите номер карты и три цифры на обороте", "Продиктуйте ваш ИИН"]
+    examples_kk: ["Карта нөмірі мен арт жағындағы үш санды айтыңыз", "ЖСН-іңізді айтыңыз"]
+
+  - id: safe_account
+    ru: Перевод на "безопасный/резервный/страховой" счёт
+    kk: "Қауіпсіз/резервтік" шотқа аудару
+    description: The classic "move your money to a safe account" instruction.
+    hard_signal: true
+    examples_ru: ["Переведите деньги на безопасный счёт", "Это резервный счёт Нацбанка"]
+    examples_kk: ["Ақшаны қауіпсіз шотқа аударыңыз", "Бұл Ұлттық банктің резервтік шоты"]
+
+  - id: payment_redirect
+    ru: Перевод/оплата через нестандартный канал (крипта, QR, терминал, перевод по номеру)
+    kk: Стандартты емес арна арқылы төлеу (крипто, QR, терминал, нөмірге аудару)
+    description: Directs payment through crypto, QR, cash-in terminal, or a personal number.
+    hard_signal: false
+    examples_ru: ["Внесите наличные через терминал", "Оплатите по этому QR-коду"]
+    examples_kk: ["Терминал арқылы қолма-қол салыңыз", "Осы QR-код арқылы төлеңіз"]
+
+  - id: remote_access
+    ru: Просьба установить приложение удалённого доступа (AnyDesk/TeamViewer)
+    kk: Қашықтан қосылу қосымшасын орнатуды сұрау (AnyDesk/TeamViewer)
+    description: Asks to install remote-control software to "help" or "protect" the account.
+    hard_signal: true
+    examples_ru: ["Установите приложение AnyDesk", "Скачайте программу для защиты счёта"]
+    examples_kk: ["AnyDesk қосымшасын орнатыңыз", "Шотты қорғау бағдарламасын жүктеңіз"]
+
+  - id: prize_lottery
+    ru: Выигрыш / компенсация / соцвыплата
+    kk: Ұтыс / өтемақы / әлеуметтік төлем
+    description: You "won" or are "owed" money and must pay/confirm to receive it.
+    hard_signal: false
+    examples_ru: ["Вам положена компенсация", "Вы выиграли приз, подтвердите данные"]
+    examples_kk: ["Сізге өтемақы тиесілі", "Сіз жүлде ұттыңыз, деректі растаңыз"]
+
+  - id: investment_scam
+    ru: Инвестиции / трейдинг / гарантированный доход
+    kk: Инвестиция / трейдинг / кепілді табыс
+    description: Promises of guaranteed returns via a trading platform or "expert".
+    hard_signal: false
+    examples_ru: ["Гарантированный доход 30% в месяц", "Наш аналитик поможет вам заработать"]
+    examples_kk: ["Айына 30% кепілді табыс", "Біздің талдаушы табыс табуға көмектеседі"]
+
+  - id: mule_recruitment
+    ru: Вербовка дроппера ("подработка", "оформи карту/переведи деньги")
+    kk: Дроппер жалдау ("қосымша табыс", "карта ашып бер/ақша аудар")
+    description: Recruits the victim to move money or open accounts for the operation.
+    hard_signal: false
+    examples_ru: ["Лёгкий заработок, просто прими перевод", "Оформи на себя карту за вознаграждение"]
+    examples_kk: ["Оңай табыс, тек аударымды қабылда", "Сыйақыға өз атыңа карта аш"]
+
+  - id: verification_ploy
+    ru: Ложное "подтверждение личности/операции"
+    kk: Жалған "жеке басты/операцияны растау"
+    description: Frames data theft as a routine identity/operation "verification".
+    hard_signal: false
+    examples_ru: ["Подтвердите, что это вы", "Для отмены операции подтвердите данные"]
+    examples_kk: ["Бұл сіз екеніңізді растаңыз", "Операцияны болдырмау үшін деректі растаңыз"]
+
+# Negative / hard-negative categories — NOT scam. Used to balance the corpus and drive
+# down FPR. Labeled risk ≈ 0 with tactic_tags = []. Hard negatives look superficially
+# similar to scams (a real bank call, a relative asking for money) and are critical.
+negatives:
+  - id: legit_bank_call
+    note: Real bank confirming a transaction WITHOUT asking for OTP/CVV or transfers.
+    hard_negative: true
+  - id: family_money_request
+    note: A relative genuinely asking for a transfer (urgency without scam tactics).
+    hard_negative: true
+  - id: legit_gov_service
+    note: Genuine e-gov / clinic / utility call (appointment, reminder).
+    hard_negative: true
+  - id: delivery_notification
+    note: Real delivery/courier coordination.
+    hard_negative: false
+  - id: general_conversation
+    note: Everyday KZ/RU/code-switch chit-chat.
+    hard_negative: false
