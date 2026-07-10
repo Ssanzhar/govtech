@@ -5,7 +5,7 @@ Fill this in **as data lands**. Every field below is scored under "Работа 
 ## Sources
 | Source | Type | Language | Role | License |
 |---|---|---|---|---|
-| Claude-generated dialogues | synthetic | KK/RU/mixed | main train/val/test | own (documented) |
+| Gemini-generated dialogues | synthetic | KK/RU/mixed | main train/val/test | own (documented) |
 | Scam-baiting call transcripts | real (public) | mostly RU/EN | real anchors, taxonomy grounding | per source |
 | Team-collected recordings (consented) | real | KK/RU | `real_heldout` only | consent on file |
 | Open dialogue corpora | real (public) | KK/RU | negatives | per source |

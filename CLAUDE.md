@@ -26,7 +26,7 @@ for a government analyst. It is a **decision-support tool; a human always decide
 2. **L1-centric.** The centerpiece is: transcript → risk score → **explained** alert.
    Level 2 (clustering into scam orgs) is a **lighter secondary** that carries the
    "why the government cares" narrative for the pitch.
-3. **Classifier = hybrid.** Claude generates + labels the corpus → we **fine-tune a small
+3. **Classifier = hybrid.** Gemini generates + labels the corpus → we **fine-tune a small
    multilingual transformer** (XLM-R base). The **LLM structured classifier ships first**
    as the baseline *and* the fallback, so a working demo exists from Day 1.
 4. **Compute = free/limited Colab** → keep the model small and the corpus modest.
@@ -41,7 +41,7 @@ for a government analyst. It is a **decision-support tool; a human always decide
 | Layer | Choice | Notes |
 |---|---|---|
 | Language | Python 3.11+ | single language |
-| Synthetic data + LLM classifier | **Anthropic Claude API** | `claude-sonnet` for quality, `claude-haiku-4-5` for bulk gen/labeling |
+| Synthetic data + LLM classifier | **Google Gemini API** (`google-genai`) | `gemini-2.5-pro` for quality, `gemini-2.5-flash` for bulk gen/labeling; build-time + baseline only |
 | Classifier (trained) | **XLM-RoBERTa base** + multi-label head | class-weighted (low FPR), fits free Colab |
 | Calibration | temperature / isotonic (scikit-learn) | calibrated confidence for explainability |
 | Attribution | **Captum** integrated gradients / attention rollout | → trigger-phrase spans |

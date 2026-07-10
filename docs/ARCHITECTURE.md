@@ -25,16 +25,16 @@ Web-first, Python-only, L1-centric. This supersedes the two-subsystem/on-device 
 ### `src/qorgan/data/`
 - `schema.py` — pydantic models: `Dialogue`, `Utterance`, `Label` (risk, `tactic_tags[]`,
   `trigger_spans[]`), `Incident`. Validate at every boundary.
-- `generate.py` — Claude generates KZ/RU/code-switch dialogues per tactic + variations,
+- `generate.py` — Gemini generates KZ/RU/code-switch dialogues per tactic + variations,
   and **hard negatives** (bank call, relative asking for money, legit gov service).
   Deterministic (seeded), config-driven.
-- `label.py` — Claude labels each dialogue with tactic tags + **verbatim** trigger spans
+- `label.py` — Gemini labels each dialogue with tactic tags + **verbatim** trigger spans
   (spans must be substrings of the transcript — validate).
 - `build_corpus.py` — assemble, dedupe, PII-scrub, split `train/val/test` + hold out a
   separate small `real_heldout` (transcribed real anchors). Writes a manifest + hash.
 
 ### `src/qorgan/classifier/`
-- `llm_classifier.py` — Claude structured output → `{risk, tactic_tags, trigger_spans}`.
+- `llm_classifier.py` — Gemini JSON-mode output → `{risk, tactic_tags, trigger_spans}`.
   Ships first; baseline + fallback.
 - `train.py` — fine-tune XLM-R base, multi-label head, **class weighting for low FPR**.
 - `calibrate.py` — temperature/isotonic → calibrated `confidence`.

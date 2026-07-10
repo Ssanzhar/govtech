@@ -86,7 +86,7 @@ Columns: **ID | Task | Files | Deps | Parallel | Test** (TDD = test-first determ
 | D1-2 | `config.py`: `.env` load, constants — model routing, backend, risk threshold, hysteresis, paths, seeds, locales | `src/qorgan/config.py` | D1-1 | D1-3 | TDD |
 | D1-3 | `taxonomy.py`: load+validate `tactics.yaml`, tactics/hard-signal/RU-KK names/negatives | `src/qorgan/taxonomy.py` | D1-1 | D1-2 | TDD |
 | D1-4 | Contracts + schema: pydantic models + validators (risk∈[0,1]; spans verbatim substrings); confidence field (G7) | `src/qorgan/data/schema.py` | D1-3 | — | TDD |
-| D1-5 | `llm_classifier.py`: Anthropic structured output `{risk,tactic_tags,trigger_spans,confidence}`; schema-validated; transcript-hash cache (G9) | `src/qorgan/classifier/llm_classifier.py` | D1-4 | — | SMOKE |
+| D1-5 | `llm_classifier.py`: Gemini JSON-mode output `{risk,tactic_tags,trigger_spans,confidence}`; schema-validated; transcript-hash cache (G9) | `src/qorgan/classifier/llm_classifier.py` | D1-4 | — | SMOKE |
 | D1-6 | `predict.py`: unified `score()`, backend routing; `llm` wired, `xlmr` stub | `src/qorgan/classifier/predict.py` | D1-5 | — | SMOKE |
 | D1-7 | `asr/transcribe.py`: faster-whisper offline wrapper + manual fallback (G10) | `src/qorgan/asr/transcribe.py` | D1-1 | D1-5/6 | SMOKE |
 | D1-8 | Minimal explainer + windowing: templated reason from tags+spans; `windows()` cumulative scoring (G8) | `src/qorgan/explain/explainer.py`, `explain/windowing.py` | D1-4 | — | TDD |
@@ -99,8 +99,8 @@ After D1-4, three parallel tracks: (a) D1-5→D1-6, (b) D1-8, (c) D1-10; D1-7 in
 ### Day 2 — Corpus + labeling + splits + provenance + eval (FPR baseline)
 | ID | Task | Files | Deps | Parallel | Test |
 |---|---|---|---|---|---|
-| D2-1 | `generate.py` full: seeded Claude gen across tactics × {KK,RU,mixed} + hard negatives | `data/generate.py`, `configs/corpus.yaml` | D1-10 | D2-2 | SMOKE |
-| D2-2 | `label.py`: Claude tactic tags + verbatim trigger spans; substring validation | `data/label.py` | D1-4 | D2-1 | SMOKE |
+| D2-1 | `generate.py` full: seeded Gemini gen across tactics × {KK,RU,mixed} + hard negatives | `data/generate.py`, `configs/corpus.yaml` | D1-10 | D2-2 | SMOKE |
+| D2-2 | `label.py`: Gemini tactic tags + verbatim trigger spans; substring validation | `data/label.py` | D1-4 | D2-1 | SMOKE |
 | D2-3 | `real_heldout` anchors: transcribe real public scam-baiting clips (+manual fallback), PII scrub | `data/raw/`, `data/processed/` | D1-7, D2-2 | — | SMOKE |
 | D2-4 | `build_corpus.py`: assemble, dedupe, PII-scrub, deterministic split + separate `real_heldout`; manifest+hash | `data/build_corpus.py`, `data/processed/manifest.json` | D2-1,2,3 | — | TDD |
 | D2-5 | `metrics.py`: FPR (primary), precision/recall/F1, PR-AUC, per-tactic F1; purity/ARI stubs | `eval/metrics.py` | D1-4 | D2-1/2 | TDD |

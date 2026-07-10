@@ -16,7 +16,7 @@ demo; L2 kept present to carry the GovTech "why the state cares" story. **Revisi
 Phase 1, L2 (per `DOCUMENTATION.md`) becomes the primary value with real report streams.
 
 ### D3 — Classifier: hybrid (LLM labels → fine-tune small model)
-Claude generates + labels the corpus; fine-tune **XLM-RoBERTa base** (multi-label,
+Gemini generates + labels the corpus; fine-tune **XLM-RoBERTa base** (multi-label,
 class-weighted). LLM structured classifier ships **first** as baseline + fallback.
 **Rationale:** LLM path guarantees a working demo Day 1 and de-risks the fine-tune;
 trained model gives real-ML credibility and an on-device path. **Revisit:** larger/distilled
@@ -52,3 +52,12 @@ self-deploy (Prototype score). **Revisit:** Postgres + pgvector + FastAPI in Pha
 Deterministic `build_corpus.py` + a checked-in manifest/hash instead of DVC.
 **Rationale:** DVC overhead isn't worth it for a 1-week corpus; reproducibility is what
 matters and a seeded build + manifest delivers it.
+
+### D10 — LLM provider: Google Gemini (not Anthropic Claude)
+Data generation/labeling and the `llm` classifier backend use **Gemini** via the
+`google-genai` SDK in JSON mode (`gemini-2.5-pro` quality / `gemini-2.5-flash` bulk); key
+via `GEMINI_API_KEY` (or `GOOGLE_API_KEY`). **Rationale:** the team already has a paid
+Gemini plan (no extra cost), and the LLM is only **build-time scaffolding + a temporary
+baseline** — the shipped classifier is the offline fine-tuned XLM-R (D3), so the provider
+choice does not affect the offline/transparent end goal. The client is dependency-injected;
+swapping providers again is a one-file change in `llm_tools.py` + `_default_client`.
