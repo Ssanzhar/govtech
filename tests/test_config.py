@@ -107,6 +107,38 @@ def test_google_api_key_used_as_gemini_fallback():
     assert cfg.gemini_api_key == "test-key-456"
 
 
+def test_split_fraction_defaults():
+    cfg = load_config({})
+    assert cfg.split_train_fraction == 0.7
+    assert cfg.split_val_fraction == 0.15
+    # test fraction is the remainder
+    assert cfg.split_test_fraction == pytest.approx(0.15)
+
+
+def test_split_fractions_env_overrides():
+    cfg = load_config({"QORGAN_SPLIT_TRAIN_FRACTION": "0.8", "QORGAN_SPLIT_VAL_FRACTION": "0.1"})
+    assert cfg.split_train_fraction == 0.8
+    assert cfg.split_val_fraction == 0.1
+    assert cfg.split_test_fraction == pytest.approx(0.1)
+
+
+def test_split_fractions_summing_to_one_or_more_raises():
+    with pytest.raises(ConfigError):
+        load_config({"QORGAN_SPLIT_TRAIN_FRACTION": "0.7", "QORGAN_SPLIT_VAL_FRACTION": "0.3"})
+
+
+def test_split_train_fraction_out_of_range_raises():
+    with pytest.raises(ConfigError):
+        load_config({"QORGAN_SPLIT_TRAIN_FRACTION": "0"})
+    with pytest.raises(ConfigError):
+        load_config({"QORGAN_SPLIT_TRAIN_FRACTION": "1.0"})
+
+
+def test_split_val_fraction_out_of_range_raises():
+    with pytest.raises(ConfigError):
+        load_config({"QORGAN_SPLIT_VAL_FRACTION": "-0.1"})
+
+
 def test_config_is_immutable():
     cfg = load_config({})
     with pytest.raises(ValidationError):

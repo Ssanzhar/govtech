@@ -32,6 +32,10 @@ _DEFAULT_RISK_THRESHOLD_EXIT = 0.55
 _DEFAULT_SEED = 42
 _DEFAULT_SUPPORTED_LOCALES: tuple[str, ...] = ("ru", "kk")
 _DEFAULT_LOCALE = "ru"
+# Corpus split fractions (test fraction is the remainder). Consumed by
+# `qorgan.data.build_corpus` for the deterministic train/val/test partition.
+_DEFAULT_SPLIT_TRAIN_FRACTION = 0.7
+_DEFAULT_SPLIT_VAL_FRACTION = 0.15
 
 ClassifierBackend = Literal["llm", "xlmr", "mock"]
 
@@ -72,10 +76,19 @@ class Config(BaseModel):
     risk_threshold_enter: float = Field(ge=0.0, le=1.0)
     risk_threshold_exit: float = Field(ge=0.0, le=1.0)
 
+    # --- Corpus splits (test fraction is the remainder) ---
+    split_train_fraction: float = Field(gt=0.0, lt=1.0)
+    split_val_fraction: float = Field(gt=0.0, lt=1.0)
+
     # --- Reproducibility / localization ---
     default_seed: int
     supported_locales: tuple[str, ...]
     default_locale: str
+
+    @property
+    def split_test_fraction(self) -> float:
+        """The held-out test fraction: whatever is left after train + val."""
+        return 1.0 - self.split_train_fraction - self.split_val_fraction
 
     @model_validator(mode="after")
     def _hysteresis_exit_not_above_enter(self) -> "Config":
@@ -90,6 +103,16 @@ class Config(BaseModel):
     def _supported_locales_not_empty(self) -> "Config":
         if not self.supported_locales:
             raise ValueError("supported_locales must not be empty")
+        return self
+
+    @model_validator(mode="after")
+    def _split_fractions_leave_room_for_test(self) -> "Config":
+        if self.split_train_fraction + self.split_val_fraction >= 1.0:
+            raise ValueError(
+                "split_train_fraction + split_val_fraction must be < 1.0 to leave a "
+                f"non-empty test split (got train={self.split_train_fraction}, "
+                f"val={self.split_val_fraction})"
+            )
         return self
 
     @model_validator(mode="after")
@@ -185,6 +208,12 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             ),
             risk_threshold_exit=_read_float(
                 source, "QORGAN_RISK_THRESHOLD_EXIT", _DEFAULT_RISK_THRESHOLD_EXIT
+            ),
+            split_train_fraction=_read_float(
+                source, "QORGAN_SPLIT_TRAIN_FRACTION", _DEFAULT_SPLIT_TRAIN_FRACTION
+            ),
+            split_val_fraction=_read_float(
+                source, "QORGAN_SPLIT_VAL_FRACTION", _DEFAULT_SPLIT_VAL_FRACTION
             ),
             default_seed=_read_int(source, "QORGAN_SEED", _DEFAULT_SEED),
             supported_locales=_read_csv_tuple(

@@ -1,0 +1,53 @@
+{
+  "schema": "records validated against src/qorgan/data/schema.py:Dialogue",
+  "seed": 42,
+  "fractions": {
+    "train": 0.7,
+    "val": 0.15,
+    "test": 0.15000000000000005
+  },
+  "counts": {
+    "train": {
+      "total": 382,
+      "hard_negatives": 114,
+      "positives": 268,
+      "by_language": {
+        "ru": 123,
+        "kk": 132,
+        "mixed": 127
+      }
+    },
+    "val": {
+      "total": 59,
+      "hard_negatives": 21,
+      "positives": 38,
+      "by_language": {
+        "ru": 23,
+        "mixed": 18,
+        "kk": 18
+      }
+    },
+    "test": {
+      "total": 69,
+      "hard_negatives": 15,
+      "positives": 54,
+      "by_language": {
+        "ru": 24,
+        "kk": 20,
+        "mixed": 25
+      }
+    },
+    "real_heldout": {
+      "total": 10,
+      "hard_negatives": 3,
+      "positives": 7,
+      "by_language": {
+        "ru": 5,
+        "mixed": 3,
+        "kk": 2
+      }
+    }
+  },
+  "total": 520,
+  "content_hash": "26fe81dc6cb8663be936c9f813578bf42e2ccf661276827deaf52c8d02394c5f"
+}

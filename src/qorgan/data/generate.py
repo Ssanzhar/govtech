@@ -15,6 +15,7 @@ mirrors the TeleAntiFraud-28k methodology referenced in `data/README.md`.
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 from typing import Any, Literal
 
@@ -23,10 +24,13 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from qorgan.config import get_config
 from qorgan.data.schema import Dialogue, Label, TacticTag, Utterance, spans_from_phrases
-from qorgan.llm_tools import LLMResponseError, generate_json
+from qorgan.llm_tools import LLMResponseError, generate_json, thinking_budget_for
 from qorgan.taxonomy import NegativeCategory, TacticDefinition, get_taxonomy
 
-_MAX_TOKENS = 1536
+# Generous ceiling: a multi-turn dialogue in JSON is long, and Gemini 2.5 thinking tokens
+# count against this budget (see `llm_tools.thinking_budget_for`). Too low truncates the
+# JSON mid-object.
+_MAX_TOKENS = 4096
 
 # Provisional risk assigned to generation-time (pre-label.py) dialogues. Day 2's
 # label.py replaces these with independently-assessed risk scores.
@@ -279,6 +283,7 @@ def _call_tool(client: Any, prompt: str, cfg: CorpusConfig) -> dict[str, Any]:
             prompt=prompt,
             response_schema=_RESPONSE_SCHEMA,
             max_output_tokens=_MAX_TOKENS,
+            thinking_budget=thinking_budget_for(model),
         )
     except LLMResponseError as exc:
         raise GenerationError(str(exc)) from exc
@@ -315,3 +320,25 @@ def _build_dialogue(
         )
     except ValueError as exc:
         raise GenerationError(f"Generated dialogue {dialogue_id!r} failed schema validation: {exc}") from exc
+
+
+def main(argv: list[str] | None = None) -> None:  # pragma: no cover - CLI (live network)
+    """CLI: `python -m qorgan.data.generate [--config configs/corpus.yaml]`.
+
+    Generates the full batch per the corpus config and writes it to `output_path`.
+    """
+    from qorgan.llm_tools import build_client
+
+    parser = argparse.ArgumentParser(description="Generate the Qorgan synthetic corpus.")
+    parser.add_argument("--config", type=Path, default=None, help="Path to configs/corpus.yaml")
+    args = parser.parse_args(argv)
+
+    cfg = load_corpus_config(args.config)
+    client = build_client(get_config().gemini_api_key)
+    dialogues = generate_batch(cfg, client=client)
+    write_dialogues_jsonl(dialogues, cfg.output_path)
+    print(f"wrote {len(dialogues)} dialogues -> {cfg.output_path}")
+
+
+if __name__ == "__main__":  # pragma: no cover - CLI entry point
+    main()

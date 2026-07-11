@@ -19,9 +19,11 @@ from typing import Any
 
 from qorgan.config import get_config
 from qorgan.data.schema import ScoreResult, TacticTag, spans_from_phrases
-from qorgan.llm_tools import LLMResponseError, generate_json
+from qorgan.llm_tools import LLMResponseError, generate_json, thinking_budget_for
 
-_MAX_TOKENS = 1024
+# Headroom so Gemini 2.5 thinking tokens (which count against this budget) never truncate
+# the JSON verdict -- this is the shipping/demo backend, so truncation here breaks the demo.
+_MAX_TOKENS = 2048
 _CACHE_VERSION = "v1"
 
 _SYSTEM_PROMPT = (
@@ -113,6 +115,7 @@ def classify(
             response_schema=_RESPONSE_SCHEMA,
             system_instruction=_SYSTEM_PROMPT,
             max_output_tokens=_MAX_TOKENS,
+            thinking_budget=thinking_budget_for(active_model),
         )
     except LLMResponseError as exc:
         raise LLMClassifierError(str(exc)) from exc

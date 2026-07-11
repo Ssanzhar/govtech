@@ -16,7 +16,8 @@ htmlcov/
 models/
 data/raw/
 data/synthetic/
-data/processed/
+data/processed/*
+!data/processed/manifest.json
 data/cache/
 *.faiss
 *.sqlite
