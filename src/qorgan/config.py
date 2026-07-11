@@ -24,8 +24,9 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 _DEFAULT_LLM_MODEL_QUALITY = "gemini-2.5-pro"
 _DEFAULT_LLM_MODEL_BULK = "gemini-2.5-flash"
-_DEFAULT_CLASSIFIER_BACKEND = "llm"
+_DEFAULT_CLASSIFIER_BACKEND = "linear"
 _DEFAULT_WHISPER_MODEL_SIZE = "small"
+_DEFAULT_EMBED_MODEL_NAME = "intfloat/multilingual-e5-base"
 _DEFAULT_RISK_THRESHOLD = 0.7
 _DEFAULT_RISK_THRESHOLD_ENTER = 0.7
 _DEFAULT_RISK_THRESHOLD_EXIT = 0.55
@@ -37,7 +38,7 @@ _DEFAULT_LOCALE = "ru"
 _DEFAULT_SPLIT_TRAIN_FRACTION = 0.7
 _DEFAULT_SPLIT_VAL_FRACTION = 0.15
 
-ClassifierBackend = Literal["llm", "xlmr", "mock"]
+ClassifierBackend = Literal["linear", "llm", "xlmr", "mock"]
 
 
 class ConfigError(ValueError):
@@ -73,6 +74,10 @@ class Config(BaseModel):
 
     # --- Fine-tuned XLM-R backend (D3) ---
     xlmr_model_dir: Path
+
+    # --- Embeddings + linear classifier backend ("linear") ---
+    linear_model_dir: Path
+    embed_model_name: str
 
     # --- Risk thresholds / hysteresis (gap G8) ---
     risk_threshold: float = Field(ge=0.0, le=1.0)
@@ -208,6 +213,10 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             xlmr_model_dir=_read_path(
                 source, "QORGAN_XLMR_MODEL_DIR", _read_path(source, "QORGAN_MODEL_DIR", _REPO_ROOT / "models") / "xlmr"
             ),
+            linear_model_dir=_read_path(
+                source, "QORGAN_LINEAR_MODEL_DIR", _read_path(source, "QORGAN_MODEL_DIR", _REPO_ROOT / "models") / "linear"
+            ),
+            embed_model_name=_read_str(source, "QORGAN_EMBED_MODEL_NAME", _DEFAULT_EMBED_MODEL_NAME),
             risk_threshold=_read_float(source, "QORGAN_RISK_THRESHOLD", _DEFAULT_RISK_THRESHOLD),
             risk_threshold_enter=_read_float(
                 source, "QORGAN_RISK_THRESHOLD_ENTER", _DEFAULT_RISK_THRESHOLD_ENTER

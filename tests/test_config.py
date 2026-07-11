@@ -10,7 +10,7 @@ from qorgan.config import Config, ConfigError, get_config, load_config
 
 def test_defaults_with_empty_env():
     cfg = load_config({})
-    assert cfg.classifier_backend == "llm"
+    assert cfg.classifier_backend == "linear"
     assert cfg.gemini_api_key is None
     assert cfg.risk_threshold == 0.7
     assert cfg.risk_threshold_enter == 0.7
@@ -112,6 +112,17 @@ def test_xlmr_model_dir_default_and_override():
     assert cfg.xlmr_model_dir == cfg.model_dir / "xlmr"
     override = load_config({"QORGAN_XLMR_MODEL_DIR": "/tmp/my_xlmr"})
     assert override.xlmr_model_dir == Path("/tmp/my_xlmr")
+
+
+def test_linear_model_dir_and_embed_model_defaults_and_overrides():
+    cfg = load_config({})
+    assert cfg.linear_model_dir == cfg.model_dir / "linear"
+    assert cfg.embed_model_name == "intfloat/multilingual-e5-base"
+    override = load_config(
+        {"QORGAN_LINEAR_MODEL_DIR": "/tmp/lin", "QORGAN_EMBED_MODEL_NAME": "intfloat/multilingual-e5-small"}
+    )
+    assert override.linear_model_dir == Path("/tmp/lin")
+    assert override.embed_model_name == "intfloat/multilingual-e5-small"
 
 
 def test_split_fraction_defaults():

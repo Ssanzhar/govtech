@@ -139,6 +139,18 @@ def test_build_generation_prompt_mentions_tactic_and_language():
     assert "Russian" in prompt
 
 
+def test_build_generation_prompt_injects_style_when_provided():
+    cfg = load_corpus_config()
+    tactic = get_taxonomy().get("otp_request")
+    style = "STYLE: rough transcribed call with filler words"
+
+    with_style = build_generation_prompt(tactic, "ru", cfg, style=style)
+    without_style = build_generation_prompt(tactic, "ru", cfg)
+
+    assert style in with_style
+    assert style not in without_style
+
+
 def test_build_hard_negative_prompt_mentions_category():
     cfg = load_corpus_config()
     category = get_taxonomy().negatives[0]

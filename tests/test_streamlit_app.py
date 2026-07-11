@@ -16,6 +16,7 @@ _RUN_TIMEOUT = 30
 def test_app_imports_and_renders_with_defaults(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "")
     monkeypatch.setenv("GOOGLE_API_KEY", "")
+    monkeypatch.setenv("QORGAN_CLASSIFIER_BACKEND", "mock")
     at = AppTest.from_file(str(APP_PATH))
 
     at.run(timeout=_RUN_TIMEOUT)
@@ -28,6 +29,7 @@ def test_app_imports_and_renders_with_defaults(monkeypatch):
 def test_app_scores_a_bundled_demo_transcript_end_to_end(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "")
     monkeypatch.setenv("GOOGLE_API_KEY", "")
+    monkeypatch.setenv("QORGAN_CLASSIFIER_BACKEND", "mock")
     at = AppTest.from_file(str(APP_PATH))
     at.run(timeout=_RUN_TIMEOUT)
 
@@ -43,6 +45,7 @@ def test_app_scores_a_bundled_demo_transcript_end_to_end(monkeypatch):
 def test_app_hard_negative_does_not_trigger_alert(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "")
     monkeypatch.setenv("GOOGLE_API_KEY", "")
+    monkeypatch.setenv("QORGAN_CLASSIFIER_BACKEND", "mock")
     at = AppTest.from_file(str(APP_PATH))
     at.run(timeout=_RUN_TIMEOUT)
 

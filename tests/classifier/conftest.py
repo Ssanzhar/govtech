@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 
+import numpy as np
 import pytest
 import torch
 
@@ -92,3 +93,34 @@ def tiny_encoder():
 @pytest.fixture
 def fake_tokenizer():
     return FakeTokenizer()
+
+
+class FakeEmbedder:
+    """Deterministic offline embedder. Texts containing `scam_marker` map to a distinct
+    region so scam/legit are linearly separable -- lets LR smoke tests actually learn."""
+
+    def __init__(self, dim: int = 16, scam_marker: str = "SMS") -> None:
+        self.dim = dim
+        self.scam_marker = scam_marker
+        self.seen: list[str] = []
+
+    def encode(self, texts, normalize_embeddings: bool = True, convert_to_numpy: bool = True):
+        self.seen = list(texts)
+        rows = []
+        for text in texts:
+            vec = [0.0] * self.dim
+            if self.scam_marker.lower() in text.lower():
+                vec[0], vec[1] = 1.0, 0.5
+            else:
+                vec[2], vec[3] = 1.0, 0.5
+            vec[4] = (hash(text) % 100) / 1000.0  # tiny deterministic jitter
+            if normalize_embeddings:
+                norm = sum(v * v for v in vec) ** 0.5 or 1.0
+                vec = [v / norm for v in vec]
+            rows.append(vec)
+        return np.array(rows, dtype=np.float32)
+
+
+@pytest.fixture
+def fake_embedder():
+    return FakeEmbedder()

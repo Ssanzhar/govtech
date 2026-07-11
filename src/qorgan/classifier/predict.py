@@ -27,9 +27,12 @@ from qorgan.data.demo_transcripts import DEMO_TRANSCRIPTS
 from qorgan.data.schema import ScoreResult, Span, TacticTag
 from qorgan.taxonomy import get_taxonomy
 
-_SUPPORTED_BACKENDS = ("llm", "xlmr", "mock")
+_SUPPORTED_BACKENDS = ("llm", "xlmr", "linear", "mock")
 # How many IG trigger spans to surface for an xlmr verdict.
 _XLMR_ATTRIBUTION_TOP_K = 8
+# `linear` backend: highlight up to this many utterances scoring at/above the margin.
+_LINEAR_ATTRIBUTION_TOP_K = 3
+_LINEAR_ATTRIBUTION_MIN_SCORE = 0.5
 
 # Risk levels used by the deterministic mock heuristic. Not a "trained" model -- just
 # enough signal to make the no-API-key demo path grounded and non-trivial.
@@ -57,6 +60,8 @@ def score(transcript: str, *, backend: str | None = None) -> ScoreResult:
         return _mock_score(transcript)
     if active_backend == "xlmr":
         return _xlmr_score(transcript)
+    if active_backend == "linear":
+        return _linear_score(transcript)
     raise UnknownBackendError(
         f"Unknown classifier backend {active_backend!r}; expected one of {_SUPPORTED_BACKENDS}"
     )
@@ -174,6 +179,58 @@ def load_xlmr_bundle(model_dir) -> XlmrBundle:  # pragma: no cover - loads the r
         temperature=metadata["temperature"],
         device=device,
     )
+
+
+_LINEAR_BUNDLE_CACHE: dict[str, Any] = {}
+
+
+def _linear_score(transcript: str, *, bundle: Any = None, embedder: Any = None) -> ScoreResult:
+    """Score `transcript` with the embeddings + calibrated-LR backend: calibrated risk +
+    decoded tactic tags + grounded top-utterance highlights. `bundle`/`embedder` are
+    injectable for tests; production loads them lazily/cached."""
+    from qorgan.classifier import embed as embed_mod
+    from qorgan.classifier.attribution import select_top_utterance_spans
+    from qorgan.classifier.labels import decode_tactics
+    from qorgan.data.schema import UTTERANCE_JOIN
+
+    active = bundle or _get_linear_bundle()
+
+    features = embed_mod.embed_texts([transcript], embedder=embedder, model_name=active.embed_model_name)
+    risk = float(active.risk_clf.predict_proba(features)[0, 1])
+    tactic_probs = active.tactic_clf.predict_proba(features)[0].tolist()
+    tags = tuple(
+        TacticTag(id=tactic_id, weight=min(1.0, max(0.0, prob)))
+        for tactic_id, prob in decode_tactics(tactic_probs, active.label_space, active.tactic_threshold)
+    )
+
+    # Grounded attribution: embed + score each utterance, highlight the riskiest ones.
+    utterances = transcript.split(UTTERANCE_JOIN)
+    utterance_features = embed_mod.embed_texts(utterances, embedder=embedder, model_name=active.embed_model_name)
+    utterance_scores = active.risk_clf.predict_proba(utterance_features)[:, 1].tolist()
+    spans = select_top_utterance_spans(
+        utterances,
+        utterance_scores,
+        top_k=_LINEAR_ATTRIBUTION_TOP_K,
+        min_score=_LINEAR_ATTRIBUTION_MIN_SCORE,
+    )
+
+    return ScoreResult(
+        risk=risk,
+        tags=tags,
+        attributions=spans,
+        backend="linear",
+        raw_confidence=max(risk, 1.0 - risk),  # calibrated certainty of the decision
+    )
+
+
+def _get_linear_bundle() -> Any:
+    from qorgan.classifier.linear_train import load_linear
+
+    cfg = get_config()
+    key = str(cfg.linear_model_dir)
+    if key not in _LINEAR_BUNDLE_CACHE:
+        _LINEAR_BUNDLE_CACHE[key] = load_linear(cfg.linear_model_dir)
+    return _LINEAR_BUNDLE_CACHE[key]
 
 
 def _span(transcript: str, phrase: str) -> Span:

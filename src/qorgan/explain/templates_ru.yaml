@@ -1,0 +1,17 @@
+# Russian explanation templates (D4-1). Externalized from explainer.py so localization can
+# be reviewed/edited without touching code. Loaded by explain/templates.py.
+# Placeholders: {tags}, {spans} in reason_template; {backend} in uncalibrated_suffix.
+
+reason_template: "Обнаружены признаки мошенничества: {tags}. Триггерные фразы в разговоре: {spans}."
+no_signal_reason: "Явных признаков мошенничества не обнаружено."
+spans_placeholder: "—"
+caveat: >-
+  Модель может ошибаться, особенно на нетипичных, коротких или прерванных звонках.
+  Оценивайте риск вместе с другими признаками.
+uncalibrated_suffix: " Оценка доверия ({backend}) не откалибрована — это базовая LLM-модель."
+human_note: "Это инструмент поддержки решений. Окончательное решение всегда принимает человек."
+confidence:
+  high: "Уверенность модели: высокая."
+  medium: "Уверенность модели: средняя."
+  low: "Уверенность модели: низкая."
+  unknown: "Уверенность модели не указана."

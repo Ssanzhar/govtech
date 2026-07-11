@@ -116,6 +116,45 @@ def test_explain_highlights_sorted_by_start():
     assert explanation.highlights[0].start < explanation.highlights[1].start
 
 
+def test_explain_surfaces_localized_confidence_label_high_for_calibrated():
+    result = ScoreResult(
+        risk=0.9, tags=[TacticTag(id="otp_request")], backend="xlmr", raw_confidence=0.92
+    )
+    explanation = explain(result, TRANSCRIPT, "ru")
+    assert explanation.confidence_label  # non-empty localized band
+    assert "высок" in explanation.confidence_label.lower()  # "высокая"
+
+
+def test_explain_confidence_label_unknown_when_no_confidence():
+    result = ScoreResult(risk=0.9, tags=[TacticTag(id="otp_request")], backend="llm")
+    explanation = explain(result, TRANSCRIPT, "ru")
+    assert explanation.confidence_label  # unknown-band string, not empty/None
+
+
+def test_explain_confidence_label_differs_by_locale():
+    result = ScoreResult(
+        risk=0.9, tags=[TacticTag(id="otp_request")], backend="xlmr", raw_confidence=0.5
+    )
+    ru = explain(result, TRANSCRIPT, "ru")
+    kk = explain(result, TRANSCRIPT, "kk")
+    assert ru.confidence_label != kk.confidence_label
+
+
+def test_explain_reason_lists_localized_tactic_name():
+    result = ScoreResult(
+        risk=0.9,
+        tags=[TacticTag(id="otp_request")],
+        attributions=[_span(TRANSCRIPT, "код из SMS")],
+        backend="llm",
+    )
+    explanation = explain(result, TRANSCRIPT, "ru")
+    # the RU display name for otp_request must appear in the reason (from taxonomy)
+    from qorgan.taxonomy import get_taxonomy
+
+    ru_name = get_taxonomy().display_name("otp_request", "ru")
+    assert ru_name in explanation.reason
+
+
 def test_explain_unknown_tag_id_skipped_gracefully():
     result = ScoreResult(
         risk=0.9,

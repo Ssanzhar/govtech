@@ -14,7 +14,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from qorgan.data.schema import Span
+from qorgan.data.schema import UTTERANCE_JOIN, Span
 
 _ZERO_WIDTH = 0
 # Captum IG defaults: enough integration steps for a stable attribution, and a modest
@@ -50,6 +50,40 @@ def align_token_attributions_to_spans(
     selected = _select_top_k(candidates, top_k)
     ranges = _merge_ranges(selected)
     return _build_spans(ranges, transcript)
+
+
+def select_top_utterance_spans(
+    utterances: Sequence[str],
+    scores: Sequence[float],
+    *,
+    top_k: int,
+    min_score: float = 0.0,
+) -> tuple[Span, ...]:
+    """Grounded attribution for the embeddings/linear backend: highlight the `top_k`
+    highest-risk *utterances* (score >= `min_score`) as verbatim `Span`s.
+
+    Offsets are computed against `UTTERANCE_JOIN.join(utterances)` (the same transcript the
+    classifier scored), so duplicate utterances resolve to their correct distinct positions
+    rather than a naive first-match. Raises `ValueError` on length mismatch or `top_k <= 0`.
+    """
+    if len(utterances) != len(scores):
+        raise ValueError(
+            f"utterances and scores must have the same length, got {len(utterances)} and {len(scores)}"
+        )
+    if top_k <= 0:
+        raise ValueError(f"top_k must be > 0, got {top_k}")
+
+    candidates: list[tuple[float, int, int, int]] = []  # (score, index, start, end)
+    cursor = 0
+    for index, (utterance, score) in enumerate(zip(utterances, scores)):
+        start, end = cursor, cursor + len(utterance)
+        cursor = end + len(UTTERANCE_JOIN)
+        if score >= min_score and utterance.strip():
+            candidates.append((score, index, start, end))
+
+    top = sorted(candidates, key=lambda c: (-c[0], c[1]))[:top_k]
+    spans = [Span(text=utterances[index], start=start, end=end) for _score, index, start, end in top]
+    return tuple(sorted(spans, key=lambda span: span.start))
 
 
 def _real_candidates(

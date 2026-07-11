@@ -216,6 +216,9 @@ class Explanation(BaseModel):
     highlights: tuple[Span, ...] = ()
     tags: tuple[TacticTag, ...] = ()
     confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    # Localized qualitative confidence band ("high/medium/low", RU/KK), derived from
+    # `confidence` + backend calibration (D4-2). Optional so older callers stay valid.
+    confidence_label: str | None = None
     caveat: str
     human_note: str
 

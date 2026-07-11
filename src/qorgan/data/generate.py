@@ -134,9 +134,16 @@ def load_corpus_config(path: Path | None = None) -> CorpusConfig:
         raise GenerationError(f"Corpus config validation failed for {resolved_path}: {exc}") from exc
 
 
-def build_generation_prompt(tactic: TacticDefinition, language: str, cfg: CorpusConfig) -> str:
-    """Documented prompt template for one synthetic scam-dialogue generation call."""
+def build_generation_prompt(
+    tactic: TacticDefinition, language: str, cfg: CorpusConfig, *, style: str = ""
+) -> str:
+    """Documented prompt template for one synthetic scam-dialogue generation call.
+
+    `style` (optional) injects a distribution-shift instruction -- e.g. a rough
+    transcribed-call style -- used to build a cross-distribution (OOD) eval set.
+    """
     lang_instruction = _LANGUAGE_INSTRUCTIONS[language]
+    style_block = f"{style}\n\n" if style else ""
     return (
         "Write a realistic phone-call transcript between a SCAM CALLER and a CALLEE in "
         f"Kazakhstan, {cfg.min_utterances}-{cfg.max_utterances} utterances long, "
@@ -144,6 +151,7 @@ def build_generation_prompt(tactic: TacticDefinition, language: str, cfg: Corpus
         f'The caller must clearly employ this scam tactic: "{tactic.description}" '
         f"(tactic id: {tactic.id}).\n\n"
         f"{lang_instruction}\n\n"
+        f"{style_block}"
         "Respond with a single JSON object with keys `utterances` (array of "
         "{speaker, text}) and `trigger_phrases` (array of strings). Every trigger_phrases "
         "entry must be an exact, verbatim substring of one of the utterances you write -- "
@@ -151,17 +159,34 @@ def build_generation_prompt(tactic: TacticDefinition, language: str, cfg: Corpus
     )
 
 
-def build_hard_negative_prompt(category: NegativeCategory, language: str, cfg: CorpusConfig) -> str:
-    """Documented prompt template for one synthetic hard-negative dialogue."""
+def build_hard_negative_prompt(
+    category: NegativeCategory, language: str, cfg: CorpusConfig, *, style: str = ""
+) -> str:
+    """Documented prompt template for one ADVERSARIAL hard-negative dialogue.
+
+    These are the FPR anchors: legitimate calls in the *same domains* as scams (bank, gov,
+    telecom, delivery) that superficially resemble a scam but contain none of the tactics,
+    so a classifier can't cheat on surface topic cues (CLAUDE.md §3.5 -- low FPR is the
+    primary metric).
+    """
     lang_instruction = _LANGUAGE_INSTRUCTIONS[language]
+    style_block = f"{style}\n\n" if style else ""
     return (
         "Write a realistic phone-call transcript between two people in Kazakhstan, "
         f"{cfg.min_utterances}-{cfg.max_utterances} utterances long, alternating turns. "
-        "This call must be legitimate -- NOT a scam.\n\n"
-        f'Scenario: "{category.note}" (category id: {category.id}). The caller must NOT '
-        "ask for OTP codes, card details/CVV, or request moving money to a 'safe' "
-        "account -- this is a hard-negative example used to measure false positives.\n\n"
+        "This call must be genuinely LEGITIMATE -- NOT a scam.\n\n"
+        f'Scenario: "{category.note}" (category id: {category.id}).\n\n'
+        "IMPORTANT (adversarial hard negative): make the call SUPERFICIALLY RESEMBLE a scam "
+        "so it is a hard case -- it may naturally mention a bank account, a recent "
+        "transaction, identity verification, an official organization, or mild time "
+        "pressure. BUT it must stay legitimate: the caller must NEVER ask for an SMS/OTP "
+        "code, card number / CVV / PIN, or login/password; never tell the callee to move "
+        "money to another or 'safe' account; never demand secrecy or threaten to block the "
+        "account or start a criminal case; never ask to install a remote-access app "
+        "(AnyDesk/TeamViewer). A real organization confirms or informs -- it never extracts "
+        "credentials or redirects money.\n\n"
         f"{lang_instruction}\n\n"
+        f"{style_block}"
         "Respond with a single JSON object with keys `utterances` (array of "
         "{speaker, text}) and `trigger_phrases` (leave it empty)."
     )
@@ -174,11 +199,12 @@ def generate_dialogue(
     client: Any,
     cfg: CorpusConfig | None = None,
     dialogue_id: str | None = None,
+    style: str = "",
 ) -> Dialogue:
     """Generate one schema-valid `Dialogue` exhibiting `tactic_id`, in `language`."""
     active_cfg = cfg or load_corpus_config()
     tactic = get_taxonomy().get(tactic_id)
-    prompt = build_generation_prompt(tactic, language, active_cfg)
+    prompt = build_generation_prompt(tactic, language, active_cfg, style=style)
     payload = _call_tool(client, prompt, active_cfg)
     return _build_dialogue(
         payload,
@@ -197,11 +223,12 @@ def generate_hard_negative(
     client: Any,
     cfg: CorpusConfig | None = None,
     dialogue_id: str | None = None,
+    style: str = "",
 ) -> Dialogue:
     """Generate one schema-valid hard-negative `Dialogue` for `category_id`, in `language`."""
     active_cfg = cfg or load_corpus_config()
     category = _get_negative_category(category_id)
-    prompt = build_hard_negative_prompt(category, language, active_cfg)
+    prompt = build_hard_negative_prompt(category, language, active_cfg, style=style)
     payload = _call_tool(client, prompt, active_cfg)
     return _build_dialogue(
         payload,
