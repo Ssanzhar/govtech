@@ -107,6 +107,13 @@ def test_google_api_key_used_as_gemini_fallback():
     assert cfg.gemini_api_key == "test-key-456"
 
 
+def test_xlmr_model_dir_default_and_override():
+    cfg = load_config({})
+    assert cfg.xlmr_model_dir == cfg.model_dir / "xlmr"
+    override = load_config({"QORGAN_XLMR_MODEL_DIR": "/tmp/my_xlmr"})
+    assert override.xlmr_model_dir == Path("/tmp/my_xlmr")
+
+
 def test_split_fraction_defaults():
     cfg = load_config({})
     assert cfg.split_train_fraction == 0.7

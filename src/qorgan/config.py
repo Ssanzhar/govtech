@@ -71,6 +71,9 @@ class Config(BaseModel):
     # --- ASR ---
     whisper_model_size: str
 
+    # --- Fine-tuned XLM-R backend (D3) ---
+    xlmr_model_dir: Path
+
     # --- Risk thresholds / hysteresis (gap G8) ---
     risk_threshold: float = Field(ge=0.0, le=1.0)
     risk_threshold_enter: float = Field(ge=0.0, le=1.0)
@@ -201,6 +204,9 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             ),
             whisper_model_size=_read_str(
                 source, "QORGAN_WHISPER_MODEL_SIZE", _DEFAULT_WHISPER_MODEL_SIZE
+            ),
+            xlmr_model_dir=_read_path(
+                source, "QORGAN_XLMR_MODEL_DIR", _read_path(source, "QORGAN_MODEL_DIR", _REPO_ROOT / "models") / "xlmr"
             ),
             risk_threshold=_read_float(source, "QORGAN_RISK_THRESHOLD", _DEFAULT_RISK_THRESHOLD),
             risk_threshold_enter=_read_float(
