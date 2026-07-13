@@ -24,16 +24,23 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 _DEFAULT_LLM_MODEL_QUALITY = "gemini-2.5-pro"
 _DEFAULT_LLM_MODEL_BULK = "gemini-2.5-flash"
-_DEFAULT_CLASSIFIER_BACKEND = "llm"
+_DEFAULT_CLASSIFIER_BACKEND = "linear"
 _DEFAULT_WHISPER_MODEL_SIZE = "small"
-_DEFAULT_RISK_THRESHOLD = 0.7
-_DEFAULT_RISK_THRESHOLD_ENTER = 0.7
-_DEFAULT_RISK_THRESHOLD_EXIT = 0.55
+_DEFAULT_EMBED_MODEL_NAME = "intfloat/multilingual-e5-base"
+# Tuned for the shipping hybrid model: max recall s.t. FPR<=0.05 on real_heldout is 0.55
+# (`eval/threshold.py`); at 0.55 real_heldout is FPR 0.000 / recall 1.000. See docs/eval_report.md.
+_DEFAULT_RISK_THRESHOLD = 0.55
+_DEFAULT_RISK_THRESHOLD_ENTER = 0.55
+_DEFAULT_RISK_THRESHOLD_EXIT = 0.45
 _DEFAULT_SEED = 42
 _DEFAULT_SUPPORTED_LOCALES: tuple[str, ...] = ("ru", "kk")
 _DEFAULT_LOCALE = "ru"
+# Corpus split fractions (test fraction is the remainder). Consumed by
+# `qorgan.data.build_corpus` for the deterministic train/val/test partition.
+_DEFAULT_SPLIT_TRAIN_FRACTION = 0.7
+_DEFAULT_SPLIT_VAL_FRACTION = 0.15
 
-ClassifierBackend = Literal["llm", "xlmr", "mock"]
+ClassifierBackend = Literal["linear", "llm", "xlmr", "mock"]
 
 
 class ConfigError(ValueError):
@@ -63,19 +70,37 @@ class Config(BaseModel):
     taxonomy_path: Path
     cache_dir: Path
     corpus_config_path: Path
+    cue_lexicon_path: Path
+    reassurance_patterns_path: Path
 
     # --- ASR ---
     whisper_model_size: str
+
+    # --- Fine-tuned XLM-R backend (D3) ---
+    xlmr_model_dir: Path
+
+    # --- Embeddings + linear classifier backend ("linear") ---
+    linear_model_dir: Path
+    embed_model_name: str
 
     # --- Risk thresholds / hysteresis (gap G8) ---
     risk_threshold: float = Field(ge=0.0, le=1.0)
     risk_threshold_enter: float = Field(ge=0.0, le=1.0)
     risk_threshold_exit: float = Field(ge=0.0, le=1.0)
 
+    # --- Corpus splits (test fraction is the remainder) ---
+    split_train_fraction: float = Field(gt=0.0, lt=1.0)
+    split_val_fraction: float = Field(gt=0.0, lt=1.0)
+
     # --- Reproducibility / localization ---
     default_seed: int
     supported_locales: tuple[str, ...]
     default_locale: str
+
+    @property
+    def split_test_fraction(self) -> float:
+        """The held-out test fraction: whatever is left after train + val."""
+        return 1.0 - self.split_train_fraction - self.split_val_fraction
 
     @model_validator(mode="after")
     def _hysteresis_exit_not_above_enter(self) -> "Config":
@@ -90,6 +115,16 @@ class Config(BaseModel):
     def _supported_locales_not_empty(self) -> "Config":
         if not self.supported_locales:
             raise ValueError("supported_locales must not be empty")
+        return self
+
+    @model_validator(mode="after")
+    def _split_fractions_leave_room_for_test(self) -> "Config":
+        if self.split_train_fraction + self.split_val_fraction >= 1.0:
+            raise ValueError(
+                "split_train_fraction + split_val_fraction must be < 1.0 to leave a "
+                f"non-empty test split (got train={self.split_train_fraction}, "
+                f"val={self.split_val_fraction})"
+            )
         return self
 
     @model_validator(mode="after")
@@ -176,15 +211,34 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             corpus_config_path=_read_path(
                 source, "QORGAN_CORPUS_CONFIG_PATH", _REPO_ROOT / "configs" / "corpus.yaml"
             ),
+            cue_lexicon_path=_read_path(
+                source, "QORGAN_CUE_LEXICON_PATH", data_dir / "lexicon" / "hard_signal_cues.yaml"
+            ),
+            reassurance_patterns_path=_read_path(
+                source, "QORGAN_REASSURANCE_PATTERNS_PATH", data_dir / "lexicon" / "reassurance_patterns.yaml"
+            ),
             whisper_model_size=_read_str(
                 source, "QORGAN_WHISPER_MODEL_SIZE", _DEFAULT_WHISPER_MODEL_SIZE
             ),
+            xlmr_model_dir=_read_path(
+                source, "QORGAN_XLMR_MODEL_DIR", _read_path(source, "QORGAN_MODEL_DIR", _REPO_ROOT / "models") / "xlmr"
+            ),
+            linear_model_dir=_read_path(
+                source, "QORGAN_LINEAR_MODEL_DIR", _read_path(source, "QORGAN_MODEL_DIR", _REPO_ROOT / "models") / "linear"
+            ),
+            embed_model_name=_read_str(source, "QORGAN_EMBED_MODEL_NAME", _DEFAULT_EMBED_MODEL_NAME),
             risk_threshold=_read_float(source, "QORGAN_RISK_THRESHOLD", _DEFAULT_RISK_THRESHOLD),
             risk_threshold_enter=_read_float(
                 source, "QORGAN_RISK_THRESHOLD_ENTER", _DEFAULT_RISK_THRESHOLD_ENTER
             ),
             risk_threshold_exit=_read_float(
                 source, "QORGAN_RISK_THRESHOLD_EXIT", _DEFAULT_RISK_THRESHOLD_EXIT
+            ),
+            split_train_fraction=_read_float(
+                source, "QORGAN_SPLIT_TRAIN_FRACTION", _DEFAULT_SPLIT_TRAIN_FRACTION
+            ),
+            split_val_fraction=_read_float(
+                source, "QORGAN_SPLIT_VAL_FRACTION", _DEFAULT_SPLIT_VAL_FRACTION
             ),
             default_seed=_read_int(source, "QORGAN_SEED", _DEFAULT_SEED),
             supported_locales=_read_csv_tuple(

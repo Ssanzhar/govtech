@@ -1,0 +1,53 @@
+# Reassurance pattern vocabulary (anti-scam NEGATIVE signal).
+#
+# Detects a legitimate institution PROACTIVELY telling the customer that sensitive data is
+# NOT needed ("we will never ask for your code/card", "no code is required") -- a documented
+# anti-fraud practice that real bank / telecom / gov calls perform and scammers never do.
+# A reassurance fires when a `sensitive_term` occurs within `window_chars` of a
+# `reassurance_term` (either order), within the same sentence.
+#
+# INVARIANT: reassurance_terms are NEGATION-OF-NEED / never-asks phrases ONLY. They must NOT
+# include scam-secrecy phrasing ("никому не говорите", "не сообщайте банку") -- scammers use
+# those, so including them would fire on scams and invert the signal.
+version: 1
+window_chars: 70
+sensitive_terms:
+  - код
+  - кода
+  - коды
+  - кодов
+  - код из sms
+  - смс
+  - sms
+  - cvv
+  - пароль
+  - пароля
+  - пароли
+  - пин
+  - пин-код
+  - данные
+  - данных
+  - данные карты
+  - номер карты
+  - реквизиты
+  - құпия сөз
+  - құпия
+  - жсн
+reassurance_terms:
+  - не нужно
+  - не нужны
+  - не требуется
+  - не потребует
+  - не потребуются
+  - не просим
+  - не спрашиваем
+  - не запрашиваем
+  - не запросит
+  - никогда не просит
+  - никогда не просим
+  - никогда не запрашивает
+  - никогда не спрашивает
+  - қажет емес
+  - сұрамайды
+  - сұрамаймыз
+  - сұрамаймыз

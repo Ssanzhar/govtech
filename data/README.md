@@ -1,41 +1,104 @@
 # Data — provenance & processing (ТЗ §9, graded)
 
-Fill this in **as data lands**. Every field below is scored under "Работа с данными".
+This documents how the Qorğan corpus is produced, cleaned, split, and evaluated. Every
+step is code-driven and reproducible (`docs/DECISIONS.md` D9): a seeded build + a committed
+`manifest.json` (content hash) stand in for DVC.
 
 ## Sources
-| Source | Type | Language | Role | License |
+| Source | Type | Language | Role | Provenance |
 |---|---|---|---|---|
-| Gemini-generated dialogues | synthetic | KK/RU/mixed | main train/val/test | own (documented) |
-| Scam-baiting call transcripts | real (public) | mostly RU/EN | real anchors, taxonomy grounding | per source |
-| Team-collected recordings (consented) | real | KK/RU | `real_heldout` only | consent on file |
-| Open dialogue corpora | real (public) | KK/RU | negatives | per source |
+| Gemini-generated dialogues | synthetic | KK / RU / mixed | `train` / `val` / `test` | `src/qorgan/data/generate.py` (`gemini-2.5-flash`, seeded) |
+| Curated `real_heldout` anchors | hand-authored (manual-transcript fallback) | KK / RU / mixed | `real_heldout` **only** | `src/qorgan/data/anchors.py` → `data/anchors/real_heldout.jsonl` |
+| Scam-tactic taxonomy | curated | RU / KK | label space + generation seeds | `data/taxonomy/tactics.yaml` |
 
-Reference methodology: TeleAntiFraud-28k (arXiv:2503.24115) — ASR transcripts + LLM
-self-instruct + adversarial synthesis. Scam-stage/script taxonomy informed by
-"An analysis of scam baiting calls" (arXiv:2307.01965).
+No public Kazakh/Russian scam-**call** transcript corpus exists, and streaming/real ASR is
+out of scope this sprint (`docs/SCOPE.md`). The `real_heldout` set is therefore a small,
+hand-curated set of realistic Kazakhstani calls — paraphrased from publicly documented
+social-engineering scripts and everyday call patterns, with every identifier already
+abstracted. Reference methodology: **TeleAntiFraud-28k** (arXiv:2503.24115) — ASR + LLM
+self-instruct + adversarial synthesis; scam-stage taxonomy informed by *"An analysis of
+scam baiting calls"* (arXiv:2307.01965).
 
 ## Structure
-- Records validated against `src/qorgan/data/schema.py`.
-- Dialogue: `{id, language, utterances[], label:{risk, tactic_tags[], trigger_spans[]}, is_hard_negative}`.
-- Trigger spans are **verbatim substrings** of the transcript (validated).
+- Every record validates against `src/qorgan/data/schema.py:Dialogue`.
+- `Dialogue = {id, language, utterances[], label:{risk, tactic_tags[], trigger_spans[], is_hard_negative}}`.
+- **Trigger spans are verbatim substrings** of the transcript (`validate_verbatim_spans`,
+  enforced at construction) — grounded highlights, never hallucinated (CLAUDE.md §6).
 
-## Generation (synthetic)
-- Tactics from `data/taxonomy/tactics.yaml`; balanced across tactics + languages + hard negatives.
-- Seeded + config-driven (`src/qorgan/data/generate.py`); reproducible; manifest + hash committed.
+## Generation (synthetic) — `data/generate.py` (D2-1)
+- One Gemini call per `(tactic × language)` and per `(hard-negative category × language)`,
+  driven by `configs/corpus.yaml`. Built corpus: **15 tactics × 3 langs × 8 = 360** positives +
+  **5 categories × 3 langs × 10 = 150** negatives = **510 dialogues** (balanced RU/KK/mixed =
+  170 each; also seeds the ~500 Level-2 incidents in Day 5).
+- Bulk route = `gemini-2.5-flash` with thinking disabled (`thinking_budget=0`) so the JSON
+  is never truncated by thinking tokens. Deterministic iteration order (sorted ids × configured langs).
 
-## Cleaning
-- Text normalization, dedup, **PII scrubbing** (numbers hashed, names redacted).
-- Consistent label schema; hard negatives explicitly marked.
+## Labeling (independent re-label) — `data/label.py` (D2-2)
+- Generation attaches a cheap self-instruct label (the tactic the model was *asked* to
+  write toward). `label.py` then **re-labels each transcript independently** — Gemini reads
+  the finished dialogue with no knowledge of the seed and assigns `{risk, tactic_tags(+weights),
+  trigger_phrases}`. This catches generation drift and adds tactics beyond the seed.
+- The prompt enumerates the **exact taxonomy ids**; ids outside the taxonomy are dropped,
+  and trigger phrases are re-located as verbatim spans (hallucinated phrases discarded).
 
-## Splits
-- `train` / `val` / `test` on synthetic+scraped; **separate `real_heldout`** (real consented).
-- Metrics reported on `test` **and** `real_heldout` separately (see `src/qorgan/eval/`).
+## Cleaning — `data/scrub.py` + `data/build_corpus.py`
+- **PII scrubbing** (`scrub_text`, deterministic + idempotent): KZ phone numbers → `[PHONE]`,
+  16-digit cards → `[CARD]`, 12-digit IIN → `[IIN]`, emails → `[EMAIL]`. Money amounts /
+  percentages / short OTP-length numbers are preserved. Applied to every utterance; trigger
+  spans are **re-grounded** against the scrubbed text (a span whose text was itself PII is
+  dropped, never left dangling).
+- **Dedup**: exact duplicates removed on a normalized (lowercased, whitespace-collapsed)
+  transcript key, keep-first / stable order.
+
+## Splits — `data/build_corpus.py` (D2-4)
+- Synthetic set → deterministic `train` / `val` / `test` via a **seeded hash of the dialogue
+  id** (`assign_split`); fractions from `config.py` (`0.70 / 0.15 / 0.15`, env-overridable).
+  Stable under reordering/additions — only id + seed + fractions matter.
+- `real_heldout` (curated anchors) is kept **entirely separate** — never mixed into train/val/test.
+- **Train augmentation** (`data/augment/*.jsonl`, committed) is scrubbed and added to **train
+  only** — never val/test/real_heldout, so the eval sets stay a clean held-out signal
+  (`manifest.json.train_augment_count`).
+
+## Targeted augmentation + feature lexicons (hybrid `linear` model)
+- **`data/augment/reassurance_negatives.jsonl`** (27): legitimate bank/gov/delivery calls that
+  **proactively reassure** ("we will never ask for your code") — a documented anti-fraud
+  practice absent from the base synthetic negatives. Generated by
+  `scripts/augment_reassurance_negatives.py` (Gemini flash, via the hard-negative prompt's
+  `style` hook), scrubbed, RU/KK/mixed. Motivated from the *general* pattern, NOT copied from
+  `real_heldout`. Closes the false-positive gap on realistic legit calls (see
+  `docs/eval_report.md`).
+- **`data/lexicon/hard_signal_cues.yaml`** — request-cue phrases per hard-signal tactic
+  (seeded from `taxonomy` examples). **`data/lexicon/reassurance_patterns.yaml`** —
+  sensitive-term + negation-of-need vocabulary. Both are committed, versioned by content hash
+  in the model bundle, and drive the 6 interpretable risk features.
+- Outputs `data/processed/{train,val,test,real_heldout}.jsonl` + **`manifest.json`**
+  (per-split counts, per-language breakdown, hard-negative counts, grand total, seed,
+  fractions, and an order-independent SHA-256 **content hash** for reproducibility).
+
+## Evaluation — `eval/metrics.py` + `eval/run.py` (D2-5, D2-6)
+- **FPR is the primary metric** (a false alarm on a real bank call destroys trust) and is
+  reported **first**, then precision / recall / F1 / PR-AUC + per-tactic F1.
+- Reported on `test` **and** `real_heldout` **separately** — the latter is the honest
+  generalization signal. The classifier backend (`llm` / `xlmr` / `mock`) is swappable with
+  no code change.
+
+## Reproduce
+```bash
+# needs GEMINI_API_KEY in .env for the two generation steps
+python -m qorgan.data.generate --config configs/corpus.yaml       # -> data/synthetic/dialogues.jsonl
+python -m qorgan.data.label --in data/synthetic/dialogues.jsonl \
+                            --out data/synthetic/dialogues.jsonl   # independent re-label (optional)
+python -m qorgan.data.build_corpus --config configs/corpus.yaml    # scrub + dedup + split + manifest
+python -m qorgan.eval.run --split test --split real_heldout        # FPR-first tables (add --backend mock for no API)
+```
 
 ## Limitations (state honestly)
-- No public KZ/RU scam-call transcripts exist → corpus is mostly synthetic; `real_heldout`
-  is small. Synthetic data may under-represent real acoustic/linguistic noise. FPR on
-  `real_heldout` is the honest generalization signal.
+- Corpus is **mostly synthetic**; `real_heldout` is small (10 curated anchors) and paraphrased,
+  not transcribed from live audio. Synthetic data under-represents real acoustic/ASR noise
+  and disfluency. **FPR on `real_heldout` is the honest generalization number**, not `test`.
+- `real_heldout` anchors are illustrative, not a statistically representative sample.
 
 ## Directories
-- `taxonomy/` scam-tactic definitions · `raw/` sources (gitignored if large) ·
-  `synthetic/` generated JSONL · `processed/` splits + manifest.
+- `taxonomy/` scam-tactic definitions · `anchors/` committed `real_heldout` set ·
+  `raw/` sources (gitignored) · `synthetic/` generated JSONL (gitignored) ·
+  `processed/` splits + manifest (gitignored, regenerated from the seeded build).

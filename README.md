@@ -8,7 +8,8 @@ Built for the GovTech Camp selection stage. This repo is the **1-week web protot
 the full mobile / on-device vision lives in [`DOCUMENTATION.md`](DOCUMENTATION.md) and the
 [`docs/`](docs/) roadmap.
 
-> **For contributors & agents:** start at [`CLAUDE.md`](CLAUDE.md) →
+> **For contributors & agents:** current state / handoff is
+> [`docs/STATUS.md`](docs/STATUS.md); then [`CLAUDE.md`](CLAUDE.md) →
 > [`docs/SCOPE.md`](docs/SCOPE.md) → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## What it does

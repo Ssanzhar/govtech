@@ -15,10 +15,11 @@ languages: ["ru", "kk", "mixed"]
 model_route: bulk
 
 # How many synthetic dialogues to generate per (tactic x language) combination, and per
-# hard-negative category x language. D1-10 keeps these small (scaffolding); D2-1 raises
-# them to hit the ~500-incident target for Level 2.
-dialogues_per_tactic: 3
-hard_negatives_per_category: 3
+# hard-negative category x language. D2-1 target: 15 tactics x 3 langs x 8 = 360 positives
+# + 5 negative categories x 3 langs x 10 = 150 hard/soft negatives = 510 dialogues, which
+# also seeds the ~500 Level-2 incidents (Day 5). Lower these for a cheaper/faster smoke run.
+dialogues_per_tactic: 8
+hard_negatives_per_category: 10
 
 # Bounds on utterance count per generated dialogue (a short but plausible phone call).
 min_utterances: 4

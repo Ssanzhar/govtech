@@ -16,7 +16,8 @@ htmlcov/
 models/
 data/raw/
 data/synthetic/
-data/processed/
+data/processed/*
+!data/processed/manifest.json
 data/cache/
 *.faiss
 *.sqlite
@@ -29,3 +30,7 @@ data/cache/
 
 # Notebooks
 .ipynb_checkpoints/
+
+# Local debug artifacts
+error_log.txt
+error.txt

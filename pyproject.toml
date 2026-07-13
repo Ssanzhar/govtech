@@ -23,10 +23,9 @@ dependencies = [
     "captum>=0.7",
     "sentence-transformers>=3.0",
     "hdbscan>=0.8.36",
-    "faiss-cpu>=1.8",
     "networkx>=3.3",
     "faster-whisper>=1.0",
-    "streamlit>=1.36",
+    "streamlit>=1.49",  # width="stretch" dataframe API (replaces use_container_width)
 ]
 
 [project.optional-dependencies]

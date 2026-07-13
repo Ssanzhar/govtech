@@ -1,0 +1,17 @@
+# Kazakh explanation templates (D4-1). Externalized from explainer.py so localization can
+# be reviewed/edited without touching code. Loaded by explain/templates.py.
+# Placeholders: {tags}, {spans} in reason_template; {backend} in uncalibrated_suffix.
+
+reason_template: "Алаяқтық белгілері анықталды: {tags}. Әңгімедегі триггер фразалар: {spans}."
+no_signal_reason: "Алаяқтық белгілері анық байқалмады."
+spans_placeholder: "—"
+caveat: >-
+  Модель әсіресе әдеттен тыс, қысқа немесе үзілген қоңырауларда қателесуі мүмкін.
+  Тәуекелді басқа белгілермен бірге бағалаңыз.
+uncalibrated_suffix: " Сенімділік бағасы ({backend}) калибрленбеген — бұл негізгі LLM моделі."
+human_note: "Бұл шешім қабылдауды қолдау құралы. Түпкілікті шешімді әрқашан адам қабылдайды."
+confidence:
+  high: "Модель сенімділігі: жоғары."
+  medium: "Модель сенімділігі: орташа."
+  low: "Модель сенімділігі: төмен."
+  unknown: "Модель сенімділігі көрсетілмеген."

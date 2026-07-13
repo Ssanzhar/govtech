@@ -16,6 +16,7 @@ _RUN_TIMEOUT = 30
 def test_app_imports_and_renders_with_defaults(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "")
     monkeypatch.setenv("GOOGLE_API_KEY", "")
+    monkeypatch.setenv("QORGAN_CLASSIFIER_BACKEND", "mock")
     at = AppTest.from_file(str(APP_PATH))
 
     at.run(timeout=_RUN_TIMEOUT)
@@ -28,6 +29,7 @@ def test_app_imports_and_renders_with_defaults(monkeypatch):
 def test_app_scores_a_bundled_demo_transcript_end_to_end(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "")
     monkeypatch.setenv("GOOGLE_API_KEY", "")
+    monkeypatch.setenv("QORGAN_CLASSIFIER_BACKEND", "mock")
     at = AppTest.from_file(str(APP_PATH))
     at.run(timeout=_RUN_TIMEOUT)
 
@@ -43,6 +45,7 @@ def test_app_scores_a_bundled_demo_transcript_end_to_end(monkeypatch):
 def test_app_hard_negative_does_not_trigger_alert(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "")
     monkeypatch.setenv("GOOGLE_API_KEY", "")
+    monkeypatch.setenv("QORGAN_CLASSIFIER_BACKEND", "mock")
     at = AppTest.from_file(str(APP_PATH))
     at.run(timeout=_RUN_TIMEOUT)
 
@@ -52,3 +55,21 @@ def test_app_hard_negative_does_not_trigger_alert(monkeypatch):
     assert not at.exception
     assert any("Low risk" in ok.value for ok in at.success)
     assert len(at.error) == 0
+
+
+def test_app_level2_tab_does_not_crash_on_empty_organizations_file(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    processed_dir = data_dir / "processed"
+    processed_dir.mkdir(parents=True)
+    (processed_dir / "organizations.jsonl").write_text("\n", encoding="utf-8")
+
+    monkeypatch.setenv("QORGAN_DATA_DIR", str(data_dir))
+    monkeypatch.setenv("GEMINI_API_KEY", "")
+    monkeypatch.setenv("GOOGLE_API_KEY", "")
+    monkeypatch.setenv("QORGAN_CLASSIFIER_BACKEND", "mock")
+    at = AppTest.from_file(str(APP_PATH))
+
+    at.run(timeout=_RUN_TIMEOUT)
+
+    assert not at.exception
+    assert any("no organizations" in info.value.lower() for info in at.info)

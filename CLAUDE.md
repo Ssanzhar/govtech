@@ -4,6 +4,14 @@
 > `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`. `TECHNICAL_TASK.md` is the organizers'
 > ask; `DOCUMENTATION.md` is the **full 10-week vision — do NOT try to build all of it.**
 
+> **📍 CURRENT STATE / HANDOFF → [`docs/STATUS.md`](docs/STATUS.md)** — read it before planning
+> new work: what's built, how to run/retrain/eval, known open threads. This brief below is the
+> original plan; STATUS.md is where things actually landed.
+>
+> **Trained models + corpus are gitignored** (regenerate from source, or pull from Hugging Face):
+> models `sanzh-ts/govtech` · dataset `sanzh-ts/govtech_ds`. Publish with `python hf_upload.py`
+> (after `hf auth login`). Work is on branch **`sanzhs-branch`** (not merged to `main`).
+
 ## 1. What this is
 
 Qorğan detects **social-engineering (scam) patterns in phone conversations** for

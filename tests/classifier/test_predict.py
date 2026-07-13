@@ -70,14 +70,88 @@ def test_score_llm_backend_routes_to_llm_classifier(monkeypatch):
     assert calls == ["some transcript"]
 
 
-def test_score_xlmr_backend_raises_not_implemented():
-    with pytest.raises(NotImplementedError):
-        predict.score("some transcript", backend="xlmr")
+def test_score_xlmr_backend_missing_model_raises_clear_error(monkeypatch, tmp_path):
+    # Point the bundle loader at an empty dir -> a clear, actionable error (not a crash).
+    monkeypatch.setenv("QORGAN_XLMR_MODEL_DIR", str(tmp_path / "no_model"))
+    predict._XLMR_BUNDLE_CACHE.clear()
+    with pytest.raises(predict.XlmrModelNotFoundError):
+        predict.score("Продиктуйте код из SMS", backend="xlmr")
+
+
+def test_xlmr_score_with_injected_bundle_returns_scoreresult(tiny_encoder, fake_tokenizer):
+    import torch
+
+    from qorgan.classifier.model import ScamClassifierModel
+
+    label_space = ("otp_request", "urgency", "safe_account")
+    model = ScamClassifierModel(tiny_encoder, num_tactics=len(label_space))
+    bundle = predict.XlmrBundle(
+        model=model,
+        tokenizer=fake_tokenizer,
+        label_space=label_space,
+        max_length=32,
+        tactic_threshold=0.5,
+        temperature=1.5,
+        device=torch.device("cpu"),
+    )
+    transcript = "Продиктуйте код из SMS и переведите деньги на безопасный счёт"
+
+    result = predict._xlmr_score(transcript, bundle=bundle)
+
+    assert isinstance(result, ScoreResult)
+    assert result.backend == "xlmr"
+    assert 0.0 <= result.risk <= 1.0
+    assert result.raw_confidence is not None and 0.5 <= result.raw_confidence <= 1.0
+    for tag in result.tags:
+        assert tag.id in label_space
+    for span in result.attributions:
+        assert transcript[span.start : span.end] == span.text  # grounded, verbatim
 
 
 def test_score_unknown_backend_raises_unknown_backend_error():
     with pytest.raises(predict.UnknownBackendError):
         predict.score("some transcript", backend="bogus")
+
+
+def test_score_linear_backend_missing_model_raises(monkeypatch, tmp_path):
+    monkeypatch.setenv("QORGAN_LINEAR_MODEL_DIR", str(tmp_path / "no_linear"))
+    predict._LINEAR_BUNDLE_CACHE.clear()
+    with pytest.raises(FileNotFoundError):
+        predict.score("Продиктуйте код из SMS", backend="linear")
+
+
+def test_linear_score_with_injected_bundle_returns_scoreresult(fake_embedder):
+    from qorgan.classifier.linear_train import train_linear
+    from qorgan.data.schema import Dialogue, Label, TacticTag, Utterance
+
+    label_space = ("otp_request", "urgency", "safe_account")
+
+    def d(did, text, risk, tags=()):
+        return Dialogue(
+            id=did, language="ru", utterances=(Utterance(speaker="c", text=text),),
+            label=Label(risk=risk, tactic_tags=tuple(TacticTag(id=t) for t in tags)),
+        )
+
+    train = (
+        [d(f"s{i}", f"Продиктуйте код из SMS {i}", 0.9, ["otp_request"]) for i in range(10)]
+        + [d(f"n{i}", f"Разговор про погоду {i}", 0.03) for i in range(10)]
+    )
+    bundle = train_linear(train, label_space=label_space, embedder=fake_embedder)
+
+    scam = "Здравствуйте это банк\nПродиктуйте код из SMS сейчас"
+    result = predict._linear_score(scam, bundle=bundle, embedder=fake_embedder)
+
+    assert isinstance(result, ScoreResult)
+    assert result.backend == "linear"
+    assert 0.0 <= result.risk <= 1.0
+    assert result.raw_confidence is not None
+    for tag in result.tags:
+        assert tag.id in label_space
+    for span in result.attributions:
+        assert scam[span.start : span.end] == span.text  # grounded, verbatim
+
+    legit = predict._linear_score("Как дела на выходных", bundle=bundle, embedder=fake_embedder)
+    assert result.risk > legit.risk  # scam scored above a benign line
 
 
 def test_score_empty_transcript_raises_value_error():

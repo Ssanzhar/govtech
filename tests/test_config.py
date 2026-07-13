@@ -10,11 +10,11 @@ from qorgan.config import Config, ConfigError, get_config, load_config
 
 def test_defaults_with_empty_env():
     cfg = load_config({})
-    assert cfg.classifier_backend == "llm"
+    assert cfg.classifier_backend == "linear"
     assert cfg.gemini_api_key is None
-    assert cfg.risk_threshold == 0.7
-    assert cfg.risk_threshold_enter == 0.7
-    assert cfg.risk_threshold_exit == 0.55
+    assert cfg.risk_threshold == 0.55
+    assert cfg.risk_threshold_enter == 0.55
+    assert cfg.risk_threshold_exit == 0.45
     assert cfg.default_seed == 42
     assert cfg.supported_locales == ("ru", "kk")
     assert cfg.default_locale == "ru"
@@ -105,6 +105,56 @@ def test_gemini_api_key_read_when_present():
 def test_google_api_key_used_as_gemini_fallback():
     cfg = load_config({"GOOGLE_API_KEY": "test-key-456"})
     assert cfg.gemini_api_key == "test-key-456"
+
+
+def test_xlmr_model_dir_default_and_override():
+    cfg = load_config({})
+    assert cfg.xlmr_model_dir == cfg.model_dir / "xlmr"
+    override = load_config({"QORGAN_XLMR_MODEL_DIR": "/tmp/my_xlmr"})
+    assert override.xlmr_model_dir == Path("/tmp/my_xlmr")
+
+
+def test_linear_model_dir_and_embed_model_defaults_and_overrides():
+    cfg = load_config({})
+    assert cfg.linear_model_dir == cfg.model_dir / "linear"
+    assert cfg.embed_model_name == "intfloat/multilingual-e5-base"
+    override = load_config(
+        {"QORGAN_LINEAR_MODEL_DIR": "/tmp/lin", "QORGAN_EMBED_MODEL_NAME": "intfloat/multilingual-e5-small"}
+    )
+    assert override.linear_model_dir == Path("/tmp/lin")
+    assert override.embed_model_name == "intfloat/multilingual-e5-small"
+
+
+def test_split_fraction_defaults():
+    cfg = load_config({})
+    assert cfg.split_train_fraction == 0.7
+    assert cfg.split_val_fraction == 0.15
+    # test fraction is the remainder
+    assert cfg.split_test_fraction == pytest.approx(0.15)
+
+
+def test_split_fractions_env_overrides():
+    cfg = load_config({"QORGAN_SPLIT_TRAIN_FRACTION": "0.8", "QORGAN_SPLIT_VAL_FRACTION": "0.1"})
+    assert cfg.split_train_fraction == 0.8
+    assert cfg.split_val_fraction == 0.1
+    assert cfg.split_test_fraction == pytest.approx(0.1)
+
+
+def test_split_fractions_summing_to_one_or_more_raises():
+    with pytest.raises(ConfigError):
+        load_config({"QORGAN_SPLIT_TRAIN_FRACTION": "0.7", "QORGAN_SPLIT_VAL_FRACTION": "0.3"})
+
+
+def test_split_train_fraction_out_of_range_raises():
+    with pytest.raises(ConfigError):
+        load_config({"QORGAN_SPLIT_TRAIN_FRACTION": "0"})
+    with pytest.raises(ConfigError):
+        load_config({"QORGAN_SPLIT_TRAIN_FRACTION": "1.0"})
+
+
+def test_split_val_fraction_out_of_range_raises():
+    with pytest.raises(ConfigError):
+        load_config({"QORGAN_SPLIT_VAL_FRACTION": "-0.1"})
 
 
 def test_config_is_immutable():
