@@ -178,6 +178,7 @@ def build_corpus(
     *,
     dialogues: Sequence[Dialogue] | None = None,
     anchor_dialogues: Sequence[Dialogue] | None = None,
+    augment_dialogues: Sequence[Dialogue] | None = None,
     synthetic_path: Path | None = None,
     processed_dir: Path | None = None,
     seed: int | None = None,
@@ -189,6 +190,9 @@ def build_corpus(
     Inputs default to the configured locations so the CLI is zero-arg, but every input is
     injectable for tests. Synthetic dialogues are scrubbed + deduped + split; the curated
     anchors become `real_heldout`, scrubbed but never mixed into train/val/test.
+    `augment_dialogues` (targeted training data, e.g. reassurance hard negatives) are scrubbed
+    and added to **train only** -- never val/test/real_heldout, so the eval sets stay a clean
+    held-out signal.
     """
     cfg = get_config()
     active_seed = cfg.default_seed if seed is None else seed
@@ -206,6 +210,10 @@ def build_corpus(
     splits = split_dialogues(
         deduped, seed=active_seed, train_fraction=active_train, val_fraction=active_val
     )
+
+    scrubbed_augment = tuple(scrub_dialogue(d) for d in (augment_dialogues or ()))
+    if scrubbed_augment:
+        splits = {**splits, "train": deduplicate(splits["train"] + scrubbed_augment)}
     real_heldout = tuple(scrub_dialogue(d) for d in anchors)
 
     for name in _SPLIT_NAMES:
@@ -215,10 +223,27 @@ def build_corpus(
     manifest = build_manifest(
         splits, real_heldout, seed=active_seed, train_fraction=active_train, val_fraction=active_val
     )
+    manifest["train_augment_count"] = len(scrubbed_augment)
     (active_processed / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     return manifest
+
+
+def _read_augment_dir(augment_dir: Path) -> list[Dialogue]:
+    """Load all `*.jsonl` in `augment_dir` as train-augmentation dialogues (empty if absent).
+
+    These are committed, targeted training examples (e.g. reassurance hard negatives from
+    `scripts/augment_reassurance_negatives.py`) that close a specific model gap.
+    """
+    if not augment_dir.exists():
+        return []
+    dialogues: list[Dialogue] = []
+    for path in sorted(augment_dir.glob("*.jsonl")):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                dialogues.append(Dialogue.model_validate_json(line))
+    return dialogues
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -226,10 +251,18 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Assemble the Qorgan corpus + manifest.")
     parser.add_argument("--config", type=Path, default=None, help="Path to configs/corpus.yaml")
     parser.add_argument("--seed", type=int, default=None, help="Override the split seed")
+    parser.add_argument(
+        "--augment-dir", type=Path, default=None, help="Dir of *.jsonl train-augmentation dialogues"
+    )
     args = parser.parse_args(argv)
 
     corpus_cfg = load_corpus_config(args.config)
-    manifest = build_corpus(synthetic_path=corpus_cfg.output_path, seed=args.seed)
+    augment_dir = args.augment_dir or (get_config().data_dir / "augment")
+    manifest = build_corpus(
+        synthetic_path=corpus_cfg.output_path,
+        augment_dialogues=_read_augment_dir(augment_dir),
+        seed=args.seed,
+    )
     print(json.dumps(manifest, ensure_ascii=False, indent=2))
 
 

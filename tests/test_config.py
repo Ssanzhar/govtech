@@ -12,9 +12,9 @@ def test_defaults_with_empty_env():
     cfg = load_config({})
     assert cfg.classifier_backend == "linear"
     assert cfg.gemini_api_key is None
-    assert cfg.risk_threshold == 0.7
-    assert cfg.risk_threshold_enter == 0.7
-    assert cfg.risk_threshold_exit == 0.55
+    assert cfg.risk_threshold == 0.55
+    assert cfg.risk_threshold_enter == 0.55
+    assert cfg.risk_threshold_exit == 0.45
     assert cfg.default_seed == 42
     assert cfg.supported_locales == ("ru", "kk")
     assert cfg.default_locale == "ru"

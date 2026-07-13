@@ -27,9 +27,11 @@ _DEFAULT_LLM_MODEL_BULK = "gemini-2.5-flash"
 _DEFAULT_CLASSIFIER_BACKEND = "linear"
 _DEFAULT_WHISPER_MODEL_SIZE = "small"
 _DEFAULT_EMBED_MODEL_NAME = "intfloat/multilingual-e5-base"
-_DEFAULT_RISK_THRESHOLD = 0.7
-_DEFAULT_RISK_THRESHOLD_ENTER = 0.7
-_DEFAULT_RISK_THRESHOLD_EXIT = 0.55
+# Tuned for the shipping hybrid model: max recall s.t. FPR<=0.05 on real_heldout is 0.55
+# (`eval/threshold.py`); at 0.55 real_heldout is FPR 0.000 / recall 1.000. See docs/eval_report.md.
+_DEFAULT_RISK_THRESHOLD = 0.55
+_DEFAULT_RISK_THRESHOLD_ENTER = 0.55
+_DEFAULT_RISK_THRESHOLD_EXIT = 0.45
 _DEFAULT_SEED = 42
 _DEFAULT_SUPPORTED_LOCALES: tuple[str, ...] = ("ru", "kk")
 _DEFAULT_LOCALE = "ru"
@@ -68,6 +70,8 @@ class Config(BaseModel):
     taxonomy_path: Path
     cache_dir: Path
     corpus_config_path: Path
+    cue_lexicon_path: Path
+    reassurance_patterns_path: Path
 
     # --- ASR ---
     whisper_model_size: str
@@ -206,6 +210,12 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             ),
             corpus_config_path=_read_path(
                 source, "QORGAN_CORPUS_CONFIG_PATH", _REPO_ROOT / "configs" / "corpus.yaml"
+            ),
+            cue_lexicon_path=_read_path(
+                source, "QORGAN_CUE_LEXICON_PATH", data_dir / "lexicon" / "hard_signal_cues.yaml"
+            ),
+            reassurance_patterns_path=_read_path(
+                source, "QORGAN_REASSURANCE_PATTERNS_PATH", data_dir / "lexicon" / "reassurance_patterns.yaml"
             ),
             whisper_model_size=_read_str(
                 source, "QORGAN_WHISPER_MODEL_SIZE", _DEFAULT_WHISPER_MODEL_SIZE

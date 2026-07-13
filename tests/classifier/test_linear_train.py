@@ -73,3 +73,51 @@ def test_train_linear_empty_raises(fake_embedder):
 
     with pytest.raises(ValueError):
         train_linear([], label_space=_LABEL_SPACE, embedder=fake_embedder)
+
+
+# --- hybrid (hard-signal) path + bundle versioning ---------------------------------------
+
+
+def test_hybrid_train_export_load_roundtrip(tmp_path, fake_embedder):
+    out = tmp_path / "linear_hybrid"
+    meta = train_and_export(
+        _corpus(), label_space=_LABEL_SPACE, out_dir=out, embedder=fake_embedder, hard_signal=True
+    )
+    assert meta["hard_signal_enabled"] is True
+    assert meta["cue_lexicon_hash"] and meta["reassurance_hash"]
+
+    bundle = load_linear(out)
+    assert bundle.hard_signal_enabled is True
+    assert bundle.lexicon is not None and bundle.reassurance_patterns is not None
+
+
+def test_legacy_metadata_loads_as_embed_only(tmp_path, fake_embedder):
+    out = tmp_path / "linear_legacy"
+    train_and_export(_corpus(), label_space=_LABEL_SPACE, out_dir=out, embedder=fake_embedder)
+    meta = json.loads((out / "metadata.json").read_text())
+    for key in ("hard_signal_enabled", "feature_version", "cue_lexicon_hash", "reassurance_hash"):
+        meta.pop(key, None)  # simulate an old bundle predating the hybrid feature
+    (out / "metadata.json").write_text(json.dumps(meta))
+
+    bundle = load_linear(out)
+    assert bundle.hard_signal_enabled is False
+
+
+def test_hybrid_load_raises_on_lexicon_drift(tmp_path, fake_embedder, monkeypatch):
+    import pytest
+
+    from qorgan.classifier.linear_train import LinearFeatureMismatchError
+    from qorgan.config import get_config
+
+    out = tmp_path / "linear_hybrid_drift"
+    train_and_export(
+        _corpus(), label_space=_LABEL_SPACE, out_dir=out, embedder=fake_embedder, hard_signal=True
+    )
+    # Point the cue lexicon at a DIFFERENT (drifted) file for loading -> hash mismatch.
+    drifted = tmp_path / "drifted_cues.yaml"
+    original = get_config().cue_lexicon_path.read_text(encoding="utf-8")
+    drifted.write_text(original + '    - "новая фраза дрейфа"\n', encoding="utf-8")
+    monkeypatch.setenv("QORGAN_CUE_LEXICON_PATH", str(drifted))
+
+    with pytest.raises(LinearFeatureMismatchError):
+        load_linear(out)

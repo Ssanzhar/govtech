@@ -186,41 +186,81 @@ _LINEAR_BUNDLE_CACHE: dict[str, Any] = {}
 
 def _linear_score(transcript: str, *, bundle: Any = None, embedder: Any = None) -> ScoreResult:
     """Score `transcript` with the embeddings + calibrated-LR backend: calibrated risk +
-    decoded tactic tags + grounded top-utterance highlights. `bundle`/`embedder` are
-    injectable for tests; production loads them lazily/cached."""
+    decoded tactic tags + grounded top-utterance highlights. For a hybrid bundle the risk head
+    consumes `[embedding | cue features | reassurance]` and fired cues are merged in as grounded
+    tags/spans. `bundle`/`embedder` are injectable for tests; production loads them cached."""
     from qorgan.classifier import embed as embed_mod
+    from qorgan.classifier import features as feat
     from qorgan.classifier.attribution import select_top_utterance_spans
     from qorgan.classifier.labels import decode_tactics
     from qorgan.data.schema import UTTERANCE_JOIN
 
     active = bundle or _get_linear_bundle()
+    utterances = transcript.split(UTTERANCE_JOIN)
 
-    features = embed_mod.embed_texts([transcript], embedder=embedder, model_name=active.embed_model_name)
-    risk = float(active.risk_clf.predict_proba(features)[0, 1])
-    tactic_probs = active.tactic_clf.predict_proba(features)[0].tolist()
-    tags = tuple(
+    if active.hard_signal_enabled:
+        kwargs = dict(
+            embedder=embedder,
+            model_name=active.embed_model_name,
+            lexicon=active.lexicon,
+            reassurance_patterns=active.reassurance_patterns,
+        )
+        blocks = feat.compute_feature_blocks([transcript], **kwargs)
+        risk = float(active.risk_clf.predict_proba(feat.hybrid_matrix(blocks))[0, 1])
+        tactic_probs = active.tactic_clf.predict_proba(blocks.embedding)[0].tolist()
+        utterance_blocks = feat.compute_feature_blocks(utterances, **kwargs)
+        utterance_scores = active.risk_clf.predict_proba(feat.hybrid_matrix(utterance_blocks))[:, 1].tolist()
+        cue_matches = blocks.matches[0]
+    else:
+        features = embed_mod.embed_texts([transcript], embedder=embedder, model_name=active.embed_model_name)
+        risk = float(active.risk_clf.predict_proba(features)[0, 1])
+        tactic_probs = active.tactic_clf.predict_proba(features)[0].tolist()
+        utterance_features = embed_mod.embed_texts(utterances, embedder=embedder, model_name=active.embed_model_name)
+        utterance_scores = active.risk_clf.predict_proba(utterance_features)[:, 1].tolist()
+        cue_matches = ()
+
+    tags = [
         TacticTag(id=tactic_id, weight=min(1.0, max(0.0, prob)))
         for tactic_id, prob in decode_tactics(tactic_probs, active.label_space, active.tactic_threshold)
+    ]
+    spans = list(
+        select_top_utterance_spans(
+            utterances, utterance_scores,
+            top_k=_LINEAR_ATTRIBUTION_TOP_K, min_score=_LINEAR_ATTRIBUTION_MIN_SCORE,
+        )
     )
-
-    # Grounded attribution: embed + score each utterance, highlight the riskiest ones.
-    utterances = transcript.split(UTTERANCE_JOIN)
-    utterance_features = embed_mod.embed_texts(utterances, embedder=embedder, model_name=active.embed_model_name)
-    utterance_scores = active.risk_clf.predict_proba(utterance_features)[:, 1].tolist()
-    spans = select_top_utterance_spans(
-        utterances,
-        utterance_scores,
-        top_k=_LINEAR_ATTRIBUTION_TOP_K,
-        min_score=_LINEAR_ATTRIBUTION_MIN_SCORE,
-    )
+    tags, spans = _merge_cue_evidence(tags, spans, cue_matches)
 
     return ScoreResult(
         risk=risk,
-        tags=tags,
-        attributions=spans,
+        tags=tuple(tags),
+        attributions=tuple(spans),
         backend="linear",
         raw_confidence=max(risk, 1.0 - risk),  # calibrated certainty of the decision
     )
+
+
+def _merge_cue_evidence(tags: list, spans: list, cue_matches) -> tuple[list, list]:
+    """Fold fired hard-signal cues into the tags + highlight spans as grounded evidence.
+
+    A matched cue is a verbatim span tied to a tactic, so it is added as a `TacticTag`
+    (weight 1.0) if that tactic isn't already tagged, and its span is added if not already
+    highlighted. Deduplicated; spans returned in transcript order.
+    """
+    tag_ids = {tag.id for tag in tags}
+    merged_tags = list(tags)
+    span_keys = {(span.start, span.end) for span in spans}
+    merged_spans = list(spans)
+    for match in cue_matches:
+        if match.tactic_id not in tag_ids:
+            merged_tags.append(TacticTag(id=match.tactic_id, weight=1.0))
+            tag_ids.add(match.tactic_id)
+        key = (match.span.start, match.span.end)
+        if key not in span_keys:
+            merged_spans.append(match.span)
+            span_keys.add(key)
+    merged_spans.sort(key=lambda span: span.start)
+    return merged_tags, merged_spans
 
 
 def _get_linear_bundle() -> Any:

@@ -8,13 +8,13 @@
   },
   "counts": {
     "train": {
-      "total": 604,
-      "hard_negatives": 307,
+      "total": 631,
+      "hard_negatives": 334,
       "positives": 297,
       "by_language": {
-        "ru": 199,
-        "kk": 204,
-        "mixed": 201
+        "ru": 208,
+        "kk": 213,
+        "mixed": 210
       }
     },
     "val": {
@@ -48,6 +48,7 @@
       }
     }
   },
-  "total": 860,
-  "content_hash": "6bd172425d9e95e730eeed6a6056fd10d6c2b4af71f0f897dc11c106a4951259"
+  "total": 887,
+  "content_hash": "50349ef98b5435c9767ce8d9f377256363a8fbcd3a20c4b4cbd5f3727c8f4637",
+  "train_augment_count": 27
 }

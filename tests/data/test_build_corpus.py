@@ -273,6 +273,43 @@ def test_build_corpus_scrubs_pii_before_writing(tmp_path):
     assert "[PHONE]" in all_text
 
 
+def test_build_corpus_adds_augmentation_to_train_only(tmp_path):
+    synthetic = [_dialogue(f"syn_{i}", [f"синтетический текст {i}"]) for i in range(40)]
+    augment = [
+        _dialogue(f"aug_{i}", [f"аугментация {i}"], hard_negative=True, risk=0.02) for i in range(6)
+    ]
+    processed = tmp_path / "processed"
+    manifest = build_corpus(
+        dialogues=synthetic,
+        anchor_dialogues=[],
+        augment_dialogues=augment,
+        processed_dir=processed,
+        seed=42,
+        train_fraction=0.7,
+        val_fraction=0.15,
+    )
+
+    def ids(name):
+        text = (processed / f"{name}.jsonl").read_text(encoding="utf-8").strip()
+        return [Dialogue.model_validate_json(x).id for x in text.splitlines() if x]
+
+    train_ids = ids("train")
+    other_ids = ids("val") + ids("test") + ids("real_heldout")
+    assert all(f"aug_{i}" in train_ids for i in range(6))  # augmentation lands in train
+    assert not any(x.startswith("aug_") for x in other_ids)  # and nowhere else
+    assert manifest["train_augment_count"] == 6
+
+
+def test_build_corpus_augmentation_defaults_to_none(tmp_path):
+    synthetic = [_dialogue(f"syn_{i}", [f"текст {i}"]) for i in range(20)]
+    processed = tmp_path / "processed"
+    manifest = build_corpus(
+        dialogues=synthetic, anchor_dialogues=[], processed_dir=processed,
+        seed=42, train_fraction=0.7, val_fraction=0.15,
+    )
+    assert manifest["train_augment_count"] == 0
+
+
 def test_build_corpus_deduplicates_synthetic(tmp_path):
     synthetic = [
         _dialogue("syn_1", ["повторяющийся текст"]),

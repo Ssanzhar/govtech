@@ -1,0 +1,47 @@
+# Hard-signal request-cue lexicon (Phase 1 seed).
+#
+# One list per hard-signal tactic. Each phrase is a *request/ask* that a legitimate
+# bank / gov / telecom / delivery call never makes (OTP, card credentials, transfer to a
+# "safe account", installing remote-access software, demanding secrecy). Seeded from
+# data/taxonomy/tactics.yaml examples_ru/kk for these tactics; Phase 2 expands it via
+# scripts/expand_cue_lexicon.py (Gemini, build-time only).
+#
+# INVARIANT: never add a bare-mention cue (e.g. plain "код" / "карта"). Legitimate calls
+# mention codes/cards precisely to say they are NOT needed ("код называть не нужно",
+# "никаких кодов не нужно") -- those calls must produce an all-zero cue block.
+version: 1
+cues:
+  secrecy:
+    - "Никому не говорите"
+    - "это секретная операция"
+    - "Не сообщайте сотрудникам банка"
+    - "Ешкімге айтпаңыз"
+    - "бұл құпия операция"
+    - "Банк қызметкерлеріне айтпаңыз"
+  otp_request:
+    - "Продиктуйте код из SMS"
+    - "код из SMS"
+    - "код из push"
+    - "Назовите шесть цифр"
+    - "шесть цифр из push"
+    - "SMS-тегі кодты айтыңыз"
+    - "алты санды атаңыз"
+  credentials_request:
+    - "Назовите номер карты"
+    - "номер карты и три цифры"
+    - "три цифры на обороте"
+    - "Продиктуйте ваш ИИН"
+    - "Карта нөмірі мен арт жағындағы"
+    - "ЖСН-іңізді айтыңыз"
+  safe_account:
+    - "на безопасный счёт"
+    - "безопасный счёт"
+    - "резервный счёт Нацбанка"
+    - "қауіпсіз шотқа аударыңыз"
+    - "резервтік шоты"
+  remote_access:
+    - "Установите приложение"
+    - "AnyDesk"
+    - "Скачайте программу для защиты"
+    - "қосымшасын орнатыңыз"
+    - "бағдарламасын жүктеңіз"

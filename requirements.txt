@@ -20,16 +20,17 @@ captum>=0.7                # integrated gradients / attribution
 
 # --- Level 2 analytics ---
 sentence-transformers>=3.0 # BGE-M3 / multilingual-e5 embeddings
-hdbscan>=0.8.36
-faiss-cpu>=1.8
-networkx>=3.3              # phone-number co-occurrence graph
+hdbscan>=0.8.36            # optional text-cluster overlay (off by default; see docs/eval_report.md)
+networkx>=3.3              # phone-number co-occurrence graph (primary org link)
+# NOTE: faiss-cpu removed -- it bundles its own libomp.dylib and segfaults alongside
+# torch's on macOS; the incident store uses numpy cosine instead (analytics/store.py).
 
 # --- ASR (offline, demo clips only) ---
 faster-whisper>=1.0
 # vosk>=0.3.45             # optional: reuse team's Kazakh Vosk stack
 
 # --- Demo app / API ---
-streamlit>=1.36
+streamlit>=1.49
 fastapi>=0.111             # optional thin API
 uvicorn>=0.30
 
