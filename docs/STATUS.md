@@ -1,169 +1,158 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: 2026-07-14. This is the **current-state** doc for anyone picking the project up.
+_Last updated: 2026-07-15. This is the **current-state** doc for anyone picking the project up.
 Read this first, then `CLAUDE.md` (the brief + locked decisions) and `docs/eval_report.md`
-(the model numbers)._
+(the model numbers). Run/usage instructions for humans are in the top-level `README.md`._
 
 ## TL;DR
-- Working **web prototype** (Streamlit): **L1** = transcript → scam risk → grounded, localized
-  (RU/KK) explanation; **L2** = cluster confirmed incidents into scam "organizations" + novelty.
-- Shipped classifier: the **`linear` hybrid** model — frozen `multilingual-e5-base` embedding
+- Working **web prototype** (Streamlit), three tabs: **L1** transcript → risk → grounded RU/KK
+  explanation · **Live call** real-time meter over streaming utterances (script replay or real
+  microphone) · **L2 analyst** dashboard of scam "organizations" fed by citizen reports.
+- Shipped classifier: the **`linear` hybrid** — frozen `multilingual-e5-base` embedding
   **⊕ 6 interpretable features** (5 hard-signal request cues + 1 reassurance) → calibrated
   Logistic Regression. Offline, CPU, retrains in seconds, ~64 KB export.
-- **600 tests green.** Work is on **`sanzhs-branch`** (**not yet merged** to `main`).
-- **Live citizen pipeline built** (2026-07-14, from the real-time design spec / `task.md`):
-  streaming utterances → rolling window → `score()` → **0-100 suspicion meter** with
-  asymmetric EMA + hard-signal floors + 55/45 hysteresis latch (`live/meter.py`,
-  `live/session.py`) → tactic-specific localized advice (`explain/recommend.py` +
-  `explain/advice_{ru,kk}.yaml`) → post-call summary + **consent-gated editable report**
-  (`live/summary.py`, appends to `data/processed/citizen_reports.jsonl`, converts to L2
-  `Incident`). Pseudo-streaming ASR source in `asr/stream.py` (replay + faster-whisper
-  segments). Demoed in the new **"Live call" tab** (`app/live_view.py`), zero-setup via
-  the mock backend; new meter knobs: `QORGAN_METER_ALPHA_UP/_DOWN` in `config.py`.
-- **Live microphone modes** (2026-07-15): the Live-call tab has an Input radio —
-  *Replay script* (default, zero-setup) · *Microphone — browser* (streamlit-webrtc) ·
-  *Microphone — local* (sounddevice). Real-time ASR = **dual Vosk KK+RU streaming
-  recognizers with per-utterance word-confidence voting** (`asr/vosk_stream.py`; models
-  `vosk-model-small-kz-0.42` + `vosk-model-small-ru-0.22`, auto-download to
-  `~/.cache/vosk`, ~100 MB total, config `QORGAN_VOSK_MODEL_KK/_RU`). Audio plumbing in
-  `asr/capture.py` (bounded drop-oldest queue), Streamlit wiring in `app/mic_live.py`
-  (worker threads → event queue → `st.fragment` drain; threads never touch Streamlit).
-  Optional extra: `pip install -e ".[live]"` — without it the tab degrades to an install
-  hint. Same `advance()` pipeline and post-call/report flow as replay. Verified end-to-end
-- **Model-improvement sprint (2026-07-15, planner→tdd-guide agents, all FPR-gated):**
-  (1) **Honest eval widened**: `real_heldout` 27→**42** anchors (24 negatives, tail tactics
-  now measurable); it immediately exposed a real KK/mixed FP (legit tariff notice @0.809).
-  (2) **Streaming eval harness** `python -m qorgan.eval.stream` (per-turn replay through the
-  live meter): false-latch rate (live FPR analog), alert-hit rate, time-to-alert.
-  (3) **KK boundary stabilized + reassurance lexicon KK-expanded** — 15 hand-written KK
-  legit hard negatives (`data/augment/kk_legit_negatives.jsonl`, train-only, leakage-tested)
-  + KK negation-of-need terms (`қажеті жоқ` etc.) and payment sensitive-terms; a first
-  lexicon-only attempt FAILED gates (joint-LR refit moved unrelated KK negatives) and was
-  rolled back — the data+lexicon combination passed. (4) **Cue-lexicon ASR variants**
-  ("безопасной счёт", "код из сообщения", KK bare imperatives) — the live hard-signal floor
-  now fires on real Vosk output (verbatim cue hits upgrade tags to weight 1.0).
-  **Shipped numbers (threshold 0.55): test FPR 0.000/rec 0.953 · real_heldout FPR 0.000/rec
-  1.000 (42) · ood FPR 0.000/rec 0.889 · streaming false-latch 0.167 heldout / 0.115 test.**
-  Open: streaming transient false-latch (~1/6 legit calls latch mid-call then recover) is a
-  structural meter finding — candidates: min-turns arm, short-window damping. Phase 3 of the
-  plan (Gemini tail-tactic top-up, needs `GEMINI_API_KEY`) was the designated drop candidate
-  and remains NOT done. Full detail: `docs/eval_report.md` 2026-07-15 addendum.
-- **Analyst dashboard overhaul + citizen-report loop (2026-07-15):** L2 view extracted to
-  `app/analyst_view.py` — KPI row, novel-scheme callout, priority queue (tactic-derived
-  display names via `analytics/presentation.py`, never raw cluster ids; progress-bar
-  priority), drill-down with tactic-profile/activity charts and span-highlighted
-  representative script. **The report loop is closed:** Live-tab reports →
-  `analytics/intake.py` (idempotent content-addressed ids, embeds ONLY new transcripts via
-  the `incident_embeddings.npz` cache the pipeline now writes) → "Ingest into analysis"
-  button in the analyst tab → number-graph placement (report with a known number joins that
-  org; unknown number = novelty candidate). Verified live: real report joined the seeded
-  bank_security org in ~9s; re-ingest is a no-op. Intake normalizes tz-aware report
-  timestamps to the store's naive convention (mixing crashed ranking). 697 tests.
-  with synthesized speech (macOS `say`, RU Milena + KK Aru) through the real Vosk models +
-  linear classifier: scam scene → meter 84/Critical/latched; hard-negative stays Low.
-  Fix found by that e2e: `predict._merge_cue_evidence` now **upgrades** a head-tagged
-  tactic to weight 1.0 on a verbatim cue hit (was: kept the head's lower weight, which
-  suppressed the meter's hard-signal floor). Risk scores untouched — FPR tables unaffected;
-  hard negatives re-checked (no cue fires, no ≥0.8 tags).
-- **Trained weights and corpus splits are gitignored** → they live on **Hugging Face** (below)
-  or are **regenerated** from the committed code + lexicons + augmentation.
+- **Shipped eval (threshold 0.55):** test FPR 0.000/rec 0.953 · **real_heldout FPR 0.000/rec
+  1.000** (42 hand-written anchors) · ood FPR 0.000/rec 0.889. Streaming: false-latch 0.167
+  heldout / 0.115 test (`python -m qorgan.eval.stream`).
+- **697 tests green**, all offline. Work is on **`sanzhs-branch`**.
+- **Trained weights and corpus splits are gitignored** → pull from **Hugging Face** (below) or
+  regenerate from committed code + lexicons + augmentation.
+
+## What landed 2026-07-14 → 15 (the sprint log)
+
+**1 · Live citizen pipeline** (from the real-time design spec / `task.md`): committed
+utterances → head+tail rolling window → `score()` → **0–100 suspicion meter** (asymmetric EMA,
+hard-signal floors 61/81, 55/45 hysteresis latch; `live/meter.py`, `live/session.py`) →
+tactic→advice engine (`explain/recommend.py` + `advice_{ru,kk}.yaml`) → post-call summary +
+**consent-gated editable report** (`live/summary.py` → `data/processed/citizen_reports.jsonl`).
+Meter knobs: `QORGAN_METER_ALPHA_UP/_DOWN`. UI: `app/live_view.py`.
+
+**2 · Live microphone**: Input radio in the Live tab — *Replay script* (default, zero-setup) ·
+*Microphone — browser* (streamlit-webrtc) · *Microphone — local* (sounddevice). ASR = **dual
+Vosk KK+RU streaming recognizers, per-utterance word-confidence voting** (`asr/vosk_stream.py`;
+small models auto-download to `~/.cache/vosk`, config `QORGAN_VOSK_MODEL_KK/_RU`). Plumbing:
+`asr/capture.py` (drop-oldest queue); wiring: `app/mic_live.py` (worker threads → event queue →
+`st.fragment` drain; threads never touch Streamlit). Optional extra `pip install -e ".[live]"`,
+graceful degrade without it. Verified end-to-end with synthesized speech (macOS `say`, RU+KK)
+through real Vosk + the linear model: scam scene → 84/Critical/latched; hard negative stays Low.
+That e2e also fixed `predict._merge_cue_evidence`: a verbatim cue hit now upgrades the tactic
+tag to weight 1.0 (was suppressed by the head's lower weight → hard-signal floor never fired).
+
+**3 · Model-improvement sprint (all FPR-gated, one attempt rolled back)**:
+- `real_heldout` widened 27→**42** anchors → immediately exposed a real KK/mixed FP (legit
+  tariff notice @ 0.809).
+- New **streaming eval harness** `python -m qorgan.eval.stream`: false-latch rate (live FPR
+  analog), alert-hit rate, time-to-alert.
+- **KK boundary stabilized**: 15 hand-written KK legit hard negatives
+  (`data/augment/kk_legit_negatives.jsonl`, train-only, leakage-tested vs anchors) + KK
+  reassurance terms (`қажеті жоқ` …) + payment sensitive-terms. A lexicon-only attempt FAILED
+  gates (the joint-LR refit moved unrelated KK negatives; test FPR 0→0.019) and was rolled
+  back — **pair lexicon edits with training data**, that combination passed.
+- **Cue-lexicon ASR variants** ("безопасной счёт", "код из сообщения", KK bare imperatives) —
+  the live hard-signal floor now fires on real Vosk output.
+- Full ablation + honest caveats: `docs/eval_report.md` **2026-07-15 addendum**.
+
+**4 · Analyst dashboard overhaul + citizen-report loop**: L2 extracted to `app/analyst_view.py`
+— KPI row, novel-scheme callout, priority queue with **tactic-derived display names**
+(`analytics/presentation.py`; never raw cluster ids), drill-down with tactic/activity charts
+and span-highlighted representative script. **Report loop closed**: Live-tab reports →
+`analytics/intake.py` (idempotent content-addressed ids; embeds ONLY new transcripts via the
+`incident_embeddings.npz` cache `analytics/pipeline.py` now writes) → **"Ingest into
+analysis"** button → number-graph placement (known number joins that org; unknown = novelty
+candidate). Verified live: a real report joined the seeded `bank_security` org in ~9 s;
+re-ingest is a no-op. Intake normalizes tz-aware report timestamps to the store's naive
+convention (mixing crashed priority ranking).
 
 ## Repository map (what to read)
 | Path | What |
 |---|---|
 | `CLAUDE.md` | Master brief, locked decisions, conventions. Auto-loaded by Claude agents. |
 | `docs/SCOPE.md` · `ARCHITECTURE.md` · `DECISIONS.md` | Scope cut, system design, decision log. |
-| `docs/eval_report.md` | **Model eval + the FPR ablation** (baseline vs hybrid). Source of truth for numbers. |
-| `data/README.md` | Data provenance, PII scrubbing, augmentation (graded, ТЗ §9). |
-| `src/qorgan/classifier/` | The classifier (see below). |
-| `src/qorgan/analytics/` | Level-2: clustering, novelty, ranking. |
-| `src/qorgan/data/` | Corpus generation, labeling, scrub, build, L2 incident synthesis. |
-| `app/streamlit_app.py` | The demo (both levels). |
-| `scripts/` | `augment_reassurance_negatives.py` (Gemini), `demo_seed.py` (L2 incidents). |
-| `hf_upload.py` | Publishes models + dataset to Hugging Face (untracked; run manually). |
+| `docs/eval_report.md` | **Model eval + FPR ablations** (incl. 2026-07-15 addendum). Source of truth for numbers. |
+| `data/README.md` | Data + ASR-model provenance, PII scrubbing, augmentation (graded, ТЗ §9). |
+| `src/qorgan/classifier/` | The classifier: predict interface, features, lexicon matchers, training. |
+| `src/qorgan/live/` | Suspicion meter, live session, post-call summary/report. |
+| `src/qorgan/asr/` | Batch whisper wrapper · replay/pseudo-stream · Vosk dual-stream · capture queues. |
+| `src/qorgan/explain/` | Explainer + templates + the tactic→advice recommendation engine. |
+| `src/qorgan/analytics/` | Level-2: clustering, novelty, ranking, presentation helpers, report intake. |
+| `src/qorgan/eval/` | FPR-first tables (`run`), threshold tuner, **streaming eval** (`stream`). |
+| `app/` | `streamlit_app.py` (shell + L1) · `live_view.py` · `mic_live.py` · `analyst_view.py` · `ui_shared.py`. |
+| `scripts/` | `demo_seed.py` (L2 incidents) · `augment_reassurance_negatives.py` (Gemini) · `hf_upload.py`. |
 
 ## Classifier backends — `classifier/predict.py :: score(transcript, backend=...)`
-One interface, backend chosen by `QORGAN_CLASSIFIER_BACKEND` (default in `.env`: `linear`):
-- **`linear`** — the SHIPPED offline model. Hybrid risk head; embedding-only per-tactic head.
-  Weights in `models/linear/` (gitignored). Loads the cue lexicon + reassurance patterns from
-  `data/lexicon/*.yaml` (committed) and **hash-validates** them (`metadata.json`).
-- **`mock`** — deterministic keyword safety net, zero deps/keys. The app auto-degrades to it if
-  no model/key is present.
+One interface, backend chosen by `QORGAN_CLASSIFIER_BACKEND` (default `linear`):
+- **`linear`** — the SHIPPED offline model. Hybrid risk head; embedding-only per-tactic head
+  (verbatim cue hits upgrade tags to weight 1.0). Weights in `models/linear/` (gitignored);
+  **hash-validates** `data/lexicon/*.yaml` — any lexicon edit forces a retrain, and per the
+  sprint lesson should be **paired with training data** (see sprint log §3).
+- **`mock`** — deterministic keyword safety net, zero deps/keys; the app auto-degrades to it.
 - **`llm`** — Gemini structured classifier; needs `GEMINI_API_KEY`.
-- **`xlmr`** — **ABANDONED** (fine-tune collapsed to the class prior). Code path is tested but
-  the real weights (`models/xlmr/`, ~1.1 GB) are unusable — safe to delete.
+- **`xlmr`** — **ABANDONED** (fine-tune collapsed). `models/xlmr/` (~1.1 GB) is deletable.
 
 ### The hybrid feature (why the model looks the way it does)
-The embedding-only model false-positived on realistic legit RU bank/telecom calls
-(`real_heldout` FPR 0.143). Root cause = a **train/reality gap**: synthetic legit calls never
-_reassure_ ("we'll never ask for your code"), a pattern in 0/307 training negatives. Fix =
-**data + a reassurance feature together** (neither works alone):
-- `data/augment/reassurance_negatives.jsonl` (27, committed) → added to **train only**.
-- `classifier/reassurance.py` + `data/lexicon/reassurance_patterns.yaml` → the anti-scam feature.
-- `classifier/cue_lexicon.py` + `data/lexicon/hard_signal_cues.yaml` → the 5 request-cue features
-  (also drive grounded highlights).
-
-**Shipped eval (real harness, alert threshold 0.55):** test FPR 0 / recall 0.953 ·
-**real_heldout FPR 0 / recall 1.000** (was 0.143 / 0.923) · ood FPR 0 / recall 0.867. Full
-ablation + honest caveats in `docs/eval_report.md`. Rollback bundle: `models/linear_embed_only/`
-(flag off; `metadata.json` has no `hard_signal_enabled`).
+The embedding-only model false-positived on realistic legit RU calls (`real_heldout` FPR
+0.143). Root cause = a **train/reality gap**: synthetic legit calls never _reassure_ ("we'll
+never ask for your code"). Fix = **data + a reassurance feature together** (neither works
+alone): `data/augment/reassurance_negatives.jsonl` (train-only) + `classifier/reassurance.py`
++ the request-cue features (`classifier/cue_lexicon.py`). The 2026-07-15 sprint repeated the
+same pattern for **Kazakh** (KK legit negatives + KK reassurance terms). Rollback bundle:
+`models/linear_embed_only/`.
 
 ## Data pipeline (`src/qorgan/data/`)
-`generate.py` (Gemini synthetic corpus) → `label.py` (independent re-label, optional) →
-`build_corpus.py` (**scrub PII** → dedup → deterministic seeded split into train/val/test;
-folds `data/augment/*.jsonl` into **train only**; `real_heldout` = curated anchors, kept
-separate) → `data/processed/{split}.jsonl` + `manifest.json`.
-- **PII:** `data/processed/*` splits and `data/augment/*` are scrubbed. `data/synthetic/*` (raw)
-  is **NOT** — never publish it. `data/processed/{incidents,organizations}.jsonl` (L2) contain
-  fabricated numbers and predate the scrub fix — don't publish them either.
-- `real_heldout` (hand-written, held-out source) is the **honest** generalization signal.
+`generate.py` (Gemini synthetic corpus) → `build_corpus.py` (**scrub PII** → dedup →
+deterministic split; folds `data/augment/*.jsonl` — reassurance + KK-legit negatives — into
+**train only**; `real_heldout` = 42 curated anchors, kept separate) →
+`data/processed/{split}.jsonl` + `manifest.json`.
+- **PII / publishing:** `data/processed/` splits and `data/augment/` are scrubbed →
+  publishable. `data/synthetic/` (raw) is **NOT**. `data/processed/{incidents,organizations,
+  citizen_reports}.jsonl` contain fabricated numbers / live report intake — **never publish**
+  (the `hf_upload.py` allow-patterns already exclude them; don't widen them).
 
 ## Hugging Face repos
 - **Models:** `sanzh-ts/govtech` — root = shipped hybrid bundle; `embed_only/` = baseline;
-  `lexicon/` = the cue/reassurance yamls the bundle validates.
-- **Dataset:** `sanzh-ts/govtech_ds` — scrubbed splits (`train/val/test/real_heldout/ood.jsonl`
-  + `manifest.json`) and `augment/`.
-
-**Publish** (write token): `hf auth login` then `python hf_upload.py`.
-
-**Pull the trained model** (instead of retraining):
-```python
-from huggingface_hub import snapshot_download
-snapshot_download("sanzh-ts/govtech", local_dir="models/linear_hf")
-# then: export QORGAN_LINEAR_MODEL_DIR=models/linear_hf/  (lexicons already committed in data/lexicon/)
-```
+  `lexicon/` = the cue/reassurance yamls the bundle validates. **Model and lexicons must be
+  uploaded together** (hash guard).
+- **Dataset:** `sanzh-ts/govtech_ds` — scrubbed splits + `augment/`.
+- **Publish** (write token): `hf auth login` then `python scripts/hf_upload.py`.
+- **Pull instead of retraining:** `snapshot_download("sanzh-ts/govtech", local_dir="models/linear_hf")`
+  then `export QORGAN_LINEAR_MODEL_DIR=models/linear_hf` (lexicons are committed in-repo).
 
 ## How to run
 ```bash
-pip install -e .                      # src-layout install -> `qorgan` importable (needs Python 3.11+)
-streamlit run app/streamlit_app.py    # the demo (mock backend if no model/key)
+pip install -e .                      # Python 3.11+; add ".[live]" for microphone modes
+streamlit run app/streamlit_app.py    # 3 tabs; mock backend if no model/key
 
-# eval (FPR-first tables on the honest splits)
+# eval — full-transcript FPR tables + streaming false-latch/time-to-alert
 QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.run --split test --split real_heldout --split ood --by-language
+QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.stream --split test --split real_heldout --backend linear
 
-# regenerate everything from source (needs GEMINI_API_KEY for generation steps)
-python -m qorgan.data.generate                         # raw synthetic corpus (or pull from HF dataset)
-python scripts/augment_reassurance_negatives.py --per-cell 8   # reassurance negatives (already committed)
-python -m qorgan.data.build_corpus                     # scrub + dedup + split (+augment) + manifest
-python -m qorgan.classifier.linear_train               # train + export the hybrid model (default)
+# retrain from committed corpus (seconds, CPU; needed after ANY data/lexicon change)
+python -m qorgan.data.build_corpus && python -m qorgan.classifier.linear_train
 
-# Level 2
+# Level 2: seed demo incidents -> organizations + embedding cache (needed for report ingest)
 python scripts/demo_seed.py && python -m qorgan.analytics.pipeline
 
-pytest -q                             # 518 tests
+pytest -q                             # 697 tests, all offline
 ```
-Alert threshold is `QORGAN_RISK_THRESHOLD` (`.env` + `config.py` default = **0.55**, tuned for the
-hybrid model by `eval/threshold.py`).
+Alert threshold `QORGAN_RISK_THRESHOLD` = **0.55** (tuner now recommends 0.59–0.62 with equal
+recall — headroom, deliberately not taken). Demo storyline (3 scenes) is in `README.md`.
 
 ## Known issues / open threads (for your own planning)
-- **`ood` recall cost:** the FPR fix trades ~4 pts of recall on the disfluent/ASR stress set
-  (0.911→0.867). Fine per the FPR-first mandate, but a lever to revisit.
-- **Mild test-set circularity:** the reassurance matcher was first motivated by the 2 `real_heldout`
-  FPs. Mitigated (generalizes on independent + fresh un-inspected sets) but noted honestly.
-- **No `legit_telecom` negative category** in the taxonomy, though a telecom call was an FP; the
-  fix generalized, but a dedicated category would be cleaner.
-- **`models/xlmr/` (~1.1 GB) is dead weight** — abandoned fine-tune, safe to `rm -rf`.
-- **`error_log.txt`** at repo root is a stray debug dump (gitignored) — can delete.
-- **Not merged to `main`** — the work is on `sanzhs-branch`.
+- **Transient streaming false-latch ~0.167**: ~1 in 6 legit calls latches the live meter
+  mid-call, then recovers (full-transcript FPR is 0). Structural: early short windows are
+  noisy. Candidates: minimum-turns before the latch arms, short-window damping. Now
+  measurable via `eval.stream` — tune against it.
+- **Plan Phase 3 not done**: Gemini tail-tactic data top-up (`mule_recruitment` has only ~12
+  train examples). Needs `GEMINI_API_KEY`; was the designated drop candidate.
+- **Mild eval circularity, twice**: both the reassurance fix (2026-07-13) and the KK fix
+  (2026-07-15) were motivated by inspected heldout FPs. Mitigated (fresh un-inspected sets,
+  leakage tests) but keep honest in the pitch.
+- **No `legit_telecom` negative category in the taxonomy** — covered at the data level
+  (anchors + KK augment), a dedicated category would still be cleaner.
+- **Vosk KK small-model accuracy** on far-field/synthetic speech is the live-mode bottleneck;
+  meter confidence-weighting absorbs some of it.
+- **Browser-mic mode** cannot run under AppTest (webrtc needs the real runtime) — one manual
+  click-through before demoing.
+- `models/xlmr/` (~1.1 GB) and `error_log.txt` are dead weight — safe to delete.
 - Persistent working memory for agents lives in
   `~/.claude/projects/-Users-sanzhars-Documents-proga--govtech/memory/` (indexed by `MEMORY.md`).
