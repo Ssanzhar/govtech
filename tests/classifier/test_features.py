@@ -96,6 +96,87 @@ def test_column_order_matches_taxonomy_order():
     assert hard.sum() == 1.0  # only safe_account fired
 
 
+def test_asr_normalized_safe_account_variants_fire():
+    lexicon = _lexicon()
+    ids = get_taxonomy().hard_signal_ids()
+    idx = ids.index("safe_account")
+    variants = [
+        "переведите деньги на безопасной счёт",  # real Vosk ASR output (genitive-ish inflection)
+        "переведите деньги на безопасному счёту",  # dative inflection
+        "переведите деньги на безопасный счет прямо сейчас",  # е-vs-ё spelling variant
+    ]
+    for text in variants:
+        hard = feat.hard_signal_features([text], lexicon)
+        assert hard[0, idx] == 1.0, f"expected safe_account to fire for: {text!r}"
+
+
+def test_asr_normalized_otp_sms_variant_fires():
+    lexicon = _lexicon()
+    ids = get_taxonomy().hard_signal_ids()
+    text = "Продиктуйте код из сообщения, которое вам только что пришло."
+
+    hard = feat.hard_signal_features([text], lexicon)
+    assert hard[0, ids.index("otp_request")] == 1.0
+
+    matches = feat.match_cues(text, lexicon)
+    otp = [m for m in matches if m.tactic_id == "otp_request"]
+    assert otp, "expected a grounded otp_request cue match"
+    span = otp[0].span
+    assert text[span.start : span.end] == span.text
+
+
+def test_kk_bare_imperative_safe_account_variant_fires():
+    lexicon = _lexicon()
+    ids = get_taxonomy().hard_signal_ids()
+    text = "Ақшаны қазір қауіпсіз шотқа аудар, кейін өкінбейсіз."
+
+    hard = feat.hard_signal_features([text], lexicon)
+    assert hard[0, ids.index("safe_account")] == 1.0
+
+
+def test_kk_bare_imperative_secrecy_variant_fires():
+    lexicon = _lexicon()
+    ids = get_taxonomy().hard_signal_ids()
+    text = "Бұл туралы ешкімге айтпа, бұл құпия тексеру."
+
+    hard = feat.hard_signal_features([text], lexicon)
+    assert hard[0, ids.index("secrecy")] == 1.0
+
+
+def test_matcher_is_case_insensitive_for_new_and_existing_cues():
+    lexicon = _lexicon()
+    ids = get_taxonomy().hard_signal_ids()
+    hard = feat.hard_signal_features(
+        ["ПРОДИКТУЙТЕ КОД ИЗ СООБЩЕНИЯ", "переведите на БЕЗОПАСНЫЙ СЧЕТ"], lexicon
+    )
+    assert hard[0, ids.index("otp_request")] == 1.0
+    assert hard[1, ids.index("safe_account")] == 1.0
+
+
+def test_bare_mentions_alone_still_yield_all_zero_block():
+    lexicon = _lexicon()
+    bare_mentions = [
+        "какой у вас счёт открыт",
+        "назовите код",
+        "у вас есть карта",
+        "пришла смс",
+    ]
+    for text in bare_mentions:
+        hard = feat.hard_signal_features([text], lexicon)
+        assert hard.sum() == 0.0, f"bare mention wrongly fired a cue: {text!r}"
+
+
+def test_reassurance_style_sentences_still_yield_all_zero_block():
+    lexicon = _lexicon()
+    reassurance_sentences = [
+        "Никакие коды называть не нужно, банк никогда их не спрашивает.",
+        "Ешқандай код айтудың қажеті жоқ.",
+    ]
+    for text in reassurance_sentences:
+        hard = feat.hard_signal_features([text], lexicon)
+        assert hard.sum() == 0.0, f"reassurance sentence wrongly fired a cue: {text!r}"
+
+
 def test_hybrid_matrix_dimensionality(fake_embedder):
     lexicon = _lexicon()
     k = len(get_taxonomy().hard_signal_ids())

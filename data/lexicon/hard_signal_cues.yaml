@@ -18,10 +18,12 @@ cues:
     - "Ешкімге айтпаңыз"
     - "бұл құпия операция"
     - "Банк қызметкерлеріне айтпаңыз"
+    - "ешкімге айтпа"  # bare-imperative ASR form (no -ңыз suffix)
   otp_request:
     - "Продиктуйте код из SMS"
     - "код из SMS"
     - "код из push"
+    - "код из сообщения"  # ASR-normalized form ("сообщение" instead of "SMS/push")
     - "Назовите шесть цифр"
     - "шесть цифр из push"
     - "SMS-тегі кодты айтыңыз"
@@ -36,8 +38,12 @@ cues:
   safe_account:
     - "на безопасный счёт"
     - "безопасный счёт"
+    - "безопасной счёт"  # ASR-normalized inflection (e.g. genitive-ish reading)
+    - "безопасному счёту"  # ASR-normalized dative inflection
+    - "безопасный счет"  # е-vs-ё spelling variant
     - "резервный счёт Нацбанка"
     - "қауіпсіз шотқа аударыңыз"
+    - "қауіпсіз шотқа аудар"  # bare-imperative ASR form (no -ыңыз suffix)
     - "резервтік шоты"
   remote_access:
     - "Установите приложение"
