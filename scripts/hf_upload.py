@@ -1,12 +1,14 @@
 from huggingface_hub import HfApi
 
 api = HfApi()
-# repo = 'sanzh-ts/govtech'
+repo = 'sanzh-ts/govtech'
 
-# api.upload_folder(repo_id=repo, repo_type='model', folder_path='models/linear')
+# Retrained hybrid bundle (2026-07-15: KK negatives + reassurance/cue lexicon update).
+api.upload_folder(repo_id=repo, repo_type='model', folder_path='models/linear')
+# The bundle hash-validates these lexicons -- ALWAYS upload them together with models/linear.
+api.upload_folder(repo_id=repo, repo_type='model', folder_path='data/lexicon', path_in_repo='lexicon')
+# Baseline unchanged this round; uncomment only if it was retrained.
 # api.upload_folder(repo_id=repo, repo_type='model', folder_path='models/linear_embed_only', path_in_repo='embed_only')
-
-# api.upload_folder(repo_id=repo, repo_type='model', folder_path='data/lexicon', path_in_repo='lexicon')
 
 repo = 'sanzh-ts/govtech_ds'
 

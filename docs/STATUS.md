@@ -48,6 +48,17 @@ Read this first, then `CLAUDE.md` (the brief + locked decisions) and `docs/eval_
   structural meter finding — candidates: min-turns arm, short-window damping. Phase 3 of the
   plan (Gemini tail-tactic top-up, needs `GEMINI_API_KEY`) was the designated drop candidate
   and remains NOT done. Full detail: `docs/eval_report.md` 2026-07-15 addendum.
+- **Analyst dashboard overhaul + citizen-report loop (2026-07-15):** L2 view extracted to
+  `app/analyst_view.py` — KPI row, novel-scheme callout, priority queue (tactic-derived
+  display names via `analytics/presentation.py`, never raw cluster ids; progress-bar
+  priority), drill-down with tactic-profile/activity charts and span-highlighted
+  representative script. **The report loop is closed:** Live-tab reports →
+  `analytics/intake.py` (idempotent content-addressed ids, embeds ONLY new transcripts via
+  the `incident_embeddings.npz` cache the pipeline now writes) → "Ingest into analysis"
+  button in the analyst tab → number-graph placement (report with a known number joins that
+  org; unknown number = novelty candidate). Verified live: real report joined the seeded
+  bank_security org in ~9s; re-ingest is a no-op. Intake normalizes tz-aware report
+  timestamps to the store's naive convention (mixing crashed ranking). 697 tests.
   with synthesized speech (macOS `say`, RU Milena + KK Aru) through the real Vosk models +
   linear classifier: scam scene → meter 84/Critical/latched; hard-negative stays Low.
   Fix found by that e2e: `predict._merge_cue_evidence` now **upgrades** a head-tagged

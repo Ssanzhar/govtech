@@ -28,7 +28,9 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from app.analyst_view import render_analyst_tab
 from app.live_view import render_live_tab
+from app.ui_shared import render_highlighted_transcript
 from qorgan.classifier.predict import score
 from qorgan.config import get_config
 from qorgan.data.demo_transcripts import DEMO_TRANSCRIPTS
@@ -62,20 +64,6 @@ def _render_risk_meter(risk: float, threshold: float) -> None:
         st.error("High risk -- likely scam pattern detected.")
     else:
         st.success("Low risk.")
-
-
-def _render_highlighted_transcript(transcript: str, highlights) -> None:
-    if not highlights:
-        st.write(transcript)
-        return
-    pieces: list[str] = []
-    cursor = 0
-    for span in sorted(highlights, key=lambda s: s.start):
-        pieces.append(transcript[cursor : span.start])
-        pieces.append(f"**:red[{transcript[span.start : span.end]}]**")
-        cursor = span.end
-    pieces.append(transcript[cursor:])
-    st.markdown("".join(pieces))
 
 
 def _render_tags(tags, locale: str) -> None:
@@ -126,7 +114,7 @@ def _render_level1() -> None:
         explanation = explain(result, transcript, locale)
 
         _render_risk_meter(result.risk, cfg.risk_threshold)
-        _render_highlighted_transcript(transcript, explanation.highlights)
+        render_highlighted_transcript(transcript, explanation.highlights)
         _render_tags(explanation.tags, locale)
         st.write("**Reason:**", explanation.reason)
         if explanation.confidence_label:
@@ -140,68 +128,7 @@ def _render_level1() -> None:
             _render_buildup(transcript, backend)
 
 
-# --- Level 2: analyst view ---------------------------------------------------------------
-
-
-def _render_level2() -> None:
-    from qorgan.analytics.pipeline import load_organizations_jsonl
-    from qorgan.data.incident_seed import load_incidents_jsonl
-
-    cfg = get_config()
-    orgs_path = cfg.data_dir / "processed" / "organizations.jsonl"
-    incidents_path = cfg.data_dir / "processed" / "incidents.jsonl"
-    if not orgs_path.exists():
-        st.info(
-            "No Level-2 analysis yet. Run `python scripts/demo_seed.py` then "
-            "`python -m qorgan.analytics.pipeline`."
-        )
-        return
-
-    organizations = load_organizations_jsonl(orgs_path)
-    if not organizations:
-        st.info(
-            "No organizations to display yet. The Level-2 analysis file is empty -- run "
-            "`python scripts/demo_seed.py` then `python -m qorgan.analytics.pipeline`."
-        )
-        return
-
-    incidents = {i.id: i for i in load_incidents_jsonl(incidents_path)} if incidents_path.exists() else {}
-
-    novel = [o for o in organizations if o.is_novel]
-    if novel:
-        st.warning(
-            f"NEW SCHEME detected: **{novel[0].id}** ({len(novel[0].members)} incidents) -- "
-            f"{(novel[0].representative_script or '')[:90]}..."
-        )
-
-    st.subheader("Scam organizations -- priority queue")
-    st.dataframe(
-        [
-            {
-                "Organization": org.id,
-                "Incidents": len(org.members),
-                "Numbers": ", ".join(org.numbers) or "-",
-                "Priority": round(org.priority, 2),
-                "New scheme": "NEW" if org.is_novel else "",
-            }
-            for org in organizations
-        ],
-        width="stretch",
-    )
-
-    selected = st.selectbox("Drill into organization", [o.id for o in organizations])
-    org = next(o for o in organizations if o.id == selected)
-    st.write(
-        f"**Linked numbers:** {', '.join(org.numbers) or '-'} · **Incidents:** {len(org.members)} "
-        f"· **New scheme:** {'yes' if org.is_novel else 'no'} · **Priority:** {org.priority:.2f}"
-    )
-    st.write("**Representative script:**", org.representative_script)
-    st.caption("Sample incidents:")
-    for member_id in org.members[:6]:
-        incident = incidents.get(member_id)
-        if incident is not None:
-            stamp = incident.timestamp.strftime("%Y-%m-%d %H:%M") if incident.timestamp else "-"
-            st.caption(f"{stamp} · {incident.phone_number} · {incident.transcript[:110]}")
+# --- Level 2: analyst view lives in app/analyst_view.py -----------------------------------
 
 
 def main() -> None:
@@ -215,7 +142,7 @@ def main() -> None:
     with live:
         render_live_tab(_effective_backend())
     with level2:
-        _render_level2()
+        render_analyst_tab()
 
 
 if __name__ == "__main__":

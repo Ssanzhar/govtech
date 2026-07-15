@@ -177,4 +177,7 @@ def _render_post_call(state: LiveSessionState) -> None:
         except ValueError as exc:
             st.error(f"Could not submit the report: {exc}")
             return
-        st.success(f"Report saved to `{path}` — it now feeds the Level-2 analyst pipeline.")
+        st.success(
+            f"Report saved to `{path}`. Open the **Level 2 — Analyst view** tab and click "
+            "*Ingest into analysis* to see it in the intelligence picture."
+        )
