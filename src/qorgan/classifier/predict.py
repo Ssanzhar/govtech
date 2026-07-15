@@ -243,9 +243,11 @@ def _linear_score(transcript: str, *, bundle: Any = None, embedder: Any = None) 
 def _merge_cue_evidence(tags: list, spans: list, cue_matches) -> tuple[list, list]:
     """Fold fired hard-signal cues into the tags + highlight spans as grounded evidence.
 
-    A matched cue is a verbatim span tied to a tactic, so it is added as a `TacticTag`
-    (weight 1.0) if that tactic isn't already tagged, and its span is added if not already
-    highlighted. Deduplicated; spans returned in transcript order.
+    A matched cue is a verbatim span tied to a tactic, so that tactic is tagged at
+    weight 1.0 — added if missing, *upgraded* if the tactic head already tagged it with
+    lower confidence (a verbatim lexicon hit is stronger evidence than the embedding
+    head, and downstream hard-signal handling keys on this weight). Span dedup as before;
+    spans returned in transcript order.
     """
     tag_ids = {tag.id for tag in tags}
     merged_tags = list(tags)
@@ -259,6 +261,10 @@ def _merge_cue_evidence(tags: list, spans: list, cue_matches) -> tuple[list, lis
         if key not in span_keys:
             merged_spans.append(match.span)
             span_keys.add(key)
+    cue_ids = {match.tactic_id for match in cue_matches}
+    merged_tags = [
+        TacticTag(id=tag.id, weight=1.0) if tag.id in cue_ids else tag for tag in merged_tags
+    ]
     merged_spans.sort(key=lambda span: span.start)
     return merged_tags, merged_spans
 

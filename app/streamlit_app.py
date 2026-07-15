@@ -9,6 +9,8 @@ backend degrades to `mock` without a model/key; the L2 tab reads a precomputed a
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
 
 # PyArrow (pulled in lazily by st.dataframe) bundles the mimalloc allocator, which segfaults
 # on macOS/ARM when its first allocation runs on a Streamlit ScriptRunner thread rather than
@@ -19,6 +21,14 @@ os.environ.setdefault("ARROW_DEFAULT_MEMORY_POOL", "system")
 
 import streamlit as st
 
+# `streamlit run app/streamlit_app.py` puts `app/` (the script dir) on sys.path but not
+# the repo root, so the `app` package itself isn't importable; pytest/AppTest does the
+# opposite. Pin the repo root so `from app.live_view import ...` works in both harnesses.
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from app.live_view import render_live_tab
 from qorgan.classifier.predict import score
 from qorgan.config import get_config
 from qorgan.data.demo_transcripts import DEMO_TRANSCRIPTS
@@ -197,9 +207,13 @@ def _render_level2() -> None:
 def main() -> None:
     st.title("Qorgan -- scam-call risk detector")
     st.caption("Decision-support only. A human always makes the final call.")
-    level1, level2 = st.tabs(["Level 1 -- Call check", "Level 2 -- Analyst view"])
+    level1, live, level2 = st.tabs(
+        ["Level 1 -- Call check", "Live call", "Level 2 -- Analyst view"]
+    )
     with level1:
         _render_level1()
+    with live:
+        render_live_tab(_effective_backend())
     with level2:
         _render_level2()
 

@@ -10,6 +10,7 @@ step is code-driven and reproducible (`docs/DECISIONS.md` D9): a seeded build + 
 | Gemini-generated dialogues | synthetic | KK / RU / mixed | `train` / `val` / `test` | `src/qorgan/data/generate.py` (`gemini-2.5-flash`, seeded) |
 | Curated `real_heldout` anchors | hand-authored (manual-transcript fallback) | KK / RU / mixed | `real_heldout` **only** | `src/qorgan/data/anchors.py` → `data/anchors/real_heldout.jsonl` |
 | Scam-tactic taxonomy | curated | RU / KK | label space + generation seeds | `data/taxonomy/tactics.yaml` |
+| Vosk ASR models (live mic only) | pretrained, third-party | KK + RU | live speech→text (`asr/vosk_stream.py`); **never training data** | `vosk-model-small-kz-0.42` + `vosk-model-small-ru-0.22`, Apache-2.0, [alphacephei.com/vosk/models](https://alphacephei.com/vosk/models), auto-downloaded to `~/.cache/vosk` |
 
 No public Kazakh/Russian scam-**call** transcript corpus exists, and streaming/real ASR is
 out of scope this sprint (`docs/SCOPE.md`). The `real_heldout` set is therefore a small,
