@@ -93,6 +93,28 @@ def cluster_quality(organizations: Sequence[Organization], incidents: Sequence[I
     }
 
 
+# Embedding cache written next to organizations.jsonl so `intake.py` can extend the
+# analysis with only the NEW reports embedded (the expensive step) instead of re-embedding
+# the whole incident stream on every ingest.
+EMBEDDINGS_FILENAME = "incident_embeddings.npz"
+
+
+def save_embeddings_npz(ids: Sequence[str], embeddings: np.ndarray, path: Path) -> None:
+    """Persist the incident-embedding matrix keyed by incident ids."""
+    if len(ids) != len(embeddings):
+        raise ValueError(f"ids/embeddings length mismatch: {len(ids)} vs {len(embeddings)}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(path, ids=np.array(list(ids)), embeddings=embeddings)
+
+
+def load_embeddings_npz(path: Path) -> tuple[list[str], np.ndarray]:
+    """Load an embedding cache written by `save_embeddings_npz`."""
+    if not path.exists():
+        raise FileNotFoundError(f"Embedding cache not found: {path}")
+    data = np.load(path, allow_pickle=False)
+    return [str(incident_id) for incident_id in data["ids"]], data["embeddings"]
+
+
 def write_organizations_jsonl(organizations: Sequence[Organization], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(o.model_dump_json() for o in organizations) + "\n", encoding="utf-8")
@@ -112,11 +134,15 @@ def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - CLI (
     args = parser.parse_args(argv)
 
     incidents = load_incidents_jsonl(args.incidents)
-    organizations = analyze_incidents(incidents)
+    embeddings = embed_incidents(incidents)
+    organizations = analyze_incidents(incidents, embeddings=embeddings)
     write_organizations_jsonl(organizations, args.out)
+    embeddings_path = args.out.with_name(EMBEDDINGS_FILENAME)
+    save_embeddings_npz([i.id for i in incidents], embeddings, embeddings_path)
     quality = cluster_quality(organizations, incidents)
     print(json.dumps(quality, indent=2))
     print(f"wrote {len(organizations)} organizations -> {args.out}")
+    print(f"wrote embedding cache -> {embeddings_path}")
 
 
 if __name__ == "__main__":  # pragma: no cover - CLI entry point

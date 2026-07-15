@@ -1,6 +1,6 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: 2026-07-13. This is the **current-state** doc for anyone picking the project up.
+_Last updated: 2026-07-14. This is the **current-state** doc for anyone picking the project up.
 Read this first, then `CLAUDE.md` (the brief + locked decisions) and `docs/eval_report.md`
 (the model numbers)._
 
@@ -10,8 +10,61 @@ Read this first, then `CLAUDE.md` (the brief + locked decisions) and `docs/eval_
 - Shipped classifier: the **`linear` hybrid** model — frozen `multilingual-e5-base` embedding
   **⊕ 6 interpretable features** (5 hard-signal request cues + 1 reassurance) → calibrated
   Logistic Regression. Offline, CPU, retrains in seconds, ~64 KB export.
-- **518 tests green.** All work is **committed on `sanzhs-branch`** (5 commits ahead of `main`,
-  **not yet merged**). Only `hf_upload.py` is untracked.
+- **600 tests green.** Work is on **`sanzhs-branch`** (**not yet merged** to `main`).
+- **Live citizen pipeline built** (2026-07-14, from the real-time design spec / `task.md`):
+  streaming utterances → rolling window → `score()` → **0-100 suspicion meter** with
+  asymmetric EMA + hard-signal floors + 55/45 hysteresis latch (`live/meter.py`,
+  `live/session.py`) → tactic-specific localized advice (`explain/recommend.py` +
+  `explain/advice_{ru,kk}.yaml`) → post-call summary + **consent-gated editable report**
+  (`live/summary.py`, appends to `data/processed/citizen_reports.jsonl`, converts to L2
+  `Incident`). Pseudo-streaming ASR source in `asr/stream.py` (replay + faster-whisper
+  segments). Demoed in the new **"Live call" tab** (`app/live_view.py`), zero-setup via
+  the mock backend; new meter knobs: `QORGAN_METER_ALPHA_UP/_DOWN` in `config.py`.
+- **Live microphone modes** (2026-07-15): the Live-call tab has an Input radio —
+  *Replay script* (default, zero-setup) · *Microphone — browser* (streamlit-webrtc) ·
+  *Microphone — local* (sounddevice). Real-time ASR = **dual Vosk KK+RU streaming
+  recognizers with per-utterance word-confidence voting** (`asr/vosk_stream.py`; models
+  `vosk-model-small-kz-0.42` + `vosk-model-small-ru-0.22`, auto-download to
+  `~/.cache/vosk`, ~100 MB total, config `QORGAN_VOSK_MODEL_KK/_RU`). Audio plumbing in
+  `asr/capture.py` (bounded drop-oldest queue), Streamlit wiring in `app/mic_live.py`
+  (worker threads → event queue → `st.fragment` drain; threads never touch Streamlit).
+  Optional extra: `pip install -e ".[live]"` — without it the tab degrades to an install
+  hint. Same `advance()` pipeline and post-call/report flow as replay. Verified end-to-end
+- **Model-improvement sprint (2026-07-15, planner→tdd-guide agents, all FPR-gated):**
+  (1) **Honest eval widened**: `real_heldout` 27→**42** anchors (24 negatives, tail tactics
+  now measurable); it immediately exposed a real KK/mixed FP (legit tariff notice @0.809).
+  (2) **Streaming eval harness** `python -m qorgan.eval.stream` (per-turn replay through the
+  live meter): false-latch rate (live FPR analog), alert-hit rate, time-to-alert.
+  (3) **KK boundary stabilized + reassurance lexicon KK-expanded** — 15 hand-written KK
+  legit hard negatives (`data/augment/kk_legit_negatives.jsonl`, train-only, leakage-tested)
+  + KK negation-of-need terms (`қажеті жоқ` etc.) and payment sensitive-terms; a first
+  lexicon-only attempt FAILED gates (joint-LR refit moved unrelated KK negatives) and was
+  rolled back — the data+lexicon combination passed. (4) **Cue-lexicon ASR variants**
+  ("безопасной счёт", "код из сообщения", KK bare imperatives) — the live hard-signal floor
+  now fires on real Vosk output (verbatim cue hits upgrade tags to weight 1.0).
+  **Shipped numbers (threshold 0.55): test FPR 0.000/rec 0.953 · real_heldout FPR 0.000/rec
+  1.000 (42) · ood FPR 0.000/rec 0.889 · streaming false-latch 0.167 heldout / 0.115 test.**
+  Open: streaming transient false-latch (~1/6 legit calls latch mid-call then recover) is a
+  structural meter finding — candidates: min-turns arm, short-window damping. Phase 3 of the
+  plan (Gemini tail-tactic top-up, needs `GEMINI_API_KEY`) was the designated drop candidate
+  and remains NOT done. Full detail: `docs/eval_report.md` 2026-07-15 addendum.
+- **Analyst dashboard overhaul + citizen-report loop (2026-07-15):** L2 view extracted to
+  `app/analyst_view.py` — KPI row, novel-scheme callout, priority queue (tactic-derived
+  display names via `analytics/presentation.py`, never raw cluster ids; progress-bar
+  priority), drill-down with tactic-profile/activity charts and span-highlighted
+  representative script. **The report loop is closed:** Live-tab reports →
+  `analytics/intake.py` (idempotent content-addressed ids, embeds ONLY new transcripts via
+  the `incident_embeddings.npz` cache the pipeline now writes) → "Ingest into analysis"
+  button in the analyst tab → number-graph placement (report with a known number joins that
+  org; unknown number = novelty candidate). Verified live: real report joined the seeded
+  bank_security org in ~9s; re-ingest is a no-op. Intake normalizes tz-aware report
+  timestamps to the store's naive convention (mixing crashed ranking). 697 tests.
+  with synthesized speech (macOS `say`, RU Milena + KK Aru) through the real Vosk models +
+  linear classifier: scam scene → meter 84/Critical/latched; hard-negative stays Low.
+  Fix found by that e2e: `predict._merge_cue_evidence` now **upgrades** a head-tagged
+  tactic to weight 1.0 on a verbatim cue hit (was: kept the head's lower weight, which
+  suppressed the meter's hard-signal floor). Risk scores untouched — FPR tables unaffected;
+  hard negatives re-checked (no cue fires, no ≥0.8 tags).
 - **Trained weights and corpus splits are gitignored** → they live on **Hugging Face** (below)
   or are **regenerated** from the committed code + lexicons + augmentation.
 

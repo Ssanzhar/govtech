@@ -25,3 +25,25 @@ DEMO_TRANSCRIPTS: dict[str, str] = {
         "на официальный номер банка на обратной стороне карты."
     ),
 }
+
+# Turn-by-turn scripts for the live-call replay (one committed utterance per line, the
+# caller's side of the conversation). The scam script deliberately contains verbatim
+# taxonomy example phrases so the zero-setup `mock` backend detects them; the hard
+# negative is the "real bank call must NOT trigger" demo scene.
+LIVE_DEMO_CALLS: dict[str, str] = {
+    "live_scam_bank_ru": (
+        "Алло, здравствуйте. Это служба безопасности вашего банка.\n"
+        "По вашей карте зафиксирована подозрительная операция на крупную сумму.\n"
+        "Действовать нужно прямо сейчас, у вас есть только пять минут.\n"
+        "Никому не говорите, это секретная операция под контролем регулятора.\n"
+        "Продиктуйте код из SMS, чтобы мы отменили операцию.\n"
+        "Теперь переведите деньги на безопасный счёт, я продиктую реквизиты."
+    ),
+    "live_hard_negative_bank_ru": (
+        "Здравствуйте, это оператор банка, звоню по вашей заявке.\n"
+        "Мы подтверждаем, что перевод на 15000 тенге успешно проведён.\n"
+        "Никакие коды и данные карты называть не нужно.\n"
+        "Если вы не совершали эту операцию, позвоните на официальный номер банка "
+        "на обратной стороне карты."
+    ),
+}

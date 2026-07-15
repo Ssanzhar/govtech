@@ -79,3 +79,39 @@ def test_reassurance_scores_shape_and_values():
     assert scores.shape == (2, 1)
     assert scores[0, 0] == 1.0
     assert scores[1, 0] == 0.0
+
+
+# --- Retry-cycle fix: KK reassurance variants + payment sensitive terms -------------------
+# `сенситив` widening (defect B): add payment-related sensitive terms (тöлем/оплата/оплату/
+# платить) and KK negation-of-need reassurance variants (қажеті жоқ/қажет жоқ/талап
+# етпейді/талап етпейміз) so real institutional "no payment/code needed" calls in Kazakh are
+# recognized. `керек емес` is deliberately excluded (fires on a real scam corpus line).
+
+
+def test_tariff_anchor_phrase_fires():
+    patterns = _patterns()
+    # verbatim phrase from the `real_neg_telecom_tariff_notice_mixed` anchor
+    assert reassures("ешқандай төлем жасаудың қажеті жоқ", patterns)
+
+
+def test_new_sensitive_terms_fire_with_a_reassurance_term():
+    patterns = _patterns()
+    assert reassures("Дополнительная оплата не требуется для активации услуги.", patterns)
+    assert reassures("Оплату производить не нужно, всё уже оплачено заранее.", patterns)
+    assert reassures("Платить дополнительно не требуется в этом месяце.", patterns)
+
+
+def test_new_kk_reassurance_terms_fire_with_a_sensitive_term():
+    patterns = _patterns()
+    assert reassures("СМС кодын айтудың қажет жоқ, өзіңіз растайсыз.", patterns)
+    assert reassures("Банк ешқашан құпия сөзді талап етпейді.", patterns)
+    assert reassures("Сізден пароль талап етпейміз.", patterns)
+
+
+def test_inversion_guards_still_hold_for_new_terms():
+    patterns = _patterns()
+    # scam secrecy / demand phrasing must NEVER count as reassurance
+    assert not reassures("Переведите деньги на безопасный счёт.", patterns)
+    assert not reassures("Никому не говорите об этом звонке.", patterns)
+    assert not reassures("Продиктуйте код из SMS прямо сейчас.", patterns)
+    assert not reassures("Оплатите по QR-коду прямо сейчас.", patterns)

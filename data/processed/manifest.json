@@ -8,13 +8,13 @@
   },
   "counts": {
     "train": {
-      "total": 631,
-      "hard_negatives": 334,
+      "total": 646,
+      "hard_negatives": 349,
       "positives": 297,
       "by_language": {
         "ru": 208,
-        "kk": 213,
-        "mixed": 210
+        "kk": 224,
+        "mixed": 214
       }
     },
     "val": {
@@ -38,17 +38,17 @@
       }
     },
     "real_heldout": {
-      "total": 27,
-      "hard_negatives": 8,
-      "positives": 19,
+      "total": 42,
+      "hard_negatives": 15,
+      "positives": 27,
       "by_language": {
-        "ru": 13,
-        "mixed": 7,
-        "kk": 7
+        "ru": 18,
+        "mixed": 11,
+        "kk": 13
       }
     }
   },
-  "total": 887,
-  "content_hash": "50349ef98b5435c9767ce8d9f377256363a8fbcd3a20c4b4cbd5f3727c8f4637",
-  "train_augment_count": 27
+  "total": 917,
+  "content_hash": "b0761128dca130d67faf1c8edfb9ce49f1e92cfb535a1196bd5c54e1271fc18e",
+  "train_augment_count": 42
 }

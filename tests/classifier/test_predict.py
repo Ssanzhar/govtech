@@ -180,3 +180,57 @@ def test_score_backend_override_beats_config_default(monkeypatch):
     result = predict.score(DEMO_TRANSCRIPTS["hard_negative_bank_call_ru"], backend="mock")
 
     assert result.backend == "mock"
+
+
+# --- _merge_cue_evidence (grounded hard-signal upgrade path) --------------------------------
+
+
+def _cue_match(tactic_id: str, text: str, start: int):
+    from qorgan.classifier.features import CueMatch
+    from qorgan.data.schema import Span
+
+    return CueMatch(tactic_id=tactic_id, span=Span(text=text, start=start, end=start + len(text)))
+
+
+def test_merge_cue_evidence_adds_untagged_cue_tactic_at_full_weight():
+    from qorgan.data.schema import TacticTag
+
+    tags, spans = predict._merge_cue_evidence(
+        [TacticTag(id="urgency", weight=0.6)], [], (_cue_match("otp_request", "код из SMS", 5),)
+    )
+
+    otp = next(tag for tag in tags if tag.id == "otp_request")
+    assert otp.weight == 1.0
+    assert len(spans) == 1
+
+
+def test_merge_cue_evidence_upgrades_head_tagged_tactic_to_full_weight():
+    """Regression (live-mic e2e): a verbatim cue hit must override the tactic head's
+    lower confidence — the meter's hard-signal floor keys on weight >= 0.8, and a
+    head-tagged secrecy at 0.68 was silently suppressing the floor."""
+    from qorgan.data.schema import TacticTag
+
+    tags, _spans = predict._merge_cue_evidence(
+        [TacticTag(id="secrecy", weight=0.68), TacticTag(id="urgency", weight=0.73)],
+        [],
+        (_cue_match("secrecy", "никому не говорите", 0),),
+    )
+
+    secrecy = next(tag for tag in tags if tag.id == "secrecy")
+    urgency = next(tag for tag in tags if tag.id == "urgency")
+    assert secrecy.weight == 1.0  # upgraded by the verbatim match
+    assert urgency.weight == 0.73  # non-cue tags untouched
+
+
+def test_merge_cue_evidence_deduplicates_spans_and_sorts_by_position():
+    from qorgan.data.schema import Span, TacticTag
+
+    existing_span = Span(text="код из SMS", start=20, end=30)
+    tags, spans = predict._merge_cue_evidence(
+        [TacticTag(id="otp_request", weight=0.9)],
+        [existing_span],
+        (_cue_match("otp_request", "код из SMS", 20), _cue_match("secrecy", "никому", 0)),
+    )
+
+    assert [span.start for span in spans] == [0, 20]
+    assert len([tag for tag in tags if tag.id == "otp_request"]) == 1

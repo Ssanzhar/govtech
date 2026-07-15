@@ -26,12 +26,26 @@ _DEFAULT_LLM_MODEL_QUALITY = "gemini-2.5-pro"
 _DEFAULT_LLM_MODEL_BULK = "gemini-2.5-flash"
 _DEFAULT_CLASSIFIER_BACKEND = "linear"
 _DEFAULT_WHISPER_MODEL_SIZE = "small"
+# Live streaming ASR (design spec §06): small Vosk models for KK + RU run in parallel and
+# vote per utterance. Names resolve via vosk's model auto-download (~/.cache/vosk).
+_DEFAULT_VOSK_MODEL_KK = "vosk-model-small-kz-0.42"
+_DEFAULT_VOSK_MODEL_RU = "vosk-model-small-ru-0.22"
+_DEFAULT_ASR_SAMPLE_RATE = 16000
 _DEFAULT_EMBED_MODEL_NAME = "intfloat/multilingual-e5-base"
-# Tuned for the shipping hybrid model: max recall s.t. FPR<=0.05 on real_heldout is 0.55
-# (`eval/threshold.py`); at 0.55 real_heldout is FPR 0.000 / recall 1.000. See docs/eval_report.md.
+# Shipped default for the hybrid model, post the 2026-07-15 KK-negatives-augmentation +
+# reassurance-lexicon retrain: at 0.55, real_heldout (42 anchors) is FPR 0.000 / recall
+# 1.000 (`eval/threshold.py`'s own max-recall-s.t.-FPR<=0.05 tuner now recommends 0.620,
+# fpr=0.000/recall=1.000 on the same set -- 0.55 is kept as the shipped default since it
+# already clears the FPR bar with equal recall). See docs/eval_report.md.
 _DEFAULT_RISK_THRESHOLD = 0.55
 _DEFAULT_RISK_THRESHOLD_ENTER = 0.55
 _DEFAULT_RISK_THRESHOLD_EXIT = 0.45
+# Live suspicion-meter smoothing (design spec §08): the displayed 0-100 score follows an
+# asymmetric EMA -- it rises fast (two consistent turns reach the target band) and decays
+# slowly (a scammer changing topic doesn't reset accumulated evidence). Launch defaults,
+# to be re-tuned on pilot recordings with the FPR-first harness.
+_DEFAULT_METER_ALPHA_UP = 0.5
+_DEFAULT_METER_ALPHA_DOWN = 0.12
 _DEFAULT_SEED = 42
 _DEFAULT_SUPPORTED_LOCALES: tuple[str, ...] = ("ru", "kk")
 _DEFAULT_LOCALE = "ru"
@@ -75,6 +89,9 @@ class Config(BaseModel):
 
     # --- ASR ---
     whisper_model_size: str
+    vosk_model_kk: str
+    vosk_model_ru: str
+    asr_sample_rate: int = Field(gt=0)
 
     # --- Fine-tuned XLM-R backend (D3) ---
     xlmr_model_dir: Path
@@ -87,6 +104,10 @@ class Config(BaseModel):
     risk_threshold: float = Field(ge=0.0, le=1.0)
     risk_threshold_enter: float = Field(ge=0.0, le=1.0)
     risk_threshold_exit: float = Field(ge=0.0, le=1.0)
+
+    # --- Live suspicion-meter smoothing (design spec §08) ---
+    meter_alpha_up: float = Field(gt=0.0, le=1.0)
+    meter_alpha_down: float = Field(gt=0.0, le=1.0)
 
     # --- Corpus splits (test fraction is the remainder) ---
     split_train_fraction: float = Field(gt=0.0, lt=1.0)
@@ -108,6 +129,15 @@ class Config(BaseModel):
             raise ValueError(
                 "risk_threshold_exit must be <= risk_threshold_enter "
                 f"(got exit={self.risk_threshold_exit}, enter={self.risk_threshold_enter})"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _meter_decay_not_above_rise(self) -> "Config":
+        if self.meter_alpha_down > self.meter_alpha_up:
+            raise ValueError(
+                "meter_alpha_down must be <= meter_alpha_up "
+                f"(got down={self.meter_alpha_down}, up={self.meter_alpha_up})"
             )
         return self
 
@@ -220,6 +250,9 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             whisper_model_size=_read_str(
                 source, "QORGAN_WHISPER_MODEL_SIZE", _DEFAULT_WHISPER_MODEL_SIZE
             ),
+            vosk_model_kk=_read_str(source, "QORGAN_VOSK_MODEL_KK", _DEFAULT_VOSK_MODEL_KK),
+            vosk_model_ru=_read_str(source, "QORGAN_VOSK_MODEL_RU", _DEFAULT_VOSK_MODEL_RU),
+            asr_sample_rate=_read_int(source, "QORGAN_ASR_SAMPLE_RATE", _DEFAULT_ASR_SAMPLE_RATE),
             xlmr_model_dir=_read_path(
                 source, "QORGAN_XLMR_MODEL_DIR", _read_path(source, "QORGAN_MODEL_DIR", _REPO_ROOT / "models") / "xlmr"
             ),
@@ -233,6 +266,10 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             ),
             risk_threshold_exit=_read_float(
                 source, "QORGAN_RISK_THRESHOLD_EXIT", _DEFAULT_RISK_THRESHOLD_EXIT
+            ),
+            meter_alpha_up=_read_float(source, "QORGAN_METER_ALPHA_UP", _DEFAULT_METER_ALPHA_UP),
+            meter_alpha_down=_read_float(
+                source, "QORGAN_METER_ALPHA_DOWN", _DEFAULT_METER_ALPHA_DOWN
             ),
             split_train_fraction=_read_float(
                 source, "QORGAN_SPLIT_TRAIN_FRACTION", _DEFAULT_SPLIT_TRAIN_FRACTION
