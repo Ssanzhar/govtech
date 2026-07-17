@@ -26,6 +26,9 @@ dependencies = [
     "networkx>=3.3",
     "faster-whisper>=1.0",
     "streamlit>=1.49",  # width="stretch" dataframe API (replaces use_container_width)
+    "fastapi>=0.110",   # thin API + static host for the landing site (qorgan.api)
+    "uvicorn>=0.30",
+    "huggingface_hub>=0.23",  # deploy bootstrap pulls model + corpus from HF
 ]
 
 [project.optional-dependencies]

@@ -1,4 +1,4 @@
-/* saq try-widget — the real connection: POST /api/analyze on the qorgan API. */
+/* Qorğan try-widget — the real connection: POST /api/analyze on the qorgan API. */
 (() => {
   "use strict";
 

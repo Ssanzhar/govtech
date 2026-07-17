@@ -21,6 +21,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
+from qorgan.api_admin import router as admin_router
+from qorgan.api_admin_stats import router as admin_stats_router
+from qorgan.api_live import router as live_router
+from qorgan.api_live_ws import router as live_ws_router
 from qorgan.classifier import predict
 from qorgan.config import get_config
 from qorgan.explain.explainer import ExplainerError, explain
@@ -120,6 +124,11 @@ def analyze(req: AnalyzeRequest) -> AnalyzeResponse:
         ),
     )
 
+
+app.include_router(admin_router)
+app.include_router(admin_stats_router)
+app.include_router(live_router)
+app.include_router(live_ws_router)
 
 if _SITE_DIR.is_dir():
     app.mount("/", StaticFiles(directory=_SITE_DIR, html=True), name="site")

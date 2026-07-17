@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qorğan — live call</title>
+<meta name="description" content="Qorğan live call — suspicion meter over streaming utterances, from a replayed script or your microphone. Grounded evidence, advice, consent-gated reporting. A human always decides.">
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%230E0C13"/><g fill="%23E29B2E"><rect x="7" y="13" width="2.6" height="6"/><rect x="11.4" y="9" width="2.6" height="14"/><rect x="15.8" y="5" width="2.6" height="22"/><rect x="20.2" y="10" width="2.6" height="12"/><rect x="24.6" y="14" width="2.6" height="4"/></g></svg>'>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="live.css">
+</head>
+<body>
+<div class="rails" aria-hidden="true"></div>
+
+<header class="nav">
+  <a class="brand" href="index.html" aria-label="Qorğan — home">
+    <svg class="brand-glyph" viewBox="0 0 26 18" aria-hidden="true">
+      <rect x="0"  y="6.5" width="2.4" height="5"/>
+      <rect x="4.7" y="3.5" width="2.4" height="11"/>
+      <rect x="9.4" y="0.5" width="2.4" height="17"/>
+      <rect x="14.1" y="4.5" width="2.4" height="9"/>
+      <rect x="18.8" y="7"  width="2.4" height="4"/>
+    </svg>
+    <span class="brand-word">qorğan.</span>
+  </a>
+  <nav class="nav-links mono" aria-label="Primary">
+    <a href="index.html#how">how it works</a>
+    <a href="admin.html">admin</a>
+    <a href="live.html" aria-current="page">live call</a>
+  </nav>
+  <a class="btn btn-fill btn-nav" href="index.html#try">Try Qorğan</a>
+</header>
+
+<main id="top" class="lv-main">
+
+  <section class="col-wide lv-hero">
+    <p class="eyebrow">Live call &middot; replay &amp; microphone</p>
+    <h1 class="display-2">Watch the <em>meter climb</em>.</h1>
+    <p class="body-copy">One pipeline behind every input. Replay a scripted call, or speak
+    into the microphone &mdash; dual KK/RU streaming ASR feeds the same detector, on your
+    own machine.</p>
+    <div class="lv-pipeline mono" role="img"
+      aria-label="Pipeline: utterances, then rolling window, then risk score, then suspicion meter, then grounded advice">
+      <span class="lv-stage">
+        <svg class="lv-glyph" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/>
+        </svg>
+        <span class="lv-stage-name">utterances</span>
+      </span>
+      <span class="lv-link" aria-hidden="true"></span>
+      <span class="lv-stage">
+        <svg class="lv-glyph" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8 5H4v14h4M16 5h4v14h-4"/>
+          <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+        </svg>
+        <span class="lv-stage-name">rolling window</span>
+      </span>
+      <span class="lv-link" aria-hidden="true"></span>
+      <span class="lv-stage">
+        <svg class="lv-glyph" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="13" r="8"/>
+          <path d="M12 13l3.5-4.5"/>
+        </svg>
+        <span class="lv-stage-name">risk score</span>
+      </span>
+      <span class="lv-link" aria-hidden="true"></span>
+      <span class="lv-stage">
+        <svg class="lv-glyph" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3" y="9.5" width="18" height="5" rx="2.5"/>
+          <path d="M6 12h7"/>
+        </svg>
+        <span class="lv-stage-name">meter 0&ndash;100</span>
+      </span>
+      <span class="lv-link" aria-hidden="true"></span>
+      <span class="lv-stage">
+        <svg class="lv-glyph" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 5.5h16V16H9.5L4 20z"/>
+        </svg>
+        <span class="lv-stage-name">advice</span>
+      </span>
+    </div>
+  </section>
+
+  <section class="tryp section lv-stage-section" aria-label="Live analysis">
+    <div class="try-panel lv-stage-panel">
+      <p class="eyebrow inverse">Live analysis</p>
+      <h2 class="display-2 inverse">One pipeline, <em>two inputs</em>.</h2>
+
+      <div class="lv-controls mono">
+        <span class="tw-loc lv-modes" role="radiogroup" aria-label="Input mode">
+          <label class="tw-chip tw-radio"><input type="radio" name="lv-mode" value="replay" checked>replay script</label>
+          <label class="tw-chip tw-radio" id="lvMicChip"><input type="radio" name="lv-mode" value="mic">microphone</label>
+        </span>
+        <span class="tw-loc" role="radiogroup" aria-label="Locale">
+          <label class="tw-chip tw-radio"><input type="radio" name="lv-loc" value="ru" checked>ru</label>
+          <label class="tw-chip tw-radio"><input type="radio" name="lv-loc" value="kk">kk</label>
+        </span>
+      </div>
+
+      <div class="lv-setup" id="lvSetupReplay">
+        <div class="lv-setup-row mono">
+          <label class="lv-field">
+            <span>scenario</span>
+            <select id="lvScenario" aria-label="Call scenario"></select>
+          </label>
+        </div>
+        <textarea id="lvScript" class="lv-script mono" rows="6" spellcheck="false"
+          placeholder="One utterance per line — the caller's side of the call…"></textarea>
+        <div class="lv-setup-actions">
+          <button type="button" id="lvStart" class="btn btn-paper">Start live analysis</button>
+          <span id="lvSetupNote" class="lv-note mono" role="status"></span>
+        </div>
+      </div>
+
+      <div class="lv-setup" id="lvSetupMic" hidden>
+        <p class="lv-mic-copy mono">Speak in Russian or Kazakh. Audio streams only to your
+        own server (dual Vosk KK+RU recognizers, per-utterance confidence voting) and every
+        committed utterance drives the same suspicion meter.</p>
+        <div class="lv-setup-actions">
+          <button type="button" id="lvMicStart" class="btn btn-paper">Start microphone</button>
+          <button type="button" id="lvMicStop" class="btn btn-ghost" hidden>End call</button>
+          <span id="lvMicNote" class="lv-note mono" role="status"></span>
+        </div>
+      </div>
+
+      <div class="panel lv-panel" id="lvCallWrap" hidden>
+        <div class="p-head mono">
+          <span class="p-dot" id="lvDot"></span>
+          <span class="p-title">live call&nbsp;&middot;&nbsp;turn <span id="lvTurn">0</span></span>
+          <span class="p-right" id="lvScore">0 / 100</span>
+        </div>
+        <div class="p-body lv-body">
+          <div class="lv-meter-track"><div class="lv-meter-fill band-low" id="lvMeterFill"></div></div>
+          <div class="lv-band-row">
+            <span class="lv-band-pill mono band-low" id="lvBandPill">LOW</span>
+            <div class="lv-tags mono" id="lvTags"></div>
+          </div>
+          <div class="lv-advice mono" id="lvAdvice" hidden role="alert"></div>
+          <div class="lv-transcript mono" id="lvTranscript" aria-live="polite"></div>
+          <div class="lv-partial mono" id="lvPartial" hidden></div>
+        </div>
+      </div>
+
+      <div id="lvSummaryWrap" hidden aria-live="polite"></div>
+
+      <p class="try-note mono">on-device ASR&nbsp;&middot;&nbsp;nothing leaves your machine&nbsp;&middot;&nbsp;a human always decides</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="col foot-row mono">
+    <span>Qorğan &mdash; scam-pattern detection &middot; kk &middot; ru</span>
+    <nav class="foot-links" aria-label="Footer">
+      <a href="index.html">home</a>
+      <a href="admin.html">admin</a>
+      <a href="index.html#eval">eval report</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="live_mic.js"></script>
+<script src="live.js"></script>
+</body>
+</html>

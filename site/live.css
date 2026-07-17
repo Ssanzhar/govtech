@@ -1,0 +1,160 @@
+/* Qorğan live call — page-specific rules only, loaded after styles.css.
+   The whole interactive stage sits inside the same night `.try-panel` as the
+   landing page's Try section, so every control below is styled for the dark card. */
+
+.lv-hero{padding-top:clamp(3rem,7vh,5.5rem)}
+.lv-stage-section{padding-top:clamp(3.5rem,8vh,6rem)}
+
+/* ── pipeline diagram (hero) — hairline signal chain, no arrows ── */
+.lv-pipeline{display:flex;align-items:flex-start;gap:.9rem;margin-top:1.8rem;max-width:44em}
+.lv-stage{display:flex;flex-direction:column;align-items:center;gap:.55rem;flex:0 0 auto}
+.lv-glyph{
+  width:24px;height:24px;stroke:var(--oxide);fill:none;
+  stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;
+}
+.lv-stage-name{
+  font-size:.64rem;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink-soft);white-space:nowrap;
+}
+.lv-link{flex:1 1 auto;height:1px;background:var(--hairline);margin-top:12px;min-width:1rem}
+@media (max-width:44rem){
+  .lv-pipeline{flex-wrap:wrap;gap:1.1rem 1.4rem}
+  .lv-link{display:none}
+}
+
+/* ── mode + locale chips ── */
+.lv-controls{
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  flex-wrap:wrap;margin-top:2rem;
+}
+.lv-modes{margin-left:0}
+.tw-chip.is-disabled{opacity:.45;cursor:not-allowed}
+.tw-chip.is-disabled:hover{color:inherit;border-color:var(--night-edge)}
+
+/* ── setup cards (dark) ── */
+.lv-setup{
+  margin-top:1.4rem;padding:1.3rem 1.4rem;border:1px solid var(--night-edge);
+  border-radius:12px;background:color-mix(in srgb,var(--night) 55%,#000);
+}
+.lv-setup-row{display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;font-size:.8rem}
+.lv-field{
+  display:flex;align-items:center;gap:.6rem;
+  color:color-mix(in srgb,var(--paper) 60%,transparent);
+}
+.lv-field select{
+  font-family:var(--mono);font-size:.8rem;padding:.5rem .7rem;border-radius:8px;
+  border:1px solid var(--night-edge);background:var(--night);color:var(--paper);
+}
+.lv-script{
+  display:block;width:100%;margin-top:1rem;padding:.9rem 1rem;border-radius:8px;
+  border:1px solid var(--night-edge);background:transparent;color:var(--paper);
+  resize:vertical;min-height:7rem;font-size:.84rem;line-height:1.7;
+}
+.lv-script::placeholder{color:color-mix(in srgb,var(--paper) 34%,transparent)}
+.lv-script:focus-visible{outline:none;box-shadow:inset 0 0 0 1px var(--amber)}
+.lv-setup-actions{display:flex;align-items:center;gap:1rem;margin-top:1.1rem;flex-wrap:wrap}
+.lv-note{font-size:.76rem;color:color-mix(in srgb,var(--paper) 55%,transparent)}
+.lv-note.is-error{color:#E06A4C}
+.lv-mic-copy{
+  font-size:.78rem;line-height:1.8;
+  color:color-mix(in srgb,var(--paper) 62%,transparent);max-width:44em;
+}
+
+/* ── live call panel ── */
+.lv-panel{width:100%;margin-top:1.4rem}
+.lv-body{padding:1.2rem 1.3rem 1.4rem}
+
+.lv-meter-track{
+  height:14px;border-radius:999px;overflow:hidden;
+  background:color-mix(in srgb,var(--paper) 12%,transparent);
+}
+.lv-meter-fill{
+  height:100%;width:0%;border-radius:999px;
+  background:var(--band-color,#67B98C);
+  transition:width .5s ease,background .4s ease;
+}
+.lv-band-row{display:flex;align-items:center;gap:.8rem;margin-top:.9rem;flex-wrap:wrap}
+.lv-band-pill{
+  padding:.3rem .8rem;border-radius:999px;font-size:.72rem;letter-spacing:.06em;
+  border:1px solid var(--band-color,#67B98C);color:var(--band-color,#67B98C);
+}
+.band-low{--band-color:#67B98C}
+.band-medium{--band-color:var(--amber)}
+.band-high{--band-color:#E06A4C}
+.band-critical{--band-color:var(--magenta)}
+.lv-tags{display:flex;gap:.4rem;flex-wrap:wrap}
+
+.lv-advice{
+  margin-top:1rem;padding:.85rem 1rem;border-radius:8px;font-size:.82rem;line-height:1.6;
+  border:1px solid color-mix(in srgb,var(--oxide) 55%,transparent);
+  background:color-mix(in srgb,var(--oxide) 16%,transparent);
+  color:color-mix(in srgb,var(--paper) 92%,transparent);
+}
+
+.lv-transcript{
+  margin-top:1.2rem;display:flex;flex-direction:column;gap:.5rem;
+  font-size:.85rem;line-height:1.7;
+}
+.lv-line{
+  padding:.7rem .9rem;border-radius:8px;
+  background:color-mix(in srgb,var(--paper) 5%,transparent);
+  color:color-mix(in srgb,var(--paper) 80%,transparent);
+}
+.lv-line mark{
+  background:color-mix(in srgb,var(--amber) 30%,transparent);
+  color:var(--paper);padding:.05em .15em;border-radius:3px;
+}
+.lv-partial{
+  margin-top:.5rem;padding:.4rem .9rem;font-size:.82rem;font-style:italic;
+  color:color-mix(in srgb,var(--paper) 45%,transparent);
+}
+.lv-partial::after{content:"▌";margin-left:.15em;color:var(--amber);animation:lv-caret 1s steps(1) infinite}
+@keyframes lv-caret{50%{opacity:0}}
+
+/* ── post-call summary + report (dark) ── */
+.lv-summary-wrap{margin-top:1.4rem}
+.lv-summary{
+  margin-top:1.4rem;border:1px solid var(--night-edge);border-radius:12px;
+  background:color-mix(in srgb,var(--night) 55%,#000);
+  padding:1.6rem 1.75rem;color:var(--paper);
+}
+.lv-summary-eyebrow{margin-bottom:0}
+.lv-summary-head{
+  display:flex;align-items:baseline;justify-content:space-between;
+  gap:1rem;flex-wrap:wrap;margin-top:.4rem;
+}
+.lv-summary-score{font-family:var(--serif);font-size:2.4rem;font-weight:560}
+.lv-summary-band{margin-top:.7rem;display:inline-block}
+.lv-summary-tags{margin-top:1rem}
+.lv-summary-actions{margin-top:1.1rem;padding-left:1.2rem}
+.lv-summary-actions li{margin-top:.4rem;font-size:.92rem;line-height:1.6}
+.lv-summary-note{
+  margin-top:1.1rem;font-size:.82rem;
+  color:color-mix(in srgb,var(--paper) 55%,transparent);
+}
+
+.lv-report{
+  margin-top:1.3rem;padding-top:1.3rem;border-top:1px solid var(--night-edge);
+  font-size:.8rem;
+}
+.lv-report-title{color:color-mix(in srgb,var(--paper) 80%,transparent)}
+.lv-report-row{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:.8rem}
+.lv-report-phone{
+  flex:1 1 14rem;padding:.6rem .8rem;border-radius:8px;
+  border:1px solid var(--night-edge);background:transparent;color:var(--paper);
+  font-size:.8rem;
+}
+.lv-report-phone::placeholder{color:color-mix(in srgb,var(--paper) 34%,transparent)}
+.lv-report-phone:focus-visible{outline:none;box-shadow:inset 0 0 0 1px var(--amber)}
+.lv-report-note{
+  margin-top:.8rem;line-height:1.7;
+  color:color-mix(in srgb,var(--paper) 50%,transparent);
+}
+.lv-report-note.is-success{color:#67B98C}
+.lv-report-note.is-error{color:#E06A4C}
+.lv-report-note a{color:inherit}
+
+@media (max-width:38rem){
+  .lv-setup-row{flex-direction:column;align-items:flex-start}
+  .lv-controls{flex-direction:column;align-items:flex-start}
+}
