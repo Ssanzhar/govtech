@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>saq — know which voice is real</title>
+<meta name="description" content="saq is a bilingual (Kazakh · Russian) detector for AI-cloned and synthetic speech. Open models, honest evaluation, runs on your own hardware.">
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%230E0C13"/><g fill="%23E29B2E"><rect x="7" y="13" width="2.6" height="6"/><rect x="11.4" y="9" width="2.6" height="14"/><rect x="15.8" y="5" width="2.6" height="22"/><rect x="20.2" y="10" width="2.6" height="12"/><rect x="24.6" y="14" width="2.6" height="4"/></g></svg>'>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="rails" aria-hidden="true"></div>
+
+<header class="nav">
+  <a class="brand" href="#top" aria-label="saq — home">
+    <svg class="brand-glyph" viewBox="0 0 26 18" aria-hidden="true">
+      <rect x="0"  y="6.5" width="2.4" height="5"/>
+      <rect x="4.7" y="3.5" width="2.4" height="11"/>
+      <rect x="9.4" y="0.5" width="2.4" height="17"/>
+      <rect x="14.1" y="4.5" width="2.4" height="9"/>
+      <rect x="18.8" y="7"  width="2.4" height="4"/>
+    </svg>
+    <span class="brand-word">saq</span>
+  </a>
+  <nav class="nav-links mono" aria-label="Primary">
+    <a href="#how">how it works</a>
+    <a href="#evidence">evidence</a>
+    <a href="#eval">evaluation</a>
+  </nav>
+  <a class="btn btn-fill btn-nav" href="#try">Try saq</a>
+</header>
+
+<main id="top">
+
+  <!-- ── Hero ─────────────────────────────────────────── -->
+  <section class="hero col">
+    <p class="eyebrow">Anti-spoofing for voice&nbsp;·&nbsp;KK&nbsp;·&nbsp;RU</p>
+    <h1 class="display">Know which<br><em>voice is real</em></h1>
+    <p class="lede">saq is a bilingual detector for AI-cloned and synthetic speech.
+    It tells genuine human voice apart from machine-made voice in Kazakh and
+    Russian&nbsp;— and shows the evidence behind every call.</p>
+    <div class="cta-row">
+      <a class="btn btn-fill" href="#try">Try the detector</a>
+      <a class="btn btn-line" href="#evidence">Read the evidence</a>
+    </div>
+    <p class="tagline mono">open models&nbsp;·&nbsp;honest evaluation&nbsp;·&nbsp;runs on your own hardware</p>
+  </section>
+
+  <!-- ── Live analyzer (signature) ─────────────────────── -->
+  <section class="analyzer" aria-label="Analyzer demonstration">
+    <figure class="a-wrap">
+      <div class="a-side a-log mono" id="aLog" aria-hidden="true"></div>
+
+      <div class="panel" id="panel">
+        <div class="p-head mono">
+          <span class="p-dot" id="pDot"></span>
+          <span class="p-title">saq&nbsp;·&nbsp;analyzer</span>
+          <span class="p-right">16&nbsp;kHz</span>
+        </div>
+        <div class="p-body" id="pBody">
+          <canvas id="waveCv" class="cv-wave"></canvas>
+          <div class="p-divider"></div>
+          <canvas id="specCv" class="cv-spec"></canvas>
+          <div class="playhead" id="playhead"></div>
+        </div>
+        <div class="p-axis mono"><span>0</span><span>2k</span><span>4k</span><span>8k</span></div>
+      </div>
+
+      <div class="a-side a-verdict mono" id="aVerdict" aria-live="polite"></div>
+
+      <figcaption class="a-caption mono">fig.&nbsp;1&nbsp;— rolling clip&nbsp;·&nbsp;mel spectrogram&nbsp;·&nbsp;verdict in&nbsp;&lt;&nbsp;1.5&nbsp;s</figcaption>
+    </figure>
+  </section>
+
+  <!-- ── How it works ─────────────────────────────────── -->
+  <section id="how" class="col section">
+    <p class="eyebrow">How it works</p>
+    <h2 class="display-2">Signal in, <em>verdict</em> out.</h2>
+    <div class="steps">
+      <div class="step">
+        <span class="step-num mono">01</span>
+        <h3>Listen</h3>
+        <p>Feed it a call, a clip, a stream. 16&nbsp;kHz mono is enough&nbsp;—
+        no transcript, no cloud round-trip.</p>
+      </div>
+      <div class="step">
+        <span class="step-num mono">02</span>
+        <h3>Measure</h3>
+        <p>Formant drift, breath and pause markers, high-frequency energy,
+        prosody flatness&nbsp;— the traces synthesis leaves in a signal.</p>
+      </div>
+      <div class="step">
+        <span class="step-num mono">03</span>
+        <h3>Decide</h3>
+        <p>A calibrated probability against an explicit threshold. Every verdict
+        ships with the measurements that produced it.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Evidence ─────────────────────────────────────── -->
+  <section id="evidence" class="col-wide section">
+    <div class="split">
+      <div class="split-copy">
+        <p class="eyebrow">Evidence</p>
+        <h2 class="display-2">A verdict you can <em>argue with</em>.</h2>
+        <p class="body-copy">Scores that can’t explain themselves get ignored&nbsp;—
+        or worse, trusted blindly. saq returns the evidence with every call:
+        which features moved the needle and by how much, so a reviewing human
+        can agree&nbsp;— or push back.</p>
+        <p class="body-copy">The features are physical, not statistical folklore:
+        things a phonetician could point to on the spectrogram.</p>
+      </div>
+      <div class="evidence-card mono" role="img" aria-label="Example evidence readout: five weighted features behind a spoof verdict">
+        <div class="ec-head"><span>evidence&nbsp;·&nbsp;clip_0142.wav</span><span class="ec-tag">"spoof"&nbsp;@&nbsp;0.97</span></div>
+        <div class="ec-row"><span class="ec-name">formant drift</span><span class="ec-bar"><i style="--w:100%"></i></span><span class="ec-val">0.34</span></div>
+        <div class="ec-row"><span class="ec-name">missing breath markers</span><span class="ec-bar"><i style="--w:79%"></i></span><span class="ec-val">0.27</span></div>
+        <div class="ec-row"><span class="ec-name">hi-freq roll-off</span><span class="ec-bar"><i style="--w:65%"></i></span><span class="ec-val">0.22</span></div>
+        <div class="ec-row"><span class="ec-name">prosody flatness</span><span class="ec-bar"><i style="--w:32%"></i></span><span class="ec-val">0.11</span></div>
+        <div class="ec-row"><span class="ec-name">phase artifacts</span><span class="ec-bar"><i style="--w:18%"></i></span><span class="ec-val">0.06</span></div>
+        <div class="ec-foot">// weights sum to 1.00&nbsp;·&nbsp;a human decides</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Evaluation ───────────────────────────────────── -->
+  <section id="eval" class="col section">
+    <p class="eyebrow">Evaluation</p>
+    <h2 class="display-2">False positives, <em>reported first</em>.</h2>
+    <p class="body-copy narrow">A detector that cries wolf gets switched off.
+    saq is tuned FPR-first and evaluated on held-out real recordings&nbsp;—
+    reported separately from synthetic test data, always.</p>
+    <table class="eval-table mono">
+      <thead>
+        <tr><th scope="col">split</th><th scope="col">fpr&nbsp;↓</th><th scope="col">recall</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>test</td><td class="hot">0.000</td><td>0.953</td></tr>
+        <tr><td>real_heldout</td><td class="hot">0.000</td><td>1.000</td></tr>
+        <tr><td>ood</td><td class="hot">0.000</td><td>0.889</td></tr>
+      </tbody>
+    </table>
+    <p class="table-note mono">threshold 0.55&nbsp;·&nbsp;calibrated&nbsp;·&nbsp;the eval harness regenerates this table on every run</p>
+  </section>
+
+  <!-- ── Bilingual ────────────────────────────────────── -->
+  <section class="bilingual section">
+    <div class="col">
+      <p class="eyebrow centered">Two languages, one model</p>
+      <p class="bi-line"><span class="bi-tag mono">kk</span><em>«Бұл дауыс шын ба, жасанды ма?»</em></p>
+      <p class="bi-line"><span class="bi-tag mono">ru</span><em>«Верить или проверить?»</em></p>
+      <p class="bi-note">One model for Kazakh, Russian, and everything in between&nbsp;— code-switching included.</p>
+    </div>
+  </section>
+
+  <!-- ── Try / CTA ────────────────────────────────────── -->
+  <section id="try" class="tryp section">
+    <div class="try-panel">
+      <p class="eyebrow inverse">Get started</p>
+      <h2 class="display-2 inverse">Run it where <em>your calls</em> are.</h2>
+      <div class="terminal mono" aria-label="Install and run example">
+        <div><span class="t-prompt">$</span> pip install saq</div>
+        <div><span class="t-prompt">$</span> saq analyze call.wav</div>
+        <div class="t-out">label: "spoof"&nbsp;·&nbsp;p=0.97&nbsp;·&nbsp;verdict in 1.3&nbsp;s<span class="t-cursor"></span></div>
+      </div>
+      <div class="cta-row">
+        <a class="btn btn-paper" href="#top">Try saq</a>
+        <a class="btn btn-ghost" href="#top">Read the API</a>
+      </div>
+      <p class="try-note mono">CPU-only&nbsp;·&nbsp;on-prem&nbsp;·&nbsp;no audio leaves your machine</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="col foot-row mono">
+    <span>saq&nbsp;— anti-spoofing for voice&nbsp;·&nbsp;kk&nbsp;·&nbsp;ru</span>
+    <nav class="foot-links" aria-label="Footer">
+      <a href="#top">github</a>
+      <a href="#top">api</a>
+      <a href="#eval">eval report</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+</body>
+</html>
