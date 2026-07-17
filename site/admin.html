@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qorğan — analyst dashboard</title>
+<meta name="description" content="Qorğan analyst dashboard — clustered scam organizations, priority queue, novelty flags. A human always decides.">
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%230E0C13"/><g fill="%23E29B2E"><rect x="7" y="13" width="2.6" height="6"/><rect x="11.4" y="9" width="2.6" height="14"/><rect x="15.8" y="5" width="2.6" height="22"/><rect x="20.2" y="10" width="2.6" height="12"/><rect x="24.6" y="14" width="2.6" height="4"/></g></svg>'>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<div class="rails" aria-hidden="true"></div>
+
+<header class="nav">
+  <a class="brand" href="index.html" aria-label="Qorğan — home">
+    <svg class="brand-glyph" viewBox="0 0 26 18" aria-hidden="true">
+      <rect x="0"  y="6.5" width="2.4" height="5"/>
+      <rect x="4.7" y="3.5" width="2.4" height="11"/>
+      <rect x="9.4" y="0.5" width="2.4" height="17"/>
+      <rect x="14.1" y="4.5" width="2.4" height="9"/>
+      <rect x="18.8" y="7"  width="2.4" height="4"/>
+    </svg>
+    <span class="brand-word">qorğan.</span>
+  </a>
+  <nav class="nav-links mono" aria-label="Primary">
+    <a href="index.html#how">how it works</a>
+    <a href="admin.html" aria-current="page">admin</a>
+    <a href="live.html">live call</a>
+  </nav>
+  <a class="btn btn-fill btn-nav" href="index.html#try">Try Qorğan</a>
+</header>
+
+<main id="top" class="adm-main">
+
+  <section class="col-wide adm-hero">
+    <p class="eyebrow">Level 2 &middot; analyst view</p>
+    <h1 class="display-2">Scam <em>organizations</em>, ranked.</h1>
+    <p class="body-copy">Confirmed incidents clustered by phone-number co-occurrence and
+    tactic profile into a priority queue for the analyst &mdash; never an automatic
+    verdict. A human always decides.</p>
+    <div class="adm-toolbar mono">
+      <span class="tw-loc">
+        <label class="tw-chip tw-radio"><input type="radio" name="adm-loc" value="ru" checked>ru</label>
+        <label class="tw-chip tw-radio"><input type="radio" name="adm-loc" value="kk">kk</label>
+      </span>
+      <button type="button" id="admRefresh" class="tw-chip">refresh</button>
+      <button type="button" id="admIngest" class="tw-chip">ingest reports</button>
+      <span id="admIngestNote" class="adm-note" role="status"></span>
+    </div>
+  </section>
+
+  <section class="col-wide adm-kpis" id="admKpis" aria-label="Dashboard totals" aria-live="polite"></section>
+
+  <section class="col-wide" id="admNovelWrap" aria-live="polite"></section>
+
+  <section class="col-wide section" id="admStatsSection" hidden>
+    <p class="eyebrow">Results &middot; statistics</p>
+    <div class="st-grid" id="admStats"></div>
+  </section>
+
+  <section class="col-wide section">
+    <p class="eyebrow">Priority queue</p>
+    <div class="adm-queue-tools mono">
+      <input id="admSearch" class="adm-search" type="search"
+        placeholder="search name or number…" aria-label="Search organizations">
+      <span class="tw-loc" role="radiogroup" aria-label="Filter organizations">
+        <label class="tw-chip tw-radio"><input type="radio" name="adm-filter" value="all" checked>all</label>
+        <label class="tw-chip tw-radio"><input type="radio" name="adm-filter" value="novel">new schemes</label>
+      </span>
+      <span id="admQueueCount" class="adm-note" aria-live="polite"></span>
+    </div>
+    <div id="admQueueWrap"></div>
+  </section>
+
+</main>
+
+<div class="adm-modal" id="admModal" hidden>
+  <div class="adm-modal-backdrop" id="admModalBackdrop"></div>
+  <div class="adm-modal-card panel dd-panel" role="dialog" aria-modal="true" aria-labelledby="admModalTitle">
+    <div class="p-head mono">
+      <span class="p-dot" id="admModalDot"></span>
+      <span class="p-title" id="admModalTitle">organization</span>
+      <button type="button" class="adm-modal-close mono" id="admModalClose" aria-label="Close">&#10005;</button>
+    </div>
+    <div class="p-body" id="admDrilldown"></div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="col foot-row mono">
+    <span>Qorğan &mdash; scam-pattern detection &middot; kk &middot; ru</span>
+    <nav class="foot-links" aria-label="Footer">
+      <a href="index.html">home</a>
+      <a href="live.html">live call</a>
+      <a href="index.html#eval">eval report</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="admin.js"></script>
+</body>
+</html>

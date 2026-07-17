@@ -1,4 +1,4 @@
-/* saq analyzer — draws a seeded waveform + mel spectrogram and loops two cases:
+/* Qorğan analyzer — draws a seeded waveform + mel spectrogram and loops two cases:
    a "spoof" verdict and a "bonafide" one. Pure canvas, no assets, no network. */
 (() => {
   "use strict";

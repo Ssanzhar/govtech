@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>saq — know which voice is real</title>
-<meta name="description" content="saq is a bilingual (Kazakh · Russian) detector for AI-cloned and synthetic speech. Open models, honest evaluation, runs on your own hardware.">
+<title>Qorğan — know which voice is real</title>
+<meta name="description" content="Qorğan is a bilingual (Kazakh · Russian) detector for AI-cloned and synthetic speech. Open models, honest evaluation, runs on your own hardware.">
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%230E0C13"/><g fill="%23E29B2E"><rect x="7" y="13" width="2.6" height="6"/><rect x="11.4" y="9" width="2.6" height="14"/><rect x="15.8" y="5" width="2.6" height="22"/><rect x="20.2" y="10" width="2.6" height="12"/><rect x="24.6" y="14" width="2.6" height="4"/></g></svg>'>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,7 +15,7 @@
 <div class="rails" aria-hidden="true"></div>
 
 <header class="nav">
-  <a class="brand" href="#top" aria-label="saq — home">
+  <a class="brand" href="#top" aria-label="Qorğan — home">
     <svg class="brand-glyph" viewBox="0 0 26 18" aria-hidden="true">
       <rect x="0"  y="6.5" width="2.4" height="5"/>
       <rect x="4.7" y="3.5" width="2.4" height="11"/>
@@ -23,14 +23,16 @@
       <rect x="14.1" y="4.5" width="2.4" height="9"/>
       <rect x="18.8" y="7"  width="2.4" height="4"/>
     </svg>
-    <span class="brand-word">saq</span>
+    <span class="brand-word">qorğan.</span>
   </a>
   <nav class="nav-links mono" aria-label="Primary">
     <a href="#how">how it works</a>
     <a href="#evidence">evidence</a>
     <a href="#eval">evaluation</a>
+    <a href="admin.html">admin</a>
+    <a href="live.html">live call</a>
   </nav>
-  <a class="btn btn-fill btn-nav" href="#try">Try saq</a>
+  <a class="btn btn-fill btn-nav" href="#try">Try Qorğan</a>
 </header>
 
 <main id="top">
@@ -39,7 +41,7 @@
   <section class="hero col">
     <p class="eyebrow">Anti-spoofing for voice&nbsp;·&nbsp;KK&nbsp;·&nbsp;RU</p>
     <h1 class="display">Know which<br><em>voice is real</em></h1>
-    <p class="lede">saq is a bilingual detector for AI-cloned and synthetic speech.
+    <p class="lede">Qorğan is a bilingual detector for AI-cloned and synthetic speech.
     It tells genuine human voice apart from machine-made voice in Kazakh and
     Russian&nbsp;— and shows the evidence behind every call.</p>
     <div class="cta-row">
@@ -57,7 +59,7 @@
       <div class="panel" id="panel">
         <div class="p-head mono">
           <span class="p-dot" id="pDot"></span>
-          <span class="p-title">saq&nbsp;·&nbsp;analyzer</span>
+          <span class="p-title">qorğan&nbsp;·&nbsp;analyzer</span>
           <span class="p-right">16&nbsp;kHz</span>
         </div>
         <div class="p-body" id="pBody">
@@ -108,7 +110,7 @@
         <p class="eyebrow">Evidence</p>
         <h2 class="display-2">A verdict you can <em>argue with</em>.</h2>
         <p class="body-copy">Scores that can’t explain themselves get ignored&nbsp;—
-        or worse, trusted blindly. saq returns the evidence with every call:
+        or worse, trusted blindly. Qorğan returns the evidence with every call:
         which features moved the needle and by how much, so a reviewing human
         can agree&nbsp;— or push back.</p>
         <p class="body-copy">The features are physical, not statistical folklore:
@@ -131,7 +133,7 @@
     <p class="eyebrow">Evaluation</p>
     <h2 class="display-2">False positives, <em>reported first</em>.</h2>
     <p class="body-copy narrow">A detector that cries wolf gets switched off.
-    saq is tuned FPR-first and evaluated on held-out real recordings&nbsp;—
+    Qorğan is tuned FPR-first and evaluated on held-out real recordings&nbsp;—
     reported separately from synthetic test data, always.</p>
     <table class="eval-table mono">
       <thead>
@@ -163,7 +165,7 @@
       <h2 class="display-2 inverse">Run it on <em>your calls</em>.</h2>
 
       <div class="try-widget">
-        <div class="tw-head mono"><span class="p-dot"></span><span>saq&nbsp;·&nbsp;api</span><span class="tw-right">POST&nbsp;/api/analyze</span></div>
+        <div class="tw-head mono"><span class="p-dot"></span><span>qorğan&nbsp;·&nbsp;api</span><span class="tw-right">POST&nbsp;/api/analyze</span></div>
         <textarea id="twInput" class="tw-input mono" rows="4" spellcheck="false"
           placeholder="Paste a call transcript (RU / KK) and get a verdict with its evidence…"></textarea>
         <div class="tw-controls">
@@ -191,7 +193,7 @@
 
 <footer class="footer">
   <div class="col foot-row mono">
-    <span>saq&nbsp;— anti-spoofing for voice&nbsp;·&nbsp;kk&nbsp;·&nbsp;ru</span>
+    <span>Qorğan&nbsp;— anti-spoofing for voice&nbsp;·&nbsp;kk&nbsp;·&nbsp;ru</span>
     <nav class="foot-links" aria-label="Footer">
       <a href="#top">github</a>
       <a href="#top">api</a>

@@ -1,4 +1,4 @@
-/* saq — forensic-editorial landing. Two voices: Fraunces (human) · Plex Mono (machine). */
+/* Qorğan — forensic-editorial landing. Two voices: Fraunces (human) · Plex Mono (machine). */
 
 :root{
   --paper:#F2EFE8;
@@ -65,6 +65,18 @@ main{position:relative;z-index:1}
 .nav-links{display:flex;gap:1.9rem;font-size:.8rem;letter-spacing:.04em}
 .nav-links a{text-decoration:none;color:var(--ink-soft);transition:color .15s ease}
 .nav-links a:hover{color:var(--ink)}
+.nav-links a[aria-current="page"]{color:var(--ink)}
+
+/* shared "no data yet" notice — analyst dashboard + live-call page degrade states */
+.data-empty{
+  border:1px dashed var(--hairline);border-radius:10px;
+  padding:1.4rem 1.6rem;color:var(--ink-soft);font-size:.92rem;line-height:1.6;
+}
+.data-empty code{
+  font-family:var(--mono);font-size:.85em;
+  background:color-mix(in srgb,var(--ink) 6%,transparent);
+  padding:.1em .4em;border-radius:4px;
+}
 
 /* ── buttons ── */
 .btn{
