@@ -150,7 +150,7 @@
   <section class="bilingual section">
     <div class="col">
       <p class="eyebrow centered">Two languages, one model</p>
-      <p class="bi-line"><span class="bi-tag mono">kk</span><em>«Бұл дауыс шын ба, жасанды ма?»</em></p>
+      <p class="bi-line"><span class="bi-tag mono">kk</span><em>«Әуелі тексер, сосын сен.»</em></p>
       <p class="bi-line"><span class="bi-tag mono">ru</span><em>«Верить или проверить?»</em></p>
       <p class="bi-note">One model for Kazakh, Russian, and everything in between&nbsp;— code-switching included.</p>
     </div>
@@ -160,17 +160,30 @@
   <section id="try" class="tryp section">
     <div class="try-panel">
       <p class="eyebrow inverse">Get started</p>
-      <h2 class="display-2 inverse">Run it where <em>your calls</em> are.</h2>
-      <div class="terminal mono" aria-label="Install and run example">
-        <div><span class="t-prompt">$</span> pip install saq</div>
-        <div><span class="t-prompt">$</span> saq analyze call.wav</div>
-        <div class="t-out">label: "spoof"&nbsp;·&nbsp;p=0.97&nbsp;·&nbsp;verdict in 1.3&nbsp;s<span class="t-cursor"></span></div>
+      <h2 class="display-2 inverse">Run it on <em>your calls</em>.</h2>
+
+      <div class="try-widget">
+        <div class="tw-head mono"><span class="p-dot"></span><span>saq&nbsp;·&nbsp;api</span><span class="tw-right">POST&nbsp;/api/analyze</span></div>
+        <textarea id="twInput" class="tw-input mono" rows="4" spellcheck="false"
+          placeholder="Paste a call transcript (RU / KK) and get a verdict with its evidence…"></textarea>
+        <div class="tw-controls">
+          <div class="tw-samples mono">
+            <button type="button" class="tw-chip" data-sample="scam">sample: scam&nbsp;·&nbsp;ru</button>
+            <button type="button" class="tw-chip" data-sample="legit">sample: legit bank&nbsp;·&nbsp;ru</button>
+            <span class="tw-loc">
+              <label class="tw-chip tw-radio"><input type="radio" name="loc" value="ru" checked>ru</label>
+              <label class="tw-chip tw-radio"><input type="radio" name="loc" value="kk">kk</label>
+            </span>
+          </div>
+          <button type="button" id="twGo" class="btn btn-paper">Analyze</button>
+        </div>
+        <div id="twResult" class="tw-result mono" hidden></div>
       </div>
+
       <div class="cta-row">
-        <a class="btn btn-paper" href="#top">Try saq</a>
-        <a class="btn btn-ghost" href="#top">Read the API</a>
+        <a class="btn btn-ghost" href="/docs">Read the API</a>
       </div>
-      <p class="try-note mono">CPU-only&nbsp;·&nbsp;on-prem&nbsp;·&nbsp;no audio leaves your machine</p>
+      <p class="try-note mono">CPU-only&nbsp;·&nbsp;on-prem&nbsp;·&nbsp;nothing leaves your machine&nbsp;·&nbsp;a human always decides</p>
     </div>
   </section>
 
@@ -188,5 +201,6 @@
 </footer>
 
 <script src="main.js"></script>
+<script src="try.js"></script>
 </body>
 </html>
