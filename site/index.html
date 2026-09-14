@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Qorğan — know which voice is real</title>
-<meta name="description" content="Qorğan is a bilingual (Kazakh · Russian) detector for AI-cloned and synthetic speech. Open models, honest evaluation, runs on your own hardware.">
+<title>Qorğan — know what the caller is doing</title>
+<meta name="description" content="Qorğan spots social-engineering patterns in Kazakh and Russian phone conversations — on your device, with the phrases that triggered the verdict. Open models, honest evaluation, a human always decides.">
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%230E0C13"/><g fill="%23E29B2E"><rect x="7" y="13" width="2.6" height="6"/><rect x="11.4" y="9" width="2.6" height="14"/><rect x="15.8" y="5" width="2.6" height="22"/><rect x="20.2" y="10" width="2.6" height="12"/><rect x="24.6" y="14" width="2.6" height="4"/></g></svg>'>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,16 +41,17 @@
 
   <!-- ── Hero ─────────────────────────────────────────── -->
   <section class="hero col">
-    <p class="eyebrow">Anti-spoofing for voice&nbsp;·&nbsp;KK&nbsp;·&nbsp;RU</p>
-    <h1 class="display">Know which<br><em>voice is real</em></h1>
-    <p class="lede">Qorğan is a bilingual detector for AI-cloned and synthetic speech.
-    It tells genuine human voice apart from machine-made voice in Kazakh and
-    Russian&nbsp;— and shows the evidence behind every call.</p>
+    <p class="eyebrow">Scam-pattern detection for calls&nbsp;·&nbsp;KK&nbsp;·&nbsp;RU</p>
+    <h1 class="display">Know what the<br><em>caller is doing</em></h1>
+    <p class="lede">Qorğan reads a phone conversation as it happens and flags the tactics
+    scammers use&nbsp;— the one-time-code request, the "safe account", the "tell no one"&nbsp;—
+    in Kazakh and Russian. The analysis runs in your browser and shows the exact phrases
+    behind every verdict.</p>
     <div class="cta-row">
-      <a class="btn btn-fill" href="#try">Try the detector</a>
+      <a class="btn btn-fill" href="#try">Try it on a transcript</a>
       <a class="btn btn-line" href="#evidence">Read the evidence</a>
     </div>
-    <p class="tagline mono">open models&nbsp;·&nbsp;honest evaluation&nbsp;·&nbsp;runs on your own hardware</p>
+    <p class="tagline mono">open models&nbsp;·&nbsp;intervals, not point estimates&nbsp;·&nbsp;runs on your device</p>
   </section>
 
   <!-- ── Live analyzer (signature) ─────────────────────── -->
@@ -61,8 +62,8 @@
       <div class="panel" id="panel">
         <div class="p-head mono">
           <span class="p-dot" id="pDot"></span>
-          <span class="p-title">qorğan&nbsp;·&nbsp;analyzer</span>
-          <span class="p-right">16&nbsp;kHz</span>
+          <span class="p-title">qorğan&nbsp;·&nbsp;live call</span>
+          <span class="p-right">on-device</span>
         </div>
         <div class="p-body" id="pBody">
           <canvas id="waveCv" class="cv-wave"></canvas>
@@ -70,37 +71,39 @@
           <canvas id="specCv" class="cv-spec"></canvas>
           <div class="playhead" id="playhead"></div>
         </div>
-        <div class="p-axis mono"><span>0</span><span>2k</span><span>4k</span><span>8k</span></div>
+        <div class="p-axis mono"><span>turn 1</span><span>2</span><span>3</span><span>4+</span></div>
       </div>
 
       <div class="a-side a-verdict mono" id="aVerdict" aria-live="polite"></div>
 
-      <figcaption class="a-caption mono">fig.&nbsp;1&nbsp;— rolling clip&nbsp;·&nbsp;mel spectrogram&nbsp;·&nbsp;verdict in&nbsp;&lt;&nbsp;1.5&nbsp;s</figcaption>
+      <figcaption class="a-caption mono">fig.&nbsp;1&nbsp;— illustrative call-activity view&nbsp;·&nbsp;the detector reads the transcript, never the audio&nbsp;·&nbsp;verdict per turn in&nbsp;&lt;&nbsp;1&nbsp;s</figcaption>
     </figure>
   </section>
 
   <!-- ── How it works ─────────────────────────────────── -->
   <section id="how" class="col section">
     <p class="eyebrow">How it works</p>
-    <h2 class="display-2">Signal in, <em>verdict</em> out.</h2>
+    <h2 class="display-2">Words in, <em>verdict</em> out.</h2>
     <div class="steps">
       <div class="step">
         <span class="step-num mono">01</span>
-        <h3>Listen</h3>
-        <p>Feed it a call, a clip, a stream. 16&nbsp;kHz mono is enough&nbsp;—
-        no transcript, no cloud round-trip.</p>
+        <h3>Read</h3>
+        <p>Paste a transcript or replay a call turn by turn. Everything stays in your
+        browser&nbsp;— no upload, no cloud round-trip. On-device speech recognition is next.</p>
       </div>
       <div class="step">
         <span class="step-num mono">02</span>
         <h3>Measure</h3>
-        <p>Formant drift, breath and pause markers, high-frequency energy,
-        prosody flatness&nbsp;— the traces synthesis leaves in a signal.</p>
+        <p>A multilingual sentence embedding (e5, int8, on device) plus six interpretable
+        signals: one-time-code request, "safe account", remote access, secrecy, card
+        credentials&nbsp;— and the reassurance real banks give ("we never ask for your code").</p>
       </div>
       <div class="step">
         <span class="step-num mono">03</span>
         <h3>Decide</h3>
-        <p>A calibrated probability against an explicit threshold. Every verdict
-        ships with the measurements that produced it.</p>
+        <p>A calibrated probability against an explicit threshold (0.59), a 0–100 meter
+        with hysteresis during a live call, and the verbatim phrases that produced it.
+        A human always decides.</p>
       </div>
     </div>
   </section>
@@ -113,19 +116,19 @@
         <h2 class="display-2">A verdict you can <em>argue with</em>.</h2>
         <p class="body-copy">Scores that can’t explain themselves get ignored&nbsp;—
         or worse, trusted blindly. Qorğan returns the evidence with every call:
-        which features moved the needle and by how much, so a reviewing human
-        can agree&nbsp;— or push back.</p>
-        <p class="body-copy">The features are physical, not statistical folklore:
-        things a phonetician could point to on the spectrogram.</p>
+        which tactics were detected and the exact phrases behind them, so a
+        reviewing human can agree&nbsp;— or push back.</p>
+        <p class="body-copy">Every highlighted phrase is a verbatim span of the transcript,
+        tied to a named tactic. Nothing is paraphrased by a language model.</p>
       </div>
-      <div class="evidence-card mono" role="img" aria-label="Example evidence readout: five weighted features behind a spoof verdict">
-        <div class="ec-head"><span>evidence&nbsp;·&nbsp;clip_0142.wav</span><span class="ec-tag">"spoof"&nbsp;@&nbsp;0.97</span></div>
-        <div class="ec-row"><span class="ec-name">formant drift</span><span class="ec-bar"><i style="--w:100%"></i></span><span class="ec-val">0.34</span></div>
-        <div class="ec-row"><span class="ec-name">missing breath markers</span><span class="ec-bar"><i style="--w:79%"></i></span><span class="ec-val">0.27</span></div>
-        <div class="ec-row"><span class="ec-name">hi-freq roll-off</span><span class="ec-bar"><i style="--w:65%"></i></span><span class="ec-val">0.22</span></div>
-        <div class="ec-row"><span class="ec-name">prosody flatness</span><span class="ec-bar"><i style="--w:32%"></i></span><span class="ec-val">0.11</span></div>
-        <div class="ec-row"><span class="ec-name">phase artifacts</span><span class="ec-bar"><i style="--w:18%"></i></span><span class="ec-val">0.06</span></div>
-        <div class="ec-foot">// weights sum to 1.00&nbsp;·&nbsp;a human decides</div>
+      <div class="evidence-card mono" role="img" aria-label="Example evidence readout: the tactics and phrases behind a scam verdict">
+        <div class="ec-head"><span>evidence&nbsp;·&nbsp;live_scam_bank_ru</span><span class="ec-tag">"scam_risk"&nbsp;@&nbsp;0.93</span></div>
+        <div class="ec-row"><span class="ec-name">otp_request&nbsp;«Продиктуйте код из SMS»</span><span class="ec-bar"><i style="--w:100%"></i></span><span class="ec-val">1.00</span></div>
+        <div class="ec-row"><span class="ec-name">secrecy&nbsp;«Никому не говорите»</span><span class="ec-bar"><i style="--w:100%"></i></span><span class="ec-val">1.00</span></div>
+        <div class="ec-row"><span class="ec-name">safe_account&nbsp;«на безопасный счёт»</span><span class="ec-bar"><i style="--w:100%"></i></span><span class="ec-val">1.00</span></div>
+        <div class="ec-row"><span class="ec-name">urgency&nbsp;«только пять минут»</span><span class="ec-bar"><i style="--w:72%"></i></span><span class="ec-val">0.72</span></div>
+        <div class="ec-row"><span class="ec-name">impersonation_bank</span><span class="ec-bar"><i style="--w:64%"></i></span><span class="ec-val">0.64</span></div>
+        <div class="ec-foot">// tactic weights from the model, phrases verbatim&nbsp;·&nbsp;a human decides</div>
       </div>
     </div>
   </section>
@@ -135,19 +138,20 @@
     <p class="eyebrow">Evaluation</p>
     <h2 class="display-2">False positives, <em>reported first</em>.</h2>
     <p class="body-copy narrow">A detector that cries wolf gets switched off.
-    Qorğan is tuned FPR-first and evaluated on held-out real recordings&nbsp;—
-    reported separately from synthetic test data, always.</p>
+    Qorğan is tuned FPR-first, and every number carries its 95&nbsp;% interval&nbsp;—
+    a <em>0.000</em> on a small set is not a zero. The held-out set below is
+    hand-written by the team, not real calls; a locked real-call set is the next step.</p>
     <table class="eval-table mono">
       <thead>
-        <tr><th scope="col">split</th><th scope="col">fpr&nbsp;↓</th><th scope="col">recall</th></tr>
+        <tr><th scope="col">split</th><th scope="col">fpr&nbsp;↓&nbsp;[95%&nbsp;ci]</th><th scope="col">recall&nbsp;[95%&nbsp;ci]</th></tr>
       </thead>
       <tbody>
-        <tr><td>test</td><td class="hot">0.000</td><td>0.953</td></tr>
-        <tr><td>authored_heldout</td><td class="hot">0.000</td><td>1.000</td></tr>
-        <tr><td>ood</td><td class="hot">0.000</td><td>0.889</td></tr>
+        <tr><td>test (synthetic, n=116)</td><td class="hot">0.000&nbsp;[0, 0.068]</td><td>0.938&nbsp;[0.848, 0.983]</td></tr>
+        <tr><td>authored_heldout (hand-written, n=42)</td><td class="hot">0.000&nbsp;[0, 0.142]</td><td>1.000&nbsp;[0.815, 1.000]</td></tr>
+        <tr><td>ood (asr-stress, n=120)</td><td class="hot">0.000&nbsp;[0, 0.048]</td><td>0.844&nbsp;[0.705, 0.935]</td></tr>
       </tbody>
     </table>
-    <p class="table-note mono">threshold 0.55&nbsp;·&nbsp;calibrated&nbsp;·&nbsp;the eval harness regenerates this table on every run</p>
+    <p class="table-note mono">threshold 0.59&nbsp;·&nbsp;calibrated&nbsp;·&nbsp;exact clopper–pearson intervals&nbsp;·&nbsp;regenerated by <code>python -m qorgan.eval.run</code></p>
   </section>
 
   <!-- ── Bilingual ────────────────────────────────────── -->
@@ -164,7 +168,7 @@
   <section id="try" class="tryp section">
     <div class="try-panel">
       <p class="eyebrow inverse">Get started</p>
-      <h2 class="display-2 inverse">Run it on <em>your calls</em>.</h2>
+      <h2 class="display-2 inverse">Run it on <em>a transcript</em>.</h2>
 
       <div class="try-widget">
         <div class="tw-head mono"><span class="p-dot"></span><span>qorğan&nbsp;·&nbsp;api</span><span class="tw-right">POST&nbsp;/api/analyze</span></div>
@@ -188,7 +192,7 @@
       <div class="cta-row">
         <a class="btn btn-ghost" href="/docs">Read the API</a>
       </div>
-      <p class="try-note mono">CPU-only&nbsp;·&nbsp;on-prem&nbsp;·&nbsp;nothing leaves your machine&nbsp;·&nbsp;a human always decides</p>
+      <p class="try-note mono">runs in this browser (278&nbsp;MB model, cached)&nbsp;·&nbsp;server scoring only if you tick it&nbsp;·&nbsp;a human always decides</p>
     </div>
   </section>
 
@@ -196,11 +200,11 @@
 
 <footer class="footer">
   <div class="col foot-row mono">
-    <span>Qorğan&nbsp;— anti-spoofing for voice&nbsp;·&nbsp;kk&nbsp;·&nbsp;ru</span>
+    <span>Qorğan&nbsp;— scam-pattern detection for calls&nbsp;·&nbsp;kk&nbsp;·&nbsp;ru</span>
     <nav class="foot-links" aria-label="Footer">
-      <a href="#top">github</a>
-      <a href="#top">api</a>
-      <a href="#eval">eval report</a>
+      <a href="https://github.com/Ssanzhar/govtech">github</a>
+      <a href="/docs">api</a>
+      <a href="live.html">live call</a>
     </nav>
   </div>
 </footer>

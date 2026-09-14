@@ -62,7 +62,7 @@ accept numbered reports), `QORGAN_REPORT_RETENTION_DAYS=180`.
 - **B8 static quantisation:** int8 graphs drift ~0.6 % cosine across ONNX Runtime versions; decision-level parity holds (0 flips / 28) — bit-level parity needs calibrated static quantisation.
 - **A6 meter:** false-latch 2/24 and alert-hit 16/18 on authored — gate any min-turns/damping change on both.
 - **Streamlit `app/`:** still runs (local embedder, Streamlit-side mic uses in-process Vosk) but is no longer the served product; retire per D4 once the PWA covers the three demo scenes.
-- `models/xlmr/` (1 GB), `models/linear_e5small/`, `models/linear_fp32/` are local experiment leftovers (gitignored) — delete when done comparing.
+- `models/linear_fp32/` (the fp32-trained heads) and `models/linear_embed_only/` are the local rollback bundles (gitignored); `models/xlmr/` and the e5-small experiment were deleted on 2026-09-14.
 
 ---
 
