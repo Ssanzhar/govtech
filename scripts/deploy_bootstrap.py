@@ -10,6 +10,9 @@ already exists, so re-running (container restart, local dev) is a fast no-op.
    hash-validation (drift), retrain from the corpus — seconds on CPU.
 4. Level-2 seeds  ← `demo_seed` + `analytics.pipeline`, deterministic (seed 42). The
    fabricated demo phone numbers live only in the running instance, never in git.
+5. On-device model ← `Xenova/multilingual-e5-base` int8 ONNX (+ tokenizer) self-hosted
+   under site/models/ so the browser never contacts huggingface.co; plus the exported head
+   weights (`site/models/weights.json`) from the trained bundle.
 """
 
 from __future__ import annotations
@@ -123,12 +126,40 @@ def ensure_l2_seeds() -> None:
     _log("L2 seeds: organizations ready")
 
 
+WEB_EMBED_REPO = "Xenova/multilingual-e5-base"
+WEB_EMBED_FILES = ("config.json", "tokenizer.json", "tokenizer_config.json", "onnx/model_quantized.onnx")
+SITE_MODELS = REPO_ROOT / "site" / "models"
+
+
+def ensure_web_model() -> None:
+    """Self-host the int8 e5-base ONNX + tokenizer for the PWA (PLAN_2026-09 B3), and copy
+    the exported head weights next to it."""
+    from huggingface_hub import hf_hub_download
+
+    target = SITE_MODELS / WEB_EMBED_REPO
+    for name in WEB_EMBED_FILES:
+        destination = target / name
+        if destination.exists():
+            continue
+        _log(f"web model: downloading {WEB_EMBED_REPO}/{name}")
+        source = Path(hf_hub_download(WEB_EMBED_REPO, name))
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(source.read_bytes())
+    weights = MODEL_DIR / "web" / "weights.json"
+    if weights.exists():
+        (SITE_MODELS / "weights.json").write_bytes(weights.read_bytes())
+        _log("web model: head weights in place")
+    else:
+        _log("web model: no exported head weights (run python -m qorgan.classifier.web_bundle)")
+
+
 def main() -> None:
     os.environ.setdefault("QORGAN_CLASSIFIER_BACKEND", "linear")
     ensure_corpus()
     ensure_dialogue_pool()
     ensure_model()
     ensure_l2_seeds()
+    ensure_web_model()
     _log("done — serve with: uvicorn qorgan.api:app --host 0.0.0.0 --port $PORT")
 
 

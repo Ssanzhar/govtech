@@ -10,6 +10,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0E0C13">
 </head>
 <body>
 <div class="rails" aria-hidden="true"></div>
@@ -172,6 +174,7 @@
           <div class="tw-samples mono">
             <button type="button" class="tw-chip" data-sample="scam">sample: scam&nbsp;·&nbsp;ru</button>
             <button type="button" class="tw-chip" data-sample="legit">sample: legit bank&nbsp;·&nbsp;ru</button>
+            <label class="tw-chip tw-radio" title="Off = analysed in your browser; on = one stateless request to this server"><input type="checkbox" id="twServer">score on server</label>
             <span class="tw-loc">
               <label class="tw-chip tw-radio"><input type="radio" name="loc" value="ru" checked>ru</label>
               <label class="tw-chip tw-radio"><input type="radio" name="loc" value="kk">kk</label>
@@ -204,5 +207,6 @@
 
 <script src="main.js"></script>
 <script src="try.js"></script>
+<script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});</script>
 </body>
 </html>

@@ -27,21 +27,27 @@ mobile / on-device vision lives in [`DOCUMENTATION.md`](DOCUMENTATION.md) and th
 # 1. Environment (Python 3.11+)
 python -m venv .venv && source .venv/bin/activate
 pip install -e .                 # src-layout: puts `qorgan` on the path
-cp .env.example .env             # optional: GEMINI_API_KEY only for data-gen / llm backend
+cp .env.example .env             # set QORGAN_NUMBER_HMAC_KEY (see the file); GEMINI_API_KEY only for data-gen
 
-# 2. Get the trained model (pick ONE)
-#    a) pull from Hugging Face (recommended):
-python -c "from huggingface_hub import snapshot_download; snapshot_download('sanzh-ts/govtech', local_dir='models/linear_hf')"
-export QORGAN_LINEAR_MODEL_DIR=models/linear_hf     # lexicons are already committed in data/lexicon/
-#    b) or retrain from the committed corpus (seconds, CPU):
+# 2. Models + demo data in one go (idempotent; ~300 MB download on first run):
+#    corpus splits + trained head weights from Hugging Face, the int8 ONNX embedder the
+#    browser ships (self-hosted under site/models/), and the Level-2 demo seeds.
+python scripts/deploy_bootstrap.py
+#    ...or retrain the heads from the committed corpus (seconds, CPU):
 python -m qorgan.data.build_corpus && python -m qorgan.classifier.linear_train
 
-# 3. Seed the Level-2 demo data (~500 synthetic incidents -> organizations + embedding cache)
-python scripts/demo_seed.py && python -m qorgan.analytics.pipeline
-
-# 4. Run
+# 3. Run the site (landing + live call + analyst dashboard) -- analysis runs ON THE DEVICE
+python -m qorgan.api             # http://localhost:8000
+#    or the Streamlit prototype:
 streamlit run app/streamlit_app.py
 ```
+
+**On-device by design.** The pages under `site/` load the same `multilingual-e5-base`
+int8 ONNX graph and the exported head weights (`site/models/`) and score transcripts in
+the browser (`site/core/`, a 1:1 port of the Python classifier — `npm test` proves parity
+on golden fixtures). The server embeds with the *same* int8 graph
+(`QORGAN_EMBED_BACKEND=onnx`), so a verdict is identical wherever it is computed. No
+route accepts audio; call content leaves the device only on an explicit report.
 
 **No model, no key?** The app still runs — it degrades to a deterministic `mock` backend
 so the demo scripts work out of the box.

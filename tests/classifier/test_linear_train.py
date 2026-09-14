@@ -2,6 +2,8 @@
 
 import json
 
+import pytest
+
 from qorgan.classifier.embed import embed_texts
 from qorgan.classifier.linear_train import (
     LinearBundle,
@@ -121,3 +123,31 @@ def test_hybrid_load_raises_on_lexicon_drift(tmp_path, fake_embedder, monkeypatc
 
     with pytest.raises(LinearFeatureMismatchError):
         load_linear(out)
+
+
+# --- embed backend is part of the bundle contract (PLAN_2026-09 A4) --------------------------
+
+
+def test_export_records_the_embed_backend_and_load_refuses_a_mismatch(tmp_path, fake_embedder, monkeypatch):
+    from qorgan.classifier.linear_train import LinearFeatureMismatchError
+
+    out = tmp_path / "linear"
+    monkeypatch.setenv("QORGAN_EMBED_BACKEND", "onnx")
+    meta = train_and_export(_corpus(), label_space=_LABEL_SPACE, out_dir=out, embedder=fake_embedder)
+    assert meta["embed_backend"] == "onnx"
+    assert load_linear(out).embed_backend == "onnx"
+
+    monkeypatch.setenv("QORGAN_EMBED_BACKEND", "sentence-transformers")
+    with pytest.raises(LinearFeatureMismatchError):
+        load_linear(out)
+
+
+def test_legacy_bundle_without_embed_backend_loads_as_sentence_transformers(tmp_path, fake_embedder, monkeypatch):
+    monkeypatch.setenv("QORGAN_EMBED_BACKEND", "sentence-transformers")
+    out = tmp_path / "linear"
+    train_and_export(_corpus(), label_space=_LABEL_SPACE, out_dir=out, embedder=fake_embedder)
+    meta_path = out / "metadata.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta.pop("embed_backend")
+    meta_path.write_text(json.dumps(meta), encoding="utf-8")
+    assert load_linear(out).embed_backend == "sentence-transformers"

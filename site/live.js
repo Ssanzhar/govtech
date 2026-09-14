@@ -1,4 +1,4 @@
-/* Qorğan live call — replay (POST /api/live/session + /utterance + /end) and
+/* Qorğan live call — replay runs ON THIS DEVICE (site/core, no server round-trip); only an
    microphone (on-device, pending) drive the same meter UI; both end in a
    post-call summary with the consent-gated report button (POST .../report). */
 (() => {
@@ -89,6 +89,39 @@
   };
 
   // One committed utterance → meter, band, tags, advice, transcript line.
+  // Adapt the on-device core's update to the fields this page renders.
+  const toUpdate = (update, state) => ({
+    turn: update.meter.turn_index,
+    meter: update.meter.score,
+    band: update.band,
+    latched: update.meter.latched,
+    risk: update.result.risk,
+    advice: update.recommendation.advices,
+    note: update.recommendation.note,
+    new_evidence: update.new_evidence,
+    tactics: state.tags,
+  });
+
+  let runtimePromise = null;
+  const deviceRuntime = () => {
+    if (!runtimePromise) {
+      runtimePromise = import("./core/device.js").then(async ({ createDeviceRuntime }) => {
+        const runtime = await createDeviceRuntime({
+          onProgress: (p) => {
+            if (p.type === "progress" && p.status === "progress" && p.file?.endsWith(".onnx")) {
+              setNote(setupNote, `downloading the on-device model… ${Math.round(p.progress || 0)}% (278 MB, cached after the first time)`);
+            }
+          },
+        });
+        setNote(setupNote, "preparing the on-device model…");
+        await runtime.warmup();
+        setNote(setupNote, "on-device model ready — nothing leaves this browser");
+        return runtime;
+      });
+    }
+    return runtimePromise;
+  };
+
   const applyUpdate = (update, lineText) => {
     turnEl.textContent = String(update.turn);
     scoreEl.textContent = `${update.meter.toFixed(0)} / 100`;
@@ -143,16 +176,19 @@
     const btn = document.getElementById("lvReportSend");
     const note = document.getElementById("lvReportNote");
     const phone = document.getElementById("lvReportPhone").value.trim();
-    if (!lastSessionId) return;
+    if (!lastState) return;
     btn.disabled = true;
     try {
-      const res = await fetch(`/api/live/session/${encodeURIComponent(lastSessionId)}/report`, {
+      const runtime = await deviceRuntime();
+      const draft = runtime.buildReport(lastState, { phoneNumber: phone || null });
+      const res = await fetch("/api/reports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone_number: phone || null }),
+        body: JSON.stringify({ ...draft, consent: true }),
       });
-      if (res.status === 404) throw new Error("this call was already reported");
-      if (res.status === 422) throw new Error("nothing to report — no utterances were scored");
+      if (res.status === 422) throw new Error((await res.json()).detail || "the report was rejected");
+      if (res.status === 503) throw new Error("this server is not configured to accept caller numbers");
+      if (res.status === 429) throw new Error("too many reports from this device — try again in a minute");
       if (!res.ok) throw new Error(`API returned ${res.status}`);
       const body = await res.json();
       note.className = "lv-report-note is-success";
@@ -191,6 +227,7 @@
     adviceEl.hidden = true;
     showPartial("");
     lastSessionId = null;
+    lastState = null;
     turnEl.textContent = "0";
     scoreEl.textContent = "0 / 100";
     meterFill.style.width = "0%";
@@ -202,8 +239,8 @@
 
   const loadScenarios = async () => {
     try {
-      const res = await fetch("/api/live/scenarios");
-      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      const res = await fetch("core/scenarios.json");
+      if (!res.ok) throw new Error(`scenarios returned ${res.status}`);
       const body = await res.json();
       scenarios = body.scenarios || [];
       scenarioSel.innerHTML =
@@ -241,32 +278,20 @@
     resetCallUi();
 
     try {
-      const createRes = await fetch("/api/live/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locale: locale(), backend: null }),
-      });
-      if (!createRes.ok) throw new Error(`session create returned ${createRes.status}`);
-      const { session_id: sessionId } = await createRes.json();
-
+      const runtime = await deviceRuntime();
+      let state = runtime.newSession(locale());
       for (const line of lines) {
         await sleep(TURN_DELAY_MS);
-        const res = await fetch(`/api/live/session/${sessionId}/utterance`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: line }),
-        });
-        if (!res.ok) throw new Error(`utterance returned ${res.status}`);
-        applyUpdate(await res.json(), line);
+        const out = await runtime.advance(state, line, 1);
+        state = out.state;
+        applyUpdate(toUpdate(out.update, state), line);
       }
-
-      const endRes = await fetch(`/api/live/session/${sessionId}/end`, { method: "POST" });
-      if (!endRes.ok) throw new Error(`end returned ${endRes.status}`);
-      renderSummary(await endRes.json(), sessionId);
+      lastState = state;
+      renderSummary(runtime.summarize(state), null);
     } catch (e) {
       setNote(
         setupNote,
-        `Live analysis offline — ${e.message || e}. Serve the page through the API: python -m qorgan.api`,
+        `On-device analysis failed — ${e.message || e}. The model files under /models/ may still be downloading.`,
         true
       );
     } finally {
@@ -291,17 +316,10 @@
   };
 
   const checkMicCapability = async () => {
-    try {
-      const res = await fetch("/api/live/capabilities");
-      const body = await res.json();
-      if (!body.microphone) {
-        disableMicChip(body.reason || "microphone mode is not available");
-        setNote(micNote, body.reason || "");
-        return;
-      }
-    } catch {
-      disableMicChip("could not reach /api/live/capabilities");
-    }
+    // No server probe: microphone mode arrives as on-device speech recognition (PLAN B7).
+    const reason = "microphone mode is coming as an on-device feature — this server never accepts audio";
+    disableMicChip(reason);
+    setNote(micNote, reason);
   };
 
   // Microphone capture returns as an on-device feature (no audio leaves the browser);

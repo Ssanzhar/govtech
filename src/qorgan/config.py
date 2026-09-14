@@ -32,16 +32,21 @@ _DEFAULT_VOSK_MODEL_KK = "vosk-model-small-kz-0.42"
 _DEFAULT_VOSK_MODEL_RU = "vosk-model-small-ru-0.22"
 _DEFAULT_ASR_SAMPLE_RATE = 16000
 _DEFAULT_EMBED_MODEL_NAME = "intfloat/multilingual-e5-base"
-# Shipped default for the hybrid model, post the 2026-07-15 KK-negatives-augmentation +
-# reassurance-lexicon retrain: at 0.55, authored_heldout (42 anchors) is FPR 0.000 / recall
-# 1.000 (`eval/threshold.py`'s own max-recall-s.t.-FPR<=0.05 tuner now recommends 0.620,
-# fpr=0.000/recall=1.000 on the same set -- 0.55 is kept as the shipped default since it
-# already clears the FPR bar with equal recall). See docs/eval_report.md.
-_DEFAULT_RISK_THRESHOLD = 0.55
+# "sentence-transformers" (fp32 PyTorch) or "onnx" (the int8 graph the browser ships;
+# PLAN_2026-09 A4 -- server and device then embed identically).
+_DEFAULT_EMBED_BACKEND = "onnx"
+_EMBED_BACKENDS = ("sentence-transformers", "onnx")
+_DEFAULT_EMBED_ONNX_SUBDIR = Path("site") / "models" / "Xenova" / "multilingual-e5-base"
+# Shipped default (2026-09-14, PLAN_2026-09 A4/A5): heads trained on the int8 ONNX
+# embeddings the browser ships (server + device embed identically). At 0.59 every FPR
+# gate is 0 (test / authored_heldout / ood) with test recall 0.953 and authored recall
+# 1.000; the one ood negative that crossed 0.55 sat at 0.551. ood recall is 0.844 (was
+# 0.889 with fp32-trained heads) -- reported, not hidden. See docs/eval_report.md.
+_DEFAULT_RISK_THRESHOLD = 0.59
 # Consented reports are kept this long before the purge removes them (PLAN_2026-09 C3).
 _DEFAULT_REPORT_RETENTION_DAYS = 180
-_DEFAULT_RISK_THRESHOLD_ENTER = 0.55
-_DEFAULT_RISK_THRESHOLD_EXIT = 0.45
+_DEFAULT_RISK_THRESHOLD_ENTER = 0.59
+_DEFAULT_RISK_THRESHOLD_EXIT = 0.49
 # Live suspicion-meter smoothing (design spec §08): the displayed 0-100 score follows an
 # asymmetric EMA -- it rises fast (two consistent turns reach the target band) and decays
 # slowly (a scammer changing topic doesn't reset accumulated evidence). Launch defaults,
@@ -103,6 +108,8 @@ class Config(BaseModel):
     # --- Embeddings + linear classifier backend ("linear") ---
     linear_model_dir: Path
     embed_model_name: str
+    embed_backend: str
+    embed_onnx_dir: Path
 
     # --- Risk thresholds / hysteresis (gap G8) ---
     risk_threshold: float = Field(ge=0.0, le=1.0)
@@ -131,6 +138,12 @@ class Config(BaseModel):
     def split_test_fraction(self) -> float:
         """The held-out test fraction: whatever is left after train + val."""
         return 1.0 - self.split_train_fraction - self.split_val_fraction
+
+    @model_validator(mode="after")
+    def _embed_backend_known(self) -> "Config":
+        if self.embed_backend not in _EMBED_BACKENDS:
+            raise ValueError(f"embed_backend must be one of {_EMBED_BACKENDS}, got {self.embed_backend!r}")
+        return self
 
     @model_validator(mode="after")
     def _hysteresis_exit_not_above_enter(self) -> "Config":
@@ -278,6 +291,8 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
                 source, "QORGAN_LINEAR_MODEL_DIR", _read_path(source, "QORGAN_MODEL_DIR", _REPO_ROOT / "models") / "linear"
             ),
             embed_model_name=_read_str(source, "QORGAN_EMBED_MODEL_NAME", _DEFAULT_EMBED_MODEL_NAME),
+            embed_backend=_read_str(source, "QORGAN_EMBED_BACKEND", _DEFAULT_EMBED_BACKEND),
+            embed_onnx_dir=_read_path(source, "QORGAN_EMBED_ONNX_DIR", _REPO_ROOT / _DEFAULT_EMBED_ONNX_SUBDIR),
             risk_threshold=_read_float(source, "QORGAN_RISK_THRESHOLD", _DEFAULT_RISK_THRESHOLD),
             risk_threshold_enter=_read_float(
                 source, "QORGAN_RISK_THRESHOLD_ENTER", _DEFAULT_RISK_THRESHOLD_ENTER

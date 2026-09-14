@@ -71,6 +71,10 @@ class LinearBundle:
     feature_version: str = _FEATURE_VERSION
     cue_lexicon_hash: str = ""
     reassurance_hash: str = ""
+    # Which embedder produced the training vectors ("sentence-transformers" fp32 or the int8
+    # "onnx" graph the browser ships). Loading under a different backend is refused: the
+    # heads are only valid on the embedding distribution they were fitted on (A4).
+    embed_backend: str = "sentence-transformers"
 
 
 def _targets(dialogues: Sequence[Dialogue], label_space: Sequence[str]) -> tuple[np.ndarray, np.ndarray]:
@@ -115,13 +119,16 @@ def train_linear(
         raise ValueError("train_dialogues must not be empty")
     texts = [d.transcript() for d in train_dialogues]
     y_risk, tactic_matrix = _targets(train_dialogues, label_space)
-    embed_model = model_name or get_config().embed_model_name
+    cfg = get_config()
+    embed_model = model_name or cfg.embed_model_name
 
     if not hard_signal:
         features = embed.embed_texts(texts, embedder=embedder, model_name=model_name)
         risk_clf = _fit_risk_head(features, y_risk)
         tactic_clf = MultiLabelHead(label_space).fit(features, tactic_matrix)
-        return LinearBundle(risk_clf, tactic_clf, tuple(label_space), embed_model, tactic_threshold)
+        return LinearBundle(
+            risk_clf, tactic_clf, tuple(label_space), embed_model, tactic_threshold, embed_backend=cfg.embed_backend
+        )
 
     from qorgan.classifier import features as feat
     from qorgan.classifier.cue_lexicon import load_cue_lexicon, lexicon_hash
@@ -146,6 +153,7 @@ def train_linear(
         reassurance_patterns=patterns,
         cue_lexicon_hash=lexicon_hash(lex),
         reassurance_hash=_reassurance_hash(patterns),
+        embed_backend=cfg.embed_backend,
     )
 
 
@@ -162,8 +170,19 @@ def export_linear(bundle: LinearBundle, out_dir: Path) -> dict:
         "feature_version": bundle.feature_version,
         "cue_lexicon_hash": bundle.cue_lexicon_hash,
         "reassurance_hash": bundle.reassurance_hash,
+        "embed_backend": bundle.embed_backend,
     }
     (out_dir / _METADATA_FILE).write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+    # On-device export (PLAN_2026-09 B1): the same heads as plain JSON, next to the joblibs.
+    from qorgan.classifier.web_bundle import WEB_BUNDLE_FILENAME, write_web_bundle
+    from qorgan.config import get_config
+
+    cfg = get_config()
+    write_web_bundle(
+        bundle,
+        out_dir / "web" / WEB_BUNDLE_FILENAME,
+        thresholds={"risk": cfg.risk_threshold, "enter": cfg.risk_threshold_enter, "exit": cfg.risk_threshold_exit},
+    )
     return metadata
 
 
@@ -182,6 +201,14 @@ def load_linear(model_dir: Path) -> LinearBundle:
             "`python -m qorgan.classifier.linear_train`."
         )
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    from qorgan.config import get_config
+
+    embed_backend = metadata.get("embed_backend", "sentence-transformers")
+    if embed_backend != get_config().embed_backend:
+        raise LinearFeatureMismatchError(
+            f"{model_dir} was trained on {embed_backend!r} embeddings but QORGAN_EMBED_BACKEND is "
+            f"{get_config().embed_backend!r}; set the backend to match or retrain."
+        )
     hard_signal_enabled = bool(metadata.get("hard_signal_enabled", False))
     cue_hash = metadata.get("cue_lexicon_hash", "")
     reass_hash = metadata.get("reassurance_hash", "")
@@ -216,6 +243,7 @@ def load_linear(model_dir: Path) -> LinearBundle:
         feature_version=metadata.get("feature_version", _FEATURE_VERSION),
         cue_lexicon_hash=cue_hash,
         reassurance_hash=reass_hash,
+        embed_backend=embed_backend,
     )
 
 

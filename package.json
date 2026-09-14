@@ -1,0 +1,13 @@
+{
+  "name": "qorgan-web-core",
+  "private": true,
+  "version": "0.1.0",
+  "description": "On-device Qorğan core (site/core) + golden parity tests against the Python implementation",
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"tests_js/**/*.test.mjs\""
+  },
+  "devDependencies": {
+    "@huggingface/transformers": "^4.2.0"
+  }
+}

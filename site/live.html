@@ -11,6 +11,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="live.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0E0C13">
 </head>
 <body>
 <div class="rails" aria-hidden="true"></div>
@@ -163,5 +165,6 @@
 </footer>
 
 <script src="live.js"></script>
+<script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});</script>
 </body>
 </html>
