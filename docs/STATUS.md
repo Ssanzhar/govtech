@@ -23,6 +23,11 @@ kept as history._
   does not exist yet; that is the biggest open item.
 - **Tests:** `pytest -q` → 906 offline · `npm test` → 16 (JS core parity + the int8 runtime
   gate, which needs the self-hosted model files). Branch `sanzh-ts`.
+- **Verified in Chromium (2026-09-14, Playwright):** scene 1 on-device → 90/100 CRITICAL with
+  cue-grounded tags/advice/summary; scene 2 (real bank call) → 5/100 LOW; report submit →
+  receipt, digest + `+7 700 ***` on disk, raw number absent; delete → gone. Only network
+  calls with call content: `POST /api/reports`, `DELETE /api/reports/{receipt}`. Model load
+  ~3 s from localhost, ~0.6 s first inference (WASM/WebGPU).
 
 ## How to run (September)
 ```bash

@@ -19,8 +19,11 @@ export function createWorkerEmbedder({ workerUrl = new URL("./embed-worker.js", 
     if (msg.type === "error") entry.reject(new Error(msg.message));
     else entry.resolve(msg.type === "result" ? msg.rows : true);
   };
-  worker.onerror = (err) => {
-    for (const { reject } of pending.values()) reject(err);
+  worker.onerror = (event) => {
+    // A module worker that fails to load reports a bare ErrorEvent; say so usefully.
+    const detail = event?.message || (event?.filename ? `${event.filename}:${event.lineno}` : "embedding worker failed to load (check the model files and the script imports)");
+    const error = new Error(detail);
+    for (const { reject } of pending.values()) reject(error);
     pending.clear();
   };
 

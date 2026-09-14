@@ -4,7 +4,11 @@
    main thread; nothing here ever touches the network except fetching model files from
    this site's own /models/ path (self-hosted, cached by the browser). */
 
-import { env, pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0/dist/transformers.web.js";
+// Pinned to 3.8.1: the 4.2.0 browser bundle throws "this.tokenizer is not a function" for
+// feature-extraction (verified in Chromium). `transformers.min.js` is the self-contained bundle;
+// `transformers.web.js`
+// is the bundler entry with bare `onnxruntime-web` imports and cannot be imported directly.
+import { env, pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/dist/transformers.min.js";
 
 const E5_PREFIX = "query: ";
 const MODEL_ID = "Xenova/multilingual-e5-base";

@@ -110,9 +110,10 @@ tuner's recommendation, previously left as headroom): test 0.000 [0, 0.068] / re
 authored 0.000 [0, 0.142] / 1.000, ood 0.000 [0, 0.048] / 0.844 (fp32 heads at 0.55 had
 test recall 0.953 and ood 0.889 — the honest cost). Hysteresis pair 0.59 / 0.49.
 **Known residual.** A dynamically-quantised graph is not bit-stable across ONNX Runtime
-implementations (Python ORT 1.27, onnxruntime-node 1.24, onnxruntime-web): cosine ~0.994
-mean / ~0.98 min, tokenisation identical. With int8-trained heads that is decision-safe on
-the golden set (0 flips / 28, |Δrisk| ≤ 0.055, tag-set Jaccard 0.977) and is the gate
-`tests_js/integration/embedding.test.mjs` enforces. Bit-level parity would need **static
-(calibrated) quantisation** — a follow-up, not a blocker. **Revisit:** when a real-call
+implementations (Python ORT 1.27, onnxruntime-node 1.21/1.24, onnxruntime-web): cosine
+0.985–0.994 mean / 0.97–0.98 min, tokenisation identical. With int8-trained heads that is
+decision-safe on the golden set (0 flips / 28 on every runtime tried) but not tag-stable
+(|Δrisk| up to 0.11, tag-set Jaccard 0.94–0.98); `tests_js/integration/embedding.test.mjs`
+gates exactly that. Bit-level parity needs **static (calibrated) quantisation** — PLAN B8,
+now the next item. **Revisit:** when a real-call
 training set exists (PLAN A8) — retrain, re-tune, re-gate.

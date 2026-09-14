@@ -40,3 +40,4 @@ error_log.txt
 error.txt
 Qorgan_transcript.md
 node_modules
+.playwright-mcp/

@@ -38,7 +38,8 @@
 
   let scenarios = [];
   let running = false;
-  let lastSessionId = null; // set once a call finishes; consumed by the report button
+  let lastSessionId = null; // legacy (server sessions); kept for renderSummary's signature
+  let lastState = null; // the finished on-device session; consumed by the report button
 
   const esc = (s) =>
     String(s ?? "").replace(/[&<>"']/g, (ch) =>
