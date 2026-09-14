@@ -1,1 +1,1 @@
-"""Evaluation: FPR-first metrics and report tables on `test` and `real_heldout`."""
+"""Evaluation: FPR-first metrics and report tables on `test` and `authored_heldout`."""

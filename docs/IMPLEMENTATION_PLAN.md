@@ -1,5 +1,8 @@
 # IMPLEMENTATION_PLAN.md — Qorğan (GovTech Camp selection sprint)
 
+> **Superseded (2026-09-11) by [`PLAN_2026-09.md`](PLAN_2026-09.md).** Kept as the July sprint record;
+> `real_heldout` below is today's `authored_heldout`.
+
 > Execution plan for the engineer agent. Pairs with `CLAUDE.md`, `docs/SCOPE.md`,
 > `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`. Deadline **2026-07-17 23:59 GMT+5**.
 

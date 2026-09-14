@@ -25,8 +25,11 @@ PROCESSED = REPO_ROOT / "data" / "processed"
 MODEL_DIR = REPO_ROOT / "models" / "linear"
 DATASET_REPO = "sanzh-ts/govtech_ds"
 MODEL_REPO = "sanzh-ts/govtech"
-SPLIT_FILES = ("train.jsonl", "val.jsonl", "test.jsonl", "real_heldout.jsonl", "ood.jsonl", "manifest.json")
+SPLIT_FILES = ("train.jsonl", "val.jsonl", "test.jsonl", "authored_heldout.jsonl", "ood.jsonl", "manifest.json")
 DIALOGUE_POOL_SPLITS = ("train.jsonl", "val.jsonl", "test.jsonl")
+# `real_heldout` was renamed `authored_heldout` (it is hand-written, not real calls --
+# PLAN_2026-09 A2); Hub snapshots published before that still use the old name.
+LEGACY_SPLIT_NAMES = {"authored_heldout.jsonl": "real_heldout.jsonl"}
 
 # Scored once to prove the linear backend actually loads (also warms the embedder cache).
 _PROBE_SNIPPET = (
@@ -55,6 +58,8 @@ def ensure_corpus() -> None:
     PROCESSED.mkdir(parents=True, exist_ok=True)
     for name in SPLIT_FILES:
         source = snapshot / name
+        if not source.exists() and name in LEGACY_SPLIT_NAMES:
+            source = snapshot / LEGACY_SPLIT_NAMES[name]  # dataset published before the rename
         if source.exists():
             (PROCESSED / name).write_bytes(source.read_bytes())
     _log("corpus: splits in place")

@@ -235,10 +235,14 @@ def test_binary_report_key_order_is_fpr_first():
     report = binary_report(y_true, y_scores, threshold=0.5)
     assert list(report.keys()) == [
         "fpr",
+        "fpr_ci",
         "precision",
+        "precision_ci",
         "recall",
+        "recall_ci",
         "f1",
         "pr_auc",
+        "pr_auc_ci",
         "tp",
         "fp",
         "tn",
@@ -246,6 +250,33 @@ def test_binary_report_key_order_is_fpr_first():
         "support",
         "threshold",
     ]
+
+
+def test_binary_report_intervals_are_exact_binomial_on_the_right_denominators():
+    # 24 negatives, 0 false positives -> FPR 0.000 but the 95 % interval reaches 0.142.
+    y_true = [0] * 24 + [1] * 18
+    y_scores = [0.1] * 24 + [0.9] * 18
+    report = binary_report(y_true, y_scores, threshold=0.5)
+    assert report["fpr"] == 0.0
+    assert report["fpr_ci"] == (0.0, pytest.approx(0.1423, abs=1e-3))
+    assert report["recall"] == 1.0
+    assert report["recall_ci"] == (pytest.approx(0.8147, abs=1e-3), 1.0)
+    assert report["precision_ci"] == (pytest.approx(0.8147, abs=1e-3), 1.0)
+    assert report["pr_auc_ci"] == (pytest.approx(1.0), pytest.approx(1.0))
+
+
+def test_binary_report_intervals_are_none_when_a_class_is_absent():
+    report = binary_report([1, 1], [0.9, 0.8], threshold=0.5)
+    assert report["fpr_ci"] is None  # no negatives -> FPR undefined, not "[0, 1]"
+    assert report["pr_auc_ci"] is None
+    assert report["recall_ci"] == (pytest.approx(0.1581, abs=1e-3), 1.0)
+
+
+def test_binary_report_bootstrap_resamples_is_configurable():
+    y_true = [1, 0, 1, 0]
+    y_scores = [0.9, 0.6, 0.4, 0.1]
+    fast = binary_report(y_true, y_scores, threshold=0.5, bootstrap_resamples=20)
+    assert fast["pr_auc_ci"] is not None
 
 
 def test_binary_report_values_perfect_classifier():

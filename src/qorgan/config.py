@@ -33,7 +33,7 @@ _DEFAULT_VOSK_MODEL_RU = "vosk-model-small-ru-0.22"
 _DEFAULT_ASR_SAMPLE_RATE = 16000
 _DEFAULT_EMBED_MODEL_NAME = "intfloat/multilingual-e5-base"
 # Shipped default for the hybrid model, post the 2026-07-15 KK-negatives-augmentation +
-# reassurance-lexicon retrain: at 0.55, real_heldout (42 anchors) is FPR 0.000 / recall
+# reassurance-lexicon retrain: at 0.55, authored_heldout (42 anchors) is FPR 0.000 / recall
 # 1.000 (`eval/threshold.py`'s own max-recall-s.t.-FPR<=0.05 tuner now recommends 0.620,
 # fpr=0.000/recall=1.000 on the same set -- 0.55 is kept as the shipped default since it
 # already clears the FPR bar with equal recall). See docs/eval_report.md.
@@ -88,6 +88,8 @@ class Config(BaseModel):
     reassurance_patterns_path: Path
 
     # --- ASR ---
+    # Ids of authored_heldout anchors read during feature engineering (PLAN_2026-09 A2).
+    inspection_ledger_path: Path
     whisper_model_size: str
     vosk_model_kk: str
     vosk_model_ru: str
@@ -260,6 +262,9 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
                 source, "QORGAN_LINEAR_MODEL_DIR", _read_path(source, "QORGAN_MODEL_DIR", _REPO_ROOT / "models") / "linear"
             ),
             embed_model_name=_read_str(source, "QORGAN_EMBED_MODEL_NAME", _DEFAULT_EMBED_MODEL_NAME),
+            inspection_ledger_path=_read_path(
+                source, "QORGAN_INSPECTION_LEDGER_PATH", data_dir / "anchors" / "inspection_ledger.yaml"
+            ),
             risk_threshold=_read_float(source, "QORGAN_RISK_THRESHOLD", _DEFAULT_RISK_THRESHOLD),
             risk_threshold_enter=_read_float(
                 source, "QORGAN_RISK_THRESHOLD_ENTER", _DEFAULT_RISK_THRESHOLD_ENTER

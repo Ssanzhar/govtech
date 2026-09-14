@@ -11,7 +11,7 @@ Read this first, then `CLAUDE.md` (the brief + locked decisions) and `docs/eval_
 - Shipped classifier: the **`linear` hybrid** — frozen `multilingual-e5-base` embedding
   **⊕ 6 interpretable features** (5 hard-signal request cues + 1 reassurance) → calibrated
   Logistic Regression. Offline, CPU, retrains in seconds, ~64 KB export.
-- **Shipped eval (threshold 0.55):** test FPR 0.000/rec 0.953 · **real_heldout FPR 0.000/rec
+- **Shipped eval (threshold 0.55):** test FPR 0.000/rec 0.953 · **authored_heldout FPR 0.000/rec
   1.000** (42 hand-written anchors) · ood FPR 0.000/rec 0.889. Streaming: false-latch 0.167
   heldout / 0.115 test (`python -m qorgan.eval.stream`).
 - **697 tests green**, all offline. Work is on **`sanzhs-branch`**.
@@ -39,7 +39,7 @@ That e2e also fixed `predict._merge_cue_evidence`: a verbatim cue hit now upgrad
 tag to weight 1.0 (was suppressed by the head's lower weight → hard-signal floor never fired).
 
 **3 · Model-improvement sprint (all FPR-gated, one attempt rolled back)**:
-- `real_heldout` widened 27→**42** anchors → immediately exposed a real KK/mixed FP (legit
+- `authored_heldout` widened 27→**42** anchors → immediately exposed a real KK/mixed FP (legit
   tariff notice @ 0.809).
 - New **streaming eval harness** `python -m qorgan.eval.stream`: false-latch rate (live FPR
   analog), alert-hit rate, time-to-alert.
@@ -90,7 +90,7 @@ One interface, backend chosen by `QORGAN_CLASSIFIER_BACKEND` (default `linear`):
 - **`xlmr`** — **ABANDONED** (fine-tune collapsed). `models/xlmr/` (~1.1 GB) is deletable.
 
 ### The hybrid feature (why the model looks the way it does)
-The embedding-only model false-positived on realistic legit RU calls (`real_heldout` FPR
+The embedding-only model false-positived on realistic legit RU calls (`authored_heldout` FPR
 0.143). Root cause = a **train/reality gap**: synthetic legit calls never _reassure_ ("we'll
 never ask for your code"). Fix = **data + a reassurance feature together** (neither works
 alone): `data/augment/reassurance_negatives.jsonl` (train-only) + `classifier/reassurance.py`
@@ -101,7 +101,7 @@ same pattern for **Kazakh** (KK legit negatives + KK reassurance terms). Rollbac
 ## Data pipeline (`src/qorgan/data/`)
 `generate.py` (Gemini synthetic corpus) → `build_corpus.py` (**scrub PII** → dedup →
 deterministic split; folds `data/augment/*.jsonl` — reassurance + KK-legit negatives — into
-**train only**; `real_heldout` = 42 curated anchors, kept separate) →
+**train only**; `authored_heldout` = 42 curated anchors, kept separate) →
 `data/processed/{split}.jsonl` + `manifest.json`.
 - **PII / publishing:** `data/processed/` splits and `data/augment/` are scrubbed →
   publishable. `data/synthetic/` (raw) is **NOT**. `data/processed/{incidents,organizations,
@@ -123,8 +123,8 @@ pip install -e .                      # Python 3.11+; add ".[live]" for micropho
 streamlit run app/streamlit_app.py    # 3 tabs; mock backend if no model/key
 
 # eval — full-transcript FPR tables + streaming false-latch/time-to-alert
-QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.run --split test --split real_heldout --split ood --by-language
-QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.stream --split test --split real_heldout --backend linear
+QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.run --split test --split authored_heldout --split ood --by-language
+QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.stream --split test --split authored_heldout --backend linear
 
 # retrain from committed corpus (seconds, CPU; needed after ANY data/lexicon change)
 python -m qorgan.data.build_corpus && python -m qorgan.classifier.linear_train

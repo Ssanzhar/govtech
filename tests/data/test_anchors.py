@@ -1,4 +1,4 @@
-"""Tests for the curated `real_heldout` anchors — every anchor must be schema-valid,
+"""Tests for the curated `authored_heldout` anchors — every anchor must be schema-valid,
 its trigger spans verbatim, and the positive/negative balance sane."""
 
 from qorgan.data.anchors import ANCHOR_SPECS, build_anchor_dialogues
@@ -60,7 +60,7 @@ def test_all_languages_represented():
     assert {"ru", "kk", "mixed"} <= languages
 
 
-# --- Phase 1A: widened `real_heldout` anchor set (was 27 dialogues / ~14 negatives) -------
+# --- Phase 1A: widened `authored_heldout` anchor set (was 27 dialogues / ~14 negatives) -------
 # The hand-written eval anchor set was statistically underpowered for the project's
 # FPR-first discipline (CLAUDE.md SS3.5). These tests pin the widened counts and balance.
 
@@ -109,7 +109,7 @@ def test_widened_negatives_have_solid_kk_and_mixed_language_coverage():
 def test_starved_tail_tactics_now_have_measurable_recall():
     """mule_recruitment, secrecy, remote_access, investment_scam, prize_lottery were
     under-represented; each must now appear in at least 2 anchors so recall on the tail
-    is actually measurable on `real_heldout`."""
+    is actually measurable on `authored_heldout`."""
     starved_tactics = (
         "mule_recruitment",
         "secrecy",

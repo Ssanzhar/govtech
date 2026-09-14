@@ -13,6 +13,8 @@ from typing import Any
 
 from sklearn.metrics import adjusted_rand_score, average_precision_score
 
+from qorgan.eval import intervals
+
 _BINARY_VALUES = (0, 1)
 
 
@@ -162,21 +164,41 @@ def adjusted_rand(labels_true: Sequence[Any], labels_pred: Sequence[Any]) -> flo
     return float(adjusted_rand_score(true_list, pred_list))
 
 
-def binary_report(y_true: Sequence[int], y_scores: Sequence[float], *, threshold: float) -> dict[str, Any]:
+def binary_report(
+    y_true: Sequence[int],
+    y_scores: Sequence[float],
+    *,
+    threshold: float,
+    confidence: float = intervals.DEFAULT_CONFIDENCE,
+    bootstrap_resamples: int = intervals.DEFAULT_BOOTSTRAP_RESAMPLES,
+) -> dict[str, Any]:
     """The headline aggregator for the eval harness: binarize `y_scores` at
     `threshold`, then return an insertion-ordered dict with FPR reported first
     (CLAUDE.md SS3.5 -- FPR is the primary metric, never buried).
+
+    Every rate is followed by its `<name>_ci` -- an exact Clopper-Pearson interval as a
+    `(low, high)` tuple, or `None` when the rate's denominator is empty (PLAN_2026-09 A1:
+    a point estimate on a small split is not a metric). `pr_auc_ci` is a seeded
+    percentile bootstrap.
     """
     y_true_list = list(y_true)
-    y_pred = binarize(y_scores, threshold)
+    y_scores_list = list(y_scores)
+    y_pred = binarize(y_scores_list, threshold)
     tp, fp, tn, fn = confusion_counts(y_true_list, y_pred)
+    pr_auc_ci = intervals.bootstrap_pr_auc(
+        y_true_list, y_scores_list, n_resamples=bootstrap_resamples, confidence=confidence
+    )
 
     return {
         "fpr": false_positive_rate(y_true_list, y_pred),
+        "fpr_ci": _ci_tuple(fp, fp + tn, confidence),
         "precision": precision(y_true_list, y_pred),
+        "precision_ci": _ci_tuple(tp, tp + fp, confidence),
         "recall": recall(y_true_list, y_pred),
+        "recall_ci": _ci_tuple(tp, tp + fn, confidence),
         "f1": f1(y_true_list, y_pred),
-        "pr_auc": pr_auc(y_true_list, y_scores),
+        "pr_auc": pr_auc(y_true_list, y_scores_list),
+        "pr_auc_ci": pr_auc_ci.as_tuple() if pr_auc_ci else None,
         "tp": tp,
         "fp": fp,
         "tn": tn,
@@ -184,3 +206,8 @@ def binary_report(y_true: Sequence[int], y_scores: Sequence[float], *, threshold
         "support": len(y_true_list),
         "threshold": threshold,
     }
+
+
+def _ci_tuple(numerator: int, denominator: int, confidence: float) -> tuple[float, float] | None:
+    interval = intervals.binomial_interval(numerator, denominator, confidence=confidence)
+    return interval.as_tuple() if interval else None

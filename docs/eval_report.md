@@ -1,22 +1,30 @@
 # Eval report — classifier backends
 
+> **2026-09-13 note (PLAN_2026-09 A1–A2).** The split formerly called `real_heldout` is now
+> **`authored_heldout`**: it is hand-written by the team (18 scam / 24 legit), not real calls,
+> and five of its negatives were *read* during feature engineering (see
+> `data/anchors/inspection_ledger.yaml`; the harness now reports `(clean)` / `(inspected)`
+> rows). The tables below are July point estimates without intervals: `FPR 0.000` on 24
+> negatives has a 95 % Clopper–Pearson interval of `[0.000, 0.142]`. The harness prints
+> intervals now; this report is regenerated with them in A7.
+
 FPR is the **primary** metric (a false alarm on a real bank call destroys trust). Numbers
-are reported on `test` **and** `real_heldout` **separately**; `real_heldout` (hand-written,
+are reported on `test` **and** `authored_heldout` **separately**; `authored_heldout` (hand-written,
 different source) is the honest generalization signal. Regenerate with:
 
 ```bash
-python -m qorgan.eval.run --split test --split real_heldout --backend <linear|llm|mock> --by-language
+python -m qorgan.eval.run --split test --split authored_heldout --backend <linear|llm|mock> --by-language
 ```
 
 The CLI also prints a **per-tactic F1** table and a **recommended alert threshold** — the
-cutoff maximising recall subject to `fpr <= 0.05` on `real_heldout` (`eval/threshold.py`).
+cutoff maximising recall subject to `fpr <= 0.05` on `authored_heldout` (`eval/threshold.py`).
 
 ## Corpus
 **833 dialogues** (scams + **adversarial hard negatives**: legitimate calls in the *same
 domains* as scams — bank, gov, telecom, delivery — that superficially resemble a scam but
 contain none of the tactics), balanced across RU/KK/mixed. Splits: **train 604 / val 113 /
 test 116** (`data/processed/manifest.json`), plus a separate **27**-dialogue hand-written
-`real_heldout` anchor set (different source — the honest generalization signal).
+`authored_heldout` anchor set (different source — the honest generalization signal).
 
 ## `linear` backend — **SHIPPING offline model (hybrid)** ✅
 Frozen `multilingual-e5-base` embeddings **⊕ 6 interpretable features** → class-weighted,
@@ -25,7 +33,7 @@ The risk head's input is `[768 embedding | 5 hard-signal request-cues | 1 reassu
 (`classifier/features.py`). Trains in seconds on CPU; the export is ~60 KB.
 
 ### The FPR fix — data + a reassurance feature (the two are inseparable)
-The embedding-only model had a stubborn **real_heldout FPR 0.143**, entirely 2 legitimate RU
+The embedding-only model had a stubborn **authored_heldout FPR 0.143**, entirely 2 legitimate RU
 calls (a bank fraud-alert, a telecom offer). Diagnosis (`docs/DECISIONS`-style, reproduced in
 git history): these are a **train/reality gap** — the synthetic training negatives never do
 what real institutions do, **proactively reassure** ("we will never ask for your code";
@@ -41,20 +49,20 @@ what real institutions do, **proactively reassure** ("we will never ask for your
   (~0.99 → ~0.34)**, which opens headroom to operate at the tuned threshold.
 
 ### Ablation (fixed eval sets; alert threshold in parentheses)
-| Model | test FPR/rec | **real_heldout FPR/rec** | ood FPR/rec |
+| Model | test FPR/rec | **authored_heldout FPR/rec** | ood FPR/rec |
 |---|---|---|---|
 | embedding-only (baseline, @0.70) | 0.000 / 0.969 | **0.143 / 0.923** | 0.000 / 0.911 |
 | hybrid (cues + reassurance + data, @0.70) | 0.000 / 0.953 | **0.000 / 0.923** | 0.000 / 0.778 |
 | **hybrid @ tuned 0.55 (shipped)** | 0.000 / 0.953 | **0.000 / 1.000** | 0.000 / 0.867 |
 
-0.55 is the `eval/threshold.py` cutoff (max recall s.t. FPR ≤ 0.05 on real_heldout). On the
+0.55 is the `eval/threshold.py` cutoff (max recall s.t. FPR ≤ 0.05 on authored_heldout). On the
 honest hand-written set the hybrid model is a **strict Pareto win** — false positives
 eliminated *and* recall to 1.000 — for a small recall cost on the synthetic in-distribution
 (test −1.6 pts) and disfluent-stress (ood −4.4 pts) sets, FPR 0 everywhere.
 
 **Honest caveats.** (1) The reassurance matcher was first motivated by inspecting the 2 FPs,
-so real_heldout's FPR=0 is *mildly* optimistic; mitigating evidence — it fires on 59/72
-independently-generated reassurance negatives and 0/13 real_heldout scams, and on a **fresh,
+so authored_heldout's FPR=0 is *mildly* optimistic; mitigating evidence — it fires on 59/72
+independently-generated reassurance negatives and 0/13 authored_heldout scams, and on a **fresh,
 never-inspected** 24-call honest set the hybrid model scores **FPR 0 (max 0.271** vs baseline
 0.416), i.e. it rates unseen legit calls *lower*, so the mechanism generalizes rather than
 memorizes. (2) It is not magic: a legit call compressed into one scam-vocabulary-dense line
@@ -111,11 +119,11 @@ ranked for the analyst queue by `priority = f(size, recency, recent-growth)`
 
 ## Addendum (2026-07-15) — KK legit-boundary stabilization + reassurance widening
 
-The `real_heldout` anchor set was widened 27 -> **42 dialogues** (Phase 1A: +10 negatives
+The `authored_heldout` anchor set was widened 27 -> **42 dialogues** (Phase 1A: +10 negatives
 spanning telecom/delivery/other legit domains, +5 positives giving previously-starved tail
 tactics — `mule_recruitment`/`secrecy`/`remote_access`/`investment_scam`/`prize_lottery` —
 measurable recall). On the retrained (unmodified-lexicon) model this widening alone
-surfaced a **new real_heldout FPR of 0.042** (1/24 negatives): `real_neg_telecom_tariff_notice_mixed`
+surfaced a **new authored_heldout FPR of 0.042** (1/24 negatives): `real_neg_telecom_tariff_notice_mixed`
 scored **0.809**, well above the 0.55 alert threshold, with `real_neg_bank_card_delivery_kk`
 sitting at a **0.541 near-miss** just under it.
 
@@ -130,7 +138,7 @@ minimal, previously-validated lexicon change**:
    negatives (5 bank-service, 5 gov/e-gov-service, 5 telecom-notice calls: card pickup,
    service confirmation, appointment/document-ready, tariff/SIM/maintenance notices), several
    reassuring in Kazakh ("қажеті жоқ", "талап етпейміз" style). All new text, verified to have
-   zero verbatim overlap with the `real_heldout` anchors (`tests/data/test_kk_legit_negatives_augment.py`).
+   zero verbatim overlap with the `authored_heldout` anchors (`tests/data/test_kk_legit_negatives_augment.py`).
    Train grew 631 -> **646** (+15, no dedup collisions); `train_augment_count` 27 -> 42.
 2. **`data/lexicon/reassurance_patterns.yaml`** — added sensitive terms `төлем`, `оплата`,
    `оплату`, `платить` and KK reassurance terms `қажеті жоқ`, `қажет жоқ`, `талап етпейді`,
@@ -143,20 +151,20 @@ minimal, previously-validated lexicon change**:
 | Split | FPR before / after | Recall before / after |
 |---|---|---|
 | test | 0.000 / **0.000** | 0.953 / 0.953 |
-| real_heldout | 0.042 / **0.000** | 1.000 / 1.000 |
+| authored_heldout | 0.042 / **0.000** | 1.000 / 1.000 |
 | ood | 0.000 / **0.000** | 0.867 / **0.889** |
 
 | Split | False-latch before / after |
 |---|---|
-| real_heldout | 0.167 / 0.167 |
+| authored_heldout | 0.167 / 0.167 |
 | test | 0.135 / **0.115** |
 
 **Tracked anchors (direct score, before -> after):**
 
 | Anchor | Before | After |
 |---|---|---|
-| `real_neg_telecom_tariff_notice_mixed` (real_heldout) | 0.809 | **0.281** |
-| `real_neg_bank_card_delivery_kk` (real_heldout) | 0.541 | **0.474** |
+| `real_neg_telecom_tariff_notice_mixed` (authored_heldout) | 0.809 | **0.281** |
+| `real_neg_bank_card_delivery_kk` (authored_heldout) | 0.541 | **0.474** |
 | `neg_legit_gov_service_kk_19` (test) | 0.448 | 0.484 |
 
 `eval/threshold.py`'s max-recall-s.t.-FPR<=0.05 tuner now recommends **0.620** (fpr=0.000,
@@ -166,7 +174,7 @@ recall=1.000) on the widened set — up from 0.550 pre-fix — but the shipped d
 **Honest caveat** (mirrors the caveat style above): this fix, like the original reassurance
 mechanism, was **motivated by inspecting** the two heldout false/near-positives the widened
 anchor set exposed (`real_neg_telecom_tariff_notice_mixed`, `real_neg_bank_card_delivery_kk`),
-so the real_heldout FPR=0.000 here is *mildly* optimistic in the same sense as the original
+so the authored_heldout FPR=0.000 here is *mildly* optimistic in the same sense as the original
 fix. Mitigating evidence: the new augmentation data covers 3 legit-call domains with 15
 independently-written dialogues (not just the 2 inspected anchors), the reassurance-lexicon
 change was validated feature-by-feature (RED->GREEN, including inversion guards) before
@@ -189,10 +197,10 @@ reassurance-style RU/KK sentences) confirmed still all-zero. `match_cues`/
 redundant lowercase variants were added.
 
 Retrained `linear` on the widened lexicon; full suite 670/670 green (663 baseline + 7
-new). All eval gates held: test FPR 0.000 (recall 0.953, unchanged), real_heldout FPR
+new). All eval gates held: test FPR 0.000 (recall 0.953, unchanged), authored_heldout FPR
 0.000 (recall 1.000, unchanged), ood FPR 0.000 (recall 0.889, unchanged) — tuner still
-recommends 0.590 on real_heldout (fpr=0.000, recall=1.000), threshold left at the shipped
-0.55. Streaming false-latch unchanged: real_heldout 0.167, test 0.115. Direct-scored the
+recommends 0.590 on authored_heldout (fpr=0.000, recall=1.000), threshold left at the shipped
+0.55. Streaming false-latch unchanged: authored_heldout 0.167, test 0.115. Direct-scored the
 motivating ASR failure string ("...переведите деньги на безопасной счёт...") — `safe_account`
 now appears in tags at weight 1.0 (verbatim cue-merge). Sentinel negatives held:
 `real_neg_telecom_tariff_notice_mixed` 0.284, `real_neg_bank_card_delivery_kk` 0.478

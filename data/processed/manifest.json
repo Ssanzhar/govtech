@@ -37,7 +37,7 @@
         "mixed": 40
       }
     },
-    "real_heldout": {
+    "authored_heldout": {
       "total": 42,
       "hard_negatives": 15,
       "positives": 27,

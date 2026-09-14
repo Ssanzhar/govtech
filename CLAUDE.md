@@ -76,7 +76,7 @@ src/qorgan/
   explain/             explainer.py  (attributions+tags → localized templated reason)
   analytics/           embed.py · cluster.py · novelty.py · rank.py   (Level 2, light)
   asr/                 transcribe.py  (faster-whisper/Vosk wrapper, offline)
-  eval/                metrics.py · run.py  (FPR-first tables: test + real_heldout)
+  eval/                metrics.py · run.py  (FPR-first tables: test + authored_heldout)
 app/streamlit_app.py   the demo (L1 centerpiece + L2 panel)
 data/                  taxonomy/ · raw/ · synthetic/ · processed/ · README.md (provenance)
 tests/                 unit tests for deterministic modules
@@ -94,7 +94,7 @@ docs/                  SCOPE.md · ARCHITECTURE.md · DECISIONS.md
   attributed span from the transcript, tied to a tactic tag with a weight. No hallucinated
   reasons. Templated strings live in `explain/`, localized RU + KK.
 - **Report FPR first**, then precision/recall/F1/PR-AUC, always on `test` **and**
-  `real_heldout` **separately**. The eval harness (`eval/run.py`) regenerates the tables.
+  `authored_heldout` **separately**. The eval harness (`eval/run.py`) regenerates the tables.
 - **Data provenance is graded** (ТЗ §9): every dataset/source, its structure, limits,
   cleaning, and features go in `data/README.md`.
 
@@ -111,12 +111,12 @@ docs/                  SCOPE.md · ARCHITECTURE.md · DECISIONS.md
 
 - **Day 1** Skeleton + `tactics.yaml` taxonomy + data schema. Start LLM synthetic gen.
   Ship the **LLM classifier + minimal Streamlit** → *working transcript→risk→reasons demo today.*
-- **Day 2** Finish corpus + LLM labeling (tags + spans) + splits (incl. small `real_heldout`).
+- **Day 2** Finish corpus + LLM labeling (tags + spans) + splits (incl. small `authored_heldout`).
   `data/README.md`. Eval harness + FPR baseline on LLM classifier.
 - **Day 3** Fine-tune XLM-R on Colab (class-weighted) + calibration + Captum attribution;
   wire behind `predict.py`.
 - **Day 4** Explainability polish (localized reasons, confidence, "where it can be wrong",
-  human-decides). Full eval tables (LLM + trained) on test + real_heldout. FPR tuning + hysteresis.
+  human-decides). Full eval tables (LLM + trained) on test + authored_heldout. FPR tuning + hysteresis.
 - **Day 5** L2 light: embed ~500 synthetic incidents → HDBSCAN + number overlay + novelty +
   ranking → Streamlit analyst panel (cluster map, priority queue, drill-down, new-scheme flag).
 - **Day 6** Integration, tests, one-command run + Docker, README, deploy, demo dry-run
@@ -126,7 +126,7 @@ docs/                  SCOPE.md · ARCHITECTURE.md · DECISIONS.md
 ## 9. Definition of done (mapped to the 100-pt rubric)
 
 Working `docker compose up` / `streamlit run`; a scam transcript triggers an **explained**
-alert; a hard-negative bank call does **not**; FPR-first metric tables on test + real_heldout;
+alert; a hard-negative bank call does **not**; FPR-first metric tables on test + authored_heldout;
 a Level-2 panel showing at least one clustered scam "organization" + a novelty flag;
 `data/README.md` provenance; README run instructions; demo video; 7–10 slides.
 

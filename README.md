@@ -63,21 +63,25 @@ mode still works and the mic modes show an install hint.
 ## Evaluate
 
 ```bash
-# FPR-first tables (test + real_heldout + ASR-stress), per language
+# FPR-first tables (test + authored_heldout + ASR-stress), per language
 QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.run \
-    --split test --split real_heldout --split ood --by-language
+    --split test --split authored_heldout --split ood --by-language
 
 # Streaming eval: false-latch rate (live FPR analog), time-to-alert
 QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.stream \
-    --split test --split real_heldout --backend linear
+    --split test --split authored_heldout --backend linear
 
 pytest -q        # ~700 tests, all offline
 ```
 
-Shipped numbers (threshold 0.55): **test FPR 0.000 / recall 0.953 · real_heldout FPR
-0.000 / recall 1.000 · ood FPR 0.000 / recall 0.889**. Methodology + honest caveats:
-[`docs/eval_report.md`](docs/eval_report.md), data provenance:
-[`data/README.md`](data/README.md).
+Shipped numbers (threshold 0.55, July): **test FPR 0.000 / recall 0.953 · authored_heldout
+FPR 0.000 / recall 1.000 · ood FPR 0.000 / recall 0.889**. Read them with their intervals:
+`authored_heldout` is **hand-written, not real calls** (18 scam / 24 legit), so its FPR of
+0.000 has a 95 % Clopper–Pearson interval of **[0.000, 0.142]** and its recall of 1.000 a
+lower bound of 0.815; five of its negatives were read during feature engineering and are
+reported separately (`data/anchors/inspection_ledger.yaml`). The harness prints intervals
+on every run. Methodology + caveats: [`docs/eval_report.md`](docs/eval_report.md), data
+provenance: [`data/README.md`](data/README.md).
 
 ## Publish model/data updates (maintainers)
 

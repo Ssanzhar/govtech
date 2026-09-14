@@ -31,7 +31,7 @@ Web-first, Python-only, L1-centric. This supersedes the two-subsystem/on-device 
 - `label.py` — Gemini labels each dialogue with tactic tags + **verbatim** trigger spans
   (spans must be substrings of the transcript — validate).
 - `build_corpus.py` — assemble, dedupe, PII-scrub, split `train/val/test` + hold out a
-  separate small `real_heldout` (transcribed real anchors). Writes a manifest + hash.
+  separate small `authored_heldout` (transcribed real anchors). Writes a manifest + hash.
 
 ### `src/qorgan/classifier/`
 - `llm_classifier.py` — Gemini JSON-mode output → `{risk, tactic_tags, trigger_spans}`.
@@ -58,7 +58,7 @@ Web-first, Python-only, L1-centric. This supersedes the two-subsystem/on-device 
 ### `src/qorgan/eval/`
 - `metrics.py` — FPR (primary), precision, recall, F1, PR-AUC, per-tactic F1;
   cluster purity/ARI on labeled synthetic groups.
-- `run.py` — regenerates metric tables for `test` and `real_heldout` **separately**;
+- `run.py` — regenerates metric tables for `test` and `authored_heldout` **separately**;
   fixed seeds; logs configs.
 
 ### `src/qorgan/asr/`
@@ -90,5 +90,5 @@ def cluster(incidents: list[Incident]) -> list[Organization]:
 ## Non-negotiable properties
 - Deterministic corpus build (seeds + manifest) → reproducible metrics.
 - Explanations grounded in attributed spans; localized RU/KK; never hallucinated.
-- FPR reported on `test` **and** `real_heldout` separately.
+- FPR reported on `test` **and** `authored_heldout` separately.
 - Nothing "sends" or "decides" automatically — human-in-the-loop by construction.

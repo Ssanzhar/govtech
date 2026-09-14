@@ -8,7 +8,7 @@ is the full 10-week vision; below is what we actually build by **2026-07-17 23:5
 | # | Deliverable | Serves rubric |
 |---|---|---|
 | 1 | Labeled KZ/RU/code-switch **scam-text corpus** (synthetic + real anchors + hard negatives), with provenance doc | Data (15) |
-| 2 | **Scam-risk classifier** — LLM structured baseline **and** fine-tuned XLM-R; unified interface; FPR-first eval on `test` + `real_heldout` | AI/ML (20) |
+| 2 | **Scam-risk classifier** — LLM structured baseline **and** fine-tuned XLM-R; unified interface; FPR-first eval on `test` + `authored_heldout` | AI/ML (20) |
 | 3 | **Explainability** — token attribution → trigger-phrase highlights + tactic tags + calibrated confidence + localized RU/KK reason + "where it can be wrong" | Explainability (10) |
 | 4 | **Streamlit demo (L1 centerpiece):** paste/play transcript → live risk meter → explained alert; hard-negative bank call does not trigger | Prototype (15), UX/demo (5) |
 | 5 | **Level 2 (light):** embed ~500 synthetic incidents → HDBSCAN clustering into scam "organizations" + number co-occurrence + novelty/new-scheme flag + priority ranking → analyst panel in the same app | AI/ML (20), Value (15) |
@@ -30,7 +30,7 @@ used only to transcribe a few demo clips. Do not rebuild ASR.
 | Risk | Mitigation / fallback |
 |---|---|
 | Colab GPU unavailable / fine-tune stalls | **LLM structured classifier is the shipping fallback** — demo never depends on the trained model landing |
-| KZ/RU synthetic data too "clean", high FPR on real anchors | Hard negatives from Day 1; report FPR on `real_heldout` honestly; tune threshold + hysteresis |
+| KZ/RU synthetic data too "clean", high FPR on real anchors | Hard negatives from Day 1; report FPR on `authored_heldout` honestly; tune threshold + hysteresis |
 | Live demo fails on stage | Pre-recorded **fallback video** of all 3 scenes |
 | L2 clustering looks weak on synthetic data | Seed incidents from a few known "scripts" so clusters are visibly meaningful; show novelty flag on an injected new scheme |
 | Time overrun | L2 is the first thing to shrink (panel can go read-only/precomputed); L1 + explainability must ship |

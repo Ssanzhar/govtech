@@ -29,8 +29,8 @@ def _lexicon():
     return load_cue_lexicon(get_config().cue_lexicon_path)
 
 
-def _real_heldout_by_id() -> dict[str, Dialogue]:
-    path = get_config().data_dir / "processed" / "real_heldout.jsonl"
+def _authored_heldout_by_id() -> dict[str, Dialogue]:
+    path = get_config().data_dir / "processed" / "authored_heldout.jsonl"
     out: dict[str, Dialogue] = {}
     for line in Path(path).read_text(encoding="utf-8").splitlines():
         if line.strip():
@@ -63,7 +63,7 @@ def test_kazakh_cue_matches():
 
 def test_golden_legit_fixtures_yield_all_zero_block():
     lexicon = _lexicon()
-    by_id = _real_heldout_by_id()
+    by_id = _authored_heldout_by_id()
     for fixture_id in _LEGIT_FIXTURE_IDS:
         hard = feat.hard_signal_features([by_id[fixture_id].transcript()], lexicon)
         assert hard.sum() == 0.0, f"{fixture_id} wrongly fired a hard-signal cue"
@@ -72,7 +72,7 @@ def test_golden_legit_fixtures_yield_all_zero_block():
 def test_golden_scam_fixture_fires_otp_and_safe_account():
     lexicon = _lexicon()
     ids = get_taxonomy().hard_signal_ids()
-    scam = _real_heldout_by_id()[_SCAM_FIXTURE_ID].transcript()
+    scam = _authored_heldout_by_id()[_SCAM_FIXTURE_ID].transcript()
     hard = feat.hard_signal_features([scam], lexicon)
     assert hard[0, ids.index("otp_request")] == 1.0
     assert hard[0, ids.index("safe_account")] == 1.0
@@ -81,7 +81,7 @@ def test_golden_scam_fixture_fires_otp_and_safe_account():
 
 def test_hard_signal_features_are_deterministic():
     lexicon = _lexicon()
-    scam = _real_heldout_by_id()[_SCAM_FIXTURE_ID].transcript()
+    scam = _authored_heldout_by_id()[_SCAM_FIXTURE_ID].transcript()
     assert np.array_equal(
         feat.hard_signal_features([scam], lexicon),
         feat.hard_signal_features([scam], lexicon),

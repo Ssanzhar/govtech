@@ -28,7 +28,7 @@ from qorgan.llm_tools import build_client
 _MAX_ATTEMPTS = 4
 
 # Institutional reassurance is a real anti-fraud behavior banks/telcos/gov services perform.
-# Motivated generally (NOT from the real_heldout transcripts) so any gain there is genuine
+# Motivated generally (NOT from the authored_heldout transcripts) so any gain there is genuine
 # generalization, not test-set leakage.
 _REASSURANCE_STYLE = (
     "CRITICAL REALISM -- fraud-safety reassurance: the legitimate caller must PROACTIVELY "

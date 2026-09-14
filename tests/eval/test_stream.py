@@ -6,6 +6,8 @@ from verbatim taxonomy example phrases so the mock backend detects them turn by 
 the meter escalates to a latch; the benign script never latches.
 """
 
+import re
+
 import pytest
 
 from qorgan.asr.stream import CommittedUtterance
@@ -206,7 +208,7 @@ def test_format_stream_report_places_false_latch_rate_first():
 
 def test_format_stream_report_renders_dash_for_none_percentiles():
     report = evaluate_stream([_benign_dialogue("b1"), _benign_dialogue("b2")], locale="ru", backend="mock")
-    text = format_stream_report({"real_heldout": report})
+    text = format_stream_report({"authored_heldout": report})
     assert "-" in text
 
 
@@ -240,3 +242,18 @@ def test_stream_report_is_frozen():
     report = evaluate_stream([_scam_dialogue()], locale="ru", backend="mock")
     with pytest.raises(Exception):
         report.false_latch_rate = 1.0  # type: ignore[misc]
+
+
+def test_stream_report_carries_binomial_intervals():
+    report = evaluate_stream([_scam_dialogue("s1"), _benign_dialogue("b1"), _benign_dialogue("b2")], locale="ru", backend="mock")
+    assert report.false_latch_ci is not None
+    low, high = report.false_latch_ci
+    assert low <= report.false_latch_rate <= high
+    assert report.alert_hit_ci is not None
+
+
+def test_format_stream_report_renders_interval_next_to_false_latch_rate():
+    report = evaluate_stream([_scam_dialogue("s1"), _benign_dialogue("b1")], locale="ru", backend="mock")
+    text = format_stream_report({"test": report})
+    assert "95% CI" in text.splitlines()[0]
+    assert re.search(r"\| 0\.000 \[0\.000, 0\.\d{3}\] \|", text), text

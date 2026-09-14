@@ -1,6 +1,6 @@
 """Assemble the shippable corpus (D2-4): read generated synthetic dialogues + the curated
-`real_heldout` anchors, PII-scrub them, deduplicate, deterministically split the synthetic
-set into train/val/test, keep `real_heldout` entirely separate, and write each split plus a
+`authored_heldout` anchors, PII-scrub them, deduplicate, deterministically split the synthetic
+set into train/val/test, keep `authored_heldout` entirely separate, and write each split plus a
 reproducibility `manifest.json` (counts + content hash) to `data/processed/`.
 
 Determinism is the whole point (`docs/DECISIONS.md` D9 -- seeded build + manifest instead
@@ -130,17 +130,17 @@ def _split_counts(dialogues: Sequence[Dialogue]) -> dict:
 
 def build_manifest(
     splits: Mapping[str, Sequence[Dialogue]],
-    real_heldout: Sequence[Dialogue],
+    authored_heldout: Sequence[Dialogue],
     *,
     seed: int,
     train_fraction: float,
     val_fraction: float,
 ) -> dict:
     """Build the reproducibility manifest: per-split counts, grand total, seed, fractions,
-    and a content hash over every record (splits + real_heldout)."""
+    and a content hash over every record (splits + authored_heldout)."""
     counts = {name: _split_counts(splits.get(name, ())) for name in _SPLIT_NAMES}
-    counts["real_heldout"] = _split_counts(real_heldout)
-    all_records = [d for name in _SPLIT_NAMES for d in splits.get(name, ())] + list(real_heldout)
+    counts["authored_heldout"] = _split_counts(authored_heldout)
+    all_records = [d for name in _SPLIT_NAMES for d in splits.get(name, ())] + list(authored_heldout)
     return {
         "schema": _MANIFEST_SCHEMA_NOTE,
         "seed": seed,
@@ -189,9 +189,9 @@ def build_corpus(
 
     Inputs default to the configured locations so the CLI is zero-arg, but every input is
     injectable for tests. Synthetic dialogues are scrubbed + deduped + split; the curated
-    anchors become `real_heldout`, scrubbed but never mixed into train/val/test.
+    anchors become `authored_heldout`, scrubbed but never mixed into train/val/test.
     `augment_dialogues` (targeted training data, e.g. reassurance hard negatives) are scrubbed
-    and added to **train only** -- never val/test/real_heldout, so the eval sets stay a clean
+    and added to **train only** -- never val/test/authored_heldout, so the eval sets stay a clean
     held-out signal.
     """
     cfg = get_config()
@@ -214,14 +214,14 @@ def build_corpus(
     scrubbed_augment = tuple(scrub_dialogue(d) for d in (augment_dialogues or ()))
     if scrubbed_augment:
         splits = {**splits, "train": deduplicate(splits["train"] + scrubbed_augment)}
-    real_heldout = tuple(scrub_dialogue(d) for d in anchors)
+    authored_heldout = tuple(scrub_dialogue(d) for d in anchors)
 
     for name in _SPLIT_NAMES:
         _write_jsonl(splits[name], active_processed / f"{name}.jsonl")
-    _write_jsonl(real_heldout, active_processed / "real_heldout.jsonl")
+    _write_jsonl(authored_heldout, active_processed / "authored_heldout.jsonl")
 
     manifest = build_manifest(
-        splits, real_heldout, seed=active_seed, train_fraction=active_train, val_fraction=active_val
+        splits, authored_heldout, seed=active_seed, train_fraction=active_train, val_fraction=active_val
     )
     manifest["train_augment_count"] = len(scrubbed_augment)
     (active_processed / "manifest.json").write_text(

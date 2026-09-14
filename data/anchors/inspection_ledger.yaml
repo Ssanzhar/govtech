@@ -1,0 +1,21 @@
+# Inspection ledger -- authored_heldout anchors whose text was READ while engineering
+# features. Their scores are not an unbiased generalization signal; the eval harness
+# reports them as a separate "(inspected)" subset. Append, never delete. See
+# src/qorgan/data/ledger.py and docs/PLAN_2026-09.md (A2).
+version: 1
+entries:
+  - id: real_neg_bank_fraud_alert_ru
+    inspected_on: 2026-07-13
+    reason: false positive at 0.990 on the embedding-only model; motivated the reassurance feature + reassurance negatives
+  - id: real_neg_telecom_tariff_ru
+    inspected_on: 2026-07-13
+    reason: false positive at 0.942 on the embedding-only model; same investigation as above
+  - id: real_neg_bank_card_ready_ru
+    inspected_on: 2026-07-13
+    reason: near-miss at 0.647 examined alongside the two false positives
+  - id: real_neg_telecom_tariff_notice_mixed
+    inspected_on: 2026-07-15
+    reason: KK/mixed false positive at 0.809 after widening the set; motivated KK reassurance terms + KK legit negatives; used as a retrain-gate sentinel
+  - id: real_neg_bank_card_delivery_kk
+    inspected_on: 2026-07-15
+    reason: borderline at 0.541 during the KK-boundary work; used as a retrain-gate sentinel

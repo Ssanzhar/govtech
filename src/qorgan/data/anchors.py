@@ -1,7 +1,7 @@
-"""Curated `real_heldout` anchor dialogues (D2-3, manual-transcript fallback).
+"""Curated `authored_heldout` anchor dialogues (D2-3, manual-transcript fallback).
 
 No public Kazakh/Russian scam-call transcript corpus exists, and streaming ASR of real
-recordings is explicitly out of scope this sprint (`docs/SCOPE.md`). So the `real_heldout`
+recordings is explicitly out of scope this sprint (`docs/SCOPE.md`). So the `authored_heldout`
 generalization set is a small, hand-curated set of realistic Kazakhstani calls --
 paraphrased from publicly documented scam scripts and everyday call patterns, with every
 identifier already abstracted (no real phone numbers/cards/IINs). It is kept deliberately
@@ -262,7 +262,7 @@ _POSITIVE_ANCHORS: tuple[AnchorSpec, ...] = (
     ),
     # --- Phase 1A widening: one dedicated anchor each for previously-starved tail
     # tactics (mule_recruitment, secrecy, remote_access, investment_scam, prize_lottery),
-    # so tail-tactic recall on `real_heldout` becomes statistically measurable. -----------
+    # so tail-tactic recall on `authored_heldout` becomes statistically measurable. -----------
     AnchorSpec(
         id="real_scam_mule_recruit_reward_ru",
         language="ru",

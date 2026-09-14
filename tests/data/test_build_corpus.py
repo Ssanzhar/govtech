@@ -198,14 +198,14 @@ def test_build_manifest_counts_and_metadata():
         "val": [_dialogue("v1", ["e f"], language="kk")],
         "test": [_dialogue("te1", ["g h"], language="mixed")],
     }
-    real_heldout = [_dialogue("r1", ["i j"], hard_negative=True, risk=0.02)]
+    authored_heldout = [_dialogue("r1", ["i j"], hard_negative=True, risk=0.02)]
     manifest = build_manifest(
-        splits, real_heldout, seed=42, train_fraction=0.7, val_fraction=0.15
+        splits, authored_heldout, seed=42, train_fraction=0.7, val_fraction=0.15
     )
     assert manifest["seed"] == 42
     assert manifest["counts"]["train"]["total"] == 2
     assert manifest["counts"]["train"]["hard_negatives"] == 1
-    assert manifest["counts"]["real_heldout"]["total"] == 1
+    assert manifest["counts"]["authored_heldout"]["total"] == 1
     assert manifest["total"] == 5
     assert manifest["fractions"] == {"train": 0.7, "val": 0.15, "test": pytest.approx(0.15)}
     assert len(manifest["content_hash"]) == 64
@@ -233,12 +233,12 @@ def test_build_corpus_end_to_end_writes_splits_and_manifest(tmp_path):
         val_fraction=0.15,
     )
 
-    for name in ("train", "val", "test", "real_heldout"):
+    for name in ("train", "val", "test", "authored_heldout"):
         assert (processed / f"{name}.jsonl").exists()
     assert (processed / "manifest.json").exists()
 
-    # real_heldout equals the anchors, kept fully separate from the split corpus.
-    heldout_lines = (processed / "real_heldout.jsonl").read_text(encoding="utf-8").strip().splitlines()
+    # authored_heldout equals the anchors, kept fully separate from the split corpus.
+    heldout_lines = (processed / "authored_heldout.jsonl").read_text(encoding="utf-8").strip().splitlines()
     assert len(heldout_lines) == 2
     split_ids = []
     for name in ("train", "val", "test"):
@@ -294,7 +294,7 @@ def test_build_corpus_adds_augmentation_to_train_only(tmp_path):
         return [Dialogue.model_validate_json(x).id for x in text.splitlines() if x]
 
     train_ids = ids("train")
-    other_ids = ids("val") + ids("test") + ids("real_heldout")
+    other_ids = ids("val") + ids("test") + ids("authored_heldout")
     assert all(f"aug_{i}" in train_ids for i in range(6))  # augmentation lands in train
     assert not any(x.startswith("aug_") for x in other_ids)  # and nowhere else
     assert manifest["train_augment_count"] == 6

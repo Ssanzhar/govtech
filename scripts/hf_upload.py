@@ -14,6 +14,6 @@ repo = 'sanzh-ts/govtech_ds'
 
 api.upload_folder(
     repo_id=repo, repo_type='dataset', folder_path='data/processed',
-    allow_patterns=['train.jsonl', 'val.jsonl', 'test.jsonl', 'real_heldout.jsonl', 'ood.jsonl', 'manifest.json']
+    allow_patterns=['train.jsonl', 'val.jsonl', 'test.jsonl', 'authored_heldout.jsonl', 'ood.jsonl', 'manifest.json']
 )
 api.upload_folder(repo_id=repo, repo_type='dataset', folder_path='data/augment', path_in_repo='augment')
