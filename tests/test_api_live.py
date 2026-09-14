@@ -185,6 +185,7 @@ def _tmp_data_dir(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv(
         "QORGAN_REASSURANCE_PATTERNS_PATH", "data/lexicon/reassurance_patterns.yaml"
     )
+    monkeypatch.setenv("QORGAN_NUMBER_HMAC_KEY", "tests-only-key")
 
 
 def test_report_after_end_appends_a_citizen_report(
@@ -203,13 +204,16 @@ def test_report_after_end_appends_a_citizen_report(
     assert res.status_code == 200, res.text
     body = res.json()
     assert body["report_id"].startswith("report-")
+    assert body["receipt_id"] == body["receipt_id"].lower() and len(body["receipt_id"]) == 24
+    assert body["number_prefix"] == "+7 700 ***"
     lines = _reports_file(tmp_path).read_text(encoding="utf-8").splitlines()
     assert len(lines) == 1
-    from qorgan.live.summary import ReportDraft
+    from qorgan.reports.model import StoredReport
 
-    draft = ReportDraft.model_validate_json(lines[0])
-    assert scam_line in draft.transcript
-    assert draft.phone_number == "+7 700 000 11 22"
+    stored = StoredReport.model_validate_json(lines[0])
+    assert scam_line in stored.transcript
+    assert stored.number_prefix == "+7 700 ***"
+    assert "000 11 22" not in lines[0] and "0001122" not in lines[0]  # raw number never persisted
 
 
 def test_report_works_without_calling_end_first(
@@ -283,3 +287,40 @@ def test_reported_call_shows_up_as_pending_on_the_admin_overview(
     body = client.get("/api/admin/overview").json()
 
     assert body["kpis"]["pending_reports"] == 1
+
+
+def test_report_with_a_number_is_refused_when_no_hashing_key_is_configured(
+    client: TestClient, tmp_path, monkeypatch
+) -> None:
+    """Never store a raw number: a misconfigured server refuses instead (ADR D14)."""
+    _tmp_data_dir(tmp_path, monkeypatch)
+    monkeypatch.setenv("QORGAN_NUMBER_HMAC_KEY", "")
+    session_id = _create_session(client)
+    client.post(f"/api/live/session/{session_id}/utterance", json={"text": _lines("live_scam_bank_ru")[0]})
+
+    res = client.post(f"/api/live/session/{session_id}/report", json={"phone_number": "+7 700 000 11 22"})
+
+    assert res.status_code == 503
+    assert not _reports_file(tmp_path).exists()
+
+
+def test_report_without_a_number_needs_no_key(client: TestClient, tmp_path, monkeypatch) -> None:
+    _tmp_data_dir(tmp_path, monkeypatch)
+    monkeypatch.setenv("QORGAN_NUMBER_HMAC_KEY", "")
+    session_id = _create_session(client)
+    client.post(f"/api/live/session/{session_id}/utterance", json={"text": _lines("live_scam_bank_ru")[0]})
+
+    res = client.post(f"/api/live/session/{session_id}/report", json={})
+
+    assert res.status_code == 200, res.text
+    assert res.json()["number_prefix"] is None
+
+
+def test_report_with_an_unparseable_number_is_a_client_error(client: TestClient, tmp_path, monkeypatch) -> None:
+    _tmp_data_dir(tmp_path, monkeypatch)
+    session_id = _create_session(client)
+    client.post(f"/api/live/session/{session_id}/utterance", json={"text": _lines("live_scam_bank_ru")[0]})
+
+    res = client.post(f"/api/live/session/{session_id}/report", json={"phone_number": "call me"})
+
+    assert res.status_code == 422

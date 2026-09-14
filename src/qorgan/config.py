@@ -38,6 +38,8 @@ _DEFAULT_EMBED_MODEL_NAME = "intfloat/multilingual-e5-base"
 # fpr=0.000/recall=1.000 on the same set -- 0.55 is kept as the shipped default since it
 # already clears the FPR bar with equal recall). See docs/eval_report.md.
 _DEFAULT_RISK_THRESHOLD = 0.55
+# Consented reports are kept this long before the purge removes them (PLAN_2026-09 C3).
+_DEFAULT_REPORT_RETENTION_DAYS = 180
 _DEFAULT_RISK_THRESHOLD_ENTER = 0.55
 _DEFAULT_RISK_THRESHOLD_EXIT = 0.45
 # Live suspicion-meter smoothing (design spec §08): the displayed 0-100 score follows an
@@ -86,10 +88,10 @@ class Config(BaseModel):
     corpus_config_path: Path
     cue_lexicon_path: Path
     reassurance_patterns_path: Path
-
-    # --- ASR ---
     # Ids of authored_heldout anchors read during feature engineering (PLAN_2026-09 A2).
     inspection_ledger_path: Path
+
+    # --- ASR ---
     whisper_model_size: str
     vosk_model_kk: str
     vosk_model_ru: str
@@ -114,6 +116,11 @@ class Config(BaseModel):
     # --- Corpus splits (test fraction is the remainder) ---
     split_train_fraction: float = Field(gt=0.0, lt=1.0)
     split_val_fraction: float = Field(gt=0.0, lt=1.0)
+
+    # --- Privacy (PLAN_2026-09 C2/C3, ADR D14) ---
+    # Salt for phone-number HMACs; None means numbers cannot be accepted at all.
+    number_hmac_key: bytes | None
+    report_retention_days: int = Field(gt=0)
 
     # --- Reproducibility / localization ---
     default_seed: int
@@ -193,6 +200,12 @@ def _read_int(env: Mapping[str, str], key: str, default: int) -> int:
         raise ConfigError(f"{key}={raw!r} is not a valid int") from exc
 
 
+def _read_secret_bytes(env: Mapping[str, str], key: str) -> bytes | None:
+    """An optional secret as bytes; unset or blank means "not configured" (None)."""
+    value = env.get(key, "").strip()
+    return value.encode("utf-8") if value else None
+
+
 def _read_path(env: Mapping[str, str], key: str, default: Path) -> Path:
     raw = env.get(key)
     return default if not raw else Path(raw)
@@ -249,6 +262,9 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             reassurance_patterns_path=_read_path(
                 source, "QORGAN_REASSURANCE_PATTERNS_PATH", data_dir / "lexicon" / "reassurance_patterns.yaml"
             ),
+            inspection_ledger_path=_read_path(
+                source, "QORGAN_INSPECTION_LEDGER_PATH", data_dir / "anchors" / "inspection_ledger.yaml"
+            ),
             whisper_model_size=_read_str(
                 source, "QORGAN_WHISPER_MODEL_SIZE", _DEFAULT_WHISPER_MODEL_SIZE
             ),
@@ -262,9 +278,6 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
                 source, "QORGAN_LINEAR_MODEL_DIR", _read_path(source, "QORGAN_MODEL_DIR", _REPO_ROOT / "models") / "linear"
             ),
             embed_model_name=_read_str(source, "QORGAN_EMBED_MODEL_NAME", _DEFAULT_EMBED_MODEL_NAME),
-            inspection_ledger_path=_read_path(
-                source, "QORGAN_INSPECTION_LEDGER_PATH", data_dir / "anchors" / "inspection_ledger.yaml"
-            ),
             risk_threshold=_read_float(source, "QORGAN_RISK_THRESHOLD", _DEFAULT_RISK_THRESHOLD),
             risk_threshold_enter=_read_float(
                 source, "QORGAN_RISK_THRESHOLD_ENTER", _DEFAULT_RISK_THRESHOLD_ENTER
@@ -283,6 +296,10 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
                 source, "QORGAN_SPLIT_VAL_FRACTION", _DEFAULT_SPLIT_VAL_FRACTION
             ),
             default_seed=_read_int(source, "QORGAN_SEED", _DEFAULT_SEED),
+            number_hmac_key=_read_secret_bytes(source, "QORGAN_NUMBER_HMAC_KEY"),
+            report_retention_days=_read_int(
+                source, "QORGAN_REPORT_RETENTION_DAYS", _DEFAULT_REPORT_RETENTION_DAYS
+            ),
             supported_locales=_read_csv_tuple(
                 source, "QORGAN_SUPPORTED_LOCALES", _DEFAULT_SUPPORTED_LOCALES
             ),

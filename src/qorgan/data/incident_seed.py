@@ -93,11 +93,19 @@ def build_families_from_dialogues(dialogues: Sequence[Dialogue]) -> list[ScriptF
 
 
 def seed_incidents(
-    dialogues: Sequence[Dialogue], *, count: int, seed: int, start_time: datetime, span_days: float = 30.0
+    dialogues: Sequence[Dialogue],
+    *,
+    count: int,
+    seed: int,
+    start_time: datetime,
+    hmac_key: bytes,
+    span_days: float = 30.0,
 ) -> list[Incident]:
-    """Build families from `dialogues` and synthesize `count` incidents."""
+    """Build families from `dialogues` and synthesize `count` incidents (numbers hashed with `hmac_key`)."""
     families = build_families_from_dialogues(dialogues)
-    return synthesize_incidents(families, count=count, seed=seed, start_time=start_time, span_days=span_days)
+    return synthesize_incidents(
+        families, count=count, seed=seed, start_time=start_time, hmac_key=hmac_key, span_days=span_days
+    )
 
 
 def write_incidents_jsonl(incidents: Sequence[Incident], path: Path) -> None:

@@ -53,7 +53,7 @@ def cluster_incidents(
 
     # Primary signal: union incidents sharing a phone number (transitively).
     incident_numbers = {
-        incident.id: ([incident.phone_number] if incident.phone_number else []) for incident in incidents
+        incident.id: ([incident.number_hash] if incident.number_hash else []) for incident in incidents
     }
     for component in link_by_shared_numbers(incident_numbers):
         _union_all(parent, list(component))

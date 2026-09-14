@@ -178,3 +178,22 @@ def test_repo_root_is_absolute_and_contains_pyproject():
 
 def test_load_config_returns_config_instance():
     assert isinstance(load_config({}), Config)
+
+
+# --- privacy knobs (PLAN_2026-09 C2/C3) ------------------------------------------------------
+
+
+def test_number_hmac_key_defaults_to_none_and_reads_env():
+    assert load_config({}).number_hmac_key is None
+    assert load_config({"QORGAN_NUMBER_HMAC_KEY": ""}).number_hmac_key is None
+    assert load_config({"QORGAN_NUMBER_HMAC_KEY": "s3cret"}).number_hmac_key == b"s3cret"
+
+
+def test_report_retention_days_default_and_override():
+    assert load_config({}).report_retention_days == 180
+    assert load_config({"QORGAN_REPORT_RETENTION_DAYS": "30"}).report_retention_days == 30
+
+
+def test_report_retention_days_must_be_positive():
+    with pytest.raises(ConfigError):
+        load_config({"QORGAN_REPORT_RETENTION_DAYS": "0"})

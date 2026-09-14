@@ -33,9 +33,15 @@ def main(argv: Sequence[str] | None = None) -> None:
         for line in dialogues_path.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
+    if cfg.number_hmac_key is None:
+        raise SystemExit(
+            "QORGAN_NUMBER_HMAC_KEY is not set -- seeded incidents store caller numbers only as "
+            "HMAC digests (ADR D14). Generate one: python -c 'import secrets; print(secrets.token_hex(32))'"
+        )
     start = datetime.now() - timedelta(days=args.span_days)
     incidents = seed_incidents(
-        dialogues, count=args.count, seed=args.seed, start_time=start, span_days=args.span_days
+        dialogues, count=args.count, seed=args.seed, start_time=start,
+        hmac_key=cfg.number_hmac_key, span_days=args.span_days,
     )
     write_incidents_jsonl(incidents, args.out)
     print(f"seeded {len(incidents)} incidents -> {args.out}")

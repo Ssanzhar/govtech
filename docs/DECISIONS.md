@@ -80,3 +80,16 @@ same as D12 — the analyst layer must be reachable only through an explicit, re
 report. **Revisit:** when the partner intake API lands (PLAN C5) it is the second
 *consented* ingress, with a required `consent_basis`, quotas and audit — not a bulk feed.
 
+### D14 — Reports are stored minimised: hashed numbers, scrubbed transcripts, receipts, retention (2026-09-14)
+A consented report is persisted only after `reports.store.prepare_report`: the transcript is
+PII-scrubbed (`data/scrub.py`), the caller number is reduced to a salted HMAC-SHA256 digest
+(`privacy/numbers.py`, key `QORGAN_NUMBER_HMAC_KEY`) plus a coarse display prefix
+(`+7 700 ***`), and the record gets an unguessable receipt. `Incident` and `StoredReport`
+refuse anything that is not a digest, so a raw number cannot be persisted through the
+schema. `DELETE /api/reports/{receipt}` forgets the report everywhere it reached (incident,
+embedding cache, recomputed organizations); `python -m qorgan.reports.purge` applies
+`QORGAN_REPORT_RETENTION_DAYS`. A server without a key refuses reports that carry a number
+(503) rather than storing it raw. **Rationale:** the analyst layer needs to *link* numbers,
+never to know them; the council's "one config line from surveillance" risk is answered by
+making the raw data unavailable by construction. **Revisit:** key rotation strategy when a
+real partner integration lands (linking breaks across keys).

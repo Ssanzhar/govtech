@@ -112,6 +112,11 @@ def ensure_l2_seeds() -> None:
     if (PROCESSED / "organizations.jsonl").exists():
         _log("L2 seeds: present")
         return
+    if not os.environ.get("QORGAN_NUMBER_HMAC_KEY", "").strip():
+        # Seeded numbers are stored as HMAC digests (ADR D14). Without the runtime key
+        # (never baked into an image) seeding is deferred to the first start.
+        _log("L2 seeds: skipped -- QORGAN_NUMBER_HMAC_KEY not set (seeds on first start with the key)")
+        return
     _log("L2 seeds: seeding incidents + clustering (embeds ~500 transcripts on CPU)")
     _run([sys.executable, "scripts/demo_seed.py"])
     _run([sys.executable, "-m", "qorgan.analytics.pipeline"])

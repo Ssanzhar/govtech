@@ -24,7 +24,9 @@ RUN pip install -e .
 
 COPY . .
 
-# Bake corpus + model + Level-2 seeds + Vosk models into the image.
+# Bake corpus + model into the image. Level-2 seeds are created on first start, because
+# their caller numbers are HMAC-hashed with QORGAN_NUMBER_HMAC_KEY (a runtime secret that
+# must never be baked into the image) -- pass it with `docker run -e QORGAN_NUMBER_HMAC_KEY=...`.
 RUN python scripts/deploy_bootstrap.py
 
 EXPOSE 8000

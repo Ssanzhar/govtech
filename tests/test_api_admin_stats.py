@@ -11,7 +11,7 @@ from qorgan.analytics.pipeline import write_organizations_jsonl
 from qorgan.api import app
 from qorgan.data.incident_seed import write_incidents_jsonl
 from qorgan.data.schema import Incident, Label, Organization, TacticTag
-from qorgan.live.summary import ReportDraft
+from support.numbers import stored_report
 
 
 @pytest.fixture()
@@ -103,15 +103,13 @@ def test_stats_report_counts(client: TestClient, tmp_path, monkeypatch) -> None:
     from qorgan.analytics.intake import report_incident_id
 
     now = datetime.now()
-    ingested_draft = ReportDraft(
-        transcript="переведите деньги на безопасный счёт",
-        timestamp=datetime(2026, 7, 15, 10, 0, tzinfo=UTC),
-        risk_score=84.0,
+    ingested_draft = stored_report(
+        number=None, transcript="переведите деньги на безопасный счёт",
+        timestamp=datetime(2026, 7, 15, 10, 0, tzinfo=UTC), risk_score=84.0,
     )
-    pending_draft = ReportDraft(
-        transcript="назовите код из смс срочно",
-        timestamp=datetime(2026, 7, 16, 10, 0, tzinfo=UTC),
-        risk_score=90.0,
+    pending_draft = stored_report(
+        number=None, transcript="назовите код из смс срочно", flagged_phrases=(), tactic_ids=(),
+        timestamp=datetime(2026, 7, 16, 10, 0, tzinfo=UTC), risk_score=90.0,
     )
     incidents = [
         _incident("i1", ts=now),

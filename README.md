@@ -83,6 +83,16 @@ reported separately (`data/anchors/inspection_ledger.yaml`). The harness prints 
 on every run. Methodology + caveats: [`docs/eval_report.md`](docs/eval_report.md), data
 provenance: [`data/README.md`](data/README.md).
 
+## Reports API (consented ingress) & privacy
+
+`POST /api/reports` is the only way call content enters the analyst layer, and only on an
+explicit user action. The server stores the transcript PII-scrubbed, the caller number as
+a salted HMAC digest + prefix (`+7 700 ***`), returns exactly what it kept plus a receipt,
+and `DELETE /api/reports/{receipt}` forgets it everywhere (`python -m qorgan.reports.purge`
+applies the retention window). Set `QORGAN_NUMBER_HMAC_KEY` (see `.env.example`); without
+it the server refuses reports that carry a number. No route accepts audio; these
+invariants are enforced by `tests/test_architecture.py` (ADRs D12–D14).
+
 ## Publish model/data updates (maintainers)
 
 After a retrain: `hf auth login` (write token) then `python scripts/hf_upload.py` — it

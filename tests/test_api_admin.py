@@ -13,6 +13,8 @@ from fastapi.testclient import TestClient
 from qorgan.analytics.pipeline import write_organizations_jsonl
 from qorgan.api import app
 from qorgan.data.incident_seed import write_incidents_jsonl
+from support.numbers import hashed, prefix, stored_report
+
 from qorgan.data.schema import Incident, Label, Organization, TacticTag
 
 
@@ -34,7 +36,7 @@ def _incident(
         dialogue_id=iid,
         transcript=transcript,
         label=Label(risk=0.9, tactic_tags=tuple(TacticTag(id=t) for t in tags)),
-        phone_number=number,
+        number_hash=hashed(number), number_prefix=prefix(number),
         timestamp=ts,
     )
 
@@ -280,16 +282,7 @@ class _FakeEmbedder:
 def _write_report(tmp_path, *, number: str) -> None:
     from datetime import UTC, datetime
 
-    from qorgan.live.summary import ReportDraft
-
-    draft = ReportDraft(
-        phone_number=number,
-        transcript="алло переведите деньги на безопасный счёт",
-        flagged_phrases=("переведите деньги на безопасный счёт",),
-        tactic_ids=("safe_account",),
-        timestamp=datetime(2026, 7, 17, 10, 0, tzinfo=UTC),
-        risk_score=84.0,
-    )
+    draft = stored_report(number=number, timestamp=datetime(2026, 7, 17, 10, 0, tzinfo=UTC))
     path = tmp_path / "processed" / "citizen_reports.jsonl"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(draft.model_dump_json() + "\n", encoding="utf-8")

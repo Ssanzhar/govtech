@@ -10,6 +10,8 @@ from qorgan.analytics.pipeline import (
     load_organizations_jsonl,
     write_organizations_jsonl,
 )
+from support.numbers import hashed, prefix, stored_report
+
 from qorgan.data.schema import Incident, Label
 
 _NOW = datetime(2026, 7, 31, 12, 0, 0)
@@ -18,7 +20,7 @@ _NOW = datetime(2026, 7, 31, 12, 0, 0)
 def _incident(iid, text, number, family, days_ago):
     return Incident(
         id=iid, dialogue_id=iid, transcript=text, label=Label(risk=0.9),
-        phone_number=number, timestamp=_NOW - timedelta(days=days_ago), script_family=family,
+        number_hash=hashed(number), number_prefix=prefix(number), timestamp=_NOW - timedelta(days=days_ago), script_family=family,
     )
 
 
@@ -26,13 +28,13 @@ def _fixture():
     rng = np.random.default_rng(0)
     incidents, rows = [], []
     for i in range(12):
-        incidents.append(_incident(f"a{i}", "банк код", "n_a", "bank", 20))
+        incidents.append(_incident(f"a{i}", "банк код", "+7 700 000 00 01", "bank", 20))
         rows.append([1.0, 0.0, 0.0] + rng.normal(0, 0.02, 3).tolist())
     for i in range(12):
-        incidents.append(_incident(f"b{i}", "следователь дело", "n_b", "police", 15))
+        incidents.append(_incident(f"b{i}", "следователь дело", "+7 701 000 00 02", "police", 15))
         rows.append([0.0, 1.0, 0.0] + rng.normal(0, 0.02, 3).tolist())
     for i in range(2):
-        incidents.append(_incident(f"x{i}", "крипто раздача", "n_x", "crypto_new", 1))
+        incidents.append(_incident(f"x{i}", "крипто раздача", "+7 702 000 00 03", "crypto_new", 1))
         rows.append([0.0, 0.0, 1.0] + rng.normal(0, 0.02, 3).tolist())
     return incidents, np.array(rows, dtype=np.float32)
 

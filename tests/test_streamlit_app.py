@@ -133,6 +133,7 @@ def _write_l2_fixture(data_dir):
     """Two organizations (one novel) + tagged, dated incidents for the analyst tab."""
     from datetime import UTC, datetime
 
+    from support.numbers import hashed
     from qorgan.data.schema import Incident, Label, Organization, Span, TacticTag
 
     processed = data_dir / "processed"
@@ -150,7 +151,7 @@ def _write_l2_fixture(data_dir):
                 tactic_tags=(TacticTag(id="impersonation_bank"), TacticTag(id="otp_request")),
                 trigger_spans=(Span(text=phrase, start=start, end=start + len(phrase)),),
             ),
-            phone_number="+7 700 101 20 30",
+            number_hash=hashed("+7 700 101 20 30"), number_prefix="+7 700 ***",
             timestamp=datetime(2026, 7, 10 + n, 12, 0, tzinfo=UTC),
         )
         for n in range(3)
@@ -160,7 +161,7 @@ def _write_l2_fixture(data_dir):
             dialogue_id="i9",
             transcript="Раздача криптовалюты, отправьте монеты на кошелёк.",
             label=Label(risk=0.9, tactic_tags=(TacticTag(id="payment_redirect"),)),
-            phone_number="+7 708 909 10 11",
+            number_hash=hashed("+7 708 909 10 11"), number_prefix="+7 708 ***",
             timestamp=datetime(2026, 7, 14, 9, 0, tzinfo=UTC),
         )
     ]
@@ -214,15 +215,13 @@ def test_analyst_tab_offers_and_wires_ingest_for_pending_reports(monkeypatch, tm
     from datetime import UTC, datetime
 
     from qorgan.analytics.intake import IngestSummary, Placement
-    from qorgan.live.summary import ReportDraft
+    from support.numbers import stored_report
 
     data_dir = tmp_path / "data"
     _write_l2_fixture(data_dir)
-    draft = ReportDraft(
-        phone_number="+7 700 101 20 30",
-        transcript="алло переведите деньги на безопасный счёт",
-        timestamp=datetime(2026, 7, 15, 10, 0, tzinfo=UTC),
-        risk_score=84.0,
+    draft = stored_report(
+        number="+7 700 101 20 30", flagged_phrases=(), tactic_ids=(),
+        timestamp=datetime(2026, 7, 15, 10, 0, tzinfo=UTC), risk_score=84.0,
     )
     (data_dir / "processed" / "citizen_reports.jsonl").write_text(
         draft.model_dump_json() + "\n", encoding="utf-8"

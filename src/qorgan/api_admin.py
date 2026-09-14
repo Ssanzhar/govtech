@@ -222,7 +222,7 @@ def organization_detail(org_id: str, locale: Locale = "ru") -> OrgDetailResponse
         SampleIncidentOut(
             id=incident.id,
             date=incident.timestamp.strftime("%Y-%m-%d %H:%M") if incident.timestamp else None,
-            number=incident.phone_number,
+            number=incident.number_prefix,
             risk=incident.label.risk,
             excerpt=incident.transcript[:_EXCERPT_CHARS],
         )

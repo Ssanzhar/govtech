@@ -132,7 +132,8 @@
       `<button type="button" id="lvReportSend" class="btn btn-paper">Send report</button>` +
       `</div>` +
       `<p class="lv-report-note" id="lvReportNote">Consent-gated: nothing is sent until you click. ` +
-      `The transcript and detected tactics join the analyst dashboard's pending queue.</p>` +
+      `What is kept: the transcript with numbers/IDs redacted, the caller number only as a keyed hash ` +
+      `plus its prefix (e.g. +7 700 ***), and the detected tactics. You get a receipt to delete it.</p>` +
       `</div>` +
       `</div>`;
     document.getElementById("lvReportSend").addEventListener("click", sendReport);
@@ -156,12 +157,29 @@
       const body = await res.json();
       note.className = "lv-report-note is-success";
       note.innerHTML =
-        `Report <b>${esc(body.report_id)}</b> submitted — it is now a pending report on the ` +
-        `<a href="admin.html">analyst dashboard</a>, where “ingest reports” folds it into the cluster analysis.`;
+        `Stored — receipt <b>${esc(body.receipt_id)}</b>. Number kept as <b>${esc(body.number_prefix || "—")}</b>; ` +
+        `transcript as stored (redacted):` +
+        `<pre class="lv-stored mono">${esc(body.stored_transcript)}</pre>` +
+        `It is now a pending report on the <a href="admin.html">analyst dashboard</a>. ` +
+        `<button type="button" id="lvReportDelete" class="btn btn-ghost">Delete my report</button>`;
+      document.getElementById("lvReportDelete").addEventListener("click", () => deleteReport(body.receipt_id, note));
     } catch (e) {
       btn.disabled = false;
       note.className = "lv-report-note is-error";
       note.textContent = `Could not submit — ${e.message || e}`;
+    }
+  };
+
+  const deleteReport = async (receiptId, note) => {
+    try {
+      const res = await fetch(`/api/reports/${encodeURIComponent(receiptId)}`, { method: "DELETE" });
+      if (res.status === 404) throw new Error("already deleted");
+      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      note.className = "lv-report-note";
+      note.textContent = "Report deleted — removed from the pending queue and from the analysis if it had been ingested.";
+    } catch (e) {
+      note.className = "lv-report-note is-error";
+      note.textContent = `Could not delete — ${e.message || e}`;
     }
   };
 
