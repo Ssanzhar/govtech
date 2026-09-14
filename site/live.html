@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Qorğan — live call</title>
-<meta name="description" content="Qorğan live call — suspicion meter over streaming utterances, from a replayed script or your microphone. Grounded evidence, advice, consent-gated reporting. A human always decides.">
+<meta name="description" content="Qorğan live call — suspicion meter over streaming utterances from a replayed script (microphone mode arrives as an on-device feature). Grounded evidence, advice, consent-gated reporting. A human always decides.">
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%230E0C13"/><g fill="%23E29B2E"><rect x="7" y="13" width="2.6" height="6"/><rect x="11.4" y="9" width="2.6" height="14"/><rect x="15.8" y="5" width="2.6" height="22"/><rect x="20.2" y="10" width="2.6" height="12"/><rect x="24.6" y="14" width="2.6" height="4"/></g></svg>'>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,9 +39,9 @@
   <section class="col-wide lv-hero">
     <p class="eyebrow">Live call &middot; replay &amp; microphone</p>
     <h1 class="display-2">Watch the <em>meter climb</em>.</h1>
-    <p class="body-copy">One pipeline behind every input. Replay a scripted call, or speak
-    into the microphone &mdash; dual KK/RU streaming ASR feeds the same detector, on your
-    own machine.</p>
+    <p class="body-copy">One pipeline behind every input. Replay a scripted call turn by
+    turn. Microphone mode is coming as an <em>on-device</em> feature &mdash; this server
+    never accepts audio.</p>
     <div class="lv-pipeline mono" role="img"
       aria-label="Pipeline: utterances, then rolling window, then risk score, then suspicion meter, then grounded advice">
       <span class="lv-stage">
@@ -116,9 +116,8 @@
       </div>
 
       <div class="lv-setup" id="lvSetupMic" hidden>
-        <p class="lv-mic-copy mono">Speak in Russian or Kazakh. Audio streams only to your
-        own server (dual Vosk KK+RU recognizers, per-utterance confidence voting) and every
-        committed utterance drives the same suspicion meter.</p>
+        <p class="lv-mic-copy mono">Microphone mode will run speech recognition in your
+        browser, so no audio ever leaves your device. Not available yet on this build.</p>
         <div class="lv-setup-actions">
           <button type="button" id="lvMicStart" class="btn btn-paper">Start microphone</button>
           <button type="button" id="lvMicStop" class="btn btn-ghost" hidden>End call</button>
@@ -163,7 +162,6 @@
   </div>
 </footer>
 
-<script src="live_mic.js"></script>
 <script src="live.js"></script>
 </body>
 </html>

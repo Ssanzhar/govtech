@@ -1,5 +1,5 @@
 /* Qorğan live call — replay (POST /api/live/session + /utterance + /end) and
-   microphone (WS /api/live/ws via live_mic.js) drive the same meter UI; both end in a
+   microphone (on-device, pending) drive the same meter UI; both end in a
    post-call summary with the consent-gated report button (POST .../report). */
 (() => {
   "use strict";
@@ -273,69 +273,21 @@
   };
 
   const checkMicCapability = async () => {
-    if (!window.QorganMic?.supported()) {
-      disableMicChip("this browser cannot capture microphone audio");
-      return;
-    }
     try {
       const res = await fetch("/api/live/capabilities");
       const body = await res.json();
       if (!body.microphone) {
-        disableMicChip("server lacks streaming ASR — pip install -e '.[live]'");
+        disableMicChip(body.reason || "microphone mode is not available");
+        setNote(micNote, body.reason || "");
+        return;
       }
     } catch {
       disableMicChip("could not reach /api/live/capabilities");
     }
   };
 
-  const micIdle = () => {
-    micStartBtn.disabled = false;
-    micStartBtn.hidden = false;
-    micStopBtn.hidden = true;
-  };
-
-  const handleMicEvent = (msg) => {
-    switch (msg.type) {
-      case "ready":
-        micSessionId = msg.session_id;
-        micStartBtn.hidden = true;
-        micStopBtn.hidden = false;
-        setNote(micNote, `listening — backend: ${msg.backend}. Speak, then click “End call”.`);
-        break;
-      case "partial":
-        showPartial(msg.text);
-        break;
-      case "utterance":
-        showPartial("");
-        applyUpdate(msg, msg.text);
-        break;
-      case "summary":
-        showPartial("");
-        renderSummary(msg, msg.session_id || micSessionId);
-        setNote(micNote, "");
-        micIdle();
-        break;
-      case "error":
-        setNote(micNote, msg.message, true);
-        micIdle();
-        break;
-      default:
-        break;
-    }
-  };
-
-  micStartBtn?.addEventListener("click", () => {
-    micStartBtn.disabled = true;
-    setNote(micNote, "connecting…");
-    resetCallUi();
-    window.QorganMic.start({ locale: locale(), onEvent: handleMicEvent });
-  });
-
-  micStopBtn?.addEventListener("click", () => {
-    micStopBtn.hidden = true;
-    setNote(micNote, "finishing — flushing the last words…");
-    window.QorganMic.stop();
-  });
+  // Microphone capture returns as an on-device feature (no audio leaves the browser);
+  // until then the chip is disabled with the server's stated reason.
 
   // ── mode toggle ──────────────────────────────────────────────────────────────
 

@@ -1,5 +1,6 @@
 # Qorğan demo — FastAPI site (landing + live call + analyst dashboard) in one container.
-# Model, corpus, demo seeds, and Vosk ASR models are baked at BUILD time by
+# This server never accepts audio (PLAN_2026-09 §2); ASR belongs on the device.
+# Model, corpus, and demo seeds are baked at BUILD time by
 # scripts/deploy_bootstrap.py, so cold starts are instant.
 
 FROM python:3.11-slim
@@ -19,8 +20,7 @@ RUN pip install "torch>=2.2" --index-url https://download.pytorch.org/whl/cpu
 
 COPY pyproject.toml README.md ./
 COPY src ./src
-# vosk: server-side streaming ASR for the live-mic mode (no audio-device deps needed).
-RUN pip install -e . && pip install "vosk>=0.3.44"
+RUN pip install -e .
 
 COPY . .
 

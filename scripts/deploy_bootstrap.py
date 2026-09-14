@@ -10,7 +10,6 @@ already exists, so re-running (container restart, local dev) is a fast no-op.
    hash-validation (drift), retrain from the corpus — seconds on CPU.
 4. Level-2 seeds  ← `demo_seed` + `analytics.pipeline`, deterministic (seed 42). The
    fabricated demo phone numbers live only in the running instance, never in git.
-5. Vosk KK/RU streaming models pre-downloaded so the live-mic mode has no first-use lag.
 """
 
 from __future__ import annotations
@@ -119,32 +118,12 @@ def ensure_l2_seeds() -> None:
     _log("L2 seeds: organizations ready")
 
 
-def ensure_vosk_models() -> None:
-    try:
-        from vosk import Model  # noqa: F401  (the [live]/deploy extra)
-    except ImportError:
-        _log("vosk not installed — live-mic mode will be reported unavailable")
-        return
-    from qorgan.config import get_config
-
-    cfg = get_config()
-    for model_name in (cfg.vosk_model_kk, cfg.vosk_model_ru):
-        marker = Path.home() / ".cache" / "vosk" / model_name
-        if marker.exists():
-            _log(f"vosk: {model_name} cached")
-            continue
-        _log(f"vosk: downloading {model_name}")
-        snippet = f"from vosk import Model; Model(model_name={model_name!r})"
-        subprocess.run([sys.executable, "-c", snippet], check=True, cwd=REPO_ROOT)
-
-
 def main() -> None:
     os.environ.setdefault("QORGAN_CLASSIFIER_BACKEND", "linear")
     ensure_corpus()
     ensure_dialogue_pool()
     ensure_model()
     ensure_l2_seeds()
-    ensure_vosk_models()
     _log("done — serve with: uvicorn qorgan.api:app --host 0.0.0.0 --port $PORT")
 
 

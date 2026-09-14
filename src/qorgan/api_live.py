@@ -117,6 +117,27 @@ class ReportResponse(BaseModel):
     status: str
 
 
+class CapabilitiesResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    microphone: bool
+    reason: str
+
+
+# Raw call audio never reaches this server (PLAN_2026-09 §2 invariant 1; ADR D12). The
+# microphone mode returns once ASR runs on the device itself (spike B7).
+_MICROPHONE_UNAVAILABLE_REASON = (
+    "this server does not accept audio -- microphone analysis will run on your device "
+    "once on-device speech recognition ships"
+)
+
+
+@router.get("/capabilities", response_model=CapabilitiesResponse)
+def capabilities() -> CapabilitiesResponse:
+    """What the live page can offer on this install. Audio is never one of them."""
+    return CapabilitiesResponse(microphone=False, reason=_MICROPHONE_UNAVAILABLE_REASON)
+
+
 @router.get("/scenarios", response_model=ScenariosResponse)
 def scenarios() -> ScenariosResponse:
     return ScenariosResponse(

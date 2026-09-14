@@ -61,3 +61,22 @@ Gemini plan (no extra cost), and the LLM is only **build-time scaffolding + a te
 baseline** — the shipped classifier is the offline fine-tuned XLM-R (D3), so the provider
 choice does not affect the offline/transparent end goal. The client is dependency-injected;
 swapping providers again is a one-file change in `llm_tools.py` + `_default_client`.
+
+### D12 — No server-side call audio; no operator interception on the roadmap (2026-09-13)
+The served API never accepts audio: the microphone WebSocket (`api_live_ws.py`) and its
+streaming client (`site/live_mic.js`) were removed; `GET /api/live/capabilities` states the
+invariant. Speech recognition belongs on the citizen's device (PLAN_2026-09 B7 spike);
+"listen to live calls through the operator" is off the roadmap. **Rationale:** the council
+review — an architecture that streams call content to a server and forwards results to
+government analysts is indistinguishable from interception infrastructure regardless of
+intent, and it is not fixable by code review, only by design. Enforced by
+`tests/test_architecture.py`. **Revisit:** never for audio; on-device ASR when B7 is green.
+
+### D13 — Level 2 has a single ingress: consented reports (2026-09-13)
+Nothing on the citizen path (`live/*`, `api_live*`, `api.py::analyze`) may import the
+analytics write paths (`analytics.store`, `pipeline`, `cluster`, `intake.ingest_*`);
+`/api/analyze` persists nothing. Enforced by `tests/test_architecture.py`. **Rationale:**
+same as D12 — the analyst layer must be reachable only through an explicit, reviewable
+report. **Revisit:** when the partner intake API lands (PLAN C5) it is the second
+*consented* ingress, with a required `consent_basis`, quotas and audit — not a bulk feed.
+
