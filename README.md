@@ -89,6 +89,14 @@ reported separately (`data/anchors/inspection_ledger.yaml`). The harness prints 
 on every run. Methodology + caveats: [`docs/eval_report.md`](docs/eval_report.md), data
 provenance: [`data/README.md`](data/README.md).
 
+## Real calls (when they arrive)
+
+`docs/DATA_INTAKE.md` is the policy and protocol: encrypted/on-prem delivery, a
+`batch.yaml` + `calls.csv` batch format, `python scripts/ingest_partner_calls.py <batch>`
+(scrub → hashed number linkage → first-come allocation into a hash-locked
+`real_heldout_v2` of 60 legit / 40 scam, the rest to `real_train`). The locked set is
+scored, never read, and only at release points. `data/real/` never enters git.
+
 ## Reports API (consented ingress) & privacy
 
 `POST /api/reports` is the only way call content enters the analyst layer, and only on an
@@ -98,6 +106,46 @@ and `DELETE /api/reports/{receipt}` forgets it everywhere (`python -m qorgan.rep
 applies the retention window). Set `QORGAN_NUMBER_HMAC_KEY` (see `.env.example`); without
 it the server refuses reports that carry a number. No route accepts audio; these
 invariants are enforced by `tests/test_architecture.py` (ADRs D12–D14).
+
+## Partner API (`/api/v1`) — consented reports in, aggregates out
+
+A bank fraud desk, telecom or hotline can feed confirmed cases into the analyst layer and
+read back the organization-level picture — without ever sending call content it does not
+have to. It is a second *consented* ingress, not a bulk feed (ADR D19):
+
+- **Auth**: `X-API-Key` per partner; keys live in the server env
+  `QORGAN_PARTNER_API_KEYS="bank_a:<secret ≥16 chars>[:daily_quota],telecom_b:<secret>"`
+  (unset = the API is closed; `QORGAN_PARTNER_DAILY_QUOTA` is the default budget).
+- **One report per request**, preferably **structured tactic hits**; a transcript is accepted
+  only if the partner already PII-scrubbed it (the server checks and refuses otherwise,
+  without echoing it). `consent_basis` (a code from the data-sharing agreement) is required.
+  The caller number is hashed on receipt like a citizen report. `partner_reference` makes
+  retries idempotent.
+- **Limits**: 60 requests/min and a rolling 24 h quota per partner (`X-Quota-Limit` /
+  `X-Quota-Remaining` on every response); a content-free audit line for every action
+  (`data/processed/audit_log.jsonl`).
+- **Export**: `GET /api/v1/organizations` returns aggregates only — no numbers, no digests,
+  no transcripts. Partners can `DELETE` only their own receipts.
+
+```bash
+export QORGAN_PARTNER_API_KEYS="bank_a:replace-with-a-32-char-secret-00000000"
+python -m qorgan.api    # OpenAPI at http://localhost:8000/docs (scheme: PartnerApiKey)
+
+# 1. a confirmed case as structured signals (preferred shape)
+curl -s -X POST http://localhost:8000/api/v1/reports \
+  -H "X-API-Key: replace-with-a-32-char-secret-00000000" -H "Content-Type: application/json" \
+  -d '{"consent_basis":"customer_consent","tactic_ids":["otp_request","safe_account"],
+       "phone_number":"+7 700 555 66 77","partner_reference":"CASE-2026-0912"}'
+# -> 201 {"receipt_id": "...", "number_prefix": "+7 700 ***", "quota": {"limit":200,"used":1,...}}
+# 2. the same case again -> 200 "duplicate", nothing stored, quota untouched
+# 3. the organization-level picture (aggregates only)
+curl -s http://localhost:8000/api/v1/organizations?locale=ru -H "X-API-Key: replace-with-a-32-char-secret-00000000"
+# 4. withdraw a report
+curl -s -X DELETE http://localhost:8000/api/v1/reports/<receipt_id> -H "X-API-Key: replace-with-a-32-char-secret-00000000"
+```
+
+Signals-only reports (no transcript) are stored, receipted, deletable and counted; placing
+them into organizations through the number graph alone is the next Level-2 item (PLAN C9).
 
 ## Publish model/data updates (maintainers)
 

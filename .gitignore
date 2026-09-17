@@ -21,6 +21,8 @@ site/models/Xenova/
 site/models/qorgan/
 data/raw/
 data/synthetic/
+# Real partner calls (docs/DATA_INTAKE.md): scrubbed + hashed, still never in git.
+data/real/
 data/processed/*
 !data/processed/manifest.json
 data/cache/

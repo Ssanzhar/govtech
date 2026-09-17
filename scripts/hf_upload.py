@@ -12,6 +12,8 @@ api.upload_folder(repo_id=repo, repo_type='model', folder_path='data/lexicon', p
 
 repo = 'sanzh-ts/govtech_ds'
 
+# Explicit filenames on purpose: real_heldout_v2.jsonl / real_train.jsonl (real partner calls,
+# docs/DATA_INTAKE.md) live in the same dir and must NEVER be published.
 api.upload_folder(
     repo_id=repo, repo_type='dataset', folder_path='data/processed',
     allow_patterns=['train.jsonl', 'val.jsonl', 'test.jsonl', 'authored_heldout.jsonl', 'ood.jsonl', 'manifest.json']

@@ -2,7 +2,7 @@
 
 _Last updated: **2026-09-17**. Current-state doc for anyone picking the project up. Read this,
 then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECISIONS.md`
-(ADRs D11–D17), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
+(ADRs D11–D19), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
 kept as history._
 
 ## TL;DR (September 2026)
@@ -12,7 +12,8 @@ kept as history._
   golden parity tests). Level 2 (analyst) is fed **only** by consented reports.
 - **Privacy by architecture, enforced by tests** (`tests/test_architecture.py`): no route
   accepts audio; `/api/analyze` persists nothing; the analyst store has a single ingress
-  (`POST /api/reports`); numbers stored only as salted HMAC digests + `+7 700 ***`
+  (`POST /api/reports`) plus the consented partner ingress (`POST /api/v1/reports`,
+  API-key, quota, audit, aggregates-only export — ADR D19); numbers stored only as salted HMAC digests + `+7 700 ***`
   prefixes; transcripts PII-scrubbed; every report has a receipt, `DELETE` forgets it
   everywhere, `python -m qorgan.reports.purge` applies retention.
 - **Model:** e5-base int8 embeddings (same graph server + device, one text per run) ⊕ 6
@@ -21,7 +22,7 @@ kept as history._
   n=19 negatives → [0, 0.176]) · ood 0.000 [0, 0.048] / 0.844 · false-latch 2/24.
   **`authored_heldout` is hand-written, not real calls** — the locked real-call set (PLAN A3)
   does not exist yet; that is the biggest open item.
-- **Tests:** `pytest -q` → 906 offline · `npm test` → 16 (JS core parity + the int8 runtime
+- **Tests:** `pytest -q` → 985 offline (+2 skipped until a real held-out set exists) · `npm test` → 16 (JS core parity + the int8 runtime
   gate, which needs the self-hosted model files). Branch `sanzh-ts`.
 - **Verified in Chromium (2026-09-14, Playwright):** scene 1 on-device → 90/100 CRITICAL with
   cue-grounded tags/advice/summary; scene 2 (real bank call) → 5/100 LOW; report submit →
@@ -52,18 +53,21 @@ accept numbered reports), `QORGAN_REPORT_RETENTION_DAYS=180`.
 | `site/sw.js`, `manifest.webmanifest`, `icons/` | PWA shell: offline after first load; `/api/` never cached. |
 | `tests_js/` | Node built-in test runner: golden parity (`fixtures/parity.json`, generated) + integration gate. |
 | `src/qorgan/privacy/`, `src/qorgan/reports/`, `api_reports.py`, `api_ratelimit.py` | Number hashing, minimised report storage, receipts/deletion/purge, the consented ingress. |
+| `api_partner.py`, `api_partner_export.py`, `partners.py`, `audit.py`, `reports/partner.py`, `api_limits.py` | Partner API (`/api/v1`): key registry, one-report-per-request ingress, receipt-time quota, content-free audit log, aggregates-only export (ADR D19); app-wide body cap + 422s that never echo input. |
+| `data/real_intake.py`, `data/real_allocation.py`, `scripts/ingest_partner_calls.py`, `docs/DATA_INTAKE.md` | Real-call intake (A8): batch validation, scrub + hashed linkage, first-come allocation, hash-locked held-out set. `data/real/` is gitignored. |
 | `src/qorgan/classifier/web_bundle.py`, `embed.py::OnnxEmbedder` | JSON export of the heads + reference scorer; the int8 ONNX embedder. |
 | `src/qorgan/eval/intervals.py`, `src/qorgan/data/ledger.py`, `data/anchors/inspection_ledger.yaml` | Clopper–Pearson / bootstrap intervals; the inspection ledger behind the `(clean)/(inspected)` rows. |
 | `tests/test_architecture.py` | The privacy invariants as tests. |
 
 ## Open threads (see PLAN_2026-09 for owners/estimates)
-- **Real data (A3/A8):** no real calls yet; everything is synthetic or author-written. Stakeholders were asked for both scam and legit recordings.
+- **Real data (A3):** no real calls yet; everything is synthetic or author-written. Stakeholders were asked for both scam and legit recordings. The intake protocol + tooling exist (A8: `docs/DATA_INTAKE.md`, `scripts/ingest_partner_calls.py`, hash-locked `real_heldout_v2`, `tests/data/test_heldout_lock.py` skips until a set exists); the legal owner has not reviewed the protocol yet.
 - **B7 on-device ASR:** mic mode is disabled on the served site until it runs in the browser (Vosklet / Whisper KK+RU bake-off). Server-side audio is gone for good (ADR D12).
 - **B8 static quantisation — closed, no-go (2026-09-17, ADR D18):** int8 graphs drift
   ~0.6 % cosine across ONNX Runtime versions; a statically calibrated graph cost 5 pts of
   fidelity and did not move the cross-runtime floor. Decision-level parity (0 flips / 28) is
   the guarantee. The browser loads the graph named by the server's `QORGAN_EMBED_ONNX_DIR`
   (`qorgan-config.json::embedder`).
+- **C9 signals-only placement:** partner reports without a transcript are stored/counted but not placed into organizations (nothing to embed) — number-graph-only placement is the next L2 item.
 - **A6 meter:** false-latch 2/24 and alert-hit 16/18 on authored — gate any min-turns/damping change on both.
 - **Streamlit `app/`:** still runs (local embedder, Streamlit-side mic uses in-process Vosk) but is no longer the served product; retire per D4 once the PWA covers the three demo scenes.
 - `models/linear_fp32/` (the fp32-trained heads) and `models/linear_embed_only/` are the local rollback bundles (gitignored); `models/xlmr/` and the e5-small experiment were deleted on 2026-09-14.
