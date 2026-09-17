@@ -1,6 +1,6 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: **2026-09-14**. Current-state doc for anyone picking the project up. Read this,
+_Last updated: **2026-09-17**. Current-state doc for anyone picking the project up. Read this,
 then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECISIONS.md`
 (ADRs D11–D17), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
 kept as history._
@@ -59,7 +59,11 @@ accept numbered reports), `QORGAN_REPORT_RETENTION_DAYS=180`.
 ## Open threads (see PLAN_2026-09 for owners/estimates)
 - **Real data (A3/A8):** no real calls yet; everything is synthetic or author-written. Stakeholders were asked for both scam and legit recordings.
 - **B7 on-device ASR:** mic mode is disabled on the served site until it runs in the browser (Vosklet / Whisper KK+RU bake-off). Server-side audio is gone for good (ADR D12).
-- **B8 static quantisation:** int8 graphs drift ~0.6 % cosine across ONNX Runtime versions; decision-level parity holds (0 flips / 28) — bit-level parity needs calibrated static quantisation.
+- **B8 static quantisation — closed, no-go (2026-09-17, ADR D18):** int8 graphs drift
+  ~0.6 % cosine across ONNX Runtime versions; a statically calibrated graph cost 5 pts of
+  fidelity and did not move the cross-runtime floor. Decision-level parity (0 flips / 28) is
+  the guarantee. The browser loads the graph named by the server's `QORGAN_EMBED_ONNX_DIR`
+  (`qorgan-config.json::embedder`).
 - **A6 meter:** false-latch 2/24 and alert-hit 16/18 on authored — gate any min-turns/damping change on both.
 - **Streamlit `app/`:** still runs (local embedder, Streamlit-side mic uses in-process Vosk) but is no longer the served product; retire per D4 once the PWA covers the three demo scenes.
 - `models/linear_fp32/` (the fp32-trained heads) and `models/linear_embed_only/` are the local rollback bundles (gitignored); `models/xlmr/` and the e5-small experiment were deleted on 2026-09-14.

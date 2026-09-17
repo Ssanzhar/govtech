@@ -18,6 +18,7 @@ htmlcov/
 !site/models/
 # ...but not the self-hosted 278 MB ONNX embedder (deploy_bootstrap downloads it)
 site/models/Xenova/
+site/models/qorgan/
 data/raw/
 data/synthetic/
 data/processed/*

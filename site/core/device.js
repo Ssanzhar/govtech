@@ -14,7 +14,7 @@ const WEIGHTS_URL = new URL("../models/weights.json", import.meta.url);
 
 export async function createDeviceRuntime({ onProgress } = {}) {
   const [config, weights] = await Promise.all([fetchJson(CONFIG_URL), fetchJson(WEIGHTS_URL)]);
-  const embedder = createWorkerEmbedder({ onProgress });
+  const embedder = createWorkerEmbedder({ onProgress, embedder: config.embedder });
   const score = createScorer({ weights, config, embed: embedder.embed });
 
   return {

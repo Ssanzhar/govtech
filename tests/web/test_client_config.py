@@ -3,6 +3,7 @@ exported from the same sources Python uses (taxonomy, templates, advice, config)
 two implementations cannot drift."""
 
 import json
+from pathlib import Path
 
 from qorgan.config import get_config
 from qorgan.explain.recommend import load_advice
@@ -89,3 +90,16 @@ def test_served_weights_match_the_trained_bundle_when_present():
         pytest.skip("no local trained bundle")
     assert served.exists()
     assert hashlib.sha256(served.read_bytes()).hexdigest() == hashlib.sha256(trained.read_bytes()).hexdigest()
+
+
+def test_export_names_the_embedder_the_browser_must_load(monkeypatch):
+    from qorgan.web.client_config import web_model_id
+
+    monkeypatch.setenv("QORGAN_EMBED_ONNX_DIR", "site/models/Xenova/multilingual-e5-base")
+    data = export_client_config()
+    assert data["embedder"] == {
+        "model_id": "Xenova/multilingual-e5-base", "dtype": "q8", "prefix": "query: ",
+        "model_name": "intfloat/multilingual-e5-base",
+    }
+    assert web_model_id(Path("site/models/qorgan/multilingual-e5-base-static-int8")) == "qorgan/multilingual-e5-base-static-int8"
+    assert web_model_id(Path("/elsewhere/vendor/model")) == "vendor/model"

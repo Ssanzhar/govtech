@@ -74,7 +74,24 @@ def export_client_config() -> dict[str, Any]:
             "head_utterances": session.WINDOW_HEAD_UTTERANCES,
             "join": UTTERANCE_JOIN,
         },
+        # The browser loads exactly the graph the server embeds with (ADR D17): the model id
+        # is the ONNX dir relative to site/models/ (transformers.js `localModelPath`).
+        "embedder": {
+            "model_id": web_model_id(cfg.embed_onnx_dir),
+            "dtype": "q8",
+            "prefix": "query: ",
+            "model_name": cfg.embed_model_name,
+        },
     }
+
+
+def web_model_id(onnx_dir: Path) -> str:
+    """`site/models/<id>` -> `<id>`; a dir outside site/models keeps its last two parts."""
+    parts = onnx_dir.resolve().parts
+    if "models" in parts and "site" in parts:
+        idx = len(parts) - 1 - parts[::-1].index("models")
+        return "/".join(parts[idx + 1 :])
+    return "/".join(parts[-2:])
 
 
 def _templates(locale: str) -> dict[str, Any]:

@@ -2,7 +2,7 @@
    `embed(texts)` matching the signature `score.js` expects, plus `warmup()` with
    progress events for the model-download UI. */
 
-export function createWorkerEmbedder({ workerUrl = new URL("./embed-worker.js", import.meta.url), onProgress } = {}) {
+export function createWorkerEmbedder({ workerUrl = new URL("./embed-worker.js", import.meta.url), onProgress, embedder } = {}) {
   const worker = new Worker(workerUrl, { type: "module" });
   const pending = new Map();
   let nextId = 1;
@@ -35,8 +35,8 @@ export function createWorkerEmbedder({ workerUrl = new URL("./embed-worker.js", 
     });
 
   return {
-    warmup: (device) => request({ type: "warmup", device }),
-    embed: (texts) => request({ type: "embed", texts }),
+    warmup: (device) => request({ type: "warmup", device, embedder }),
+    embed: (texts) => request({ type: "embed", texts, embedder }),
     terminate: () => worker.terminate(),
   };
 }

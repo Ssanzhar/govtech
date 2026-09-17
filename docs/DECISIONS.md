@@ -114,6 +114,33 @@ implementations (Python ORT 1.27, onnxruntime-node 1.21/1.24, onnxruntime-web): 
 0.985–0.994 mean / 0.97–0.98 min, tokenisation identical. With int8-trained heads that is
 decision-safe on the golden set (0 flips / 28 on every runtime tried) but not tag-stable
 (|Δrisk| up to 0.11, tag-set Jaccard 0.94–0.98); `tests_js/integration/embedding.test.mjs`
-gates exactly that. Bit-level parity needs **static (calibrated) quantisation** — PLAN B8,
-now the next item. **Revisit:** when a real-call
-training set exists (PLAN A8) — retrain, re-tune, re-gate.
+gates exactly that. Static (calibrated) quantisation was the candidate fix — measured and
+rejected in D18. **Revisit:** when a real-call training set exists (PLAN A8) — retrain,
+re-tune, re-gate.
+
+### D18 — Static int8 quantisation rejected; the cross-runtime residual is accepted and gated at decision level (2026-09-17)
+PLAN B8 hypothesised that the Node/Python/web drift of D17 came from *run-time* activation
+scales (`DynamicQuantizeLinear`) and that a statically calibrated QDQ graph would make every
+runtime do the same integer arithmetic. `scripts/quantize_embedder.py` built one (MinMax
+moving-average, 128 train texts, MatMul + Gather quantised, the 24 activation-activation
+MatMuls left fp32, 278 MB) and it was measured on 88 transcripts (28 golden + 60 test):
+
+| graph | cosine vs fp32 (Python ORT) | Node ORT 1.21 vs Python ORT 1.27 |
+|---|---|---|
+| dynamic int8 (Hub, shipped) | 0.992 mean / 0.981 min | 0.985 mean / 0.970 min |
+| static int8 (MinMax-MA) | **0.944 mean / 0.924 min** | 0.992 mean / **0.971 min** |
+
+Two findings: (1) static per-tensor uint8 activations cost 5 pts of fidelity — more error
+than the drift it was meant to remove (outlier hidden-state dimensions, the known BERT-family
+problem); (2) the cross-runtime floor barely moved (0.971 vs 0.970 min), so the residual is
+kernel/fusion differences between ONNX Runtime implementations, not scale computation, and
+no calibration method can remove it. **Decision:** the dynamic Hub graph stays the single
+artefact on both sides; the guarantee is the decision-level gate in
+`tests_js/integration/embedding.test.mjs` (0 flips, |Δrisk| < 0.15, tag Jaccard ≥ 0.9) and
+the eval report states it. The browser now loads the graph the server is configured with
+(`qorgan-config.json::embedder`, derived from `QORGAN_EMBED_ONNX_DIR`), so the two can never
+silently diverge. The script and the drift probes (`scripts/embed_probe.py`,
+`tests_js/tools/runtime_drift.mjs`) stay as measurement tooling (`pip install -e ".[quant]"`).
+**Revisit:** only with a different mechanism — e.g. running the *same* ONNX Runtime build on
+both sides, or training the heads on the browser runtime's embeddings — and only if a real
+tag-flip is ever observed in the field.

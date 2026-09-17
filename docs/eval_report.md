@@ -255,6 +255,18 @@ ONNX Runtime implementations the int8 graph itself drifts (cosine ~0.994 mean / 
 Node vs Python); with int8-trained heads that is decision-safe: **0 flips / 28, |Δrisk| ≤
 0.055, tag-set Jaccard 0.977** (`tests_js/integration/embedding.test.mjs`).
 
+Static (calibrated) int8 quantisation was measured as the candidate fix and rejected
+(2026-09-17, ADR D18; `scripts/quantize_embedder.py`, 88 transcripts):
+
+| graph | cosine vs fp32 | Node ORT 1.21 vs Python ORT 1.27 |
+|---|---|---|
+| dynamic int8 (shipped) | 0.992 mean / 0.981 min | 0.985 mean / 0.970 min |
+| static int8 (MinMax-MA, 128 calib.) | 0.944 mean / 0.924 min | 0.992 mean / 0.971 min |
+
+It loses 5 pts of fidelity and leaves the cross-runtime floor where it was, so the residual
+is runtime kernel differences, not activation scales. The decision-level gate above is the
+guarantee; it is not bit-level parity and this report does not claim it.
+
 ### Streaming (`python -m qorgan.eval.stream --split test --split authored_heldout --backend linear`)
 | Split | False-Latch Rate [95% CI] | Alert-Hit Rate [95% CI] | Median Turns | P90 Turns | N+ | N- |
 |---|---|---|---|---|---|---|

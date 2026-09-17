@@ -1,12 +1,14 @@
-/* B3 gate (decision-level). The device and the server run the SAME int8 graph, but a
-   dynamically-quantised graph is not bit-stable across ONNX Runtime versions (Python ORT
-   1.27 vs onnxruntime-node 1.21/1.24 vs onnxruntime-web in the browser): measured cosine
+/* B3 gate (decision-level). The device and the server run the SAME int8 graph (the id
+   comes from qorgan-config.json, i.e. from the server's QORGAN_EMBED_ONNX_DIR), but an int8
+   graph is not bit-stable across ONNX Runtime implementations (Python ORT 1.27 vs
+   onnxruntime-node 1.21/1.24 vs onnxruntime-web in the browser): measured cosine
    0.985-0.994 mean / 0.97-0.98 min between runtimes, tokenisation identical. With heads
    trained on int8 embeddings (A4) the residual is DECISION-safe (0 flips / 28 across every
    runtime tried) but not tag-stable (|Δrisk| up to 0.11, tag-set Jaccard 0.94-0.98). The
-   gate below is what is guaranteed today; bit-level parity needs static (calibrated)
-   quantisation -- PLAN B8, promoted to the next item. Skipped when the self-hosted model files
-   are absent (run scripts/deploy_bootstrap.py first). */
+   gate below is what is guaranteed. Static (calibrated) quantisation was measured and does
+   NOT remove the residual (ADR D18) -- the floor is kernel/fusion differences, not run-time
+   activation scales. Skipped when the self-hosted model files are absent (run
+   scripts/deploy_bootstrap.py first). */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
@@ -15,7 +17,7 @@ import { createScorer } from "../../site/core/score.js";
 import { REPO, config, fixtureEmbed, parity, weights } from "../helpers.mjs";
 
 const MODEL_DIR = join(REPO, "site", "models");
-const MODEL_ID = "Xenova/multilingual-e5-base";
+const MODEL_ID = config.embedder.model_id;
 const available = existsSync(join(MODEL_DIR, MODEL_ID, "onnx", "model_quantized.onnx"));
 
 const cosine = (a, b) => a.reduce((s, x, i) => s + x * b[i], 0);
@@ -24,11 +26,11 @@ test("int8 ONNX in Node agrees with Python-ONNX at the decision level (same grap
   const { env, pipeline } = await import("@huggingface/transformers");
   env.allowRemoteModels = false;
   env.localModelPath = MODEL_DIR;
-  const extractor = await pipeline("feature-extraction", MODEL_ID, { dtype: "q8" });
+  const extractor = await pipeline("feature-extraction", MODEL_ID, { dtype: config.embedder.dtype });
   // One text per run -- dynamic int8 quantisation is batch-sensitive (see embed-worker.js).
   const onnxEmbed = async (texts) => {
     const rows = [];
-    for (const t of texts) rows.push(Array.from((await extractor(["query: " + t], { pooling: "mean", normalize: true })).data));
+    for (const t of texts) rows.push(Array.from((await extractor([config.embedder.prefix + t], { pooling: "mean", normalize: true })).data));
     return rows;
   };
 
@@ -40,7 +42,7 @@ test("int8 ONNX in Node agrees with Python-ONNX at the decision level (same grap
   const cosines = jsVectors.map((v, i) => cosine(v, pyVectors[i]));
   const mean = cosines.reduce((a, b) => a + b, 0) / cosines.length;
   const min = Math.min(...cosines);
-  console.log(`e5-base int8 (Node/onnxruntime-node) vs Python (onnxruntime): cosine mean=${mean.toFixed(4)} min=${min.toFixed(4)}; ${ms.toFixed(0)} ms/transcript`);
+  console.log(`${MODEL_ID} (Node/onnxruntime-node) vs Python (onnxruntime): cosine mean=${mean.toFixed(4)} min=${min.toFixed(4)}; ${ms.toFixed(0)} ms/transcript`);
   assert.ok(mean >= 0.98, `mean cosine ${mean}`);
   assert.ok(min >= 0.96, `min cosine ${min}`);
 

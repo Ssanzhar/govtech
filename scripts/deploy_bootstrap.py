@@ -10,9 +10,10 @@ already exists, so re-running (container restart, local dev) is a fast no-op.
    hash-validation (drift), retrain from the corpus — seconds on CPU.
 4. Level-2 seeds  ← `demo_seed` + `analytics.pipeline`, deterministic (seed 42). The
    fabricated demo phone numbers live only in the running instance, never in git.
-5. On-device model ← `Xenova/multilingual-e5-base` int8 ONNX (+ tokenizer) self-hosted
-   under site/models/ so the browser never contacts huggingface.co; plus the exported head
-   weights (`site/models/weights.json`) from the trained bundle.
+5. Embedder      ← `Xenova/multilingual-e5-base` int8 ONNX (+ tokenizer) self-hosted under
+   site/models/ at the dir `QORGAN_EMBED_ONNX_DIR` names — the browser never contacts
+   huggingface.co and the server runs the same file (ADR D17); plus the exported head
+   weights (`site/models/weights.json`).
 """
 
 from __future__ import annotations
@@ -126,25 +127,44 @@ def ensure_l2_seeds() -> None:
     _log("L2 seeds: organizations ready")
 
 
-WEB_EMBED_REPO = "Xenova/multilingual-e5-base"
-WEB_EMBED_FILES = ("config.json", "tokenizer.json", "tokenizer_config.json", "onnx/model_quantized.onnx")
+# The embedder the browser AND the server run (ADR D17): the Hub's dynamically-quantised
+# int8 graph. Static (calibrated) quantisation was measured and rejected -- ADR D18.
+EMBED_HUB_REPO = "Xenova/multilingual-e5-base"
+EMBED_FILES = ("config.json", "tokenizer.json", "tokenizer_config.json", "onnx/model_quantized.onnx")
 SITE_MODELS = REPO_ROOT / "site" / "models"
 
 
-def ensure_web_model() -> None:
-    """Self-host the int8 e5-base ONNX + tokenizer for the PWA (PLAN_2026-09 B3), and copy
-    the exported head weights next to it."""
+def _model_dir_complete(model_dir: Path) -> bool:
+    return all((model_dir / name).exists() for name in EMBED_FILES)
+
+
+def _download_embedder(target: Path) -> None:
     from huggingface_hub import hf_hub_download
 
-    target = SITE_MODELS / WEB_EMBED_REPO
-    for name in WEB_EMBED_FILES:
+    for name in EMBED_FILES:
         destination = target / name
         if destination.exists():
             continue
-        _log(f"web model: downloading {WEB_EMBED_REPO}/{name}")
-        source = Path(hf_hub_download(WEB_EMBED_REPO, name))
+        _log(f"web model: downloading {EMBED_HUB_REPO}/{name}")
         destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_bytes(source.read_bytes())
+        destination.write_bytes(Path(hf_hub_download(EMBED_HUB_REPO, name)).read_bytes())
+
+
+def ensure_web_model() -> None:
+    """Self-host the int8 embedder at the dir the config names (server + browser load the
+    same files), and copy the exported head weights next to it."""
+    from qorgan.config import get_config
+    from qorgan.web.client_config import web_model_id
+
+    target = get_config().embed_onnx_dir
+    model_id = web_model_id(target)
+    if _model_dir_complete(target):
+        _log(f"web model: {model_id} present")
+    elif model_id == EMBED_HUB_REPO:
+        _download_embedder(target)
+        _log(f"web model: {model_id} in place")
+    else:
+        _log(f"web model: WARNING {target} is incomplete and is not the Hub graph -- nothing downloaded")
     weights = MODEL_DIR / "web" / "weights.json"
     if weights.exists():
         (SITE_MODELS / "weights.json").write_bytes(weights.read_bytes())

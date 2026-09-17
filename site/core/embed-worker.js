@@ -10,9 +10,9 @@
 // is the bundler entry with bare `onnxruntime-web` imports and cannot be imported directly.
 import { env, pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/dist/transformers.min.js";
 
-const E5_PREFIX = "query: ";
-const MODEL_ID = "Xenova/multilingual-e5-base";
-const DTYPE = "q8"; // onnx/model_quantized.onnx, 278 MB
+// Model id / dtype / prefix arrive with the first request (from qorgan-config.json, which is
+// generated from the server's own embedder settings -- ADR D17: one graph on both sides).
+let settings = { model_id: "Xenova/multilingual-e5-base", dtype: "q8", prefix: "query: " };
 
 env.allowRemoteModels = false;   // never fall back to huggingface.co from the client
 env.allowLocalModels = true;
@@ -23,12 +23,13 @@ let extractorPromise = null;
 async function loadExtractor(preferredDevice) {
   const device = preferredDevice || (typeof navigator !== "undefined" && "gpu" in navigator ? "webgpu" : "wasm");
   const progress_callback = (p) => postMessage({ type: "progress", ...p });
+  const { model_id, dtype } = settings;
   try {
-    return await pipeline("feature-extraction", MODEL_ID, { dtype: DTYPE, device, progress_callback });
+    return await pipeline("feature-extraction", model_id, { dtype, device, progress_callback });
   } catch (err) {
     if (device === "webgpu") {
       postMessage({ type: "info", message: `webgpu unavailable (${err?.message || err}); falling back to wasm` });
-      return pipeline("feature-extraction", MODEL_ID, { dtype: DTYPE, device: "wasm", progress_callback });
+      return pipeline("feature-extraction", model_id, { dtype, device: "wasm", progress_callback });
     }
     throw err;
   }
@@ -43,15 +44,16 @@ async function embed(texts) {
   const extractor = await extractorPromise;
   const rows = [];
   for (const text of texts) {
-    const output = await extractor([E5_PREFIX + text], { pooling: "mean", normalize: true });
+    const output = await extractor([settings.prefix + text], { pooling: "mean", normalize: true });
     rows.push(Array.from(output.data));
   }
   return rows;
 }
 
 self.onmessage = async (event) => {
-  const { id, type, texts, device } = event.data;
+  const { id, type, texts, device, embedder } = event.data;
   try {
+    if (embedder && !extractorPromise) settings = { ...settings, ...embedder };
     if (type === "warmup") {
       if (!extractorPromise) extractorPromise = loadExtractor(device);
       await extractorPromise;
