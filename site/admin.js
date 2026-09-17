@@ -324,9 +324,9 @@
       .map((c) => {
         const expanded = c.id === expandedCall;
         return (
-          `<tr data-incident="${esc(c.id)}" class="${expanded ? "is-expanded" : ""}">` +
+          `<tr data-incident="${esc(c.id)}" data-has-transcript="${c.has_transcript === false ? "0" : "1"}" class="${expanded ? "is-expanded" : ""}">` +
           `<td>${esc(c.date || "—")}</td><td>${esc(c.number || "—")}</td>` +
-          `<td>${(c.risk * 100).toFixed(0)}%</td><td>${esc(c.excerpt)}</td></tr>` +
+          `<td>${(c.risk * 100).toFixed(0)}%</td><td>${c.has_transcript === false ? '<span class="tw-dim">signals only — partner report without a transcript</span>' : esc(c.excerpt)}</td></tr>` +
           (expanded ? analysisBlock(c.id) : "")
         );
       })
@@ -342,6 +342,7 @@
       });
     });
     callsEl.querySelectorAll("tr[data-incident]").forEach((tr) => {
+      if (tr.dataset.hasTranscript === "0") return; // nothing to analyse or open
       tr.addEventListener("click", () => expandCall(tr.dataset.incident));
     });
     callsEl.querySelectorAll("button[data-open]").forEach((btn) => {

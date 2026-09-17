@@ -97,6 +97,7 @@ class SampleIncidentOut(BaseModel):
     number: str | None
     risk: float
     excerpt: str
+    has_transcript: bool  # False for signals-only partner reports (PLAN C9): nothing to analyse or open
 
 
 class OrgDetailResponse(BaseModel):
@@ -248,6 +249,7 @@ def organization_detail(org_id: str, locale: Locale = "ru") -> OrgDetailResponse
             number=incident.number_prefix,
             risk=incident.label.risk,
             excerpt=_excerpt(incident.transcript),
+            has_transcript=bool(incident.transcript.strip()),
         )
         for incident in (
             by_id[member] for member in org.members[:_MAX_SAMPLE_INCIDENTS] if member in by_id
@@ -313,6 +315,8 @@ def _find_incident(incident_id: str) -> Incident:
     incident = next((i for i in analysis.incidents if i.id == incident_id), None)
     if incident is None:
         raise HTTPException(status_code=404, detail=f"unknown incident {incident_id!r}")
+    if not incident.transcript.strip():
+        raise HTTPException(status_code=409, detail="signals-only report: no transcript to analyse or open")
     return incident
 
 

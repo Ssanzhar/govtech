@@ -79,10 +79,14 @@ def _apply_text_merge(parent: dict[str, str], ids: Sequence[str], labels: np.nda
 def _hdbscan_labels(embeddings: np.ndarray, min_cluster_size: int) -> np.ndarray:
     import hdbscan
 
-    count = len(embeddings)
-    effective = max(2, min(min_cluster_size, count))
+    labels = np.full(len(embeddings), -1, dtype=int)
+    present = np.flatnonzero(np.any(embeddings != 0, axis=1))  # zero rows carry no text (PLAN C9)
+    if len(present) < 2:
+        return labels
+    effective = max(2, min(min_cluster_size, len(present)))
     clusterer = hdbscan.HDBSCAN(min_cluster_size=effective, metric="euclidean")
-    return clusterer.fit_predict(np.ascontiguousarray(embeddings, dtype=np.float64))
+    labels[present] = clusterer.fit_predict(np.ascontiguousarray(embeddings[present], dtype=np.float64))
+    return labels
 
 
 def _find(parent: dict[str, str], node: str) -> str:
@@ -109,7 +113,8 @@ def _build_organizations(
     organizations: list[Organization] = []
     for index, members in enumerate(ordered):
         members_sorted = tuple(sorted(members))
-        representative = Counter(transcripts[m] for m in members_sorted).most_common(1)[0][0]
+        texts = Counter(transcripts[m] for m in members_sorted if transcripts[m].strip())
+        representative = texts.most_common(1)[0][0] if texts else None  # signals-only orgs have no script
         organizations.append(
             Organization(
                 id=f"org_{index}",

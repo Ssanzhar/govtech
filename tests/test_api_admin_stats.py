@@ -128,8 +128,9 @@ def test_stats_report_counts(client: TestClient, tmp_path, monkeypatch) -> None:
     assert body["reports"] == {"submitted": 2, "ingested": 1, "pending": 1, "signals_only": 0}
 
 
-def test_stats_signals_only_partner_reports_are_neither_pending_nor_ingested(client: TestClient, tmp_path, monkeypatch) -> None:
-    """Regression (code review): `ingested` must be actual incident membership."""
+def test_stats_signals_only_partner_reports_are_pending_and_counted_separately(client: TestClient, tmp_path, monkeypatch) -> None:
+    """Regression (code review): `ingested` must be actual incident membership; signals-only
+    reports are pending for number-graph placement (C9) and reported on their own."""
     from qorgan.reports.store import prepare_report
     from support.numbers import TEST_HMAC_KEY
 
@@ -148,4 +149,4 @@ def test_stats_signals_only_partner_reports_are_neither_pending_nor_ingested(cli
 
     body = client.get("/api/admin/stats").json()
 
-    assert body["reports"] == {"submitted": 3, "ingested": 0, "pending": 0, "signals_only": 3}
+    assert body["reports"] == {"submitted": 3, "ingested": 0, "pending": 3, "signals_only": 3}

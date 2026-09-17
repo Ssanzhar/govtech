@@ -60,7 +60,9 @@ def flag_novel_organizations(
 ) -> list[Organization]:
     """Return copies of `organizations` with `is_novel` set from `novelty_flags`, gated by
     support: an org with no number and fewer than `min_support` incidents is never novel."""
-    id_to_vector = {incident.id: embeddings[i] for i, incident in enumerate(incidents)}
+    # Zero rows are signals-only incidents (PLAN C9): no text evidence, so they neither
+    # pull a centroid nor let an org be "far from everything".
+    id_to_vector = {incident.id: embeddings[i] for i, incident in enumerate(incidents) if embeddings[i].any()}
     centroids = []
     sizes = []
     for org in organizations:
@@ -71,9 +73,10 @@ def flag_novel_organizations(
     flags = novelty_flags(
         np.array(centroids), sizes, max_novel_size=max_novel_size, min_distance=min_distance
     )
+    has_text = [bool(centroid.any()) for centroid in centroids]
     return [
-        org.model_copy(update={"is_novel": flag and _supported(org, min_support)})
-        for org, flag in zip(organizations, flags, strict=True)
+        org.model_copy(update={"is_novel": flag and text and _supported(org, min_support)})
+        for org, flag, text in zip(organizations, flags, has_text, strict=True)
     ]
 
 

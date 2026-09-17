@@ -22,7 +22,7 @@ from typing import Any
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field
 
-from qorgan.analytics.embed import embed_incidents
+from qorgan.analytics.embed import embed_incidents, embed_transcripts
 from qorgan.analytics.pipeline import (
     analyze_incidents,
     load_embeddings_npz,
@@ -30,7 +30,6 @@ from qorgan.analytics.pipeline import (
     save_embeddings_npz,
     write_organizations_jsonl,
 )
-from qorgan.classifier.embed import embed_texts
 from qorgan.data.incident_seed import load_incidents_jsonl, write_incidents_jsonl
 from qorgan.data.schema import Incident
 from qorgan.reports.model import StoredReport, report_to_incident
@@ -78,15 +77,15 @@ def load_report_drafts(reports_path: Path) -> list[StoredReport]:
 def pending_reports(reports_path: Path, incidents: Sequence[Incident]) -> list[StoredReport]:
     """Stored reports not yet ingested (by deterministic id), deduplicated within the file.
 
-    Signals-only partner reports carry no transcript to embed, so they are not pending for
-    text clustering; placing them through the number graph alone is PLAN_2026-09 C9.
+    Signals-only partner reports (no transcript) are pending too: they are placed through
+    the number graph alone, with a zero embedding row (PLAN_2026-09 C9).
     """
     existing = {incident.id for incident in incidents}
     seen: set[str] = set()
     pending: list[StoredReport] = []
     for report in load_reports(reports_path):
         report_id = report_incident_id(report)
-        if report.is_signals_only or report_id in existing or report_id in seen:
+        if report_id in existing or report_id in seen:
             continue
         seen.add(report_id)
         pending.append(report)
@@ -233,8 +232,10 @@ def _extend_or_rebuild_embeddings(
     if embeddings_path.exists():
         cached_ids, cached = load_embeddings_npz(embeddings_path)
         if cached_ids == [incident.id for incident in incidents] and len(cached) == len(incidents):
-            new_vectors = embed_texts(
+            new_vectors = embed_transcripts(
                 [incident.transcript for incident in new_incidents], embedder=embedder
             )
+            if len(cached) and new_vectors.shape[1] == 0:  # only signals-only rows are new
+                new_vectors = np.zeros((len(new_incidents), cached.shape[1]), dtype=np.float32)
             return np.vstack([cached, new_vectors]) if len(cached) else new_vectors
     return embed_incidents([*incidents, *new_incidents], embedder=embedder)

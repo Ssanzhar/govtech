@@ -2,7 +2,7 @@
 
 _Last updated: **2026-09-17**. Current-state doc for anyone picking the project up. Read this,
 then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECISIONS.md`
-(ADRs D11–D21), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
+(ADRs D11–D23), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
 kept as history._
 
 ## TL;DR (September 2026)
@@ -22,7 +22,7 @@ kept as history._
   n=19 negatives → [0, 0.176]) · ood 0.000 [0, 0.048] / 0.844 · false-latch 2/24.
   **`authored_heldout` is hand-written, not real calls** — the locked real-call set (PLAN A3)
   does not exist yet; that is the biggest open item.
-- **Tests:** `pytest -q` → 985 offline (+2 skipped until a real held-out set exists) · `npm test` → 16 (JS core parity + the int8 runtime
+- **Tests:** `pytest -q` → 1010 offline (+2 skipped until a real held-out set exists) · `npm test` → 16 (JS core parity + the int8 runtime
   gate, which needs the self-hosted model files). Branch `sanzh-ts`.
 - **Verified in Chromium (2026-09-14, Playwright):** scene 1 on-device → 90/100 CRITICAL with
   cue-grounded tags/advice/summary; scene 2 (real bank call) → 5/100 LOW; report submit →
@@ -69,7 +69,7 @@ accept numbered reports), `QORGAN_REPORT_RETENTION_DAYS=180`.
   (`qorgan-config.json::embedder`).
 - **Admin auth:** `/api/admin` is unauthenticated in the demo (pre-existing). Since C4 (ADR D20) reading a full transcript is an audited `open` action naming `X-Analyst-Id` — a real deployment must put SSO in front of the admin routes so that name is trustworthy.
 - **Novelty needs support (C10, ADR D21):** a number-less single report can no longer create a "novel scheme" callout (29 false flags under number rotation → 1); two such reports, or one with a number, still can. `python -m qorgan.eval.cluster` is the regression check.
-- **C9 signals-only placement:** partner reports without a transcript are stored/counted but not placed into organizations (nothing to embed) — number-graph-only placement is the next L2 item.
+- **Adversarial (A9, ADR D22):** cue-free paraphrases of all 109 test+ood scams are detected at 0.917 vs 0.899 — the lexicon is not the recall engine. Not measured: a *legit-sounding* adversary (A9b).
 - **A6 meter:** false-latch 2/24 and alert-hit 16/18 on authored — gate any min-turns/damping change on both.
 - **Streamlit `app/`:** still runs (local embedder, Streamlit-side mic uses in-process Vosk) but is no longer the served product; retire per D4 once the PWA covers the three demo scenes.
 - `models/linear_fp32/` (the fp32-trained heads) and `models/linear_embed_only/` are the local rollback bundles (gitignored); `models/xlmr/` and the e5-small experiment were deleted on 2026-09-14.

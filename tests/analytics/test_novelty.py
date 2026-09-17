@@ -74,3 +74,19 @@ def test_a_number_less_singleton_is_never_a_novel_scheme():
     assert by_id["numbered"].is_novel is True
     assert by_id["pair"].is_novel is True
     assert by_id["big"].is_novel is False
+
+
+def test_an_org_with_no_text_evidence_is_never_novel_even_with_a_number():
+    """A zero embedding row (signals-only incident, PLAN C9) carries no text evidence."""
+    from qorgan.data.schema import Incident, Label
+    from support.numbers import hashed
+
+    embeddings = np.array([[1.0, 0.0, 0.0]] * 6 + [[0.0, 0.0, 0.0]], dtype=np.float32)
+    ids = [f"a{i}" for i in range(6)] + ["signals"]
+    incidents = [Incident(id=i, dialogue_id=i, transcript="t" if i != "signals" else "", label=Label(risk=0.9)) for i in ids]
+    orgs = [
+        Organization(id="big", members=tuple(f"a{i}" for i in range(6))),
+        Organization(id="signals", members=("signals",), numbers=(hashed("+7 700 111 22 33"),)),
+    ]
+    by_id = {o.id: o for o in flag_novel_organizations(orgs, incidents, embeddings, max_novel_size=3, min_distance=0.5)}
+    assert by_id["signals"].is_novel is False

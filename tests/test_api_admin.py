@@ -395,3 +395,19 @@ def test_open_case_defaults_the_analyst_id_and_refuses_content_in_the_reason(
     [entry] = load_audit(tmp_path / "processed" / "audit_log.jsonl")
     assert entry.actor_id == "anonymous-analyst" and entry.outcome == "ok"
     assert client.post("/api/admin/incidents/nope/open", params={"backend": "mock"}).status_code == 404
+
+
+def test_signals_only_incidents_are_marked_and_cannot_be_analysed_or_opened(
+    client: TestClient, tmp_path, monkeypatch
+) -> None:
+    incidents = [
+        _incident("i1", tags=("otp_request",), transcript="это банк, назовите код", number="+7 700 101 20 30"),
+        Incident(id="s1", dialogue_id="s1", transcript="", label=Label(risk=1.0, tactic_tags=(TacticTag(id="otp_request"),)),
+                 number_hash=hashed("+7 700 101 20 30"), number_prefix=prefix("+7 700 101 20 30")),
+    ]
+    _seed_analysis(tmp_path, monkeypatch, organizations=[Organization(id="org_0", members=("i1", "s1"))], incidents=incidents)
+
+    rows = {r["id"]: r for r in client.get("/api/admin/organizations/org_0").json()["sample_incidents"]}
+    assert rows["i1"]["has_transcript"] is True and rows["s1"]["has_transcript"] is False and rows["s1"]["excerpt"] == ""
+    assert client.get("/api/admin/incidents/s1/analysis", params={"backend": "mock"}).status_code == 409
+    assert client.post("/api/admin/incidents/s1/open", params={"backend": "mock"}).status_code == 409

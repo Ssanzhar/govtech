@@ -213,3 +213,30 @@ is still flagged. **Consequence for the demo:** a citizen report with no number 
 create a novel-scheme callout by itself; two such reports, or one with a number, can.
 **Revisit:** with C9 (signals-only placement) and real data — growth over time
 (`rank.py`) is the next support signal.
+
+### D22 — Lexicon-free recall measured: the cue lexicon is an explainability instrument, not the recall engine (2026-09-17)
+D15 said the device tier is public and the adversary should be assumed to hold the
+lexicon; A9 measured what that costs. 109 test + ood scams paraphrased by Gemini to contain
+none of the 35 cue phrases (verified locally, language preserved, 0 failures) are detected
+at **0.917 [0.849, 0.962]** vs **0.899 [0.827, 0.949]** for their sources at the shipped
+0.59 — no recall drop (−1.8 points; 3 flip to clear, 5 to scam). **Decision:** keep
+publishing the lexicon (open device tier, ADR D15) — it buys grounded highlights and the
+live meter's hard-signal floors, and hiding it would not protect recall because recall does
+not depend on it. A10 (ASR-realism training) stays a "could". The split
+(`data/adversarial/`, committed with its manifest) joins the harness as `adversarial` and
+must be regenerated when the lexicon changes. **Caveat:** an LLM paraphrase is a fluent
+adversary of the same family as the training corpus; **A9b** (rewrite calls to *sound
+legitimate*, e.g. mimic institutional reassurance) is the harder attack and is not measured.
+
+### D23 — Signals-only partner reports are placed through the number graph, with a zero embedding row (2026-09-17)
+A partner report without a transcript (PLAN C5's preferred shape) becomes an incident with
+an empty transcript and a **zero** embedding row (`analytics/embed.embed_transcripts`):
+embedding the empty string would give every such report one constant vector and cluster
+them together. Placement is by number graph only; HDBSCAN (opt-in text overlay) skips zero
+rows; novelty ignores them (no text evidence, so such an org is never "far from
+everything") and, by D21, a lone number-less report is never novel; the representative
+script is the most common *non-blank* transcript or none. The analyst API marks such rows
+`has_transcript: false`; analysis/open answer 409. **Rationale:** the partner story
+("structured hits preferred") was hollow while those reports were stored but never
+analysed. **Revisit:** tactic-profile-only similarity for signals-only orgs if partners
+send many.

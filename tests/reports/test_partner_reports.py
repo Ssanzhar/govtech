@@ -89,8 +89,8 @@ def test_signals_only_reports_get_distinct_deterministic_ids():
     assert report_incident_id(a).startswith("report-")
 
 
-def test_signals_only_reports_are_not_pending_for_text_clustering(tmp_path):
-    """No transcript -> nothing to embed; they are counted and linkable, not clustered (C9)."""
+def test_signals_only_reports_are_pending_for_number_graph_placement(tmp_path):
+    """No transcript -> nothing to embed, but the number graph can still place them (C9)."""
     path = tmp_path / "citizen_reports.jsonl"
     append_report(_partner_report(), path)
     with_text = _partner_report(transcript="это служба безопасности банка, назовите код", partner_reference="CASE-3")
@@ -98,7 +98,7 @@ def test_signals_only_reports_are_not_pending_for_text_clustering(tmp_path):
 
     pending = pending_reports(path, incidents=[])
 
-    assert [r.partner_reference for r in pending] == ["CASE-3"]
+    assert [r.partner_reference for r in pending] == ["CASE-1", "CASE-3"]
 
 
 # --- quota + idempotency helpers -----------------------------------------------------------

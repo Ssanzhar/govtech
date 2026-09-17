@@ -306,6 +306,40 @@ It loses 5 pts of fidelity and leaves the cross-runtime floor where it was, so t
 is runtime kernel differences, not activation scales. The decision-level gate above is the
 guarantee; it is not bit-level parity and this report does not claim it.
 
+### Adversarial paraphrases — "assume the adversary has the lexicon" (2026-09-17, PLAN A9, ADR D22)
+
+`python scripts/paraphrase_adversarial.py` rewrote every scam in `test` + `ood` (109) with
+`gemini-2.5-flash` under the constraint that none of the 35 hard-signal cue phrases
+survives; compliance was verified locally with the classifier's own matcher (0 / 109 cue
+hits; the sources had hits on 15 / 109) and a Kazakh-letter check kept every paraphrase in
+its source language (0 switches after retries; 0 failures). Same turn count on average
+(7.2). `QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.adversarial` (paired, @0.59):
+
+| Set | N | Recall [95% CI] |
+|---|---|---|
+| source scams (test + ood) | 109 | 0.899 [0.827, 0.949] |
+| adversarial (lexicon-free paraphrases) | 109 | 0.917 [0.849, 0.962] |
+| &nbsp;&nbsp;kk · source | 34 | 1.000 [0.897, 1.000] |
+| &nbsp;&nbsp;kk · adversarial | 34 | 0.971 [0.847, 0.999] |
+| &nbsp;&nbsp;mixed · source | 38 | 0.816 [0.657, 0.923] |
+| &nbsp;&nbsp;mixed · adversarial | 38 | 0.868 [0.719, 0.956] |
+| &nbsp;&nbsp;ru · source | 37 | 0.892 [0.746, 0.970] |
+| &nbsp;&nbsp;ru · adversarial | 37 | 0.919 [0.781, 0.983] |
+
+Recall drop: **−1.8 points** (3 scams flip to clear, 5 flip to scam) — within the plan's
+15-point gate, so A10 stays a "could". **Reading:** recall does not rest on the lexicon;
+the embedding head carries it, and the cue features are an explainability / precision
+instrument (grounded highlights, the live meter's hard-signal floors). An attacker who
+scripts around the published cue list gains nothing on the single-shot verdict.
+**Caveats, stated:** (1) the paraphrases are LLM-written by the same model family that
+wrote the training corpus — a shared "synthetic style" may keep them easy; (2) the
+constraint targets the cue *phrases*, not the embedding's notion of a scam — an adversary
+who rewrites the call to *sound legitimate* (e.g. mimicking institutional reassurance) is
+a different, harder attack (follow-up **A9b**); (3) the live meter's hard-signal floors
+cannot fire on these calls — measured with `eval.stream --split adversarial`: alert-hit
+**0.972 [0.922, 0.994]** (test: 0.969), median turns-to-alert 2 (same), P90 4 vs 3 — the
+meter still latches from the embedding signal, with a one-turn delay in the tail.
+
 ### Streaming (`python -m qorgan.eval.stream --split test --split authored_heldout --backend linear`)
 | Split | False-Latch Rate [95% CI] | Alert-Hit Rate [95% CI] | Median Turns | P90 Turns | N+ | N- |
 |---|---|---|---|---|---|---|
