@@ -139,8 +139,22 @@ trivially pure; (2) the text overlay does not rescue it — it *lowers* purity (
 scam scripts across families are near-identical to the embedder, confirming the July finding
 with a number; (3) **novelty over-fires once the graph thins**: 29 number-less singletons are
 flagged as "new schemes" at the shipped 0.06 cosine threshold. The analyst's novel-scheme
-callout is therefore only trustworthy while numbers are reused; making novelty require
-support beyond a single number-less incident is follow-up **C10** (PLAN_2026-09).
+callout was therefore only trustworthy while numbers were reused.
+
+**Fix (same day, C10 / ADR D21):** novelty now requires *support* — a linkable number or
+≥ 2 incidents — on top of the distance rule. Measured first: the truly novel family sits
+0.103–0.108 from the nearest large organization while false candidates reach 0.090 (p95
+0.065), so a distance margin alone would separate them by ~0.013 — too thin; the structural
+fact is that every false candidate was a number-less singleton. After the rule:
+
+| Condition | Novel flagged (before → after) |
+|---|---|
+| numbers as seeded (shipped) | 1 → **1** (the injected scheme, it has a number) |
+| numbers rotated for 50 % of calls | 29 → **1** |
+| numbers rotated for 50 % + text overlay | 25 → **1** |
+| text only (no numbers) | 44 → **1** (a 2-call text cluster; the injected singleton is unsupported and correctly *not* flagged) |
+
+Purity / ARI rows are unchanged (the rule touches flags, not clustering).
 
 ## Addendum (2026-07-15) — KK legit-boundary stabilization + reassurance widening
 

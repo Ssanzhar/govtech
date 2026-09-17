@@ -2,9 +2,13 @@
 
 Heuristic (distance-to-established-cluster): an organization is novel if it is still small
 (`size <= max_novel_size`) AND its transcript centroid sits far (cosine distance
-`>= min_distance`) from every *established* (large) organization. A brand-new scheme starts
-small and looks unlike anything seen before -- exactly this signature. Pure `novelty_flags`
-is deterministic and tested; `flag_novel_organizations` wraps it over embeddings.
+`>= min_distance`) from every *established* (large) organization AND it has **support** --
+a linkable caller number or at least `min_support` incidents. A brand-new scheme starts
+small and looks unlike anything seen before -- exactly this signature; a single call with
+no number is an anomaly, not a scheme (PLAN_2026-09 C10: with half the numbers rotated,
+29 such singletons were flagged before the support rule; `python -m qorgan.eval.cluster`).
+Pure `novelty_flags` is deterministic and tested; `flag_novel_organizations` wraps it over
+embeddings.
 """
 
 from __future__ import annotations
@@ -17,6 +21,8 @@ from qorgan.data.schema import Incident, Organization
 
 _DEFAULT_MAX_NOVEL_SIZE = 5
 _DEFAULT_MIN_DISTANCE = 0.4
+# A number-less organization needs this many incidents before it can be called a scheme.
+_DEFAULT_MIN_SUPPORT = 2
 
 
 def novelty_flags(
@@ -50,8 +56,10 @@ def flag_novel_organizations(
     *,
     max_novel_size: int = _DEFAULT_MAX_NOVEL_SIZE,
     min_distance: float = _DEFAULT_MIN_DISTANCE,
+    min_support: int = _DEFAULT_MIN_SUPPORT,
 ) -> list[Organization]:
-    """Return copies of `organizations` with `is_novel` set from `novelty_flags`."""
+    """Return copies of `organizations` with `is_novel` set from `novelty_flags`, gated by
+    support: an org with no number and fewer than `min_support` incidents is never novel."""
     id_to_vector = {incident.id: embeddings[i] for i, incident in enumerate(incidents)}
     centroids = []
     sizes = []
@@ -64,9 +72,13 @@ def flag_novel_organizations(
         np.array(centroids), sizes, max_novel_size=max_novel_size, min_distance=min_distance
     )
     return [
-        org.model_copy(update={"is_novel": flag})
+        org.model_copy(update={"is_novel": flag and _supported(org, min_support)})
         for org, flag in zip(organizations, flags, strict=True)
     ]
+
+
+def _supported(org: Organization, min_support: int) -> bool:
+    return bool(org.numbers) or len(org.members) >= min_support
 
 
 def _cosine_distance(a: np.ndarray, b: np.ndarray) -> float:

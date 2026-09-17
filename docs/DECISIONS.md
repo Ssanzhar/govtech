@@ -200,3 +200,16 @@ that shows every transcript on hover is a browsing tool; one that makes reading 
 deliberate, recorded act is an investigation tool. **Known gap:** `/api/admin` has no
 authentication in this demo (pre-existing); the header names, it does not authenticate —
 SSO in front of the admin routes is the deployment's job and is listed in STATUS.
+
+### D21 — A "novel scheme" needs support: a linkable number or at least two incidents (2026-09-17)
+`analytics/novelty.py` keeps its distance rule (small org, centroid ≥ 0.06 cosine from every
+large org) and adds a support gate: an organization with no number digest and a single
+incident is never flagged. **Rationale:** the C8 stress table showed the distance rule
+alone flags 29 number-less singletons as new schemes once half the callers rotate numbers —
+one un-linkable call is an anomaly, not a scheme — while the measured distance margin
+between true and false candidates (~0.013) is too thin to fix by tuning the threshold.
+After the gate every stressed row flags 1 and the seeded novel family (which has a number)
+is still flagged. **Consequence for the demo:** a citizen report with no number cannot
+create a novel-scheme callout by itself; two such reports, or one with a number, can.
+**Revisit:** with C9 (signals-only placement) and real data — growth over time
+(`rank.py`) is the next support signal.

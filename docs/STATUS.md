@@ -2,7 +2,7 @@
 
 _Last updated: **2026-09-17**. Current-state doc for anyone picking the project up. Read this,
 then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECISIONS.md`
-(ADRs D11–D20), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
+(ADRs D11–D21), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
 kept as history._
 
 ## TL;DR (September 2026)
@@ -68,7 +68,7 @@ accept numbered reports), `QORGAN_REPORT_RETENTION_DAYS=180`.
   the guarantee. The browser loads the graph named by the server's `QORGAN_EMBED_ONNX_DIR`
   (`qorgan-config.json::embedder`).
 - **Admin auth:** `/api/admin` is unauthenticated in the demo (pre-existing). Since C4 (ADR D20) reading a full transcript is an audited `open` action naming `X-Analyst-Id` — a real deployment must put SSO in front of the admin routes so that name is trustworthy.
-- **C10 novelty fragility (found by C8):** with half the caller numbers rotated, 29 number-less singletons are flagged as novel schemes (`python -m qorgan.eval.cluster`); the novel-scheme callout is trustworthy only while numbers are reused.
+- **Novelty needs support (C10, ADR D21):** a number-less single report can no longer create a "novel scheme" callout (29 false flags under number rotation → 1); two such reports, or one with a number, still can. `python -m qorgan.eval.cluster` is the regression check.
 - **C9 signals-only placement:** partner reports without a transcript are stored/counted but not placed into organizations (nothing to embed) — number-graph-only placement is the next L2 item.
 - **A6 meter:** false-latch 2/24 and alert-hit 16/18 on authored — gate any min-turns/damping change on both.
 - **Streamlit `app/`:** still runs (local embedder, Streamlit-side mic uses in-process Vosk) but is no longer the served product; retire per D4 once the PWA covers the three demo scenes.

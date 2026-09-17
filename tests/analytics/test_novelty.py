@@ -50,3 +50,27 @@ def test_flag_novel_organizations_sets_is_novel_on_the_new_scheme():
     assert by_id["org_2"].is_novel is True
     assert by_id["org_0"].is_novel is False
     assert by_id["org_1"].is_novel is False
+
+
+def test_a_number_less_singleton_is_never_a_novel_scheme():
+    """PLAN C10 (from the C8 stress table): one incident with no linkable number is an
+    anomaly, not a scheme -- novelty needs support: a number or >= 2 incidents."""
+    from qorgan.data.schema import Incident, Label
+    from support.numbers import hashed
+
+    embeddings = np.array(
+        [[1.0, 0.0, 0.0]] * 6 + [[0.0, 0.0, 1.0]] + [[0.0, 1.0, 0.0]] + [[0.0, 0.0, 1.0]] * 2, dtype=np.float32
+    )
+    ids = [f"a{i}" for i in range(6)] + ["lone", "numbered", "pair0", "pair1"]
+    incidents = [Incident(id=i, dialogue_id=i, transcript="t", label=Label(risk=0.9)) for i in ids]
+    orgs = [
+        Organization(id="big", members=tuple(f"a{i}" for i in range(6))),
+        Organization(id="lone", members=("lone",)),  # far, but one call and no number
+        Organization(id="numbered", members=("numbered",), numbers=(hashed("+7 700 111 22 33"),)),  # far, one call, a number
+        Organization(id="pair", members=("pair0", "pair1")),  # far, two calls
+    ]
+    by_id = {o.id: o for o in flag_novel_organizations(orgs, incidents, embeddings, max_novel_size=3, min_distance=0.5)}
+    assert by_id["lone"].is_novel is False
+    assert by_id["numbered"].is_novel is True
+    assert by_id["pair"].is_novel is True
+    assert by_id["big"].is_novel is False
