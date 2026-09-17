@@ -184,3 +184,19 @@ follow-up **C9**. **Rationale:** the council's "partner API becomes a bulk feed"
 (PLAN §8) is answered by shape and limits, not by a policy document. **Revisit:** key
 rotation and per-partner scopes when a pilot partner (PLAN §7 item 7) is signed; C9 when
 the first signals-only reports arrive.
+
+### D20 — Analysts see aggregates by default; a full transcript is an explicit, audited "open case" (2026-09-17)
+The admin API returns organization aggregates (`/api/admin/overview`, tactic profiles,
+counts, dates), and the drill-down carries **excerpts** (200 chars + `…`) — for the
+representative script, the sample calls and the on-demand model analysis
+(`GET /incidents/{id}/analysis`: verdict, ranked tags, trigger phrases, excerpt; no
+transcript). The only way to read a whole call is `POST /incidents/{id}/open`, which
+answers with the analysis plus the full (scrubbed) transcript **and appends a content-free
+audit line** (`audit.py`: `analyst · case.open · incident:<id> · ok[: reason]`); the
+analyst is named by `X-Analyst-Id` (the page passes `?analyst=<id>`), `anonymous-analyst`
+otherwise, and a `reason` that carries a number or other content is refused (422) rather
+than logged. **Rationale:** PLAN C4 / the council's exposure concern — an analyst layer
+that shows every transcript on hover is a browsing tool; one that makes reading a call a
+deliberate, recorded act is an investigation tool. **Known gap:** `/api/admin` has no
+authentication in this demo (pre-existing); the header names, it does not authenticate —
+SSO in front of the admin routes is the deployment's job and is listed in STATUS.

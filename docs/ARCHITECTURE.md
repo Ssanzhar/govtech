@@ -17,7 +17,9 @@ Web-first, Python-only, L1-centric. This supersedes the two-subsystem/on-device 
 >    import-graph-checked against the analytics write paths.
 > 4. **Stored minimised** — numbers only as salted HMAC digests + `+7 700 ***`, transcripts
 >    PII-scrubbed, receipts, `DELETE`, retention purge (ADR D14; schema-enforced).
-> 5. **The partner ingress is not a bulk feed** — API key per partner, one report per
+> 5. **Analysts see aggregates by default** — drill-downs carry excerpts; a full transcript
+>    is an explicit `POST …/open` that leaves an audit line naming the analyst (ADR D20).
+> 6. **The partner ingress is not a bulk feed** — API key per partner, one report per
 >    request, structured tactic hits preferred, transcripts accepted only pre-scrubbed,
 >    `consent_basis` required, per-partner rate limit + rolling daily quota, content-free
 >    audit log (`data/processed/audit_log.jsonl`), aggregates-only export.

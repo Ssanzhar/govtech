@@ -149,13 +149,15 @@ def test_drilldown_returns_tactics_and_representative_script_and_excerpt(
     body = client.get("/api/admin/organizations/org_0").json()
 
     assert body["id"] == "org_0"
-    assert body["representative_script"] == long_transcript
+    # Aggregates by default (PLAN C4): the drill-down carries an excerpt, never a full script.
+    assert long_transcript.startswith(body["representative_script"].rstrip("…"))
+    assert len(body["representative_script"]) <= 201 and body["representative_script"].endswith("…")
     tactic_ids = {t["id"] for t in body["tactics"]}
     assert "impersonation_bank" in tactic_ids
     assert body["sample_incidents"]
     sample = body["sample_incidents"][0]
-    assert long_transcript.startswith(sample["excerpt"])
-    assert len(sample["excerpt"]) <= 200
+    assert long_transcript.startswith(sample["excerpt"].rstrip("…"))
+    assert len(sample["excerpt"]) <= 201 and sample["excerpt"].endswith("…")
 
 
 def test_drilldown_unknown_org_returns_404(client: TestClient, tmp_path, monkeypatch) -> None:
@@ -200,7 +202,8 @@ def test_incident_analysis_returns_ranked_tags_and_verbatim_spans(
     body = res.json()
     assert body["incident_id"] == "i1"
     assert body["backend"] == "mock"
-    assert body["transcript"] == SCAM_TRANSCRIPT
+    assert "transcript" not in body  # the full text needs an explicit, audited "open case"
+    assert SCAM_TRANSCRIPT.startswith(body["excerpt"].rstrip("…"))
     assert 0.0 <= body["risk"] <= 1.0
     assert isinstance(body["flagged"], bool)
     assert body["threshold"] > 0.0
@@ -347,3 +350,48 @@ def test_ingest_failure_is_503_not_500(client: TestClient, tmp_path, monkeypatch
     res = client.post("/api/admin/ingest")
 
     assert res.status_code == 503
+
+
+# --- open case (PLAN C4): full transcript only on an explicit, audited action --------------
+
+
+def test_open_case_returns_the_full_transcript_and_leaves_an_audit_line(
+    client: TestClient, tmp_path, monkeypatch
+) -> None:
+    from qorgan.audit import load_audit
+
+    incidents = [_incident("i1", transcript=SCAM_TRANSCRIPT, number="+7 700 101 20 30")]
+    _seed_analysis(tmp_path, monkeypatch, organizations=[Organization(id="org_0", members=("i1",))], incidents=incidents)
+
+    res = client.post(
+        "/api/admin/incidents/i1/open",
+        params={"backend": "mock"},
+        json={"reason": "matches a hotline complaint"},
+        headers={"X-Analyst-Id": "analyst-7"},
+    )
+
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["transcript"] == SCAM_TRANSCRIPT and body["incident_id"] == "i1"
+    for span in body["spans"]:
+        assert SCAM_TRANSCRIPT[span["start"] : span["end"]] == span["text"]
+    [entry] = load_audit(tmp_path / "processed" / "audit_log.jsonl")
+    assert (entry.actor_kind, entry.actor_id, entry.action, entry.subject) == ("analyst", "analyst-7", "case.open", "incident:i1")
+    assert entry.outcome == "ok: matches a hotline complaint"
+    raw = (tmp_path / "processed" / "audit_log.jsonl").read_text(encoding="utf-8")
+    assert "продиктуйте" not in raw.lower() and "101 20 30" not in raw
+
+
+def test_open_case_defaults_the_analyst_id_and_refuses_content_in_the_reason(
+    client: TestClient, tmp_path, monkeypatch
+) -> None:
+    from qorgan.audit import load_audit
+
+    incidents = [_incident("i1", transcript=SCAM_TRANSCRIPT)]
+    _seed_analysis(tmp_path, monkeypatch, organizations=[Organization(id="org_0", members=("i1",))], incidents=incidents)
+
+    assert client.post("/api/admin/incidents/i1/open", params={"backend": "mock"}, json={"reason": "caller +7 700 101 20 30"}).status_code == 422
+    assert client.post("/api/admin/incidents/i1/open", params={"backend": "mock"}).status_code == 200
+    [entry] = load_audit(tmp_path / "processed" / "audit_log.jsonl")
+    assert entry.actor_id == "anonymous-analyst" and entry.outcome == "ok"
+    assert client.post("/api/admin/incidents/nope/open", params={"backend": "mock"}).status_code == 404

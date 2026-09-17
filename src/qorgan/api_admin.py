@@ -13,10 +13,13 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from datetime import UTC, datetime
+
+from fastapi import APIRouter, Header, HTTPException
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from qorgan.analytics.intake import ingest_pending, pending_reports
+from qorgan.audit import AUDIT_FILENAME, AuditEntry, append_audit
 from qorgan.classifier import predict
 from qorgan.explain.explainer import ExplainerError, explain
 from qorgan.analytics.pipeline import load_organizations_jsonl
@@ -40,6 +43,12 @@ _LOGGER = logging.getLogger(__name__)
 # while keeping the payload modest (60 × ~250-char excerpts ≈ 16 KB).
 _MAX_SAMPLE_INCIDENTS = 60
 _EXCERPT_CHARS = 200
+_ELLIPSIS = "…"
+# Analysts are not authenticated in this demo; the header only names who opened a case in
+# the audit line (PLAN C4). A real deployment puts SSO in front of /api/admin.
+_ANALYST_ID_HEADER = "X-Analyst-Id"
+_DEFAULT_ANALYST_ID = "anonymous-analyst"
+_MAX_OPEN_REASON_CHARS = 160
 # Test seam: a deterministic fake embedder is injected here; None means the real
 # sentence-transformers model (downloaded/cached on first ingest).
 _EMBEDDER_OVERRIDE: Any = None
@@ -115,10 +124,11 @@ class AnalysisSpanOut(BaseModel):
 
 class IncidentAnalysisResponse(BaseModel):
     """The live model verdict for one call — same `score()` contract as /api/analyze,
-    computed on demand so the analyst always sees the current model, never a cached label."""
+    computed on demand so the analyst always sees the current model, never a cached label.
+    Carries an excerpt only; the full transcript needs an explicit, audited `open` (C4)."""
 
     incident_id: str
-    transcript: str
+    excerpt: str
     risk: float
     threshold: float
     flagged: bool
@@ -128,6 +138,18 @@ class IncidentAnalysisResponse(BaseModel):
     spans: list[AnalysisSpanOut]
     reason: str
     caveat: str
+
+
+class OpenCaseRequest(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    reason: str | None = Field(default=None, max_length=_MAX_OPEN_REASON_CHARS)
+
+
+class OpenCaseResponse(IncidentAnalysisResponse):
+    """The analysis plus the full (scrubbed) transcript — returned only by `open`."""
+
+    transcript: str
 
 
 class PlacementOut(BaseModel):
@@ -225,7 +247,7 @@ def organization_detail(org_id: str, locale: Locale = "ru") -> OrgDetailResponse
             date=incident.timestamp.strftime("%Y-%m-%d %H:%M") if incident.timestamp else None,
             number=incident.number_prefix,
             risk=incident.label.risk,
-            excerpt=incident.transcript[:_EXCERPT_CHARS],
+            excerpt=_excerpt(incident.transcript),
         )
         for incident in (
             by_id[member] for member in org.members[:_MAX_SAMPLE_INCIDENTS] if member in by_id
@@ -239,7 +261,7 @@ def organization_detail(org_id: str, locale: Locale = "ru") -> OrgDetailResponse
         is_novel=org.is_novel,
         numbers=list(org.numbers),
         tactics=tactics,
-        representative_script=org.representative_script,
+        representative_script=_excerpt(org.representative_script) if org.representative_script else None,
         sample_incidents=sample_incidents,
     )
 
@@ -253,13 +275,48 @@ def incident_analysis(
     Same backend-resolution contract as /api/analyze: an explicitly unknown backend is
     a 422; a configured-but-unavailable one degrades honestly to `mock` and says so.
     """
+    return _analyse(_find_incident(incident_id), locale, backend)
+
+
+@router.post("/incidents/{incident_id}/open", response_model=OpenCaseResponse)
+def open_case(
+    incident_id: str,
+    body: OpenCaseRequest | None = None,
+    locale: Locale = "ru",
+    backend: str | None = None,
+    analyst_id: str = Header(default=_DEFAULT_ANALYST_ID, alias=_ANALYST_ID_HEADER),
+) -> OpenCaseResponse:
+    """The explicit "open case" action (PLAN C4): the only way an analyst sees a full
+    transcript, and every call leaves a content-free audit line naming who opened what."""
+    incident = _find_incident(incident_id)
+    reason = body.reason if body is not None else None
+    try:
+        entry = AuditEntry(
+            timestamp=datetime.now(UTC),
+            actor_kind="analyst",
+            actor_id=analyst_id.strip() or _DEFAULT_ANALYST_ID,
+            action="case.open",
+            subject=f"incident:{incident.id}",
+            outcome=f"ok: {reason.strip()}" if reason and reason.strip() else "ok",
+        )
+    except ValidationError as exc:  # the reason carried a number / content
+        raise HTTPException(status_code=422, detail="reason must not carry call content or numbers") from exc
+    append_audit(entry, get_config().data_dir / "processed" / AUDIT_FILENAME)
+    analysed = _analyse(incident, locale, backend)
+    return OpenCaseResponse(**analysed.model_dump(), transcript=incident.transcript)
+
+
+def _find_incident(incident_id: str) -> Incident:
     analysis = _load_analysis()
     if analysis is None:
         raise HTTPException(status_code=404, detail="analysis unavailable")
     incident = next((i for i in analysis.incidents if i.id == incident_id), None)
     if incident is None:
         raise HTTPException(status_code=404, detail=f"unknown incident {incident_id!r}")
+    return incident
 
+
+def _analyse(incident: Incident, locale: Locale, backend: str | None) -> IncidentAnalysisResponse:
     fallback = False
     try:
         result = predict.score(incident.transcript, backend=backend)
@@ -278,7 +335,7 @@ def incident_analysis(
     ranked = sorted(result.tags, key=lambda tag: -tag.weight)
     return IncidentAnalysisResponse(
         incident_id=incident.id,
-        transcript=incident.transcript,
+        excerpt=_excerpt(incident.transcript),
         risk=result.risk,
         threshold=cfg.risk_threshold,
         flagged=result.risk >= cfg.risk_threshold,
@@ -336,6 +393,10 @@ def ingest(locale: Locale = "ru") -> IngestResponse:
             for placement in summary.placements
         ],
     )
+
+
+def _excerpt(text: str) -> str:
+    return text if len(text) <= _EXCERPT_CHARS else text[:_EXCERPT_CHARS] + _ELLIPSIS
 
 
 def _org_display_names(locale: Locale) -> dict[str, str]:

@@ -110,6 +110,14 @@ applies the retention window). Set `QORGAN_NUMBER_HMAC_KEY` (see `.env.example`)
 it the server refuses reports that carry a number. No route accepts audio; these
 invariants are enforced by `tests/test_architecture.py` (ADRs D12–D14).
 
+## Analyst dashboard exposure
+
+`admin.html` shows organization aggregates and excerpts; reading a whole call is an
+explicit **Open full transcript (audited)** action that the server records in
+`data/processed/audit_log.jsonl` (`analyst · case.open · incident:<id>`), naming the analyst
+from `?analyst=<id>` (ADR D20). The admin routes carry no authentication in this demo — put
+SSO in front of them in a deployment.
+
 ## Partner API (`/api/v1`) — consented reports in, aggregates out
 
 A bank fraud desk, telecom or hotline can feed confirmed cases into the analyst layer and

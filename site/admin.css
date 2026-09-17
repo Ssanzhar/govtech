@@ -123,6 +123,10 @@ th.is-sorted .sort-ind{opacity:1}
   background:color-mix(in srgb,var(--amber) 30%,transparent);
   color:var(--paper);padding:.05em .15em;border-radius:3px;
 }
+.dd-spans{margin-top:.5rem;display:flex;flex-wrap:wrap;gap:.35rem}
+.dd-spans mark{background:color-mix(in srgb,#E06A4C 25%,transparent);color:var(--paper);padding:.1rem .35rem;border-radius:3px;font-size:.8rem}
+.dd-open-btn{margin-top:.7rem;font-size:.78rem;padding:.4rem .8rem;border:1px solid color-mix(in srgb,var(--paper) 35%,transparent);background:transparent;color:var(--paper);cursor:pointer}
+.dd-open-btn:hover{background:color-mix(in srgb,var(--paper) 10%,transparent)}
 .dd-analysis-reason{margin-top:.8rem;font-size:.9rem;line-height:1.6;color:color-mix(in srgb,var(--paper) 85%,transparent)}
 .dd-analysis-caveat{margin-top:.5rem;font-size:.7rem;color:color-mix(in srgb,var(--paper) 45%,transparent)}
 .dd-loading{padding:.4rem 0;font-size:.78rem;color:color-mix(in srgb,var(--paper) 55%,transparent)}

@@ -1,6 +1,8 @@
 /* Qorğan admin dashboard — overview, priority queue with sort/search/filter, drill-down
    with a searchable calls table, and per-call on-demand model analysis (the rank graph:
-   GET /api/admin/incidents/{id}/analysis). All list management is client-side. */
+   GET /api/admin/incidents/{id}/analysis — verdict, tags, trigger phrases, an excerpt).
+   The full transcript is shown only after an explicit "open case" (POST .../open), which
+   the server records in its audit log (PLAN C4). All list management is client-side. */
 (() => {
   "use strict";
 
@@ -292,8 +294,13 @@
         `&nbsp;&middot;&nbsp;risk ${a.risk.toFixed(2)} / threshold ${a.threshold.toFixed(2)}` +
         `&nbsp;&middot;&nbsp;backend ${esc(a.backend)}${a.fallback ? " (fallback)" : ""}</div>` +
         `<div class="dd-rank">${rank}</div>` +
-        `<div class="dd-section-label mono">transcript &middot; trigger phrases</div>` +
-        `<div class="dd-script dd-analysis-script">${highlightSpans(a.transcript, a.spans)}</div>` +
+        (a.transcript
+          ? `<div class="dd-section-label mono">full transcript &middot; trigger phrases &middot; <span class="tone-moss">opened, logged</span></div>` +
+            `<div class="dd-script dd-analysis-script">${highlightSpans(a.transcript, a.spans)}</div>`
+          : `<div class="dd-section-label mono">excerpt &middot; trigger phrases</div>` +
+            `<div class="dd-script dd-analysis-script">${esc(a.excerpt)}</div>` +
+            `<div class="dd-spans">${a.spans.map((sp) => `<mark>${esc(sp.text)}</mark>`).join(" ") || '<span class="tw-dim">no trigger phrases</span>'}</div>` +
+            `<button type="button" class="btn dd-open-btn" data-open="${esc(a.incident_id)}">Open full transcript (audited)</button>`) +
         `<p class="dd-analysis-reason">${esc(a.reason)}</p>` +
         `<p class="dd-analysis-caveat mono">${esc(a.caveat)}</p>`;
     }
@@ -337,6 +344,32 @@
     callsEl.querySelectorAll("tr[data-incident]").forEach((tr) => {
       tr.addEventListener("click", () => expandCall(tr.dataset.incident));
     });
+    callsEl.querySelectorAll("button[data-open]").forEach((btn) => {
+      btn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        openCase(btn.dataset.open);
+      });
+    });
+  };
+
+  // The explicit, audited action (PLAN C4): the server returns the full transcript and
+  // writes an audit line naming the analyst (X-Analyst-Id, from the URL ?analyst=…).
+  const analystId = () => new URLSearchParams(location.search).get("analyst") || "";
+  const openCase = async (incidentId) => {
+    const key = `${incidentId}|${locale()}`;
+    try {
+      const headers = { "Content-Type": "application/json" };
+      if (analystId()) headers["X-Analyst-Id"] = analystId();
+      const res = await fetch(
+        `/api/admin/incidents/${encodeURIComponent(incidentId)}/open?locale=${locale()}`,
+        { method: "POST", headers, body: "{}" }
+      );
+      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      analysisCache.set(key, await res.json());
+    } catch (e) {
+      analysisCache.set(key, { error: String(e.message || e) });
+    }
+    if (expandedCall === incidentId) renderCalls();
   };
 
   // ── per-call model analysis (the rank graph) ─────────────────────────────────
