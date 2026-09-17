@@ -117,6 +117,31 @@ correctly **flagged as a new scheme**; the 5 established families are not. Organ
 ranked for the analyst queue by `priority = f(size, recency, recent-growth)`
 (`analytics/rank.py`).
 
+### Cluster quality under number-availability stress (2026-09-17, PLAN C8)
+
+`python -m qorgan.eval.cluster --resamples 50` — the same 500 seeded incidents, with the
+caller number removed from a seeded random share of calls (SIM rotation is the realistic
+case) and, optionally, the HDBSCAN text overlay enabled. Intervals are 2.5–97.5 percentiles
+over 80 % subsamples × 50 (clustering *stability*, so a full-set point can sit outside them).
+
+| Condition | Purity [95% CI] | ARI [95% CI] | Orgs | Multi-member share | Novel flagged |
+|---|---|---|---|---|---|
+| numbers as seeded (shipped) | 1.000 [1.000, 1.000] | 1.000 [1.000, 1.000] | 6 | 1.00 | 1 |
+| numbers rotated for 50 % of calls | 1.000 [1.000, 1.000] | 0.323 [0.297, 0.350] | 256 | 0.50 | 29 |
+| numbers rotated for 50 % + text overlay | 0.494 [0.502, 0.625] | 0.085 [0.066, 0.282] | 77 | 0.85 | 25 |
+| text only (no numbers) | 0.724 [0.694, 0.777] | 0.047 [0.039, 0.112] | 171 | 0.69 | 44 |
+
+**Caveat:** the seeds are synthetic and every family reuses one number by construction — the
+first row is an upper bound, not a field result. **What the stress rows say:** (1) the number
+graph is exact but *only as good as number reuse* — with half the numbers rotated, half the
+incidents become singletons (ARI 0.32) while purity stays 1.0 only because singletons are
+trivially pure; (2) the text overlay does not rescue it — it *lowers* purity (0.49) because
+scam scripts across families are near-identical to the embedder, confirming the July finding
+with a number; (3) **novelty over-fires once the graph thins**: 29 number-less singletons are
+flagged as "new schemes" at the shipped 0.06 cosine threshold. The analyst's novel-scheme
+callout is therefore only trustworthy while numbers are reused; making novelty require
+support beyond a single number-less incident is follow-up **C10** (PLAN_2026-09).
+
 ## Addendum (2026-07-15) — KK legit-boundary stabilization + reassurance widening
 
 The `authored_heldout` anchor set was widened 27 -> **42 dialogues** (Phase 1A: +10 negatives

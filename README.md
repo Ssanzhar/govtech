@@ -77,11 +77,14 @@ QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.run \
 QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.stream \
     --split test --split authored_heldout --backend linear
 
-pytest -q        # ~700 tests, all offline
+# Level-2 cluster quality under number-rotation stress, with stability intervals
+python -m qorgan.eval.cluster --resamples 50
+
+pytest -q        # ~990 tests, all offline
 ```
 
-Shipped numbers (threshold 0.55, July): **test FPR 0.000 / recall 0.953 · authored_heldout
-FPR 0.000 / recall 1.000 · ood FPR 0.000 / recall 0.889**. Read them with their intervals:
+Shipped numbers (threshold 0.59, September): **test FPR 0.000 / recall 0.938 · authored_heldout
+FPR 0.000 / recall 1.000 · ood FPR 0.000 / recall 0.844**. Read them with their intervals:
 `authored_heldout` is **hand-written, not real calls** (18 scam / 24 legit), so its FPR of
 0.000 has a 95 % Clopper–Pearson interval of **[0.000, 0.142]** and its recall of 1.000 a
 lower bound of 0.815; five of its negatives were read during feature engineering and are

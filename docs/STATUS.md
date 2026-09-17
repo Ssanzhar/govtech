@@ -67,6 +67,7 @@ accept numbered reports), `QORGAN_REPORT_RETENTION_DAYS=180`.
   fidelity and did not move the cross-runtime floor. Decision-level parity (0 flips / 28) is
   the guarantee. The browser loads the graph named by the server's `QORGAN_EMBED_ONNX_DIR`
   (`qorgan-config.json::embedder`).
+- **C10 novelty fragility (found by C8):** with half the caller numbers rotated, 29 number-less singletons are flagged as novel schemes (`python -m qorgan.eval.cluster`); the novel-scheme callout is trustworthy only while numbers are reused.
 - **C9 signals-only placement:** partner reports without a transcript are stored/counted but not placed into organizations (nothing to embed) — number-graph-only placement is the next L2 item.
 - **A6 meter:** false-latch 2/24 and alert-hit 16/18 on authored — gate any min-turns/damping change on both.
 - **Streamlit `app/`:** still runs (local embedder, Streamlit-side mic uses in-process Vosk) but is no longer the served product; retire per D4 once the PWA covers the three demo scenes.
