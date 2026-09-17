@@ -83,6 +83,42 @@ scam baiting calls"* (arXiv:2307.01965).
   generalization signal. The classifier backend (`llm` / `xlmr` / `mock`) is swappable with
   no code change.
 
+## Adversarial paraphrase split — `data/adversarial/` (PLAN_2026-09 A9, ADR D15)
+- **What:** every scam in `test` + `ood` (64 + 45 sources) rewritten by `gemini-2.5-flash`
+  under the constraint that **none of the 35 hard-signal cue phrases** in
+  `data/lexicon/hard_signal_cues.yaml` survives — the device tier is public, so an
+  attacker can read the lexicon and script around it; this split measures what that costs.
+- **Structure:** same `Dialogue` schema; id `adv-<source id>`; the source label (risk,
+  tactic tags) is carried over, **trigger spans are dropped** (the text changed, nothing is
+  re-grounded by hand); scrubbed like every other split.
+- **Verification is local, not trusted:** `qorgan.data.adversarial.cue_hits` (the
+  classifier's own case-insensitive substring rule) must find zero cues, and a Kazakh-letter
+  share check keeps the language of the source (`ru` ≤ 0.5 % Kazakh-only letters, `kk`
+  ≥ 2 %); violations are retried up to 3 times with the leaked cues named, then dropped
+  and listed in `data/adversarial/manifest.json` (model, lexicon hash, prompt hash, counts,
+  failures).
+- **Use:** eval only — `build_corpus` copies it next to the other splits, never into train;
+  `python -m qorgan.eval.adversarial` reports paired recall (source vs paraphrase) with
+  Clopper–Pearson intervals; the plan's gate is a recall drop ≤ 15 points.
+- **Limits:** paraphrases are LLM-written, so they are fluent adversaries, not real
+  scammers; a human attacker may be cruder or cleverer. The split must be regenerated
+  whenever the lexicon changes (the manifest records the lexicon hash it was built against).
+
+## Real calls — `data/real/` (PLAN_2026-09 A8; never in git)
+- Protocol, batch format, roles and the split rule are in `docs/DATA_INTAKE.md`;
+  ingest with `scripts/ingest_partner_calls.py`. Utterances are scrubbed, caller numbers
+  become HMAC digests in a separate linkage file, audio is never stored.
+- The first 60 legitimate / 40 scam calls form the hash-locked `real_heldout_v2`
+  (scored, never read, ≤ once per two weeks); later calls go to `real_train`.
+- **Provenance per batch** (partner, delivery date, transfer method, consent basis, legal
+  reference, labeler declaration, input sha256s, counts by language) is written to
+  `data/real/batches/<batch_id>.manifest.json`; add one row per batch to the table below
+  when a batch lands.
+
+| batch | partner type | delivered | basis | calls (legit / scam) | languages | notes |
+|---|---|---|---|---|---|---|
+| — | — | — | — | — | — | no real batch ingested yet (2026-09-17) |
+
 ## Reproduce
 ```bash
 # needs GEMINI_API_KEY in .env for the two generation steps
@@ -91,6 +127,8 @@ python -m qorgan.data.label --in data/synthetic/dialogues.jsonl \
                             --out data/synthetic/dialogues.jsonl   # independent re-label (optional)
 python -m qorgan.data.build_corpus --config configs/corpus.yaml    # scrub + dedup + split + manifest
 python -m qorgan.eval.run --split test --split authored_heldout        # FPR-first tables (add --backend mock for no API)
+python scripts/paraphrase_adversarial.py                             # lexicon-free paraphrases (Gemini) -> data/adversarial/
+QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.adversarial   # paired recall, source vs paraphrase
 ```
 
 ## Limitations (state honestly)
@@ -100,6 +138,9 @@ python -m qorgan.eval.run --split test --split authored_heldout        # FPR-fir
 - `authored_heldout` anchors are illustrative, not a statistically representative sample.
 
 ## Directories
-- `taxonomy/` scam-tactic definitions · `anchors/` committed `authored_heldout` set ·
+- `taxonomy/` scam-tactic definitions · `anchors/` committed `authored_heldout` set +
+  inspection ledger · `augment/` train-only targeted negatives · `lexicon/` cue +
+  reassurance lexicons · `adversarial/` committed lexicon-free paraphrase split + manifest ·
+  `real/` partner calls (gitignored, hash-locked; see `docs/DATA_INTAKE.md`) ·
   `raw/` sources (gitignored) · `synthetic/` generated JSONL (gitignored) ·
   `processed/` splits + manifest (gitignored, regenerated from the seeded build).
