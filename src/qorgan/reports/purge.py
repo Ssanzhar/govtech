@@ -14,16 +14,14 @@ from pathlib import Path
 
 from qorgan.analytics.intake import forget_report
 from qorgan.config import get_config
-from qorgan.reports.store import _as_aware, load_reports
-
-_REPORTS_FILENAME = "citizen_reports.jsonl"
+from qorgan.reports.store import REPORTS_FILENAME, as_aware, load_reports
 
 
 def expired_receipts(reports_path: Path, *, retention_days: int, now: datetime) -> list[str]:
     if retention_days <= 0:
         raise ValueError(f"retention_days must be > 0, got {retention_days}")
     cutoff = now - timedelta(days=retention_days)
-    return [r.receipt_id for r in load_reports(reports_path) if _as_aware(r.timestamp, now) < cutoff]
+    return [r.receipt_id for r in load_reports(reports_path) if as_aware(r.timestamp, now) < cutoff]
 
 
 def purge(
@@ -59,13 +57,13 @@ def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - CLI
     processed = cfg.data_dir / "processed"
     now = datetime.now(UTC)
     if args.dry_run:
-        for receipt_id in expired_receipts(processed / _REPORTS_FILENAME, retention_days=args.retention_days, now=now):
+        for receipt_id in expired_receipts(processed / REPORTS_FILENAME, retention_days=args.retention_days, now=now):
             print(receipt_id)
         return
     removed = purge(
         retention_days=args.retention_days,
         now=now,
-        reports_path=processed / _REPORTS_FILENAME,
+        reports_path=processed / REPORTS_FILENAME,
         incidents_path=processed / "incidents.jsonl",
         organizations_path=processed / "organizations.jsonl",
         embeddings_path=processed / "incident_embeddings.npz",

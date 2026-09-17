@@ -63,10 +63,10 @@ def report_incident_id(report: StoredReport) -> str:
     """Deterministic, content-addressed incident id for a stored report.
 
     Same (scrubbed) transcript + timestamp → same id, which is what makes ingest idempotent.
+    A signals-only report (no transcript) is addressed by its tactic set + number digest.
     """
-    digest = hashlib.sha1(
-        f"{report.transcript}|{report.timestamp.isoformat()}".encode()
-    ).hexdigest()
+    content = report.transcript or f"{','.join(report.tactic_ids)}|{report.number_hash or ''}"
+    digest = hashlib.sha1(f"{content}|{report.timestamp.isoformat()}".encode()).hexdigest()
     return f"report-{digest[:_ID_HASH_CHARS]}"
 
 
@@ -76,13 +76,17 @@ def load_report_drafts(reports_path: Path) -> list[StoredReport]:
 
 
 def pending_reports(reports_path: Path, incidents: Sequence[Incident]) -> list[StoredReport]:
-    """Stored reports not yet ingested (by deterministic id), deduplicated within the file."""
+    """Stored reports not yet ingested (by deterministic id), deduplicated within the file.
+
+    Signals-only partner reports carry no transcript to embed, so they are not pending for
+    text clustering; placing them through the number graph alone is PLAN_2026-09 C9.
+    """
     existing = {incident.id for incident in incidents}
     seen: set[str] = set()
     pending: list[StoredReport] = []
     for report in load_reports(reports_path):
         report_id = report_incident_id(report)
-        if report_id in existing or report_id in seen:
+        if report.is_signals_only or report_id in existing or report_id in seen:
             continue
         seen.add(report_id)
         pending.append(report)

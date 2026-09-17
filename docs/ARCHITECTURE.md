@@ -3,6 +3,30 @@
 Web-first, Python-only, L1-centric. This supersedes the two-subsystem/on-device design in
 `DOCUMENTATION.md` for the sprint.
 
+> **September 2026 layer (current).** Level 1 runs on the citizen's device (`site/core/`,
+> the JS port of the classifier + `Xenova/multilingual-e5-base` int8 in a Web Worker); the
+> FastAPI server (`qorgan.api`) hosts the site, a stateless `/api/analyze` fallback, and
+> the analyst layer. The target diagram is `PLAN_2026-09.md §2`. Its invariants are
+> **tests**, not prose (`tests/test_architecture.py`):
+>
+> 1. **No route accepts audio** — no WebSocket, no audio/multipart bodies (ADR D12).
+> 2. **`/api/analyze` persists nothing** (snapshot of `data/` before/after).
+> 3. **Level 2 has only consented ingresses** — `POST /api/reports` (citizen, ADR D13)
+>    and `POST /api/v1/reports` (partner, ADR D19). Every module on the citizen/partner
+>    path (`live/*`, `api.py`, `api_live*`, `api_reports*`, `api_partner.py`) is
+>    import-graph-checked against the analytics write paths.
+> 4. **Stored minimised** — numbers only as salted HMAC digests + `+7 700 ***`, transcripts
+>    PII-scrubbed, receipts, `DELETE`, retention purge (ADR D14; schema-enforced).
+> 5. **The partner ingress is not a bulk feed** — API key per partner, one report per
+>    request, structured tactic hits preferred, transcripts accepted only pre-scrubbed,
+>    `consent_basis` required, per-partner rate limit + rolling daily quota, content-free
+>    audit log (`data/processed/audit_log.jsonl`), aggregates-only export.
+>
+> Modules: `api_reports.py` · `api_partner.py` + `api_partner_export.py` · `partners.py`
+> (credential registry) · `audit.py` · `reports/` (store, purge, partner views) ·
+> `privacy/numbers.py`. The rest of this file is the July design and still describes the
+> classifier, explainer and Level-2 internals.
+
 ## Flow
 
 ```

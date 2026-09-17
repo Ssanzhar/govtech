@@ -11,15 +11,20 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from qorgan.data.schema import Incident, Label, TacticTag, spans_from_phrases
 from qorgan.data.scrub import scrub_text
+from qorgan.partners import PARTNER_ID_PATTERN
 from qorgan.privacy.numbers import is_number_hash
 
 RECEIPT_ID_PATTERN = r"^[0-9a-f]{24}$"
 _RISK_SCORE_MAX = 100.0
 _NUMBER_PREFIX_PATTERN = r"^\+\d{1,3}( \d{3})? \*\*\*$"
+# A partner's own case id: short, opaque, safe to echo in receipts and audit lines.
+PARTNER_REFERENCE_PATTERN = r"^[A-Za-z0-9._:-]{1,64}$"
+# `consent_basis` is a code from the data-sharing agreement (e.g. `customer_consent`), not prose.
+CONSENT_BASIS_PATTERN = r"^[a-z][a-z0-9_]{2,63}$"
 
 ReportSource = Literal["citizen", "partner"]
 CITIZEN_CONSENT_BASIS = "citizen_explicit_submit"
@@ -37,18 +42,38 @@ class StoredReport(BaseModel):
     flagged_phrases: tuple[str, ...] = ()
     tactic_ids: tuple[str, ...] = ()
     timestamp: datetime
+    # Server clock at storage time (never client-supplied); quotas and retention anchor on
+    # it. Optional only so reports stored before it existed still load.
+    received_at: datetime | None = None
     risk_score: float = Field(ge=0.0, le=_RISK_SCORE_MAX)
     source: ReportSource = "citizen"
     consent_basis: str = Field(default=CITIZEN_CONSENT_BASIS, min_length=1)
+    # Partner provenance (PLAN_2026-09 C5): who sent it and their own case reference.
+    partner_id: str | None = Field(default=None, pattern=PARTNER_ID_PATTERN)
+    partner_reference: str | None = Field(default=None, pattern=PARTNER_REFERENCE_PATTERN)
 
     @field_validator("transcript")
     @classmethod
-    def _transcript_is_scrubbed_and_not_blank(cls, value: str) -> str:
-        if not value.strip():
-            raise ValueError("StoredReport.transcript must not be blank")
+    def _transcript_is_scrubbed(cls, value: str) -> str:
         if scrub_text(value) != value:
             raise ValueError("StoredReport.transcript still contains PII -- scrub before storing")
         return value
+
+    @model_validator(mode="after")
+    def _shape_matches_source(self) -> "StoredReport":
+        if (self.source == "partner") != (self.partner_id is not None):
+            raise ValueError("StoredReport.partner_id is required for source='partner' and forbidden otherwise")
+        if not self.transcript.strip():
+            # Signals-only reports (structured tactic hits, no transcript) are a partner shape.
+            if self.source != "partner":
+                raise ValueError("StoredReport.transcript must not be blank")
+            if not self.tactic_ids:
+                raise ValueError("a report without a transcript must carry at least one tactic id")
+        return self
+
+    @property
+    def is_signals_only(self) -> bool:
+        return not self.transcript.strip()
 
     @field_validator("number_hash")
     @classmethod

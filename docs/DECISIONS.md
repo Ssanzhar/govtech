@@ -144,3 +144,43 @@ silently diverge. The script and the drift probes (`scripts/embed_probe.py`,
 **Revisit:** only with a different mechanism — e.g. running the *same* ONNX Runtime build on
 both sides, or training the heads on the browser runtime's embeddings — and only if a real
 tag-flip is ever observed in the field.
+
+### D19 — The partner ingress is a consented, quota-bound, audited API — not a bulk-transcript feed (2026-09-17)
+`POST /api/v1/reports` (`api_partner.py`) is Level 2's second ingress, next to citizen
+reports, and it is shaped to make the wrong use awkward: **API key per partner**
+(`QORGAN_PARTNER_API_KEYS`, parsed at startup, ≥ 16-char unique secrets, constant-time
+lookup, closed when unset); **one report per request**; **structured tactic hits are the
+first-class shape**; a transcript is accepted only if `scrub_text` is already a fixed point
+on it — the server *refuses* an unscrubbed one (422, without echoing it) rather than
+scrubbing silently, so a partner cannot use the API to move raw call content across the
+boundary; **`consent_basis`** (a machine-readable code from the data-sharing agreement) is
+mandatory; the caller number is HMAC-hashed on receipt exactly like a citizen report
+(D14); **per-partner rate limit + rolling 24 h quota** (counted from the reports file, so
+it survives restarts; `X-Quota-*` headers); **idempotent retries** by `partner_reference`;
+a **content-free audit line** for every action (`audit.py` — the schema rejects any field
+that `scrub_text` would change, so the log cannot become a copy of the data it accounts
+for); partners **delete only their own** receipts (someone else's looks like an unknown
+one). `GET /api/v1/organizations` exports **aggregates only** — ids, tactic-derived names,
+counts, tactic counts, last-activity dates, novelty, priority; no numbers, not even digests,
+no transcripts or excerpts — from a separate module so the ingress module stays under the
+import-graph guard (`tests/test_architecture.py`, invariant 4).
+**Hardening from the same-day security + code review:** the quota is charged by
+**server receipt time** (`StoredReport.received_at`, set on both ingresses), never by the
+partner-supplied `occurred_at` — a backdated report would otherwise never fall inside the
+window (found as CRITICAL; regression-tested); `occurred_at` is bounded to
+`[now − retention, now + 5 min]`; `tactic_ids` are capped (32) and de-duplicated on both
+ingresses; every 422 in the app is rendered without pydantic's `input` echo
+(`api_limits.validation_error_handler`); bodies are capped at 256 KB by `Content-Length`
+and chunked bodies without a length are refused (`BodySizeLimitMiddleware`); the analyst
+KPI `ingested` is actual incident membership and `signals_only` is reported separately.
+**Accepted limitations (single-process demo server, same as the citizen path):** one full
+scan of the reports file per request (bounded by quota × partners × retention; an index
+comes with a real database), and idempotency by `partner_reference` is check-then-append
+without a file lock, so two *concurrent* identical retries can both store.
+**Scope cut, stated:** signals-only reports (no transcript) are stored, receipted,
+deletable, counted and quota-charged, but `intake.pending_reports` skips them — there is
+nothing to embed; placing them into organizations through the number graph alone is the
+follow-up **C9**. **Rationale:** the council's "partner API becomes a bulk feed" risk
+(PLAN §8) is answered by shape and limits, not by a policy document. **Revisit:** key
+rotation and per-partner scopes when a pilot partner (PLAN §7 item 7) is signed; C9 when
+the first signals-only reports arrive.

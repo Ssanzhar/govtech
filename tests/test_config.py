@@ -197,3 +197,26 @@ def test_report_retention_days_default_and_override():
 def test_report_retention_days_must_be_positive():
     with pytest.raises(ConfigError):
         load_config({"QORGAN_REPORT_RETENTION_DAYS": "0"})
+
+
+# --- partner intake API (PLAN_2026-09 C5) ---------------------------------------------------
+
+
+def test_partner_registry_defaults_to_closed():
+    cfg = load_config({})
+    assert cfg.partner_credentials == ()
+    assert cfg.partner_quota_window_hours == 24
+
+
+def test_partner_registry_is_parsed_with_default_and_explicit_quotas():
+    cfg = load_config({
+        "QORGAN_PARTNER_API_KEYS": "bank_a:0123456789abcdefghij:5,telecom_b:abcdefghij0123456789",
+        "QORGAN_PARTNER_DAILY_QUOTA": "42",
+    })
+    assert [(c.id, c.daily_quota) for c in cfg.partner_credentials] == [("bank_a", 5), ("telecom_b", 42)]
+    assert "0123456789abcdefghij" not in repr(cfg)
+
+
+def test_weak_partner_key_fails_fast():
+    with pytest.raises(ConfigError):
+        load_config({"QORGAN_PARTNER_API_KEYS": "bank_a:short"})

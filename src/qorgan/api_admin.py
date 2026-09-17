@@ -30,6 +30,7 @@ from qorgan.analytics.presentation import (
 from qorgan.config import get_config
 from qorgan.data.incident_seed import load_incidents_jsonl
 from qorgan.data.schema import Incident, Organization
+from qorgan.reports.store import REPORTS_FILENAME
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -157,7 +158,7 @@ def _load_analysis() -> _Analysis | None:
     except ValueError:
         return None
     try:
-        pending = len(pending_reports(processed / "citizen_reports.jsonl", incidents))
+        pending = len(pending_reports(processed / REPORTS_FILENAME, incidents))
     except ValueError:
         pending = 0
     return _Analysis(organizations=organizations, incidents=incidents, pending=pending)
@@ -311,7 +312,7 @@ def ingest(locale: Locale = "ru") -> IngestResponse:
     processed = get_config().data_dir / "processed"
     try:
         summary = ingest_pending(
-            reports_path=processed / "citizen_reports.jsonl",
+            reports_path=processed / REPORTS_FILENAME,
             incidents_path=processed / "incidents.jsonl",
             organizations_path=processed / "organizations.jsonl",
             embeddings_path=processed / EMBEDDINGS_FILENAME,

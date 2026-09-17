@@ -45,7 +45,7 @@ def test_stats_degrade_when_no_analysis(client: TestClient, tmp_path, monkeypatc
     assert body["available"] is False
     assert body["activity"] == []
     assert body["top_organizations"] == []
-    assert body["reports"] == {"submitted": 0, "ingested": 0, "pending": 0}
+    assert body["reports"] == {"submitted": 0, "ingested": 0, "pending": 0, "signals_only": 0}
 
 
 def test_stats_activity_is_zero_filled_and_counts_days(
@@ -125,4 +125,27 @@ def test_stats_report_counts(client: TestClient, tmp_path, monkeypatch) -> None:
 
     body = client.get("/api/admin/stats").json()
 
-    assert body["reports"] == {"submitted": 2, "ingested": 1, "pending": 1}
+    assert body["reports"] == {"submitted": 2, "ingested": 1, "pending": 1, "signals_only": 0}
+
+
+def test_stats_signals_only_partner_reports_are_neither_pending_nor_ingested(client: TestClient, tmp_path, monkeypatch) -> None:
+    """Regression (code review): `ingested` must be actual incident membership."""
+    from qorgan.reports.store import prepare_report
+    from support.numbers import TEST_HMAC_KEY
+
+    incidents = [_incident("i1", ts=datetime.now())]
+    _seed(tmp_path, monkeypatch, organizations=[Organization(id="org_0", members=("i1",))], incidents=incidents)
+    reports = tmp_path / "processed" / "citizen_reports.jsonl"
+    lines = [
+        prepare_report(
+            transcript="", phone_number="+7 700 555 66 77", flagged_phrases=(), tactic_ids=("otp_request",),
+            timestamp=datetime(2026, 9, 17, 10, i, tzinfo=UTC), risk_score=100.0, hmac_key=TEST_HMAC_KEY,
+            source="partner", consent_basis="customer_consent", partner_id="bank_a", partner_reference=f"C-{i}",
+        ).model_dump_json()
+        for i in range(3)
+    ]
+    reports.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    body = client.get("/api/admin/stats").json()
+
+    assert body["reports"] == {"submitted": 3, "ingested": 0, "pending": 0, "signals_only": 3}

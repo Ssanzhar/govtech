@@ -22,7 +22,7 @@ from qorgan.api_ratelimit import SlidingWindowLimiter
 from qorgan.config import get_config
 from qorgan.privacy.numbers import MissingHmacKeyError
 from qorgan.reports.model import RECEIPT_ID_PATTERN
-from qorgan.reports.store import append_report, prepare_report
+from qorgan.reports.store import REPORTS_FILENAME, append_report, prepare_report
 from qorgan.taxonomy import get_taxonomy
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
@@ -31,7 +31,7 @@ _MAX_TRANSCRIPT_CHARS = 20_000
 _MAX_PHONE_CHARS = 32
 _MAX_PHRASES = 50
 _MAX_PHRASE_CHARS = 300
-_REPORTS_FILENAME = "citizen_reports.jsonl"
+_MAX_TACTICS = 32
 # Per client address: a citizen files a handful of reports, not hundreds.
 _LIMITER = SlidingWindowLimiter(max_requests=20, window_seconds=60.0)
 _RECEIPT_RE = re.compile(RECEIPT_ID_PATTERN)
@@ -46,7 +46,7 @@ class ReportSubmission(BaseModel):
     transcript: str = Field(min_length=1, max_length=_MAX_TRANSCRIPT_CHARS)
     phone_number: str | None = Field(default=None, max_length=_MAX_PHONE_CHARS)
     flagged_phrases: tuple[str, ...] = Field(default=(), max_length=_MAX_PHRASES)
-    tactic_ids: tuple[str, ...] = ()
+    tactic_ids: tuple[str, ...] = Field(default=(), max_length=_MAX_TACTICS)
     risk_score: float = Field(ge=0.0, le=100.0)
     consent: Literal[True]
     timestamp: datetime | None = None
@@ -72,7 +72,7 @@ class ReportSubmission(BaseModel):
         unknown = sorted(set(value) - known)
         if unknown:
             raise ValueError(f"unknown tactic ids: {unknown}")
-        return value
+        return tuple(dict.fromkeys(value))
 
 
 class ReportReceipt(BaseModel):
@@ -93,15 +93,17 @@ def submit(req: ReportSubmission, request: Request) -> ReportReceipt:
     if not _LIMITER.allow(_client_key(request)):
         raise HTTPException(status_code=429, detail="too many reports from this client; try again in a minute")
     cfg = get_config()
+    now = datetime.now(UTC)
     try:
         stored = prepare_report(
             transcript=req.transcript,
             phone_number=req.phone_number,
             flagged_phrases=req.flagged_phrases,
             tactic_ids=req.tactic_ids,
-            timestamp=req.timestamp or datetime.now(UTC),
+            timestamp=req.timestamp or now,
             risk_score=req.risk_score,
             hmac_key=cfg.number_hmac_key,
+            received_at=now,
         )
     except MissingHmacKeyError as exc:  # misconfigured server: refuse, never store raw
         raise HTTPException(
@@ -110,7 +112,7 @@ def submit(req: ReportSubmission, request: Request) -> ReportReceipt:
     except ValueError as exc:  # unparseable number
         raise HTTPException(status_code=422, detail=f"caller number not understood: {exc}") from exc
 
-    append_report(stored, cfg.data_dir / "processed" / _REPORTS_FILENAME)
+    append_report(stored, cfg.data_dir / "processed" / REPORTS_FILENAME)
     return ReportReceipt(
         receipt_id=stored.receipt_id,
         report_id=report_incident_id(stored),
@@ -130,7 +132,7 @@ def delete(receipt_id: str) -> Response:
     processed = get_config().data_dir / "processed"
     summary = forget_report(
         receipt_id,
-        reports_path=processed / _REPORTS_FILENAME,
+        reports_path=processed / REPORTS_FILENAME,
         incidents_path=processed / "incidents.jsonl",
         organizations_path=processed / "organizations.jsonl",
         embeddings_path=processed / "incident_embeddings.npz",

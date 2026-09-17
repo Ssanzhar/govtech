@@ -5,6 +5,9 @@
 2. `/api/analyze` persists nothing.
 3. No route accepts audio (no WebSocket, no audio/multipart request bodies) -- raw call
    audio never reaches a server; ASR belongs on the device.
+4. The partner ingress (`/api/v1`, PLAN C5) is a consented ingress, not a bulk feed: it
+   is authenticated, requires a `consent_basis`, refuses unscrubbed transcripts and is
+   quota-bound -- and, like the citizen ingress, cannot reach the analytics write paths.
 
 These are AST/route-table checks, so they stay green regardless of which backend or model
 is installed.
@@ -27,7 +30,13 @@ _DATA = Path(__file__).resolve().parents[1] / "data"
 
 # Modules that sit on the citizen-facing path and must never touch the analytics store.
 _GUARDED_MODULES = sorted(
-    [*(_SRC / "live").glob("*.py"), *_SRC.glob("api_live*.py"), _SRC / "api.py", *_SRC.glob("api_reports*.py")]
+    [
+        *(_SRC / "live").glob("*.py"),
+        *_SRC.glob("api_live*.py"),
+        _SRC / "api.py",
+        *_SRC.glob("api_reports*.py"),
+        _SRC / "api_partner.py",  # the partner ingress; the export module is read-only by design
+    ]
 )
 _FORBIDDEN_MODULES = ("qorgan.analytics.store", "qorgan.analytics.pipeline", "qorgan.analytics.cluster")
 _FORBIDDEN_INTAKE_NAMES = ("ingest_pending",)
@@ -135,5 +144,29 @@ def test_site_ships_no_server_streaming_microphone_client():
 # sanity: the guard list is not silently empty
 def test_guarded_module_list_is_populated():
     names = {p.name for p in _GUARDED_MODULES}
-    assert {"api.py", "api_live.py", "session.py", "summary.py"} <= names
+    assert {"api.py", "api_live.py", "session.py", "summary.py", "api_reports.py", "api_partner.py"} <= names
     assert os.environ.get("QORGAN_CLASSIFIER_BACKEND", "linear") in {"linear", "mock", "llm", "xlmr"}
+
+
+# --- 4. the partner ingress is consented, not a bulk feed -------------------------------------
+
+_PARTNER_SECRET = "arch-test-secret-0123456789abcdef"
+
+
+def test_partner_ingress_is_closed_by_default_and_never_a_bulk_feed(tmp_path, monkeypatch):
+    monkeypatch.setenv("QORGAN_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("QORGAN_TAXONOMY_PATH", str(_DATA / "taxonomy" / "tactics.yaml"))
+    monkeypatch.setenv("QORGAN_PARTNER_API_KEYS", "")
+    client = TestClient(app)
+    report = {"consent_basis": "customer_consent", "tactic_ids": ["otp_request"]}
+    assert client.post("/api/v1/reports", json=report).status_code == 401  # closed without a registry
+
+    monkeypatch.setenv("QORGAN_PARTNER_API_KEYS", f"arch_partner:{_PARTNER_SECRET}:1")
+    headers = {"X-API-Key": _PARTNER_SECRET}
+    assert client.post("/api/v1/reports", json=[report, report], headers=headers).status_code == 422  # one per request
+    assert client.post("/api/v1/reports", json={"tactic_ids": ["otp_request"]}, headers=headers).status_code == 422  # consent_basis
+    unscrubbed = {**report, "tactic_ids": [], "transcript": "перезвоните на +7 700 101 20 30"}
+    assert client.post("/api/v1/reports", json=unscrubbed, headers=headers).status_code == 422  # pre-scrubbed only
+    assert client.post("/api/v1/reports", json={**report, "partner_reference": "a"}, headers=headers).status_code == 201
+    assert client.post("/api/v1/reports", json={**report, "partner_reference": "b"}, headers=headers).status_code == 429  # quota
+    assert "101 20 30" not in (tmp_path / "processed" / "citizen_reports.jsonl").read_text(encoding="utf-8")

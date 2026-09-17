@@ -19,6 +19,8 @@ from typing import Literal
 from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from qorgan.partners import DEFAULT_PARTNER_DAILY_QUOTA, PartnerCredential, parse_partner_credentials
+
 # Anchor for all repo-relative defaults: src/qorgan/config.py -> src/qorgan -> src -> repo root.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -45,6 +47,8 @@ _DEFAULT_EMBED_ONNX_SUBDIR = Path("site") / "models" / "Xenova" / "multilingual-
 _DEFAULT_RISK_THRESHOLD = 0.59
 # Consented reports are kept this long before the purge removes them (PLAN_2026-09 C3).
 _DEFAULT_REPORT_RETENTION_DAYS = 180
+# Partner intake API (PLAN_2026-09 C5): rolling window for the per-partner report budget.
+_DEFAULT_PARTNER_QUOTA_WINDOW_HOURS = 24
 _DEFAULT_RISK_THRESHOLD_ENTER = 0.59
 _DEFAULT_RISK_THRESHOLD_EXIT = 0.49
 # Live suspicion-meter smoothing (design spec §08): the displayed 0-100 score follows an
@@ -128,6 +132,11 @@ class Config(BaseModel):
     # Salt for phone-number HMACs; None means numbers cannot be accepted at all.
     number_hmac_key: bytes | None
     report_retention_days: int = Field(gt=0)
+
+    # --- Partner intake API (PLAN_2026-09 C5, ADR D19) ---
+    # Parsed `QORGAN_PARTNER_API_KEYS`; empty means the /api/v1 ingress is closed.
+    partner_credentials: tuple[PartnerCredential, ...]
+    partner_quota_window_hours: int = Field(gt=0)
 
     # --- Reproducibility / localization ---
     default_seed: int
@@ -314,6 +323,13 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             number_hmac_key=_read_secret_bytes(source, "QORGAN_NUMBER_HMAC_KEY"),
             report_retention_days=_read_int(
                 source, "QORGAN_REPORT_RETENTION_DAYS", _DEFAULT_REPORT_RETENTION_DAYS
+            ),
+            partner_credentials=parse_partner_credentials(
+                source.get("QORGAN_PARTNER_API_KEYS", ""),
+                default_quota=_read_int(source, "QORGAN_PARTNER_DAILY_QUOTA", DEFAULT_PARTNER_DAILY_QUOTA),
+            ),
+            partner_quota_window_hours=_read_int(
+                source, "QORGAN_PARTNER_QUOTA_WINDOW_HOURS", _DEFAULT_PARTNER_QUOTA_WINDOW_HOURS
             ),
             supported_locales=_read_csv_tuple(
                 source, "QORGAN_SUPPORTED_LOCALES", _DEFAULT_SUPPORTED_LOCALES

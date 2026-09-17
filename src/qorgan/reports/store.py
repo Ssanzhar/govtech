@@ -17,6 +17,9 @@ from qorgan.data.scrub import scrub_text
 from qorgan.privacy.numbers import display_prefix, hash_phone_number
 from qorgan.reports.model import CITIZEN_CONSENT_BASIS, ReportSource, StoredReport
 
+# Citizen and partner reports share one file under `<data_dir>/processed/`; the `source`
+# field tells them apart.
+REPORTS_FILENAME = "citizen_reports.jsonl"
 _RECEIPT_BYTES = 12  # 24 hex chars, matches RECEIPT_ID_PATTERN
 
 
@@ -36,6 +39,9 @@ def prepare_report(
     source: ReportSource = "citizen",
     consent_basis: str = CITIZEN_CONSENT_BASIS,
     receipt_id: str | None = None,
+    partner_id: str | None = None,
+    partner_reference: str | None = None,
+    received_at: datetime | None = None,
 ) -> StoredReport:
     """Reduce a reviewed draft to its storable form.
 
@@ -58,6 +64,9 @@ def prepare_report(
         risk_score=risk_score,
         source=source,
         consent_basis=consent_basis,
+        partner_id=partner_id,
+        partner_reference=partner_reference,
+        received_at=received_at,
     )
 
 
@@ -100,13 +109,13 @@ def purge_expired(path: Path, *, retention_days: int, now: datetime) -> list[Sto
         raise ValueError(f"retention_days must be > 0, got {retention_days}")
     reports = load_reports(path)
     cutoff = now - timedelta(days=retention_days)
-    expired = [r for r in reports if _as_aware(r.timestamp, now) < cutoff]
+    expired = [r for r in reports if as_aware(r.timestamp, now) < cutoff]
     if expired:
         _rewrite([r for r in reports if r not in expired], path)
     return expired
 
 
-def _as_aware(stamp: datetime, reference: datetime) -> datetime:
+def as_aware(stamp: datetime, reference: datetime) -> datetime:
     """Compare naive and aware stamps safely by adopting the reference's tzinfo for naive ones."""
     if stamp.tzinfo is None and reference.tzinfo is not None:
         return stamp.replace(tzinfo=reference.tzinfo)
