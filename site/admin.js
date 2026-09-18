@@ -172,7 +172,7 @@
     const rows = visible
       .map(
         (o) => `<tr data-org="${esc(o.id)}" class="${o.id === selectedId ? "is-selected" : ""}">` +
-          `<td>${esc(o.name)}${o.is_novel ? '<span class="queue-badge">NEW</span>' : ""}</td>` +
+          `<td>${esc(o.name)}${o.is_novel ? '<span class="queue-badge">NEW</span>' : ""}${feedbackBadge(o.feedback)}</td>` +
           `<td>${o.priority.toFixed(2)}</td>` +
           `<td>${o.incidents}</td>` +
           `<td>${o.numbers.length}</td>` +
@@ -232,11 +232,26 @@
         `<div class="dd-script">${esc(detail.representative_script)}</div>`
       : "";
 
+    const others = orgs.filter((o) => o.id !== detail.id);
+    const mergeOptions = others.map((o) => `<option value="${esc(o.id)}">${esc(o.name)} (${o.incidents})</option>`).join("");
+    const feedback =
+      `<div class="dd-feedback mono">` +
+      `<span class="dd-feedback-label">analyst verdict${detail.feedback ? ` · <b>${esc(detail.feedback)}</b>` : ""}</span>` +
+      `<button type="button" class="btn dd-fb-btn" data-fb="confirm">Confirm</button>` +
+      `<button type="button" class="btn dd-fb-btn" data-fb="dismiss">Dismiss</button>` +
+      (others.length
+        ? `<label class="dd-fb-merge">merge into <select id="ddMergeTarget">${mergeOptions}</select>` +
+          `<button type="button" class="btn dd-fb-btn" data-fb="merge">Merge</button></label>`
+        : "") +
+      `<span class="dd-fb-note tw-dim">logged with your analyst id; a dismissed operation drops to 20 % priority</span>` +
+      `</div>`;
+
     modalTitle.textContent = `organization · ${detail.id}`;
     modalDot.className = `p-dot${detail.is_novel ? "" : " tone-moss"}`;
     ddEl.innerHTML =
-      `<div class="dd-title">${esc(detail.name)} ${badge}</div>` +
+      `<div class="dd-title">${esc(detail.name)} ${badge}${feedbackBadge(detail.feedback)}</div>` +
       `<div class="dd-meta mono">priority ${detail.priority.toFixed(2)}</div>` +
+      feedback +
       `<div class="dd-section-label mono">linked numbers</div><div class="dd-chips">${numbers}</div>` +
       `<div class="dd-section-label mono">tactic profile</div><div class="dd-chips">${tactics}</div>` +
       script +
@@ -247,6 +262,9 @@
       `<span class="dd-call-note" id="ddCallNote"></span>` +
       `</div>` +
       `<div id="ddCalls"></div>`;
+    ddEl.querySelectorAll("button[data-fb]").forEach((btn) => {
+      btn.addEventListener("click", () => sendFeedback(detail.id, btn.dataset.fb));
+    });
     document.getElementById("ddCallSearch").addEventListener("input", (ev) => {
       callQuery = ev.target.value;
       renderCalls();
@@ -395,6 +413,33 @@
       analysisCache.set(key, { error: String(e.message || e) });
     }
     if (expandedCall === incidentId) renderCalls();
+  };
+
+  // ── analyst feedback (PLAN C6): confirm / dismiss / merge, applied server-side ──
+
+  const feedbackBadge = (state) =>
+    state ? `<span class="queue-badge fb-${esc(state)}">${esc(state.toUpperCase())}</span>` : "";
+
+  const sendFeedback = async (orgId, action) => {
+    const body = { action };
+    if (action === "merge") {
+      const target = document.getElementById("ddMergeTarget")?.value;
+      if (!target) return;
+      body.target_org_id = target;
+    }
+    const headers = { "Content-Type": "application/json" };
+    if (analystId()) headers["X-Analyst-Id"] = analystId();
+    try {
+      const res = await fetch(`/api/admin/organizations/${encodeURIComponent(orgId)}/feedback?locale=${locale()}`, {
+        method: "POST", headers, body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      const shown = await res.json();
+      await load(); // the queue, KPIs and stats all change; re-read everything
+      selectOrg(shown.id);
+    } catch (e) {
+      ddEl.insertAdjacentHTML("afterbegin", `<div class="dd-loading">feedback failed — ${esc(e.message || e)}</div>`);
+    }
   };
 
   // ── data loading ─────────────────────────────────────────────────────────────

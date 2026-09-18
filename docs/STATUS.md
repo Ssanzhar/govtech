@@ -1,8 +1,8 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: **2026-09-17**. Current-state doc for anyone picking the project up. Read this,
+_Last updated: **2026-09-18**. Current-state doc for anyone picking the project up. Read this,
 then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECISIONS.md`
-(ADRs D11–D23), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
+(ADRs D11–D24), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
 kept as history._
 
 ## TL;DR (September 2026)
@@ -22,7 +22,7 @@ kept as history._
   n=19 negatives → [0, 0.176]) · ood 0.000 [0, 0.048] / 0.844 · false-latch 2/24.
   **`authored_heldout` is hand-written, not real calls** — the locked real-call set (PLAN A3)
   does not exist yet; that is the biggest open item.
-- **Tests:** `pytest -q` → 1010 offline (+2 skipped until a real held-out set exists) · `npm test` → 16 (JS core parity + the int8 runtime
+- **Tests:** `pytest -q` → 1022 offline (+2 skipped until a real held-out set exists) · `npm test` → 16 (JS core parity + the int8 runtime
   gate, which needs the self-hosted model files). Branch `sanzh-ts`.
 - **Verified in Chromium (2026-09-14, Playwright):** scene 1 on-device → 90/100 CRITICAL with
   cue-grounded tags/advice/summary; scene 2 (real bank call) → 5/100 LOW; report submit →
@@ -53,6 +53,7 @@ accept numbered reports), `QORGAN_REPORT_RETENTION_DAYS=180`.
 | `site/sw.js`, `manifest.webmanifest`, `icons/` | PWA shell: offline after first load; `/api/` never cached. |
 | `tests_js/` | Node built-in test runner: golden parity (`fixtures/parity.json`, generated) + integration gate. |
 | `src/qorgan/privacy/`, `src/qorgan/reports/`, `api_reports.py`, `api_ratelimit.py` | Number hashing, minimised report storage, receipts/deletion/purge, the consented ingress. |
+| `analytics/feedback.py` | Analyst confirm / dismiss / merge: append-only events keyed by the operation's numbers, applied at read time (ADR D24). |
 | `api_partner.py`, `api_partner_export.py`, `partners.py`, `audit.py`, `reports/partner.py`, `api_limits.py` | Partner API (`/api/v1`): key registry, one-report-per-request ingress, receipt-time quota, content-free audit log, aggregates-only export (ADR D19); app-wide body cap + 422s that never echo input. |
 | `data/real_intake.py`, `data/real_allocation.py`, `scripts/ingest_partner_calls.py`, `docs/DATA_INTAKE.md` | Real-call intake (A8): batch validation, scrub + hashed linkage, first-come allocation, hash-locked held-out set. `data/real/` is gitignored. |
 | `src/qorgan/classifier/web_bundle.py`, `embed.py::OnnxEmbedder` | JSON export of the heads + reference scorer; the int8 ONNX embedder. |

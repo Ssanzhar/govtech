@@ -240,3 +240,19 @@ script is the most common *non-blank* transcript or none. The analyst API marks 
 ("structured hits preferred") was hollow while those reports were stored but never
 analysed. **Revisit:** tactic-profile-only similarity for signals-only orgs if partners
 send many.
+
+### D24 — Analyst feedback is append-only, follows the operation, and is applied at read time (2026-09-18)
+`POST /api/admin/organizations/{id}/feedback` records **confirm / dismiss / merge** events
+in `org_feedback.jsonl` (`analytics/feedback.py`). An event never stores the `org_<n>` id —
+every ingest re-clusters and re-assigns those — but a snapshot of the *operation*: its
+number digests, else its members; on read it is matched to whichever current organization
+shares a number (or ≥ half its members). Effects: `dismissed` → priority × 0.2 and novelty
+cleared; `confirmed` → badge; `merge` → the source unions into the target (members,
+numbers; the target keeps its id). The latest event per operation wins and is computed
+from the org's base state, so a later confirm fully undoes an earlier dismiss. Feedback is
+never written into `organizations.jsonl`, so re-clustering cannot lose it; each event is
+also an audit line (`analyst · org.<action> · org:<id>`), notes are content-free.
+**Rationale:** PLAN C6 — the queue must learn from the analyst, and the analyst's verdict
+must survive the next ingest. Built before the C7 interviews on purpose (the plan said
+"built in W3 regardless"); D16 may reshape it (e.g. implicit feedback from opened cases).
+**Revisit:** confirmed orgs as training signal for ranking once real reports flow.

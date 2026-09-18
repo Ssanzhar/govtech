@@ -115,8 +115,10 @@ invariants are enforced by `tests/test_architecture.py` (ADRs D12–D14).
 `admin.html` shows organization aggregates and excerpts; reading a whole call is an
 explicit **Open full transcript (audited)** action that the server records in
 `data/processed/audit_log.jsonl` (`analyst · case.open · incident:<id>`), naming the analyst
-from `?analyst=<id>` (ADR D20). The admin routes carry no authentication in this demo — put
-SSO in front of them in a deployment.
+from `?analyst=<id>` (ADR D20). Analysts can **confirm / dismiss / merge** an organization;
+the verdict is stored as an append-only event keyed by the operation's numbers, so it
+survives re-clustering (a dismissed operation drops to 20 % priority; ADR D24). The admin
+routes carry no authentication in this demo — put SSO in front of them in a deployment.
 
 ## Partner API (`/api/v1`) — consented reports in, aggregates out
 

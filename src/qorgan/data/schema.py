@@ -25,6 +25,7 @@ from qorgan.privacy.numbers import is_number_hash
 UTTERANCE_JOIN = "\n"
 
 SupportedLanguage = Literal["ru", "kk", "mixed"]
+FeedbackState = Literal["confirmed", "dismissed", "merged"]
 
 
 class SpanValidationError(ValueError):
@@ -262,6 +263,9 @@ class Organization(BaseModel):
     representative_script: str | None = None
     priority: float = 0.0
     is_novel: bool = False
+    # Analyst feedback applied at read time (`analytics/feedback.py`, PLAN C6); never
+    # persisted into organizations.jsonl, so re-clustering cannot lose it.
+    feedback: FeedbackState | None = None
 
     @field_validator("members")
     @classmethod

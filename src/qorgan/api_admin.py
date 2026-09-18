@@ -16,8 +16,17 @@ from typing import Any, Literal
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Header, HTTPException
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from qorgan.analytics.feedback import (
+    FEEDBACK_FILENAME,
+    FeedbackAction,
+    FeedbackEvent,
+    append_feedback,
+    apply_feedback,
+    load_feedback,
+    snapshot_for,
+)
 from qorgan.analytics.intake import ingest_pending, pending_reports
 from qorgan.audit import AUDIT_FILENAME, AuditEntry, append_audit
 from qorgan.classifier import predict
@@ -77,6 +86,7 @@ class OrgSummaryOut(BaseModel):
     numbers: list[str]  # full list so the queue is searchable by caller number
     last_activity: str | None
     is_novel: bool
+    feedback: str | None = None  # confirmed | dismissed | merged (PLAN C6)
 
 
 class OverviewResponse(BaseModel):
@@ -105,6 +115,7 @@ class OrgDetailResponse(BaseModel):
     name: str
     priority: float
     is_novel: bool
+    feedback: str | None = None
     numbers: list[str]
     tactics: list[TacticOut]
     representative_script: str | None
@@ -139,6 +150,20 @@ class IncidentAnalysisResponse(BaseModel):
     spans: list[AnalysisSpanOut]
     reason: str
     caveat: str
+
+
+class FeedbackRequest(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    action: FeedbackAction
+    target_org_id: str | None = None
+    note: str | None = Field(default=None, max_length=_MAX_OPEN_REASON_CHARS)
+
+    @model_validator(mode="after")
+    def _merge_names_a_target(self) -> "FeedbackRequest":
+        if (self.action == "merge") != (self.target_org_id is not None):
+            raise ValueError("merge needs target_org_id; other actions must not carry one")
+        return self
 
 
 class OpenCaseRequest(BaseModel):
@@ -184,7 +209,11 @@ def _load_analysis() -> _Analysis | None:
         pending = len(pending_reports(processed / REPORTS_FILENAME, incidents))
     except ValueError:
         pending = 0
-    return _Analysis(organizations=organizations, incidents=incidents, pending=pending)
+    try:
+        events = load_feedback(processed / FEEDBACK_FILENAME)
+    except ValueError:  # a corrupt feedback line must not take the dashboard down
+        events = []
+    return _Analysis(organizations=apply_feedback(organizations, events), incidents=incidents, pending=pending)
 
 
 @router.get("/overview", response_model=OverviewResponse)
@@ -201,18 +230,7 @@ def overview(locale: Locale = "ru") -> OverviewResponse:
     kpis = dashboard_kpis(
         analysis.organizations, analysis.incidents, pending_reports=analysis.pending
     )
-    orgs_out = [
-        OrgSummaryOut(
-            id=org.id,
-            name=org_display_name(org, by_id, locale=locale),
-            priority=org.priority,
-            incidents=len(org.members),
-            numbers=list(org.numbers),
-            last_activity=_iso_date(last_activity(org, by_id)),
-            is_novel=org.is_novel,
-        )
-        for org in analysis.organizations
-    ]
+    orgs_out = [_summary(org, by_id, locale) for org in analysis.organizations]
     return OverviewResponse(
         available=True,
         kpis=KpiOut(
@@ -265,7 +283,55 @@ def organization_detail(org_id: str, locale: Locale = "ru") -> OrgDetailResponse
         tactics=tactics,
         representative_script=_excerpt(org.representative_script) if org.representative_script else None,
         sample_incidents=sample_incidents,
+        feedback=org.feedback,
     )
+
+
+@router.post("/organizations/{org_id}/feedback", response_model=OrgSummaryOut)
+def organization_feedback(
+    org_id: str,
+    body: FeedbackRequest,
+    locale: Locale = "ru",
+    analyst_id: str = Header(default=_DEFAULT_ANALYST_ID, alias=_ANALYST_ID_HEADER),
+) -> OrgSummaryOut:
+    """Confirm / dismiss / merge an organization (PLAN C6). The event is appended, keyed by
+    the operation's numbers (not its re-assigned id), applied at read time, and audited."""
+    analysis = _load_analysis()
+    if analysis is None:
+        raise HTTPException(status_code=404, detail="analysis unavailable")
+    by_org = {o.id: o for o in analysis.organizations}
+    org = by_org.get(org_id)
+    if org is None:
+        raise HTTPException(status_code=404, detail=f"unknown organization {org_id!r}")
+    target = None
+    if body.action == "merge":
+        target = by_org.get(body.target_org_id or "")
+        if target is None:
+            raise HTTPException(status_code=404, detail=f"unknown target organization {body.target_org_id!r}")
+    now = datetime.now(UTC)
+    who = analyst_id.strip() or _DEFAULT_ANALYST_ID
+    try:
+        event = FeedbackEvent(
+            timestamp=now, analyst_id=who, action=body.action, org=snapshot_for(org),
+            target=snapshot_for(target) if target is not None else None, note=body.note,
+        )
+        entry = AuditEntry(
+            timestamp=now, actor_kind="analyst", actor_id=who, action=f"org.{body.action}", subject=f"org:{org.id}",
+            outcome=f"ok: {body.note.strip()}" if body.note and body.note.strip() else "ok",
+        )
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail="feedback must not carry call content or numbers") from exc
+    processed = get_config().data_dir / "processed"
+    append_feedback(event, processed / FEEDBACK_FILENAME)
+    append_audit(entry, processed / AUDIT_FILENAME)
+
+    refreshed = _load_analysis()
+    survivors = {o.id: o for o in (refreshed.organizations if refreshed else [])}
+    shown = survivors.get(target.id if target is not None else org.id)
+    if shown is None:
+        raise HTTPException(status_code=500, detail="feedback applied but the organization could not be re-read")
+    by_id = {incident.id: incident for incident in refreshed.incidents}
+    return _summary(shown, by_id, locale)
 
 
 @router.get("/incidents/{incident_id}/analysis", response_model=IncidentAnalysisResponse)
@@ -396,6 +462,19 @@ def ingest(locale: Locale = "ru") -> IngestResponse:
             )
             for placement in summary.placements
         ],
+    )
+
+
+def _summary(org: Organization, by_id: dict[str, Incident], locale: Locale) -> OrgSummaryOut:
+    return OrgSummaryOut(
+        id=org.id,
+        name=org_display_name(org, by_id, locale=locale),
+        priority=org.priority,
+        incidents=len(org.members),
+        numbers=list(org.numbers),
+        last_activity=_iso_date(last_activity(org, by_id)),
+        is_novel=org.is_novel,
+        feedback=org.feedback,
     )
 
 

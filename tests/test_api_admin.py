@@ -411,3 +411,57 @@ def test_signals_only_incidents_are_marked_and_cannot_be_analysed_or_opened(
     assert rows["i1"]["has_transcript"] is True and rows["s1"]["has_transcript"] is False and rows["s1"]["excerpt"] == ""
     assert client.get("/api/admin/incidents/s1/analysis", params={"backend": "mock"}).status_code == 409
     assert client.post("/api/admin/incidents/s1/open", params={"backend": "mock"}).status_code == 409
+
+
+# --- analyst feedback (PLAN C6) ---------------------------------------------------------------
+
+
+def _two_orgs(tmp_path, monkeypatch):
+    incidents = [
+        _incident("a0", tags=("impersonation_bank", "otp_request"), number="+7 700 101 20 30"),
+        _incident("a1", tags=("otp_request",), number="+7 700 101 20 30"),
+        _incident("b0", tags=("investment_scam",), number="+7 701 202 30 40"),
+    ]
+    orgs = [
+        Organization(id="org_0", members=("a0", "a1"), numbers=(hashed("+7 700 101 20 30"),), priority=0.9),
+        Organization(id="org_1", members=("b0",), numbers=(hashed("+7 701 202 30 40"),), priority=0.6, is_novel=True),
+    ]
+    _seed_analysis(tmp_path, monkeypatch, organizations=orgs, incidents=incidents)
+
+
+def test_dismiss_feedback_decays_priority_everywhere_and_is_audited(client: TestClient, tmp_path, monkeypatch) -> None:
+    from qorgan.analytics.feedback import load_feedback
+    from qorgan.audit import load_audit
+
+    _two_orgs(tmp_path, monkeypatch)
+    res = client.post("/api/admin/organizations/org_1/feedback", json={"action": "dismiss", "note": "known marketing line"}, headers={"X-Analyst-Id": "analyst-3"})
+
+    assert res.status_code == 200, res.text
+    assert res.json()["feedback"] == "dismissed" and res.json()["priority"] == pytest.approx(0.12) and res.json()["is_novel"] is False
+    overview = {o["id"]: o for o in client.get("/api/admin/overview").json()["organizations"]}
+    assert overview["org_1"]["feedback"] == "dismissed" and overview["org_1"]["priority"] == pytest.approx(0.12)
+    assert overview["org_0"]["feedback"] is None
+    assert client.get("/api/admin/organizations/org_1").json()["feedback"] == "dismissed"
+    [event] = load_feedback(tmp_path / "processed" / "org_feedback.jsonl")
+    assert event.analyst_id == "analyst-3" and event.action == "dismiss" and event.org.numbers == (hashed("+7 701 202 30 40"),)
+    [entry] = load_audit(tmp_path / "processed" / "audit_log.jsonl")
+    assert (entry.actor_kind, entry.actor_id, entry.action, entry.subject) == ("analyst", "analyst-3", "org.dismiss", "org:org_1")
+
+
+def test_merge_feedback_unions_organizations(client: TestClient, tmp_path, monkeypatch) -> None:
+    _two_orgs(tmp_path, monkeypatch)
+    res = client.post("/api/admin/organizations/org_1/feedback", json={"action": "merge", "target_org_id": "org_0"})
+    assert res.status_code == 200, res.text
+    assert res.json()["id"] == "org_0" and res.json()["incidents"] == 3 and res.json()["feedback"] == "merged"
+    ids = [o["id"] for o in client.get("/api/admin/overview").json()["organizations"]]
+    assert ids == ["org_0"]
+
+
+def test_feedback_validation(client: TestClient, tmp_path, monkeypatch) -> None:
+    _two_orgs(tmp_path, monkeypatch)
+    assert client.post("/api/admin/organizations/org_9/feedback", json={"action": "confirm"}).status_code == 404
+    assert client.post("/api/admin/organizations/org_1/feedback", json={"action": "merge", "target_org_id": "org_9"}).status_code == 404
+    assert client.post("/api/admin/organizations/org_1/feedback", json={"action": "merge"}).status_code == 422
+    assert client.post("/api/admin/organizations/org_1/feedback", json={"action": "promote"}).status_code == 422
+    assert client.post("/api/admin/organizations/org_1/feedback", json={"action": "confirm", "note": "caller +7 700 555 66 77"}).status_code == 422
+    assert not (tmp_path / "processed" / "org_feedback.jsonl").exists()
