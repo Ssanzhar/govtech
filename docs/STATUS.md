@@ -2,7 +2,7 @@
 
 _Last updated: **2026-09-18**. Current-state doc for anyone picking the project up. Read this,
 then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECISIONS.md`
-(ADRs D11–D24), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
+(ADRs D11–D25), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
 kept as history._
 
 ## TL;DR (September 2026)
@@ -62,7 +62,7 @@ accept numbered reports), `QORGAN_REPORT_RETENTION_DAYS=180`.
 
 ## Open threads (see PLAN_2026-09 for owners/estimates)
 - **Real data (A3):** no real calls yet; everything is synthetic or author-written. Stakeholders were asked for both scam and legit recordings. The intake protocol + tooling exist (A8: `docs/DATA_INTAKE.md`, `scripts/ingest_partner_calls.py`, hash-locked `real_heldout_v2`, `tests/data/test_heldout_lock.py` skips until a set exists); the legal owner has not reviewed the protocol yet.
-- **B7 on-device ASR:** mic mode is disabled on the served site until it runs in the browser (Vosklet / Whisper KK+RU bake-off). Server-side audio is gone for good (ADR D12).
+- **On-device ASR (B7 → B9):** the spike says GO on desktop — Vosklet (Vosk in WASM) runs the small KK/RU models at RTF 0.06–0.08 and the shipped classifier decides correctly on its transcripts of the demo scenes (ADR D25; bench in `scripts/spikes/vosklet_bench/`). Mic mode stays disabled until B9 ports the dual-recognizer voting and the live page is served cross-origin-isolated; **Android is unmeasured**. Whisper is a no-go. Server-side audio is gone for good (ADR D12).
 - **B8 static quantisation — closed, no-go (2026-09-17, ADR D18):** int8 graphs drift
   ~0.6 % cosine across ONNX Runtime versions; a statically calibrated graph cost 5 pts of
   fidelity and did not move the cross-runtime floor. Decision-level parity (0 flips / 28) is

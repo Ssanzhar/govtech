@@ -1,0 +1,62 @@
+<!doctype html><meta charset="utf-8"><title>Vosklet bench (B7 spike)</title>
+<script src="https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.2.1/Examples/Vosklet.js" crossorigin="anonymous" async defer></script>
+<button id="run">Run</button> <pre id="out">idle</pre>
+<script>
+const CLIPS = { ru_scam: "ru", ru_legit: "ru", kk_scam: "kk" };
+const MODELS = { ru: "vosk-model-small-ru-0.22", kk: "vosk-model-small-kz-0.42" };
+const log = (s) => { document.getElementById("out").textContent += "\n" + s; };
+async function decode16k(url) {
+  const buf = await (await fetch(url)).arrayBuffer();
+  const probe = new AudioContext();
+  const decoded = await probe.decodeAudioData(buf.slice(0));
+  await probe.close();
+  const frames = Math.ceil(decoded.duration * 16000);
+  const off = new OfflineAudioContext(1, frames, 16000);
+  const src = off.createBufferSource(); src.buffer = decoded; src.connect(off.destination); src.start();
+  const out = await off.startRendering();
+  return { pcm: out.getChannelData(0), seconds: decoded.duration };
+}
+function extractText(detail) {
+  try { const o = typeof detail === "string" ? JSON.parse(detail) : detail; return o.text ?? o.partial ?? JSON.stringify(o); } catch { return String(detail); }
+}
+document.getElementById("run").onclick = async () => {
+  document.getElementById("out").textContent = "running";
+  const results = {};
+  try {
+    const t0 = performance.now();
+    const module = await loadVosklet();
+    log(`vosklet loaded in ${(performance.now() - t0).toFixed(0)} ms`);
+    const models = {};
+    for (const [lang, name] of Object.entries(MODELS)) {
+      const t = performance.now();
+      models[lang] = await module.createModel(`/models/${name}.tar.gz`, lang, name + "-v2");
+      log(`model ${name} ready in ${(performance.now() - t).toFixed(0)} ms`);
+    }
+    for (const [clip, lang] of Object.entries(CLIPS)) {
+      for (const mlang of ["ru", "kk"]) {
+        const { pcm, seconds } = await decode16k(`/clips/${clip}.wav`);
+        const rec = await module.createRecognizer(models[mlang], 16000);
+        const finals = [], partials = [];
+        let lastEvent = performance.now();
+        rec.addEventListener("result", (ev) => { finals.push(extractText(ev.detail)); lastEvent = performance.now(); });
+        rec.addEventListener("partialResult", (ev) => { partials.push(extractText(ev.detail)); lastEvent = performance.now(); });
+        const t = performance.now();
+        const CH = 4000;
+        for (let i = 0; i < pcm.length; i += CH) { const r = rec.acceptWaveform(pcm.subarray(i, i + CH)); if (r && r.then) await r; }
+        // tail flush: 2 s of silence so the last utterance is finalised
+        const silence = new Float32Array(16000);
+        for (let k = 0; k < 2; k++) { const r = rec.acceptWaveform(silence); if (r && r.then) await r; }
+        // recognition runs in a worker: wait until events have been quiet for 2 s
+        for (;;) { await new Promise((res) => setTimeout(res, 250)); if (performance.now() - lastEvent > 2000) break; }
+        const ms = lastEvent - t;
+        const text = (finals.join(" ").trim() || partials.at(-1) || "").trim();
+        results[`${clip}|model=${mlang}`] = { audio_s: +seconds.toFixed(2), proc_ms: +ms.toFixed(0), rtf: +(ms / 1000 / seconds).toFixed(3), text, finals: finals.length, partials: partials.length };
+        log(`${clip} model=${mlang}: ${(ms / 1000).toFixed(2)} s for ${seconds.toFixed(1)} s audio (RTF ${(ms / 1000 / seconds).toFixed(2)}) -> ${text}`);
+        try { rec.delete?.(); } catch {}
+      }
+    }
+  } catch (e) { log("ERROR " + (e.stack || e)); }
+  window.__results = results;
+  log("DONE " + JSON.stringify(results));
+};
+</script>

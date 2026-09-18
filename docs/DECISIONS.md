@@ -256,3 +256,30 @@ also an audit line (`analyst · org.<action> · org:<id>`), notes are content-fr
 must survive the next ingest. Built before the C7 interviews on purpose (the plan said
 "built in W3 regardless"); D16 may reshape it (e.g. implicit feedback from opened cases).
 **Revisit:** confirmed orgs as training signal for ranking once real reports flow.
+
+### D25 — On-device ASR spike (B7): GO on desktop with Vosklet; Whisper no-go; Android unmeasured (2026-09-18)
+Three candidates from PLAN B7, measured where measurable (`scripts/spikes/vosklet_bench/`):
+**(a) Vosklet 1.2.1** (Vosk/Kaldi in WASM, < 614 KB, streaming partials) with the same small
+KK / RU models the July server path used, repackaged as plain tarballs (46 + 60 MB):
+loads in ~0.6 s from cache; **RTF 0.06–0.08** on a laptop (12–16× faster than real time,
+criterion ≤ 2×); on synthesized speech (macOS `say`, the two demo scenes + a Kazakh scam
+line) the same-language transcripts keep the cues intact — RU scam: «никому не говорите …
+продиктуйте код из самая с … переведите деньги на безопасной счёт»; KK scam: «ешкімге
+айтпаңыз … келген кодты айтыңыз»; RU legit: «никакие года и данные карты называть
+ненужно» — and the shipped classifier decides correctly on all of them (RU scam 1.000
+ALERT, KK scam 0.997 ALERT, RU legit 0.396 clear, wrong-language legit 0.081 clear).
+Cross-language decoding degrades badly, so the July **dual recognizer + per-utterance
+voting** design (`asr/vosk_stream.py`) must be ported, not simplified. **Hard
+requirement found:** Vosklet needs `crossOriginIsolated` — the live page must be served
+with `Cross-Origin-Opener-Policy: same-origin` + `Cross-Origin-Embedder-Policy:
+require-corp`, and every cross-origin script tag needs `crossorigin` (jsdelivr is
+CORS-enabled; model tarballs are same-origin). Vosklet caches models by id — bump the id
+on every archive change. **(b) Whisper via transformers.js:** the only KK+RU fine-tune
+(`KRASR/…whisper-small-full-ft`) ships safetensors, no ONNX, and its own card reports WER
+0.54 (KK) / 0.72 (RU); generic `Xenova/whisper-small` is ~250 MB, chunked rather than
+streaming, and weak on Kazakh — **no-go**. **(c) Web Speech API:** sends audio to the
+browser vendor; not a default, at most a disclosed opt-in — not pursued.
+**Decision:** GO for a Vosklet-based mic mode on desktop Chrome; **Android Chrome is the
+open gate** (WASM threads + ~106 MB + two recognizers on a 3 GB phone) and must be measured
+with the same bench before the mic button is enabled on phones. Follow-up **B9** in the
+plan. Server-side ASR stays gone (D12).
