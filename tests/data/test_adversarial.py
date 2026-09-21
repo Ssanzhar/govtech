@@ -120,3 +120,16 @@ def test_a_paraphrase_in_the_wrong_language_is_retried():
 
     assert result.transcript() == "Здравствуйте, это банк. Продиктуйте цифры."
     assert "Russian only" in client.prompts[1] and "not written in" in client.prompts[1]
+
+
+def test_legit_sounding_style_adds_the_register_instruction_and_keeps_the_cue_ban():
+    from qorgan.data.adversarial import PARAPHRASE_STYLES, build_paraphrase_prompt, split_name_for
+
+    prompt = build_paraphrase_prompt(_scam(), LEXICON, style="legit_sounding")
+    assert "reassur" in prompt.lower() and "never ask" in prompt.lower()
+    assert "HARD CONSTRAINT" in prompt and "код из смс" in prompt  # the lexicon ban still applies
+    assert "never ask" not in build_paraphrase_prompt(_scam(), LEXICON).lower()
+    assert set(PARAPHRASE_STYLES) == {"cue_free", "legit_sounding"}
+    assert split_name_for("cue_free") == "adversarial" and split_name_for("legit_sounding") == "adversarial_legit"
+    with pytest.raises(ValueError):
+        build_paraphrase_prompt(_scam(), LEXICON, style="polite")

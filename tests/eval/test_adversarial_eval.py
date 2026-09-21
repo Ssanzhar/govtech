@@ -45,3 +45,10 @@ def test_render_table_mentions_the_gate():
     table = render_table(result)
     assert "| Set | N | Recall [95% CI] |" in table and "drop" in table.lower()
     assert result["gate_failed"] is False and "within the 15-point gate" in table
+
+
+def test_render_table_names_the_split_it_evaluated():
+    sources = [_d("s1", "a")]
+    adversarial = [_d(f"{ADVERSARIAL_ID_PREFIX}s1", "b")]
+    result = paired_recall(sources, adversarial, score_fn=_score_fn({"a", "b"}), alert_threshold=0.5)
+    assert "adversarial_legit" in render_table(result, split_name="adversarial_legit")

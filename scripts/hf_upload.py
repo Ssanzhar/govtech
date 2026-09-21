@@ -16,6 +16,6 @@ repo = 'sanzh-ts/govtech_ds'
 # docs/DATA_INTAKE.md) live in the same dir and must NEVER be published.
 api.upload_folder(
     repo_id=repo, repo_type='dataset', folder_path='data/processed',
-    allow_patterns=['train.jsonl', 'val.jsonl', 'test.jsonl', 'authored_heldout.jsonl', 'ood.jsonl', 'adversarial.jsonl', 'manifest.json']
+    allow_patterns=['train.jsonl', 'val.jsonl', 'test.jsonl', 'authored_heldout.jsonl', 'ood.jsonl', 'adversarial.jsonl', 'adversarial_legit.jsonl', 'manifest.json']
 )
 api.upload_folder(repo_id=repo, repo_type='dataset', folder_path='data/augment', path_in_repo='augment')

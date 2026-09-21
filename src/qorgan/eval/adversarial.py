@@ -59,13 +59,20 @@ def _summary(flagged: list[tuple[bool, bool, str]]) -> dict:
     }
 
 
-def render_table(result: dict) -> str:
+_SPLIT_LABELS = {
+    ADVERSARIAL_SPLIT: "adversarial (lexicon-free paraphrases)",
+    "adversarial_legit": "adversarial_legit (lexicon-free + legit-sounding register)",
+}
+
+
+def render_table(result: dict, *, split_name: str = ADVERSARIAL_SPLIT) -> str:
+    label = _SPLIT_LABELS.get(split_name, split_name)
     lines = ["| Set | N | Recall [95% CI] |", "|---|---|---|"]
     lines.append(_row("source scams (test + ood)", result["n_pairs"], result["source"]))
-    lines.append(_row("adversarial (lexicon-free paraphrases)", result["n_pairs"], result["adversarial"]))
+    lines.append(_row(label, result["n_pairs"], result["adversarial"]))
     for language, row in result["by_language"].items():
         lines.append(_row(f"&nbsp;&nbsp;{language} · source", row["n_pairs"], row["source"]))
-        lines.append(_row(f"&nbsp;&nbsp;{language} · adversarial", row["n_pairs"], row["adversarial"]))
+        lines.append(_row(f"&nbsp;&nbsp;{language} · {split_name}", row["n_pairs"], row["adversarial"]))
     verdict = (
         f"FAILS the {RECALL_DROP_GATE_POINTS:.0f}-point gate -- PLAN A10 becomes a must"
         if result["gate_failed"]
@@ -90,17 +97,18 @@ def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - CLI (
     parser = argparse.ArgumentParser(description="Paired recall on lexicon-free paraphrases.")
     parser.add_argument("--processed-dir", type=Path, default=get_config().data_dir / "processed")
     parser.add_argument("--backend", default=None)
+    parser.add_argument("--split", default=ADVERSARIAL_SPLIT, help="adversarial (A9) or adversarial_legit (A9b)")
     args = parser.parse_args(argv)
     cfg = get_config()
     sources = [d for name in SOURCE_SPLITS for d in source_positives(load_split(args.processed_dir, name))]
-    adversarial = load_split(args.processed_dir, ADVERSARIAL_SPLIT)
+    adversarial = load_split(args.processed_dir, args.split)
     result = paired_recall(
         sources, adversarial,
         score_fn=lambda text: predict.score(text, backend=args.backend),
         alert_threshold=cfg.risk_threshold,
     )
-    print(f"backend={args.backend or cfg.classifier_backend} threshold={cfg.risk_threshold}")
-    print(render_table(result))
+    print(f"backend={args.backend or cfg.classifier_backend} threshold={cfg.risk_threshold} split={args.split}")
+    print(render_table(result, split_name=args.split))
 
 
 if __name__ == "__main__":

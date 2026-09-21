@@ -23,6 +23,19 @@ from qorgan.data.schema import Dialogue, Label, Utterance
 
 ADVERSARIAL_ID_PREFIX = "adv-"
 ADVERSARIAL_SPLIT = "adversarial"
+# A9 = avoid the cue phrases; A9b = also *sound like the institution* (register, even the
+# reassurances a real bank gives) while still pursuing the scam goal -- the harder adversary.
+PARAPHRASE_STYLES = ("cue_free", "legit_sounding")
+_SPLIT_BY_STYLE = {"cue_free": ADVERSARIAL_SPLIT, "legit_sounding": "adversarial_legit"}
+_LEGIT_REGISTER = (
+    "ADDITIONALLY make the caller sound exactly like a real, professional institution: calm, "
+    "polite, procedural register; correct terminology; no pressure words; and include, where it "
+    "fits, the reassurances a real bank or operator gives (for example that they will never ask "
+    "for a password, that this is a routine security procedure, that the customer can verify by "
+    "calling back later). The scam GOAL must survive: the caller still, in that calm register, "
+    "gets the customer to reveal a code or card detail, install software, or move money -- "
+    "framed as the routine procedure itself.\n"
+)
 DEFAULT_MAX_ATTEMPTS = 3
 _TRUTH_THRESHOLD = 0.5
 # Letters that exist in Kazakh Cyrillic but not in Russian: enough to tell the two apart
@@ -66,7 +79,16 @@ _LANGUAGE_NAMES = {"ru": "Russian only", "kk": "Kazakh only", "mixed": "the same
 _LANGUAGE_VIOLATION = "(wrong language)"
 
 
-def build_paraphrase_prompt(source: Dialogue, lexicon: CueLexicon, *, previous_hits: Sequence[str] = ()) -> str:
+def split_name_for(style: str) -> str:
+    if style not in _SPLIT_BY_STYLE:
+        raise ValueError(f"unknown paraphrase style {style!r}; expected one of {PARAPHRASE_STYLES}")
+    return _SPLIT_BY_STYLE[style]
+
+
+def build_paraphrase_prompt(
+    source: Dialogue, lexicon: CueLexicon, *, previous_hits: Sequence[str] = (), style: str = "cue_free"
+) -> str:
+    split_name_for(style)  # validates
     tactics = ", ".join(tag.id for tag in source.label.tactic_tags) or "the same scam intent"
     cues = "\n".join(f"- {cue}" for cues in lexicon.entries.values() for cue in cues)
     dialogue = "\n".join(f"{u.speaker}: {u.text}" for u in source.utterances)
@@ -89,9 +111,9 @@ def build_paraphrase_prompt(source: Dialogue, lexicon: CueLexicon, *, previous_h
         "trivially close variant (a different case, spelling or word ending still counts):\n"
         f"{cues}\n"
         "Express the same requests indirectly -- paraphrase, euphemism, implication, splitting a "
-        "request across turns -- but keep the scam's goal intact. Do not add anything a real "
-        "institution would say to reassure the customer.\n"
-        f"{retry}"
+        "request across turns -- but keep the scam's goal intact. "
+        + ("Do not add anything a real institution would say to reassure the customer.\n" if style == "cue_free" else _LEGIT_REGISTER)
+        + f"{retry}"
         "Return JSON only: {\"utterances\": [{\"speaker\": \"caller|callee\", \"text\": \"...\"}]}\n\n"
         f"Conversation:\n{dialogue}"
     )
@@ -103,13 +125,14 @@ def paraphrase_dialogue(
     *,
     paraphrase: Paraphraser,
     max_attempts: int = DEFAULT_MAX_ATTEMPTS,
+    style: str = "cue_free",
 ) -> Dialogue:
     """Cue-free, scrubbed paraphrase of `source` carrying its label (spans dropped)."""
     if max_attempts <= 0:
         raise ValueError("max_attempts must be > 0")
     hits: tuple[str, ...] = ()
     for _ in range(max_attempts):
-        payload = paraphrase(build_paraphrase_prompt(source, lexicon, previous_hits=hits))
+        payload = paraphrase(build_paraphrase_prompt(source, lexicon, previous_hits=hits, style=style))
         candidate = _build(source, payload)
         if candidate is None:
             hits = ()

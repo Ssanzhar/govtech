@@ -1,0 +1,18 @@
+{
+  "generated_at": "2026-09-18T07:07:36.305241+00:00",
+  "style": "legit_sounding",
+  "source_split": "train",
+  "model": "gemini-2.5-flash",
+  "lexicon_hash": "75255af7a15f1eba4680210d7117cbfc6a13b4ac4b4ffeb12f11801d7beef25e",
+  "produced": 268,
+  "failed": [],
+  "by_language": {
+    "ru": 86,
+    "kk": 95,
+    "mixed": 87
+  },
+  "seconds": 1032.3,
+  "committed_subset": 20,
+  "subset_rule": "random.Random(42).shuffle(all_268)[:20] -- the augmentation knee (2026-09-18): with the 45 institutional-register negatives every single-shot FPR gate holds, adversarial_legit recall 0.826, streaming alert-hit unchanged (16/18); 40 gave 0.890 but cost one streaming alert-hit",
+  "full_set": "data/synthetic/legit_style_scams.jsonl (gitignored)"
+}

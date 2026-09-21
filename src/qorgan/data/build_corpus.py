@@ -234,12 +234,12 @@ def build_corpus(
 def _copy_adversarial(source_dir: Path, processed_dir: Path) -> int:
     """The lexicon-free paraphrase split (PLAN A9) is eval-only: copied next to the other
     splits when present, never folded into train/val/test, not part of the content hash."""
-    source = source_dir / "adversarial.jsonl"
-    if not source.exists():
-        return 0
-    dialogues = _read_jsonl(source)
-    _write_jsonl(dialogues, processed_dir / "adversarial.jsonl")
-    return len(dialogues)
+    total = 0
+    for source in sorted(source_dir.glob("adversarial*.jsonl")) if source_dir.is_dir() else ():
+        dialogues = _read_jsonl(source)
+        _write_jsonl(dialogues, processed_dir / source.name)
+        total += len(dialogues)
+    return total
 
 
 def _read_augment_dir(augment_dir: Path) -> list[Dialogue]:

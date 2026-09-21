@@ -31,7 +31,7 @@ PROCESSED = REPO_ROOT / "data" / "processed"
 MODEL_DIR = REPO_ROOT / "models" / "linear"
 DATASET_REPO = "sanzh-ts/govtech_ds"
 MODEL_REPO = "sanzh-ts/govtech"
-SPLIT_FILES = ("train.jsonl", "val.jsonl", "test.jsonl", "authored_heldout.jsonl", "ood.jsonl", "adversarial.jsonl", "manifest.json")
+SPLIT_FILES = ("train.jsonl", "val.jsonl", "test.jsonl", "authored_heldout.jsonl", "ood.jsonl", "adversarial.jsonl", "adversarial_legit.jsonl", "manifest.json")
 DIALOGUE_POOL_SPLITS = ("train.jsonl", "val.jsonl", "test.jsonl")
 # `real_heldout` was renamed `authored_heldout` (it is hand-written, not real calls --
 # PLAN_2026-09 A2); Hub snapshots published before that still use the old name.
