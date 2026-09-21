@@ -226,3 +226,55 @@ def test_train_positives_count_toward_the_tuning_support(fake_embedder, monkeypa
     linear_train.train_linear(_corpus(), label_space=_LABEL_SPACE, embedder=fake_embedder, tuning_dialogues=_val())
     assert seen["positives"]["otp_request"] == 11 and seen["positives"]["urgency"] == 10
 
+
+# --- sample weights (ADR D31): a (clean, ASR-styled) pair is ONE sample -----------------------
+
+
+def test_train_linear_passes_sample_weights_to_both_heads_and_the_tuner(fake_embedder, monkeypatch):
+    import numpy as np
+
+    from qorgan.classifier import linear_train, multilabel
+
+    seen = {}
+    real_fit = multilabel.MultiLabelHead.fit
+
+    def spy_fit(self, features, targets, sample_weight=None):
+        seen.setdefault("tactic", []).append(None if sample_weight is None else float(np.sum(sample_weight)))
+        return real_fit(self, features, targets, sample_weight=sample_weight)
+
+    real_risk = linear_train._fit_risk_head
+
+    def spy_risk(features, y_risk, sample_weight=None):
+        seen["risk"] = None if sample_weight is None else float(np.sum(sample_weight))
+        return real_risk(features, y_risk, sample_weight=sample_weight)
+
+    monkeypatch.setattr(multilabel.MultiLabelHead, "fit", spy_fit)
+    monkeypatch.setattr(linear_train, "_fit_risk_head", spy_risk)
+    corpus = _corpus()
+    weights = [0.5] * len(corpus)
+    bundle = train_linear(corpus, label_space=_LABEL_SPACE, embedder=fake_embedder, tuning_dialogues=_val(), sample_weights=weights)
+    assert seen["risk"] == 10.0  # 20 rows × 0.5
+    assert seen["tactic"][0] == 10.0  # the full-data tactic head
+    assert all(w is not None and w < 10.0 for w in seen["tactic"][1:])  # every out-of-fold fit got its fold's weights
+    assert bundle.tactic_thresholds
+    with pytest.raises(ValueError):
+        train_linear(corpus, label_space=_LABEL_SPACE, embedder=fake_embedder, sample_weights=[1.0])
+
+
+def test_pair_weighted_doubling_reproduces_the_single_copy_tactic_head(fake_embedder):
+    """Two identical copies at weight 0.5 each fit the same per-label head as one copy at 1.0
+    (no refolding involved) -- the property that keeps the coefficient norm where it was."""
+    import numpy as np
+
+    from qorgan.classifier.multilabel import MultiLabelHead
+
+    rng = np.random.default_rng(0)
+    features = rng.normal(size=(30, 6))
+    targets = np.array([[1.0, 0.0]] * 15 + [[0.0, 1.0]] * 15)
+    single = MultiLabelHead(("a", "b")).fit(features, targets)
+    doubled = MultiLabelHead(("a", "b")).fit(np.vstack([features, features]), np.vstack([targets, targets]), sample_weight=np.full(60, 0.5))
+    unweighted = MultiLabelHead(("a", "b")).fit(np.vstack([features, features]), np.vstack([targets, targets]))
+    for tid in ("a", "b"):
+        assert np.allclose(single.models[tid].coef_, doubled.models[tid].coef_, atol=1e-4)
+        assert np.linalg.norm(unweighted.models[tid].coef_) > np.linalg.norm(single.models[tid].coef_)  # the effect being cancelled
+

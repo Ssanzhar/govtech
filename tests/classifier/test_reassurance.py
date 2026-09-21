@@ -115,3 +115,15 @@ def test_inversion_guards_still_hold_for_new_terms():
     assert not reassures("Никому не говорите об этом звонке.", patterns)
     assert not reassures("Продиктуйте код из SMS прямо сейчас.", patterns)
     assert not reassures("Оплатите по QR-коду прямо сейчас.", patterns)
+
+
+def test_reassurance_survives_asr_glued_negations():
+    """PLAN A10: Vosk emitted "называть ненужно" for "называть не нужно" (B9 harness, real bank
+    call). The matcher tolerates missing/doubled whitespace inside a term."""
+    from qorgan.classifier.reassurance import load_reassurance_patterns, reassures
+
+    patterns = load_reassurance_patterns()
+    assert reassures("никакие коды и данные карты называть не нужно", patterns)
+    assert reassures("никакие коды и данные карты называть ненужно", patterns)
+    assert reassures("никакие коды и данные карты называть не   нужно", patterns)
+    assert not reassures("назовите код из смс прямо сейчас", patterns)

@@ -220,3 +220,10 @@ def test_partner_registry_is_parsed_with_default_and_explicit_quotas():
 def test_weak_partner_key_fails_fast():
     with pytest.raises(ConfigError):
         load_config({"QORGAN_PARTNER_API_KEYS": "bank_a:short"})
+
+
+def test_asr_style_train_fraction_defaults_and_env_override():
+    assert load_config({}).asr_style_train_fraction == 1.0
+    assert load_config({"QORGAN_ASR_STYLE_TRAIN_FRACTION": "0.25"}).asr_style_train_fraction == 0.25
+    with pytest.raises(ValueError):
+        load_config({"QORGAN_ASR_STYLE_TRAIN_FRACTION": "1.5"})

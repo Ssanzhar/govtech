@@ -40,11 +40,17 @@ function escapeRegex(term) {
   return term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/** A term as a regex: tokens joined by optional whitespace, so ASR output that glues a
+    negation to the next word ("ненужно") still matches -- 1:1 with `reassurance._term`. */
+function termPattern(term) {
+  return term.split(/\s+/).filter(Boolean).map(escapeRegex).join("\\s*");
+}
+
 /** Compile the reassurance matcher: a sensitive term within `window_chars` of a
     reassurance term, either order, never crossing a sentence stop. */
 export function compileReassurance(patterns) {
-  const sensitive = "(?:" + patterns.sensitive_terms.map(escapeRegex).join("|") + ")";
-  const reassure = "(?:" + patterns.reassurance_terms.map(escapeRegex).join("|") + ")";
+  const sensitive = "(?:" + patterns.sensitive_terms.map(termPattern).join("|") + ")";
+  const reassure = "(?:" + patterns.reassurance_terms.map(termPattern).join("|") + ")";
   const gap = `${SENTENCE_STOP}{0,${patterns.window_chars}}?`;
   return new RegExp(`${sensitive}${gap}${reassure}|${reassure}${gap}${sensitive}`, "iu");
 }

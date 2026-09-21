@@ -32,3 +32,10 @@ test("reassurance fires when a sensitive term sits near a negation-of-need", () 
   assert.equal(reassuranceFeature("Код из SMS называть не нужно.", matcher), 1);
   assert.equal(reassuranceFeature("Продиктуйте код из SMS.", matcher), 0);
 });
+
+
+test("reassurance survives ASR-glued negations (1:1 with the Python matcher, PLAN A10)", () => {
+  assert.equal(reassuranceFeature("никакие коды и данные карты называть ненужно", matcher), 1);
+  assert.equal(reassuranceFeature("никакие коды и данные карты называть не   нужно", matcher), 1);
+  assert.equal(reassuranceFeature("назовите код из смс прямо сейчас", matcher), 0);
+});

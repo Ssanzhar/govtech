@@ -78,9 +78,16 @@ def load_reassurance_patterns(path: Path | None = None) -> ReassurancePatterns:
         raise ReassuranceError(f"Reassurance pattern validation failed for {resolved}: {exc}") from exc
 
 
+def _term(term: str) -> str:
+    """A term as a regex: its tokens joined by optional whitespace, so ASR output that glues
+    a negation to the next word ("ненужно") or doubles a space still matches (PLAN A10 --
+    the browser recogniser produced exactly that on the demo's real-bank-call scene)."""
+    return r"\s*".join(re.escape(token) for token in term.split())
+
+
 def _compile(patterns: ReassurancePatterns) -> re.Pattern[str]:
-    sensitive = "(?:" + "|".join(re.escape(t) for t in patterns.sensitive_terms) + ")"
-    reassure = "(?:" + "|".join(re.escape(t) for t in patterns.reassurance_terms) + ")"
+    sensitive = "(?:" + "|".join(_term(t) for t in patterns.sensitive_terms) + ")"
+    reassure = "(?:" + "|".join(_term(t) for t in patterns.reassurance_terms) + ")"
     gap = _SENTENCE_STOP + "{0," + str(patterns.window_chars) + "}?"
     return re.compile(f"{sensitive}{gap}{reassure}|{reassure}{gap}{sensitive}", re.IGNORECASE)
 

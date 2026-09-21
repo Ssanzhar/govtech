@@ -20,6 +20,7 @@ from pathlib import Path
 
 from qorgan.config import get_config
 from qorgan.data.anchors import build_anchor_dialogues
+from qorgan.data.asr_style import asr_style_augment
 from qorgan.data.generate import load_corpus_config
 from qorgan.data.schema import Dialogue, Label, Utterance, spans_from_phrases
 from qorgan.data.scrub import scrub_text
@@ -184,6 +185,7 @@ def build_corpus(
     seed: int | None = None,
     train_fraction: float | None = None,
     val_fraction: float | None = None,
+    asr_style_fraction: float | None = None,
 ) -> dict:
     """Assemble, clean, split, and persist the corpus; return the manifest.
 
@@ -192,13 +194,15 @@ def build_corpus(
     anchors become `authored_heldout`, scrubbed but never mixed into train/val/test.
     `augment_dialogues` (targeted training data, e.g. reassurance hard negatives) are scrubbed
     and added to **train only** -- never val/test/authored_heldout, so the eval sets stay a clean
-    held-out signal.
+    held-out signal. `asr_style_fraction` of the final train rows also get an ASR-styled copy
+    (`data.asr_style`, PLAN A10) so the heads see the recogniser's register; eval sets stay clean.
     """
     cfg = get_config()
     active_seed = cfg.default_seed if seed is None else seed
     active_train = cfg.split_train_fraction if train_fraction is None else train_fraction
     active_val = cfg.split_val_fraction if val_fraction is None else val_fraction
     active_processed = processed_dir or (cfg.data_dir / "processed")
+    active_asr_fraction = cfg.asr_style_train_fraction if asr_style_fraction is None else asr_style_fraction
 
     if dialogues is None:
         active_synthetic_path = synthetic_path or load_corpus_config().output_path
@@ -214,6 +218,9 @@ def build_corpus(
     scrubbed_augment = tuple(scrub_dialogue(d) for d in (augment_dialogues or ()))
     if scrubbed_augment:
         splits = {**splits, "train": deduplicate(splits["train"] + scrubbed_augment)}
+    asr_styled = asr_style_augment(splits["train"], fraction=active_asr_fraction, seed=active_seed)
+    if asr_styled:
+        splits = {**splits, "train": deduplicate(splits["train"] + asr_styled)}
     authored_heldout = tuple(scrub_dialogue(d) for d in anchors)
 
     for name in _SPLIT_NAMES:
@@ -224,6 +231,8 @@ def build_corpus(
         splits, authored_heldout, seed=active_seed, train_fraction=active_train, val_fraction=active_val
     )
     manifest["train_augment_count"] = len(scrubbed_augment)
+    manifest["train_asr_style_count"] = len(asr_styled)
+    manifest["asr_style_fraction"] = active_asr_fraction
     manifest["adversarial_count"] = _copy_adversarial(cfg.data_dir / "adversarial", active_processed)
     (active_processed / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"

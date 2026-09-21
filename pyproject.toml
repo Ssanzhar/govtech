@@ -31,6 +31,7 @@ dependencies = [
     "huggingface_hub>=0.23",  # deploy bootstrap pulls model + corpus from HF
     "onnxruntime>=1.17",      # the int8 embedder the server shares with the browser (ADR D17)
     "tokenizers>=0.15",
+    "num2words>=0.5",         # ASR-style numerals→words (RU/KK) for the A10 realism eval + augmentation
 ]
 
 [project.optional-dependencies]

@@ -231,6 +231,7 @@ def test_build_corpus_end_to_end_writes_splits_and_manifest(tmp_path):
         seed=42,
         train_fraction=0.7,
         val_fraction=0.15,
+        asr_style_fraction=0.0,  # this test pins the split itself; the ASR copies have their own test
     )
 
     for name in ("train", "val", "test", "authored_heldout"):
@@ -328,3 +329,26 @@ def test_build_corpus_deduplicates_synthetic(tmp_path):
     # 3 in, 1 duplicate removed -> 2 across splits.
     split_total = sum(manifest["counts"][n]["total"] for n in ("train", "val", "test"))
     assert split_total == 2
+
+
+def test_build_corpus_adds_asr_styled_copies_to_train_only(tmp_path):
+    synthetic = [_dialogue(f"syn_{i}", [f"Синтетический текст {i}!"]) for i in range(40)]
+    processed = tmp_path / "processed"
+    manifest = build_corpus(
+        dialogues=synthetic, anchor_dialogues=[], processed_dir=processed,
+        seed=42, train_fraction=0.7, val_fraction=0.15, asr_style_fraction=1.0,
+    )
+
+    def rows(name):
+        text = (processed / f"{name}.jsonl").read_text(encoding="utf-8").strip()
+        return [Dialogue.model_validate_json(x) for x in text.splitlines() if x]
+
+    train = rows("train")
+    styled = [d for d in train if d.id.endswith("-asr")]
+    assert styled and len(styled) == manifest["train_asr_style_count"]
+    assert all(d.transcript() == d.transcript().lower() for d in styled)
+    assert {d.id.removesuffix("-asr") for d in styled} <= {d.id for d in train}  # copies of train rows only
+    assert not any(d.id.endswith("-asr") for name in ("val", "test", "authored_heldout") for d in rows(name))
+    none = build_corpus(dialogues=synthetic, anchor_dialogues=[], processed_dir=tmp_path / "p2", seed=42, train_fraction=0.7, val_fraction=0.15, asr_style_fraction=0.0)
+    assert none["train_asr_style_count"] == 0
+
