@@ -57,6 +57,8 @@ def export_client_config() -> dict[str, Any]:
         "meter": {
             "alpha_up": cfg.meter_alpha_up,
             "alpha_down": cfg.meter_alpha_down,
+            "min_turns_to_arm": cfg.meter_min_turns_to_arm,
+            "short_window_turns": cfg.meter_short_window_turns,
             "enter": cfg.risk_threshold_enter,
             "exit": cfg.risk_threshold_exit,
             "bands": {

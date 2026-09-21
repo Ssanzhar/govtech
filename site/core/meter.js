@@ -16,8 +16,10 @@ export function band(score, m) {
 export function updateMeter(state, { risk, asrConfidence = 1, hardSignals = {} }, m) {
   if (!(risk >= 0 && risk <= 1)) throw new RangeError(`risk out of range: ${risk}`);
   if (!(asrConfidence >= 0 && asrConfidence <= 1)) throw new RangeError(`asrConfidence out of range: ${asrConfidence}`);
+  const turn = state.turn_index + 1;
   const target = m.bands.score_max * risk;
-  const alpha = target > state.score ? m.alpha_up : m.alpha_down;
+  // A6: the rise is damped on the first `short_window_turns` windows (1 = off).
+  const alpha = target > state.score ? m.alpha_up * Math.min(1, turn / (m.short_window_turns ?? 1)) : m.alpha_down;
   let score = state.score + alpha * asrConfidence * (target - state.score);
 
   const confident = Object.entries(hardSignals)
@@ -30,7 +32,9 @@ export function updateMeter(state, { risk, asrConfidence = 1, hardSignals = {} }
 
   const enter = m.enter * m.bands.score_max;
   const exit = m.exit * m.bands.score_max;
-  const latched = state.latched ? score > exit : score >= enter;
+  // A6: no latch before `min_turns_to_arm` utterances unless a hard signal is on record.
+  const armed = turn >= (m.min_turns_to_arm ?? 1) || accumulated.length > 0;
+  const latched = state.latched ? score > exit : armed && score >= enter;
   const before = new Set(state.hard_signal_ids);
   const event = {
     turn_index: state.turn_index + 1,

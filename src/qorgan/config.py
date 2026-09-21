@@ -57,12 +57,22 @@ _DEFAULT_RISK_THRESHOLD_EXIT = 0.49
 # to be re-tuned on pilot recordings with the FPR-first harness.
 _DEFAULT_METER_ALPHA_UP = 0.5
 _DEFAULT_METER_ALPHA_DOWN = 0.12
+# PLAN_2026-09 A6 (2026-09-19): the first one or two windows of a call are short and noisy --
+# a bank's opener reads like a scam opener until context arrives -- so the warning latch
+# cannot engage before this many committed utterances unless a confident hard signal fired
+# (measured: removes the transient false latches at turn 2 without losing an alert).
+_DEFAULT_METER_MIN_TURNS_TO_ARM = 3
+# Optional damping of the rise on short windows: alpha_up is scaled by min(1, turn / N);
+# 1 = off (it trades one hairline scam for three fewer transient latches on test).
+_DEFAULT_METER_SHORT_WINDOW_TURNS = 1
 _DEFAULT_SEED = 42
 _DEFAULT_SUPPORTED_LOCALES: tuple[str, ...] = ("ru", "kk")
 _DEFAULT_LOCALE = "ru"
 # Corpus split fractions (test fraction is the remainder). Consumed by
 # `qorgan.data.build_corpus` for the deterministic train/val/test partition.
 _DEFAULT_SPLIT_TRAIN_FRACTION = 0.7
+# Share of train rows that also get an ASR-styled copy at corpus build (PLAN A10, ADR D31).
+_DEFAULT_ASR_STYLE_TRAIN_FRACTION = 1.0
 _DEFAULT_SPLIT_VAL_FRACTION = 0.15
 
 ClassifierBackend = Literal["linear", "llm", "xlmr", "mock"]
@@ -123,9 +133,12 @@ class Config(BaseModel):
     # --- Live suspicion-meter smoothing (design spec §08) ---
     meter_alpha_up: float = Field(gt=0.0, le=1.0)
     meter_alpha_down: float = Field(gt=0.0, le=1.0)
+    meter_min_turns_to_arm: int = Field(ge=1)
+    meter_short_window_turns: int = Field(ge=1)
 
     # --- Corpus splits (test fraction is the remainder) ---
     split_train_fraction: float = Field(gt=0.0, lt=1.0)
+    asr_style_train_fraction: float = Field(ge=0.0, le=1.0)
     split_val_fraction: float = Field(gt=0.0, lt=1.0)
 
     # --- Privacy (PLAN_2026-09 C2/C3, ADR D14) ---
@@ -313,8 +326,17 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             meter_alpha_down=_read_float(
                 source, "QORGAN_METER_ALPHA_DOWN", _DEFAULT_METER_ALPHA_DOWN
             ),
+            meter_min_turns_to_arm=_read_int(
+                source, "QORGAN_METER_MIN_TURNS_TO_ARM", _DEFAULT_METER_MIN_TURNS_TO_ARM
+            ),
+            meter_short_window_turns=_read_int(
+                source, "QORGAN_METER_SHORT_WINDOW_TURNS", _DEFAULT_METER_SHORT_WINDOW_TURNS
+            ),
             split_train_fraction=_read_float(
                 source, "QORGAN_SPLIT_TRAIN_FRACTION", _DEFAULT_SPLIT_TRAIN_FRACTION
+            ),
+            asr_style_train_fraction=_read_float(
+                source, "QORGAN_ASR_STYLE_TRAIN_FRACTION", _DEFAULT_ASR_STYLE_TRAIN_FRACTION
             ),
             split_val_fraction=_read_float(
                 source, "QORGAN_SPLIT_VAL_FRACTION", _DEFAULT_SPLIT_VAL_FRACTION
