@@ -278,3 +278,20 @@ def test_pair_weighted_doubling_reproduces_the_single_copy_tactic_head(fake_embe
         assert np.allclose(single.models[tid].coef_, doubled.models[tid].coef_, atol=1e-4)
         assert np.linalg.norm(unweighted.models[tid].coef_) > np.linalg.norm(single.models[tid].coef_)  # the effect being cancelled
 
+
+# --- backend guard (ADR D33): the server's native ORT is the documented PROXY for device heads
+
+
+def test_device_trained_bundle_loads_under_the_onnx_proxy_but_not_under_sentence_transformers(tmp_path, fake_embedder, monkeypatch):
+    from qorgan.classifier.linear_train import LinearFeatureMismatchError
+
+    out = tmp_path / "linear"
+    monkeypatch.setenv("QORGAN_EMBED_BACKEND", "device")  # get_config() re-reads the environment
+    train_and_export(_corpus(), label_space=_LABEL_SPACE, out_dir=out, embedder=fake_embedder)
+    assert json.loads((out / "metadata.json").read_text())["embed_backend"] == "device"
+
+    monkeypatch.setenv("QORGAN_EMBED_BACKEND", "onnx")
+    assert load_linear(out).embed_backend == "device"  # the proxy pair, allowed
+    monkeypatch.setenv("QORGAN_EMBED_BACKEND", "sentence-transformers")
+    with pytest.raises(LinearFeatureMismatchError):
+        load_linear(out)

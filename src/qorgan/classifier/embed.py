@@ -88,13 +88,23 @@ class OnnxEmbedder:
 
 
 def get_embedder(model_name: str | None = None) -> Any:  # pragma: no cover - loads the real model
-    """Lazily load and cache the configured embedder: the int8 ONNX graph when
-    `config.embed_backend == "onnx"`, else a SentenceTransformer by name."""
+    """Lazily load and cache the configured embedder: the browser's own vectors through the
+    device bridge (`"device"`, ADR D33), the int8 ONNX graph (`"onnx"`), else a
+    SentenceTransformer by name."""
     cfg = get_config()
     name = model_name or cfg.embed_model_name
-    key = f"onnx:{cfg.embed_onnx_dir}" if cfg.embed_backend == "onnx" else name
+    if cfg.embed_backend == "device":
+        key = f"device:{cfg.device_embed_url}"
+    elif cfg.embed_backend == "onnx":
+        key = f"onnx:{cfg.embed_onnx_dir}"
+    else:
+        key = name
     if key not in _MODEL_CACHE:
-        if cfg.embed_backend == "onnx":
+        if cfg.embed_backend == "device":
+            from qorgan.classifier.device_embed import DeviceEmbedder, EmbeddingCache
+
+            _MODEL_CACHE[key] = DeviceEmbedder(cfg.device_embed_url, cache=EmbeddingCache(cfg.device_embed_cache))
+        elif cfg.embed_backend == "onnx":
             _MODEL_CACHE[key] = OnnxEmbedder.from_dir(cfg.embed_onnx_dir)
         else:
             from sentence_transformers import SentenceTransformer

@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test \"tests_js/**/*.test.mjs\"",
-    "gate:browser": "node tests_js/tools/browser_gate_embed.mjs"
+    "gate:browser": "node tests_js/tools/browser_gate_embed.mjs",
+    "device:serve": "node tests_js/tools/device_embed_server.mjs"
   },
   "devDependencies": {
     "@huggingface/transformers": "3.8.1",

@@ -255,10 +255,11 @@ def load_linear(model_dir: Path) -> LinearBundle:
     from qorgan.config import get_config
 
     embed_backend = metadata.get("embed_backend", "sentence-transformers")
-    if embed_backend != get_config().embed_backend:
+    runtime_backend = get_config().embed_backend
+    if embed_backend != runtime_backend and (embed_backend, runtime_backend) not in _PROXY_BACKENDS:
         raise LinearFeatureMismatchError(
             f"{model_dir} was trained on {embed_backend!r} embeddings but QORGAN_EMBED_BACKEND is "
-            f"{get_config().embed_backend!r}; set the backend to match or retrain."
+            f"{runtime_backend!r}; set the backend to match or retrain."
         )
     hard_signal_enabled = bool(metadata.get("hard_signal_enabled", False))
     cue_hash = metadata.get("cue_lexicon_hash", "")

@@ -37,7 +37,10 @@ _DEFAULT_EMBED_MODEL_NAME = "intfloat/multilingual-e5-base"
 # "sentence-transformers" (fp32 PyTorch) or "onnx" (the int8 graph the browser ships;
 # PLAN_2026-09 A4 -- server and device then embed identically).
 _DEFAULT_EMBED_BACKEND = "onnx"
-_EMBED_BACKENDS = ("sentence-transformers", "onnx")
+_EMBED_BACKENDS = ("sentence-transformers", "onnx", "device")
+# "device" = the browser's own WASM embeddings via the bridge `npm run device:serve` (ADR D33).
+_DEFAULT_DEVICE_EMBED_URL = "http://127.0.0.1:8765"
+_DEFAULT_DEVICE_EMBED_CACHE_SUBDIR = "cache/device_embeddings.sqlite"
 _DEFAULT_EMBED_ONNX_SUBDIR = Path("site") / "models" / "Xenova" / "multilingual-e5-base"
 # Shipped default (2026-09-14, PLAN_2026-09 A4/A5): heads trained on the int8 ONNX
 # embeddings the browser ships (server + device embed identically). At 0.59 every FPR
@@ -124,6 +127,8 @@ class Config(BaseModel):
     embed_model_name: str
     embed_backend: str
     embed_onnx_dir: Path
+    device_embed_url: str
+    device_embed_cache: Path
 
     # --- Risk thresholds / hysteresis (gap G8) ---
     risk_threshold: float = Field(ge=0.0, le=1.0)
@@ -315,6 +320,8 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             embed_model_name=_read_str(source, "QORGAN_EMBED_MODEL_NAME", _DEFAULT_EMBED_MODEL_NAME),
             embed_backend=_read_str(source, "QORGAN_EMBED_BACKEND", _DEFAULT_EMBED_BACKEND),
             embed_onnx_dir=_read_path(source, "QORGAN_EMBED_ONNX_DIR", _REPO_ROOT / _DEFAULT_EMBED_ONNX_SUBDIR),
+            device_embed_url=_read_str(source, "QORGAN_DEVICE_EMBED_URL", _DEFAULT_DEVICE_EMBED_URL),
+            device_embed_cache=_read_path(source, "QORGAN_DEVICE_EMBED_CACHE", data_dir / _DEFAULT_DEVICE_EMBED_CACHE_SUBDIR),
             risk_threshold=_read_float(source, "QORGAN_RISK_THRESHOLD", _DEFAULT_RISK_THRESHOLD),
             risk_threshold_enter=_read_float(
                 source, "QORGAN_RISK_THRESHOLD_ENTER", _DEFAULT_RISK_THRESHOLD_ENTER
