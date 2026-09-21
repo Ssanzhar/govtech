@@ -29,6 +29,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from qorgan.asr.stream import CommittedUtterance
 from qorgan.config import get_config
+from qorgan.data.ledger import load_inspection_ledger
 from qorgan.data.schema import Dialogue
 from qorgan.eval import intervals
 from qorgan.eval.run import _TRUTH_THRESHOLD, load_split
@@ -129,6 +130,14 @@ def evaluate_stream(
         raise ValueError("dialogues must not be empty")
 
     results = tuple(replay_dialogue(d, locale=locale, backend=backend) for d in dialogues)
+    return aggregate_stream(results)
+
+
+def aggregate_stream(results: Sequence[StreamResult]) -> StreamReport:
+    """A `StreamReport` over already-replayed dialogues (so subsets never replay twice).
+    Raises `ValueError` for an empty sequence."""
+    if not results:
+        raise ValueError("results must not be empty")
     positives = [r for r in results if r.is_scam]
     negatives = [r for r in results if not r.is_scam]
     latch_turns = [
@@ -147,6 +156,29 @@ def evaluate_stream(
         n_positive=len(positives),
         n_negative=len(negatives),
     )
+
+
+def evaluate_streams(
+    splits: Mapping[str, Sequence[Dialogue]], *, locale: str, backend: str | None = None,
+    ledger_ids: frozenset[str] = frozenset(),
+) -> dict[str, StreamReport]:
+    """`{split_name: report}` for several splits, with the inspection ledger applied as
+    `eval.run` applies it (PLAN A2): a split containing inspected ids also gets
+    `<split> (clean)` and `<split> (inspected)` rows, so a false-latch rate computed on
+    records that were read during feature engineering is never the generalization number.
+    Every dialogue is replayed exactly once."""
+    out: dict[str, StreamReport] = {}
+    for name, dialogues in splits.items():
+        replays = tuple(replay_dialogue(d, locale=locale, backend=backend) for d in dialogues)
+        out[name] = aggregate_stream(replays)
+        inspected = tuple(r for r in replays if r.dialogue_id in ledger_ids)
+        if not inspected:
+            continue
+        clean = tuple(r for r in replays if r.dialogue_id not in ledger_ids)
+        if clean:
+            out[f"{name} (clean)"] = aggregate_stream(clean)
+        out[f"{name} (inspected)"] = aggregate_stream(inspected)
+    return out
 
 
 def _ci_tuple(numerator: int, denominator: int) -> tuple[float, float] | None:
@@ -224,10 +256,11 @@ def main(argv: Sequence[str] | None = None) -> None:
     processed_dir = args.processed_dir or (cfg.data_dir / "processed")
     locale = args.locale or cfg.default_locale
 
-    results = {
-        name: evaluate_stream(load_split(processed_dir, name), locale=locale, backend=args.backend)
-        for name in split_names
-    }
+    ledger_ids = load_inspection_ledger(cfg.inspection_ledger_path).ids
+    results = evaluate_streams(
+        {name: load_split(processed_dir, name) for name in split_names},
+        locale=locale, backend=args.backend, ledger_ids=ledger_ids,
+    )
     print(format_stream_report(results))
 
 

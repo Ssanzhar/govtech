@@ -352,3 +352,34 @@ def test_build_corpus_adds_asr_styled_copies_to_train_only(tmp_path):
     none = build_corpus(dialogues=synthetic, anchor_dialogues=[], processed_dir=tmp_path / "p2", seed=42, train_fraction=0.7, val_fraction=0.15, asr_style_fraction=0.0)
     assert none["train_asr_style_count"] == 0
 
+
+def test_build_corpus_repairs_wrapped_rows_and_drops_corrupted_ones(tmp_path):
+    synthetic = [_dialogue(f"syn_{i}", [f"Синтетический текст {i}!"]) for i in range(40)]
+    wrapped = _dialogue("syn_wrapped", ['"\r\nҚайырлы күн! Бұл банк.\r\n"'], risk=0.05, hard_negative=True)
+    corrupted = _dialogue("syn_corrupted", ["Allo, s\ntyzba?", "S\ntyzba. B\rghyn ta\rdan."], risk=0.05, hard_negative=True)
+    processed = tmp_path / "processed"
+    manifest = build_corpus(dialogues=synthetic + [wrapped, corrupted], anchor_dialogues=[], processed_dir=processed, seed=42, train_fraction=0.7, val_fraction=0.15, asr_style_fraction=0.0)
+
+    rows = {}
+    for name in ("train", "val", "test"):
+        text = (processed / f"{name}.jsonl").read_text(encoding="utf-8").strip()
+        for line in text.splitlines():
+            d = Dialogue.model_validate_json(line); rows[d.id] = d
+    assert "syn_corrupted" not in rows and manifest["dropped_corrupted"] == ["syn_corrupted"]
+    assert rows["syn_wrapped"].utterances[0].text == "Қайырлы күн! Бұл банк."
+    assert manifest["total"] == 41
+
+
+def test_build_corpus_cleans_augment_rows_too_and_refuses_a_corrupted_anchor(tmp_path):
+    synthetic = [_dialogue(f"syn_{i}", [f"Синтетический текст {i}!"]) for i in range(40)]
+    augment = [
+        _dialogue("aug_wrapped", ['"\r\nБұл банк.\r\n"'], risk=0.05, hard_negative=True),
+        _dialogue("aug_corrupted", ["Iya, d\r s. Men k\r tetin edim."], risk=0.05, hard_negative=True),
+    ]
+    manifest = build_corpus(dialogues=synthetic, anchor_dialogues=[], augment_dialogues=augment, processed_dir=tmp_path / "p", seed=42, train_fraction=0.7, val_fraction=0.15, asr_style_fraction=0.0)
+    train = {Dialogue.model_validate_json(l).id: Dialogue.model_validate_json(l) for l in (tmp_path / "p" / "train.jsonl").read_text(encoding="utf-8").splitlines() if l}
+    assert train["aug_wrapped"].utterances[0].text == "Бұл банк." and "aug_corrupted" not in train
+    assert manifest["dropped_corrupted"] == ["aug_corrupted"] and manifest["train_augment_count"] == 1
+
+    with pytest.raises(ValueError, match="anchor"):
+        build_corpus(dialogues=synthetic, anchor_dialogues=[_dialogue("anc_bad", ["S\ntyzba?"], risk=0.05, hard_negative=True)], processed_dir=tmp_path / "p2", seed=42, train_fraction=0.7, val_fraction=0.15, asr_style_fraction=0.0)
