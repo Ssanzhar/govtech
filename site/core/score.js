@@ -30,7 +30,7 @@ export function createScorer({ weights, config, embed }) {
     const probs = tacticProba(transcriptEmbedding, weights.tactic_head, weights.label_space);
     const utteranceScores = featureRows(utterances, utteranceEmbeddings).map((r) => riskProba(r, weights.risk_head));
 
-    let tags = decodeTactics(probs, weights.label_space, weights.tactic_head.threshold).map(([id, p]) => ({
+    let tags = decodeTactics(probs, weights.label_space, weights.tactic_head.threshold, weights.tactic_head.thresholds || {}).map(([id, p]) => ({
       id,
       weight: Math.min(1, Math.max(0, p)),
     }));

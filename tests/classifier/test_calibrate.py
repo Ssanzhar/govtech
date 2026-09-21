@@ -128,3 +128,38 @@ def test_save_and_load_temperature_round_trips(tmp_path):
 
 def test_load_temperature_missing_defaults_to_one(tmp_path):
     assert load_temperature(tmp_path / "absent.json") == 1.0
+
+
+# --- per-tactic thresholds (ADR D30) ------------------------------------------------------------
+
+
+def test_tune_tactic_thresholds_picks_the_f1_maximising_threshold_per_tactic():
+    from qorgan.classifier.calibrate import tune_tactic_thresholds
+
+    label_space = ["otp_request", "urgency", "rare"]
+    # otp_request: eight true rows score >= 0.75, four false rows sit at 0.5-0.65 -> 0.7 is the lowest perfect cut
+    # urgency: nothing beats 0.5 (perfect at 0.5) -> stays 0.5 · rare: 2 positives (< 8) -> default
+    probs = [[0.95, 0.9, 0.9], [0.92, 0.1, 0.9], [0.9, 0.9, 0.1], [0.88, 0.1, 0.1], [0.85, 0.9, 0.1], [0.8, 0.1, 0.1], [0.78, 0.9, 0.1], [0.75, 0.1, 0.1],
+             [0.65, 0.9, 0.1], [0.6, 0.1, 0.1], [0.55, 0.9, 0.1], [0.5, 0.1, 0.1]]
+    truth = [[1, 1, 1], [1, 0, 1], [1, 1, 0], [1, 0, 0], [1, 1, 0], [1, 0, 0], [1, 1, 0], [1, 0, 0],
+             [0, 1, 0], [0, 0, 0], [0, 1, 0], [0, 0, 0]]
+    chosen = tune_tactic_thresholds(probs, truth, label_space)
+    assert chosen == {"otp_request": 0.7, "urgency": 0.5, "rare": 0.5}
+    with pytest.raises(ValueError):
+        tune_tactic_thresholds(probs, truth[:-1], label_space)
+
+
+def test_tune_tactic_thresholds_never_exceeds_the_hard_signal_floor():
+    from qorgan.classifier.calibrate import TACTIC_THRESHOLD_GRID
+    from qorgan.live.meter import HARD_SIGNAL_CONFIDENCE_FLOOR
+
+    assert max(TACTIC_THRESHOLD_GRID) < HARD_SIGNAL_CONFIDENCE_FLOOR  # a confident hard signal always survives
+
+
+def test_tune_tactic_thresholds_prefers_the_lowest_threshold_on_ties():
+    from qorgan.classifier.calibrate import tune_tactic_thresholds
+
+    # every threshold from 0.5 to 0.7 gives the same perfect F1 -> keep 0.5 (recall)
+    probs = [[0.95]] * 8 + [[0.1]] * 3
+    truth = [[1]] * 8 + [[0]] * 3
+    assert tune_tactic_thresholds(probs, truth, ["x"]) == {"x": 0.5}

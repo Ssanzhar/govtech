@@ -38,11 +38,14 @@ export function hybridRow(embedding, cueBlock, reassurance) {
   return [...embedding, ...cueBlock, reassurance];
 }
 
-/** `(id, prob)` pairs at/above threshold, sorted by prob desc then id asc (labels.decode_tactics). */
-export function decodeTactics(probs, labelSpace, threshold) {
+/** `(id, prob)` pairs at/above their threshold, sorted by prob desc then id asc
+    (labels.decode_tactics). `perTactic` holds the thresholds tuned on out-of-fold train + val (ADR D30); a
+    tactic it does not name uses `threshold`. */
+export function decodeTactics(probs, labelSpace, threshold, perTactic = {}) {
   const selected = [];
   labelSpace.forEach((id, i) => {
-    if (probs[i] >= threshold) selected.push([id, probs[i]]);
+    const cut = Object.prototype.hasOwnProperty.call(perTactic, id) ? perTactic[id] : threshold;
+    if (probs[i] >= cut) selected.push([id, probs[i]]);
   });
   return selected.sort((a, b) => (b[1] - a[1]) || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
 }

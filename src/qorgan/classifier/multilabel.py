@@ -26,13 +26,17 @@ class MultiLabelHead:
         self.label_space = tuple(label_space)
         self.models: dict[str, Any] = {}
 
-    def fit(self, features: np.ndarray, target_matrix: np.ndarray) -> "MultiLabelHead":
+    def fit(
+        self, features: np.ndarray, target_matrix: np.ndarray, sample_weight: np.ndarray | None = None
+    ) -> "MultiLabelHead":
+        """`sample_weight` (optional, per row) lets an augmented copy share one unit with its
+        source instead of counting as new evidence (ADR D31)."""
         for column, tactic_id in enumerate(self.label_space):
             column_targets = target_matrix[:, column].astype(int)
             if len(set(column_targets.tolist())) >= 2:
                 self.models[tactic_id] = LogisticRegression(
                     class_weight="balanced", max_iter=_LR_MAX_ITER
-                ).fit(features, column_targets)
+                ).fit(features, column_targets, sample_weight=sample_weight)
             else:
                 self.models[tactic_id] = None
         return self
@@ -44,3 +48,24 @@ class MultiLabelHead:
             if model is not None:
                 out[:, column] = model.predict_proba(features)[:, 1]
         return out
+
+
+def out_of_fold_proba(
+    features: np.ndarray, target_matrix: np.ndarray, label_space: Sequence[str], *, folds: int, seed: int,
+    sample_weight: np.ndarray | None = None,
+) -> np.ndarray:
+    """`(n, L)` probabilities where every row comes from a head fitted WITHOUT that row
+    (seeded K-fold). These are the fit-independent probabilities per-tactic thresholds are
+    tuned on (ADR D30): the training rows become usable tuning data instead of the small
+    `val` split alone. Raises `ValueError` for fewer than 2 folds or more folds than rows."""
+    rows = features.shape[0]
+    if folds < 2 or folds > rows:
+        raise ValueError(f"folds must be in [2, {rows}], got {folds}")
+    order = np.random.default_rng(seed).permutation(rows)
+    out = np.zeros((rows, len(label_space)), dtype=np.float64)
+    for held_out in np.array_split(order, folds):
+        fitted_on = np.setdiff1d(order, held_out)
+        fold_weight = None if sample_weight is None else sample_weight[fitted_on]
+        head = MultiLabelHead(label_space).fit(features[fitted_on], target_matrix[fitted_on], sample_weight=fold_weight)
+        out[held_out] = head.predict_proba(features[held_out])
+    return out

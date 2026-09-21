@@ -151,3 +151,78 @@ def test_legacy_bundle_without_embed_backend_loads_as_sentence_transformers(tmp_
     meta.pop("embed_backend")
     meta_path.write_text(json.dumps(meta), encoding="utf-8")
     assert load_linear(out).embed_backend == "sentence-transformers"
+
+
+# --- per-tactic thresholds (ADR D30): tuned on out-of-fold train + val ------------------------
+
+
+def _val():
+    return [_d("v0", "Скажите код из SMS быстро", risk=0.9, tags=["otp_request"]), _d("v1", "Поговорим о погоде", risk=0.05)]
+
+
+def test_out_of_fold_proba_predicts_every_row_from_a_head_that_did_not_see_it(monkeypatch):
+    import numpy as np
+
+    from qorgan.classifier import multilabel
+
+    fits, predictions = [], []
+    real_fit, real_predict = multilabel.MultiLabelHead.fit, multilabel.MultiLabelHead.predict_proba
+
+    def spy_fit(self, features, targets, sample_weight=None):
+        fits.append(features.shape[0])
+        return real_fit(self, features, targets, sample_weight=sample_weight)
+
+    def spy_predict(self, features):
+        predictions.append(features.shape[0])
+        return real_predict(self, features)
+
+    monkeypatch.setattr(multilabel.MultiLabelHead, "fit", spy_fit)
+    monkeypatch.setattr(multilabel.MultiLabelHead, "predict_proba", spy_predict)
+    rng = np.random.default_rng(0)
+    features = rng.normal(size=(20, 8))
+    targets = np.array([[1.0, 0.0]] * 10 + [[0.0, 1.0]] * 10)
+    first = multilabel.out_of_fold_proba(features, targets, ("a", "b"), folds=5, seed=1)
+    assert first.shape == (20, 2)
+    assert fits == [16] * 5 and predictions == [4] * 5  # each fold: fit on the rest, predict the held-out rows
+    second = multilabel.out_of_fold_proba(features, targets, ("a", "b"), folds=5, seed=1)
+    assert np.array_equal(first, second)  # a seeded permutation -- reproducible exports
+
+
+def test_out_of_fold_proba_rejects_bad_folds():
+    import numpy as np
+
+    from qorgan.classifier.multilabel import out_of_fold_proba
+
+    with pytest.raises(ValueError):
+        out_of_fold_proba(np.zeros((3, 2)), np.zeros((3, 1)), ("a",), folds=1, seed=0)
+    with pytest.raises(ValueError):
+        out_of_fold_proba(np.zeros((3, 2)), np.zeros((3, 1)), ("a",), folds=4, seed=0)  # more folds than rows
+
+
+def test_train_linear_tunes_a_threshold_for_every_tactic_from_train_oof_plus_val(fake_embedder):
+    from qorgan.classifier.calibrate import TACTIC_THRESHOLD_GRID
+
+    bundle = train_linear(_corpus(), label_space=_LABEL_SPACE, embedder=fake_embedder, tuning_dialogues=_val())
+    assert set(bundle.tactic_thresholds) == set(_LABEL_SPACE)
+    allowed = {0.5, *TACTIC_THRESHOLD_GRID}
+    assert all(v in allowed for v in bundle.tactic_thresholds.values())
+    again = train_linear(_corpus(), label_space=_LABEL_SPACE, embedder=fake_embedder, tuning_dialogues=_val())
+    assert again.tactic_thresholds == bundle.tactic_thresholds
+    assert train_linear(_corpus(), label_space=_LABEL_SPACE, embedder=fake_embedder).tactic_thresholds == {}
+
+
+def test_train_positives_count_toward_the_tuning_support(fake_embedder, monkeypatch):
+    """`otp_request` has 10 train positives and 1 val positive: with val alone it would sit
+    under the support guard and keep the default; out-of-fold train rows make it tunable."""
+    from qorgan.classifier import linear_train
+
+    seen = {}
+
+    def spy(probs, truth, label_space, **kwargs):
+        seen["positives"] = {tid: sum(int(r[j]) for r in truth) for j, tid in enumerate(label_space)}
+        return {tid: 0.5 for tid in label_space}
+
+    monkeypatch.setattr("qorgan.classifier.calibrate.tune_tactic_thresholds", spy)
+    linear_train.train_linear(_corpus(), label_space=_LABEL_SPACE, embedder=fake_embedder, tuning_dialogues=_val())
+    assert seen["positives"]["otp_request"] == 11 and seen["positives"]["urgency"] == 10
+

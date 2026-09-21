@@ -186,3 +186,14 @@ def test_tactic_pos_weights_empty_matrix_raises():
 def test_tactic_pos_weights_ragged_rows_raises():
     with pytest.raises(ValueError):
         tactic_pos_weights([[1.0, 0.0], [1.0]])
+
+
+def test_decode_tactics_honours_per_tactic_thresholds():
+    from qorgan.classifier.labels import decode_tactics
+
+    probs = [0.7, 0.7, 0.55]
+    space = ["otp_request", "urgency", "secrecy"]
+    assert decode_tactics(probs, space, 0.5) == [("otp_request", 0.7), ("urgency", 0.7), ("secrecy", 0.55)]
+    assert decode_tactics(probs, space, 0.5, {"otp_request": 0.8, "secrecy": 0.5}) == [("urgency", 0.7), ("secrecy", 0.55)]
+    with pytest.raises(ValueError):
+        decode_tactics(probs, space, 0.5, {"urgency": 1.5})

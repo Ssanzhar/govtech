@@ -54,6 +54,7 @@ def export_web_bundle(bundle: Any, *, thresholds: Mapping[str, float]) -> dict[s
         "risk_head": {"type": _RISK_HEAD_TYPE, "members": members},
         "tactic_head": {
             "threshold": float(bundle.tactic_threshold),
+            "thresholds": {k: float(v) for k, v in getattr(bundle, "tactic_thresholds", {}).items()},
             "models": {
                 tactic_id: {"coef": _floats(model.coef_[0]), "intercept": float(model.intercept_[0])}
                 for tactic_id, model in bundle.tactic_clf.models.items()
@@ -118,6 +119,7 @@ class WebScorer:
         self._calib_b = np.asarray([m["calib_b"] for m in head["members"]], dtype=np.float64)
         self.label_space: tuple[str, ...] = tuple(data["label_space"])
         self.tactic_threshold = float(data["tactic_head"]["threshold"])
+        self.tactic_thresholds = {str(k): float(v) for k, v in data["tactic_head"].get("thresholds", {}).items()}
         self._tactics = {tid: (np.asarray(m["coef"], dtype=np.float64), float(m["intercept"])) for tid, m in data["tactic_head"]["models"].items()}
         self.feature_order: tuple[str, ...] = tuple(data["feature_order"])
         self.embedding_dim = int(data["embedding_dim"])

@@ -14,7 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -24,7 +24,7 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.linear_model import LogisticRegression
 
 from qorgan.classifier import embed, labels
-from qorgan.classifier.multilabel import MultiLabelHead  # re-exported: keep import path stable
+from qorgan.classifier.multilabel import MultiLabelHead, out_of_fold_proba  # MultiLabelHead re-exported: keep import path stable
 from qorgan.config import get_config
 from qorgan.data.schema import Dialogue
 
@@ -36,7 +36,14 @@ _DEFAULT_TACTIC_THRESHOLD = 0.5
 _MAX_CALIBRATION_FOLDS = 3
 _LR_MAX_ITER = 2000
 _RISK_C = 4.0
+# Per-tactic threshold tuning (ADR D30): out-of-fold train probabilities + val.
+_TUNING_FOLDS = 5
+_TUNING_SEED = 42
 
+# (trained-on, running-on) pairs allowed to differ: the server's int8 ONNX graph and the
+# browser's WASM build of the same graph are cosine-0.98 proxies of each other (ADR D32/D33);
+# anything else is a different embedding distribution and is refused.
+_PROXY_BACKENDS = frozenset({("device", "onnx"), ("onnx", "device")})
 _RISK_CLF_FILE = "risk_clf.joblib"
 _TACTIC_CLF_FILE = "tactic_clf.joblib"
 _METADATA_FILE = "metadata.json"
@@ -71,6 +78,8 @@ class LinearBundle:
     feature_version: str = _FEATURE_VERSION
     cue_lexicon_hash: str = ""
     reassurance_hash: str = ""
+    # Per-tactic decision thresholds tuned on out-of-fold train + `val` (ADR D30); empty = flat `tactic_threshold`.
+    tactic_thresholds: dict[str, float] = field(default_factory=dict)
     # Which embedder produced the training vectors ("sentence-transformers" fp32 or the int8
     # "onnx" graph the browser ships). Loading under a different backend is refused: the
     # heads are only valid on the embedding distribution they were fitted on (A4).
@@ -86,15 +95,16 @@ def _targets(dialogues: Sequence[Dialogue], label_space: Sequence[str]) -> tuple
     return y_risk, tactic_matrix
 
 
-def _fit_risk_head(features: np.ndarray, y_risk: np.ndarray) -> Any:
+def _fit_risk_head(features: np.ndarray, y_risk: np.ndarray, sample_weight: np.ndarray | None = None) -> Any:
     """Class-weighted LR calibrated with as many folds as the smaller class allows; falls
-    back to an uncalibrated LR when there are too few samples to calibrate."""
+    back to an uncalibrated LR when there are too few samples to calibrate. `sample_weight`
+    reaches both the base estimator and the calibrator."""
     base = LogisticRegression(class_weight="balanced", max_iter=_LR_MAX_ITER, C=_RISK_C)
     min_class = int(np.bincount(y_risk, minlength=2).min())
     if min_class >= 2:
         folds = min(_MAX_CALIBRATION_FOLDS, min_class)
-        return CalibratedClassifierCV(base, method="sigmoid", cv=folds).fit(features, y_risk)
-    return base.fit(features, y_risk)
+        return CalibratedClassifierCV(base, method="sigmoid", cv=folds).fit(features, y_risk, sample_weight=sample_weight)
+    return base.fit(features, y_risk, sample_weight=sample_weight)
 
 
 def train_linear(
@@ -107,8 +117,13 @@ def train_linear(
     hard_signal: bool = False,
     lexicon: Any = None,
     reassurance_patterns: Any = None,
+    tuning_dialogues: Sequence[Dialogue] | None = None,
+    sample_weights: Sequence[float] | None = None,
 ) -> LinearBundle:
-    """Embed transcripts, fit the calibrated risk head + multi-label tactic head.
+    """Embed transcripts, fit the calibrated risk head + multi-label tactic head; with
+    `tuning_dialogues` (the `val` split) also tune per-tactic decision thresholds on out-of-fold
+    train probabilities + `val` (ADR D30). `sample_weights` (optional, one per train dialogue)
+    reach both heads, the calibrator and the out-of-fold tuner.
 
     With `hard_signal=True` the risk head is trained on the hybrid vector
     `[embedding | cue features | reassurance]` (the tactic head stays embedding-only), and the
@@ -117,6 +132,9 @@ def train_linear(
     """
     if not train_dialogues:
         raise ValueError("train_dialogues must not be empty")
+    if sample_weights is not None and len(sample_weights) != len(train_dialogues):
+        raise ValueError(f"sample_weights must have one entry per train dialogue ({len(train_dialogues)}), got {len(sample_weights)}")
+    weights = None if sample_weights is None else np.asarray(sample_weights, dtype=float)
     texts = [d.transcript() for d in train_dialogues]
     y_risk, tactic_matrix = _targets(train_dialogues, label_space)
     cfg = get_config()
@@ -124,10 +142,15 @@ def train_linear(
 
     if not hard_signal:
         features = embed.embed_texts(texts, embedder=embedder, model_name=model_name)
-        risk_clf = _fit_risk_head(features, y_risk)
-        tactic_clf = MultiLabelHead(label_space).fit(features, tactic_matrix)
+        risk_clf = _fit_risk_head(features, y_risk, sample_weight=weights)
+        tactic_clf = MultiLabelHead(label_space).fit(features, tactic_matrix, sample_weight=weights)
+        thresholds = _tune_thresholds(
+            tactic_clf, label_space, tuning_dialogues, tactic_threshold,
+            train_features=features, train_targets=tactic_matrix, train_weights=weights, embedder=embedder, model_name=model_name,
+        )
         return LinearBundle(
-            risk_clf, tactic_clf, tuple(label_space), embed_model, tactic_threshold, embed_backend=cfg.embed_backend
+            risk_clf, tactic_clf, tuple(label_space), embed_model, tactic_threshold, embed_backend=cfg.embed_backend,
+            tactic_thresholds=thresholds,
         )
 
     from qorgan.classifier import features as feat
@@ -140,8 +163,12 @@ def train_linear(
     blocks = feat.compute_feature_blocks(
         texts, embedder=embedder, model_name=model_name, lexicon=lex, reassurance_patterns=patterns
     )
-    risk_clf = _fit_risk_head(feat.hybrid_matrix(blocks), y_risk)
-    tactic_clf = MultiLabelHead(label_space).fit(blocks.embedding, tactic_matrix)
+    risk_clf = _fit_risk_head(feat.hybrid_matrix(blocks), y_risk, sample_weight=weights)
+    tactic_clf = MultiLabelHead(label_space).fit(blocks.embedding, tactic_matrix, sample_weight=weights)
+    thresholds = _tune_thresholds(
+        tactic_clf, label_space, tuning_dialogues, tactic_threshold,
+        train_features=blocks.embedding, train_targets=tactic_matrix, train_weights=weights, embedder=embedder, model_name=model_name,
+    )
     return LinearBundle(
         risk_clf,
         tactic_clf,
@@ -154,7 +181,30 @@ def train_linear(
         cue_lexicon_hash=lexicon_hash(lex),
         reassurance_hash=_reassurance_hash(patterns),
         embed_backend=cfg.embed_backend,
+        tactic_thresholds=thresholds,
     )
+
+
+def _tune_thresholds(
+    tactic_clf: MultiLabelHead, label_space: Sequence[str], tuning: Sequence[Dialogue] | None, default: float,
+    *, train_features: np.ndarray, train_targets: np.ndarray, train_weights: np.ndarray | None, embedder: Any, model_name: str | None,
+) -> dict[str, float]:
+    """Per-tactic thresholds (ADR D30) from fit-independent probabilities: out-of-fold
+    probabilities on the training rows (seeded K-fold of the same head) concatenated with the
+    fitted head's probabilities on the tuning split (`val`). `{}` without a tuning split --
+    the small `val` split alone starves most tactics of the support the tuner requires."""
+    if not tuning:
+        return {}
+    from qorgan.classifier.calibrate import tune_tactic_thresholds
+
+    tuning_features = embed.embed_texts([d.transcript() for d in tuning], embedder=embedder, model_name=model_name)
+    _, tuning_targets = _targets(tuning, label_space)
+    probs = np.vstack([
+        out_of_fold_proba(train_features, train_targets, label_space, folds=_TUNING_FOLDS, seed=_TUNING_SEED, sample_weight=train_weights),
+        tactic_clf.predict_proba(tuning_features),
+    ])
+    truth = np.vstack([train_targets, tuning_targets]).astype(int)
+    return tune_tactic_thresholds(probs.tolist(), truth.tolist(), label_space, default=default)
 
 
 def export_linear(bundle: LinearBundle, out_dir: Path) -> dict:
@@ -166,6 +216,7 @@ def export_linear(bundle: LinearBundle, out_dir: Path) -> dict:
         "embed_model_name": bundle.embed_model_name,
         "label_space": list(bundle.label_space),
         "tactic_threshold": bundle.tactic_threshold,
+        "tactic_thresholds": dict(bundle.tactic_thresholds),
         "hard_signal_enabled": bundle.hard_signal_enabled,
         "feature_version": bundle.feature_version,
         "cue_lexicon_hash": bundle.cue_lexicon_hash,
@@ -237,6 +288,7 @@ def load_linear(model_dir: Path) -> LinearBundle:
         label_space=tuple(metadata["label_space"]),
         embed_model_name=metadata["embed_model_name"],
         tactic_threshold=metadata["tactic_threshold"],
+        tactic_thresholds={str(k): float(v) for k, v in metadata.get("tactic_thresholds", {}).items()},
         hard_signal_enabled=hard_signal_enabled,
         lexicon=lexicon,
         reassurance_patterns=patterns,
@@ -256,6 +308,8 @@ def train_and_export(
     model_name: str | None = None,
     tactic_threshold: float = _DEFAULT_TACTIC_THRESHOLD,
     hard_signal: bool = False,
+    tuning_dialogues: Sequence[Dialogue] | None = None,
+    sample_weights: Sequence[float] | None = None,
 ) -> dict:
     """Train then export; return the metadata."""
     bundle = train_linear(
@@ -265,6 +319,8 @@ def train_and_export(
         model_name=model_name,
         tactic_threshold=tactic_threshold,
         hard_signal=hard_signal,
+        tuning_dialogues=tuning_dialogues,
+        sample_weights=sample_weights,
     )
     return export_linear(bundle, out_dir)
 
@@ -284,12 +340,16 @@ def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - CLI (
     )
     args = parser.parse_args(argv)
 
+    train = load_split(args.processed_dir, "train")
     metadata = train_and_export(
-        load_split(args.processed_dir, "train"),
+        train,
         label_space=labels.default_label_space(),
         out_dir=args.out_dir,
         model_name=args.model_name,
         hard_signal=not args.no_hard_signal,
+        tuning_dialogues=load_split(args.processed_dir, "val"),  # per-tactic thresholds (ADR D30)
+        # No sample weights: the ASR-styled copies count as full rows. Pair-weighting (0.5 + 0.5)
+        # was measured and rejected -- it halves the clean register's evidence too (ADR D31).
     )
     print(json.dumps(metadata, indent=2))
     print(f"exported -> {args.out_dir}")

@@ -28,3 +28,10 @@ test("tactic head + decode reproduce the tag set (before cue merge) ordering rul
 test("risk head rejects a row of the wrong width", () => {
   assert.throws(() => riskProba([0, 1, 2], weights.risk_head), RangeError);
 });
+
+test("decodeTactics honours per-tactic thresholds (1:1 with labels.decode_tactics, ADR D30)", () => {
+  const probs = [0.7, 0.7, 0.55];
+  const space = ["otp_request", "urgency", "secrecy"];
+  assert.deepEqual(decodeTactics(probs, space, 0.5), [["otp_request", 0.7], ["urgency", 0.7], ["secrecy", 0.55]]);
+  assert.deepEqual(decodeTactics(probs, space, 0.5, { otp_request: 0.8, secrecy: 0.5 }), [["urgency", 0.7], ["secrecy", 0.55]]);
+});
