@@ -20,19 +20,20 @@ env.localModelPath = new URL("../models/", import.meta.url).href;
 
 let extractorPromise = null;
 
+// WASM only, deliberately (ADR D32). On WebGPU the int8 graph's quantised ops are not all
+// assigned to the GPU provider and the embeddings come out at cosine ~0.78 to the server's
+// (measured in Chromium on the 200-case gate, 2026-09-20) -- decisions no longer match the
+// trained heads -- and it was slower (0.7 s vs 0.2 s per transcript). WASM reproduces the
+// server at cosine 0.99. A caller asking for another device is refused rather than obeyed.
+const DEVICE = "wasm";
+
 async function loadExtractor(preferredDevice) {
-  const device = preferredDevice || (typeof navigator !== "undefined" && "gpu" in navigator ? "webgpu" : "wasm");
+  if (preferredDevice && preferredDevice !== DEVICE) {
+    postMessage({ type: "info", message: `device ${preferredDevice} refused: the int8 graph is only decision-safe on ${DEVICE}` });
+  }
   const progress_callback = (p) => postMessage({ type: "progress", ...p });
   const { model_id, dtype } = settings;
-  try {
-    return await pipeline("feature-extraction", model_id, { dtype, device, progress_callback });
-  } catch (err) {
-    if (device === "webgpu") {
-      postMessage({ type: "info", message: `webgpu unavailable (${err?.message || err}); falling back to wasm` });
-      return pipeline("feature-extraction", model_id, { dtype, device: "wasm", progress_callback });
-    }
-    throw err;
-  }
+  return pipeline("feature-extraction", model_id, { dtype, device: DEVICE, progress_callback });
 }
 
 // ONE text per graph run, deliberately: the int8 graph is dynamically quantised and the

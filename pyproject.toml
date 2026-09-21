@@ -29,7 +29,7 @@ dependencies = [
     "fastapi>=0.110",   # thin API + static host for the landing site (qorgan.api)
     "uvicorn>=0.30",
     "huggingface_hub>=0.23",  # deploy bootstrap pulls model + corpus from HF
-    "onnxruntime>=1.17",      # the int8 embedder the server shares with the browser (ADR D17)
+    "onnxruntime==1.21.*",    # PINNED to the onnxruntime-node that transformers.js 3.8.1 bundles: same version = bit-identical int8 embeddings (ADR D32); move both together
     "tokenizers>=0.15",
     "num2words>=0.5",         # ASR-style numerals→words (RU/KK) for the A10 realism eval + augmentation
 ]

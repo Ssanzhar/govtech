@@ -5,9 +5,11 @@
   "description": "On-device Qorğan core (site/core) + golden parity tests against the Python implementation",
   "type": "module",
   "scripts": {
-    "test": "node --test \"tests_js/**/*.test.mjs\""
+    "test": "node --test \"tests_js/**/*.test.mjs\"",
+    "gate:browser": "node tests_js/tools/browser_gate_embed.mjs"
   },
   "devDependencies": {
-    "@huggingface/transformers": "^3.8.1"
+    "@huggingface/transformers": "3.8.1",
+    "playwright": "1.56.1"
   }
 }
