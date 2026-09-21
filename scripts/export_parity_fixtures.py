@@ -37,6 +37,12 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 _E5_PREFIX = "query: "
 _AUTHORED_PER_CLASS = 10
 _TEST_CASES = 6
+# The cross-runtime decision gate (tests_js/integration, PLAN B3: same decision on >= 99 %)
+# needs statistical power the 28 golden trajectories cannot give: 200 transcripts with
+# Python's risk/tags only (Node embeds them itself), all authored + seeded test/ood samples.
+RUNTIME_GATE_FILENAME = "runtime_gate.json"
+_RUNTIME_GATE_CASES = 200
+_RUNTIME_GATE_SEED = 42
 
 
 class RecordingEmbedder:
@@ -70,6 +76,30 @@ def _select_cases(processed: Path) -> list[dict[str, Any]]:
     for name, text in LIVE_DEMO_CALLS.items():
         cases.append({"id": name, "locale": "kk" if name.endswith("_kk") else "ru", "utterances": text.split(UTTERANCE_JOIN)})
     return cases
+
+
+def _select_runtime_gate(processed: Path) -> list[Dialogue]:
+    import random
+
+    authored = _load(processed / "authored_heldout.jsonl")
+    rest = [*_load(processed / "test.jsonl"), *_load(processed / "ood.jsonl")]
+    random.Random(_RUNTIME_GATE_SEED).shuffle(rest)
+    return [*authored, *rest][:_RUNTIME_GATE_CASES]
+
+
+def export_runtime_gate(processed: Path, out: Path) -> int:
+    """`{cases: [{id, transcript, risk, flagged, tags}]}` -- Python's single-shot verdicts."""
+    threshold = get_config().risk_threshold
+    cases = []
+    for d in _select_runtime_gate(processed):
+        transcript = d.transcript()
+        result = predict.score(transcript, backend="linear")
+        cases.append({
+            "id": d.id, "language": d.language, "transcript": transcript, "risk": result.risk,
+            "flagged": result.risk >= threshold, "tags": [{"id": t.id, "weight": t.weight} for t in result.tags],
+        })
+    out.write_text(json.dumps({"threshold": threshold, "embed_backend": get_config().embed_backend, "cases": cases}, ensure_ascii=False), encoding="utf-8")
+    return len(cases)
 
 
 def _score_case(case: dict[str, Any]) -> dict[str, Any]:
@@ -111,8 +141,11 @@ def _score_case(case: dict[str, Any]) -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Export JS parity fixtures.")
     parser.add_argument("--out", type=Path, default=REPO_ROOT / "tests_js" / "fixtures" / "parity.json")
+    parser.add_argument("--runtime-gate-out", type=Path, default=REPO_ROOT / "tests_js" / "fixtures" / RUNTIME_GATE_FILENAME)
     args = parser.parse_args(argv)
     cfg = get_config()
+    n_gate = export_runtime_gate(cfg.data_dir / "processed", args.runtime_gate_out)
+    print(f"runtime gate: {n_gate} transcripts -> {args.runtime_gate_out}")
 
     inner = embed_mod.get_embedder()  # the configured backend (int8 ONNX by default)
     recorder = RecordingEmbedder(inner)
