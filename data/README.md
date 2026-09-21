@@ -83,6 +83,62 @@ scam baiting calls"* (arXiv:2307.01965).
   generalization signal. The classifier backend (`llm` / `xlmr` / `mock`) is swappable with
   no code change.
 
+## Legit-style scam augmentation — `data/augment/legit_style_scams.jsonl` (PLAN A9b, ADR D27)
+- **What:** 20 of the 268 legit-sounding paraphrases of **train** scams (same generator and
+  constraints as the `adversarial_legit` split, but from train sources only — zero overlap
+  with any evaluation split by normalised transcript, `tests/data/test_legit_style_augment.py`),
+  ids `aug-legit-<source id>`, positives, no trigger spans. Train-only, folded by `build_corpus`.
+- **Why 20:** the augmentation-dose sweep in `docs/eval_report.md` — 20 scam paraphrases
+  plus the 45 remaining institutional-register legit negatives from July
+  (`data/augment/reassurance_negatives.jsonl` is now the full 72) hold every single-shot
+  FPR gate and lift adversarial_legit recall 0.651 → 0.826 without losing a streaming
+  alert-hit; more scam-side data alone brings the July false positives back. The full 268 live in `data/synthetic/legit_style_scams.jsonl`
+  (gitignored) with `legit_style_scams.manifest.json` recording the subset rule.
+
+## `ood` — the transcribed-call stress set (July 2026; provenance recorded 2026-09-21)
+- **What:** 120 dialogues (now 118, see below) generated in July with `data/generate.py`'s
+  *transcribed-call style* prompt — disfluencies («эээ», «ну»), restarts, no clean turns —
+  as a cross-distribution evaluation set: 45 scams / 75 legit, RU / KK / mixed, ids `ood_*`.
+  Written straight to `data/processed/ood.jsonl` (not produced by `build_corpus`; on the
+  Hugging Face dataset) and never in train. Every scam in it is also a source for the
+  adversarial splits below.
+- **Limits:** synthetic, single generator; the disfluency style is a guess at ASR output —
+  the measured ASR register is `eval.asr_realism` (ADR D31).
+
+## Corpus repair — `data/clean.py` (ADR D34, 2026-09-21)
+- **What:** generation artefacts found while styling the corpus: utterances wrapped in
+  `"\r\n … "` with several turns jammed into one (repaired: unwrapped, split back into
+  turns), backspaces inside words (deleted), literal `\uXXXX` escapes (decoded), trailing
+  whitespace (stripped); and rows where Kazakh-specific letters (ә, ұ, ң, і) had become
+  control characters (`с\nлеметсіз`, `С\t\nл\t\nшамын`) — unrecoverable, **dropped**.
+  `build_corpus` applies it to the synthetic set and the augment files and lists the drops
+  in `manifest.json.dropped_corrupted`; `python -m qorgan.data.clean data/processed/ood.jsonl`
+  repairs the July file in place (idempotent). A corrupted hand-written anchor is an error,
+  never a silent drop.
+- **Effect:** 11 synthetic / augment rows dropped (all `mixed`; five of them are in
+  `data/augment/reassurance_negatives.jsonl`, so its effective size is 67 of 72), ~55
+  repaired; `ood` 120 → 118 (`ood_impersonation_gov_police_mixed_0`, the transcript that
+  drifted most between runtimes in every gate run, and `ood_neg_legit_gov_service_mixed_3`),
+  12 repaired; `test` 116 → 115 (`neg_legit_gov_service_mixed_6`). Splits do not reshuffle
+  (assignment is by id). The committed augment files stay as generated; the drop happens at
+  build time and is on record.
+
+## ASR-styled train copies — `data/asr_style.py` (PLAN A10, ADR D31)
+- **What:** every train row (the seeded share `QORGAN_ASR_STYLE_TRAIN_FRACTION`, 1.0 =
+  all 711) also gets a copy in the register the on-device recogniser emits (ADR D25):
+  lowercase, punctuation removed, numerals spelled out in the dialogue's language
+  (`num2words` ru / kz; code-switched text reads numbers in Russian), Latin tokens kept
+  lowercased. Ids `<source id>-asr`, same label, trigger spans dropped (no longer
+  verbatim). Generated at `build_corpus` time — deterministic, nothing to commit
+  (`manifest.json.train_asr_style_count`).
+- **Why:** on clean text the model was never shown the ASR register; styled eval text
+  raised risk across the board — test FPR 1/52 → 5/52 under the device-faithful runtime
+  (ADR D32) — all on Kazakh/mixed legit openers (`docs/eval_report.md`, 2026-09-20 addendum).
+  With the copies styled test FPR is 0/52 and adversarial-legit recall reaches 0.872.
+- **Limits:** the styling models the recogniser's *format*, not its misrecognitions
+  («SMS» → «самая с»); `--drop-latin` in `eval.asr_realism` is the only stress for the latter.
+  Eval splits are never styled at build time — `eval.asr_realism` styles them on the fly.
+
 ## Adversarial paraphrase split — `data/adversarial/` (PLAN_2026-09 A9, ADR D15)
 - **What:** every scam in `test` + `ood` (64 + 45 sources) rewritten by `gemini-2.5-flash`
   under the constraint that **none of the 35 hard-signal cue phrases** in
@@ -97,7 +153,10 @@ scam baiting calls"* (arXiv:2307.01965).
   ≥ 2 %); violations are retried up to 3 times with the leaked cues named, then dropped
   and listed in `data/adversarial/manifest.json` (model, lexicon hash, prompt hash, counts,
   failures).
-- **Use:** eval only — `build_corpus` copies it next to the other splits, never into train;
+- **Two styles:** `adversarial.jsonl` (cue-free) and `adversarial_legit.jsonl` (cue-free *and*
+  a calm institutional register with the reassurances a real bank gives — `--style
+  legit_sounding`, manifest `manifest_adversarial_legit.json`).
+- **Use:** eval only — `build_corpus` copies both next to the other splits, never into train;
   `python -m qorgan.eval.adversarial` reports paired recall (source vs paraphrase) with
   Clopper–Pearson intervals; the plan's gate is a recall drop ≤ 15 points.
 - **Limits:** paraphrases are LLM-written, so they are fluent adversaries, not real

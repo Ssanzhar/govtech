@@ -23,6 +23,14 @@ Web-first, Python-only, L1-centric. This supersedes the two-subsystem/on-device 
 >    request, structured tactic hits preferred, transcripts accepted only pre-scrubbed,
 >    `consent_basis` required, per-partner rate limit + rolling daily quota, content-free
 >    audit log (`data/processed/audit_log.jsonl`), aggregates-only export.
+> 7. **The device is the runtime the numbers describe** (ADR D32) — the browser embeds
+>    on WASM only (WebGPU is refused: measured broken for the int8 graph), the server
+>    pins `onnxruntime` to the version transformers.js bundles for Node
+>    (`tests/test_runtime_pin.py`), and the decision gate runs on the browser's own
+>    embeddings (`tests_js/integration/browser_gate.test.mjs`, captured by
+>    `npm run gate:browser`), not on a Node proxy. The heads are trained and evaluated on the
+>    browser's own embeddings (`QORGAN_EMBED_BACKEND=device`, `classifier/device_embed.py`,
+>    ADR D33); the server loads them with native ORT as the documented proxy.
 >
 > Modules: `api_reports.py` · `api_partner.py` + `api_partner_export.py` · `partners.py`
 > (credential registry) · `audit.py` · `reports/` (store, purge, partner views) ·
@@ -58,12 +66,17 @@ Web-first, Python-only, L1-centric. This supersedes the two-subsystem/on-device 
   (spans must be substrings of the transcript — validate).
 - `build_corpus.py` — assemble, dedupe, PII-scrub, split `train/val/test` + hold out a
   separate small `authored_heldout` (transcribed real anchors). Writes a manifest + hash.
+- `asr_style.py` — the on-device recogniser's register (lowercase, no punctuation, numerals
+  → words) as a deterministic transform; `build_corpus` adds a styled copy of every train row
+  (ADR D31) and `eval/asr_realism.py` scores eval splits clean vs styled, paired.
 
 ### `src/qorgan/classifier/`
 - `llm_classifier.py` — Gemini JSON-mode output → `{risk, tactic_tags, trigger_spans}`.
   Ships first; baseline + fallback.
 - `train.py` — fine-tune XLM-R base, multi-label head, **class weighting for low FPR**.
-- `calibrate.py` — temperature/isotonic → calibrated `confidence`.
+- `calibrate.py` — temperature/isotonic → calibrated `confidence`; per-tactic decision
+  thresholds for the tactic head (`tune_tactic_thresholds`, ADR D30), tuned at training time on
+  out-of-fold train + val (`multilabel.out_of_fold_proba`) and shipped in the bundle metadata.
 - `attribution.py` — Captum integrated gradients / attention rollout → token spans.
 - `predict.py` — **single interface** `score(transcript) -> ScoreResult` selecting backend
   via config. All callers depend on this, not on a specific model.

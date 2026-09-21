@@ -77,20 +77,56 @@ QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.run \
 QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.stream \
     --split test --split authored_heldout --backend linear
 
+# Live-meter parameter sweep on cached per-turn traces (seconds, after a ~2 min trace build)
+QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.meter_sweep --min-turns 1,2,3 --damping 1,2,3
+
 # Level-2 cluster quality under number-rotation stress, with stability intervals
 python -m qorgan.eval.cluster --resamples 50
 
-pytest -q        # ~990 tests, all offline
+# Adversarial paraphrases: cue-free (A9) and legit-sounding (A9b), paired recall vs the sources
+QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.adversarial
+QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.adversarial --split adversarial_legit
+
+# The recogniser's register: every eval dialogue clean vs ASR-styled (lowercase, no
+# punctuation, numerals as words), paired; --drop-latin is the worst case for «SMS»/«CVV»
+QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.asr_realism [--drop-latin]
+
+pytest -q        # ~1,070 tests, all offline
+npm test         # JS core parity with Python + the DEVICE gate (browser embeddings, seconds)
+npm run gate:browser   # re-capture the browser's embeddings of the gate set (headless Chromium;
+                       # `npx playwright install chromium` once) after a model/runtime change
+
+# Retrain / evaluate on the DEVICE's embeddings (ADR D33): start the bridge, then any command
+# above with QORGAN_EMBED_BACKEND=device (vectors are cached; the first pass takes minutes)
+npm run device:serve -- --pages 4 &
+QORGAN_EMBED_BACKEND=device python -m qorgan.classifier.linear_train
 ```
 
-Shipped numbers (threshold 0.59, September): **test FPR 0.000 / recall 0.938 · authored_heldout
-FPR 0.000 / recall 1.000 · ood FPR 0.000 / recall 0.844**. Read them with their intervals:
-`authored_heldout` is **hand-written, not real calls** (18 scam / 24 legit), so its FPR of
-0.000 has a 95 % Clopper–Pearson interval of **[0.000, 0.142]** and its recall of 1.000 a
-lower bound of 0.815; five of its negatives were read during feature engineering and are
-reported separately (`data/anchors/inspection_ledger.yaml`). The harness prints intervals
-on every run. Methodology + caveats: [`docs/eval_report.md`](docs/eval_report.md), data
+Shipped numbers (threshold 0.59, 2026-09-21, computed on the **browser's own embeddings** —
+ADR D33, so they describe what the device decides, browser gate 0/200; corpus repaired, ADR D34):
+**test FPR 0.000 / recall 0.953 · authored_heldout FPR 0.000 / recall 0.889 · ood FPR 0.000 /
+recall 0.886 · ASR-styled FPR 0.000 on every split · adversarial (cue-free) recall 0.917 ·
+adversarial (legit-sounding) recall 0.815**. Read them with their intervals: `authored_heldout` is
+**hand-written, not real calls** (18 scam / 24 legit), so its FPR of 0.000 has a 95 %
+Clopper–Pearson interval of **[0.000, 0.142]** and its recall of 0.889 is 16/18 — the two
+misses are named in the report; test's 0.000 is **[0.000, 0.070]** on 51 negatives; five
+authored negatives were read during feature engineering and are reported separately
+(`data/anchors/inspection_ledger.yaml`). The server's native runtime is a cosine-0.98 proxy
+of the device and disagrees on 6/200 borderline calls — reported, not hidden. The harness
+prints intervals on every run. Methodology + caveats: [`docs/eval_report.md`](docs/eval_report.md), data
 provenance: [`data/README.md`](data/README.md).
+
+## Microphone mode (on-device speech recognition)
+
+On desktop browsers the live page can listen to a call directly: Kazakh and Russian Vosk
+models run in the browser (Vosklet/WASM, one instance each), the better hypothesis wins per
+utterance, and the transcript feeds the same on-device classifier and meter as replay —
+**no audio or text leaves the device** (ADR D26). Requirements the server already meets:
+`/live.html` and `/core/*` are served cross-origin isolated (COOP/COEP) because the
+recogniser needs SharedArrayBuffer; `python scripts/deploy_bootstrap.py` installs the
+hash-pinned Vosklet runtime under `site/vendor/` and packages the two model tarballs
+(~106 MB, downloaded once by the browser) — nothing is loaded live from a CDN. Phones are disabled until the
+Android bench passes (`scripts/spikes/vosklet_bench/`).
 
 ## Real calls (when they arrive)
 
