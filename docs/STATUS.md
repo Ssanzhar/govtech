@@ -1,8 +1,8 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: **2026-09-18**. Current-state doc for anyone picking the project up. Read this,
+_Last updated: **2026-09-21**. Current-state doc for anyone picking the project up. Read this,
 then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECISIONS.md`
-(ADRs D11–D34), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
+(ADRs D11–D37), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
 kept as history._
 
 ## TL;DR (September 2026)
@@ -24,6 +24,13 @@ kept as history._
   adversarial cue-free 0.927 · adversarial_legit 0.826 (was 0.651).
   **`authored_heldout` is hand-written, not real calls** — the locked real-call set (PLAN A3)
   does not exist yet; that is the biggest open item.
+- **The honest headline (2026-09-21, ADR D35):** on `shift` — 66 calls written by a *second
+  generator* (Claude, no sight of corpus / prompts / lexicons; `python -m qorgan.data.shift_set`)
+  — the same model has **recall 0.242 [0.111, 0.423] (8 / 33), FPR 0.030**; ru 0.455 · kk 0.182 ·
+  mixed 0.091. Every other split shares its generator with train. The cue lexicon fires on 6 / 33,
+  the embedding head puts textbook prize / customs / relative-in-trouble scams at ≤ 0.10; the
+  reassurance feature and the FPR story hold. Do not extend the lexicon from this set. The
+  utterance-level heads were a measured no-go (D36); the e5-large server tier is D37.
 - **Tests:** `pytest -q` → 1038 offline (+2 skipped until a real held-out set exists) · `npm test` → 28 (JS core parity, the ASR vote/alignment reducer, the int8
   runtime gate on 200 transcripts — which needs the self-hosted model files). Branch `sanzh-ts`.
 - **Verified in Chromium (2026-09-14, Playwright):** scene 1 on-device → 90/100 CRITICAL with
@@ -40,6 +47,7 @@ python -m qorgan.api                         # http://localhost:8000  (landing �
 pytest -q && npm test                        # Python suite · JS parity suite
 # retrain (needed after ANY data/lexicon change; also re-exports web/weights.json):
 python -m qorgan.data.build_corpus && python -m qorgan.classifier.linear_train
+python -m qorgan.data.shift_set                # the second-generator eval split (A12) -> processed/shift.jsonl
 python -m qorgan.web.client_config && python scripts/export_parity_fixtures.py   # refresh client config + golden fixtures
 QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.run --split test --split authored_heldout --split ood
 ```
@@ -58,6 +66,7 @@ accept numbered reports), `QORGAN_REPORT_RETENTION_DAYS=180`.
 | `site/core/asr.js`, `asr/web_models.py`, `api_limits.CrossOriginIsolationMiddleware` | On-device dual-language speech recognition (Vosklet), model tarball packaging, the COOP/COEP headers the live page needs (ADR D26). |
 | `eval/meter_sweep.py` | Offline live-meter sweep: per-turn traces cached once, variants replayed through the production meter (the A6 methodology, ADR D29). |
 | `eval/asr_realism.py` | Paired clean-vs-ASR-styled evaluation (FPR first, cue/reassurance survival, `--drop-latin` worst case) — the A10 gate (ADR D31). |
+| `data/shift_set.py`, `data/authored/shift/` | The generator-shift split (A12, ADR D35): 66 calls by a second generator, grounded from verbatim phrases, scrubbed, refused if they overlap any split; `python -m qorgan.data.shift_set` → `processed/shift.jsonl` + manifest. |
 | `data/clean.py` | Generation-artefact repair run by `build_corpus` (and by hand on `ood.jsonl`): unwrap/split jammed turns, delete backspaces, decode escapes; rows with lost Kazakh letters are dropped and listed in the manifest (ADR D34). |
 | `classifier/device_embed.py` | The `device` embed backend: the browser's own vectors through the headless-Chromium bridge (`npm run device:serve`), sqlite-cached; a warm cache works with the bridge down (ADR D33). |
 | `tests_js/tools/device_runtime.mjs` + `device_embed_server.mjs` + `browser_gate_embed.mjs` | Playwright tooling: the site's real worker as an embedding service, and the browser-gate fixture capture (ADRs D32/D33). |
@@ -70,6 +79,7 @@ accept numbered reports), `QORGAN_REPORT_RETENTION_DAYS=180`.
 | `tests/test_architecture.py` | The privacy invariants as tests. |
 
 ## Open threads (see PLAN_2026-09 for owners/estimates)
+- **Cross-generator recall (A12, ADR D35):** 8 / 33 on `shift`. Levers that are honest: real calls (A3), a third generator for *training* data, the `llm` cloud second opinion (needs `GEMINI_API_KEY` — not on this machine, so its numbers are still July's), the e5-large tier (D37). Not honest: lexicon entries mined from `shift`.
 - **Real data (A3):** no real calls yet; everything is synthetic or author-written. Stakeholders were asked for both scam and legit recordings. The intake protocol + tooling exist (A8: `docs/DATA_INTAKE.md`, `scripts/ingest_partner_calls.py`, hash-locked `real_heldout_v2`, `tests/data/test_heldout_lock.py` skips until a set exists); the legal owner has not reviewed the protocol yet.
 - **On-device ASR (B9, ADR D26):** microphone mode is live on **desktop** browsers — `site/core/asr.js` runs the small KK + RU Vosk models in Vosklet (one WASM instance each), votes per utterance, and feeds the same session/meter as replay; the live page and `/core/*` are served cross-origin isolated (COOP/COEP, `no-cache`). The three demo scenes pass through the recogniser (RU scam 81, bank call 14, KK scam 61). **Phones stay disabled until the Android bench passes** (`scripts/spikes/vosklet_bench/`). `deploy_bootstrap` packages the tarballs (~106 MB, gitignored). Whisper is a no-go (D25); server-side audio is gone for good (D12).
 - **B8 static quantisation — closed, no-go (2026-09-17, ADR D18):** int8 graphs drift
@@ -86,7 +96,7 @@ accept numbered reports), `QORGAN_REPORT_RETENTION_DAYS=180`.
 - **ASR realism (A10, ADR D31, uncommitted):** `python -m qorgan.eval.asr_realism [--drop-latin]` scores every eval dialogue clean and ASR-styled (`data/asr_style.py`: lowercase, no punctuation, numerals → words via `num2words`), paired, FPR first. Under the device-faithful runtime the register alone cost test FPR 5/52 on clean-trained heads → `build_corpus` adds an ASR-styled copy of every train row (`QORGAN_ASR_STYLE_TRAIN_FRACTION=1.0`; train 711 → 1,422; generated at build) and the two hyphenated KK cues have ASR forms. Same runtime before → after: styled test FPR 5/52 → 0, streaming test false-latch 5/52 → 3/52, adversarial-legit 0.872; costs: one server-side ood FP (`ood_neg_legit_bank_call_mixed_3`, 0.67 server / 0.15 browser) and a third transient authored latch (`real_neg_bank_fraud_alert_ru`, inspected anchor). Rollbacks: `models/linear_d30` (needs the pre-D31 lexicon — it hash-checks — and was trained on ORT 1.27).
 - **Runtime truth (ADR D32, uncommitted):** the browser's **WebGPU** path was broken for the int8 graph (cosine 0.78 to the server, slower than WASM) → `embed-worker.js` is WASM-only. The D17/D18/D28 "runtime residual" was an **ONNX Runtime version gap** (Python 1.27 vs onnxruntime-node 1.21): `onnxruntime==1.21.*` is pinned (`tests/test_runtime_pin.py`), Node is now bit-identical, and `npm test` drops from ~30 min to minutes. The browser (onnxruntime-web 1.22-dev, WASM) is a third build at cosine 0.982 / min 0.949: the runtime gate is `tests_js/integration/browser_gate.test.mjs` on `tests_js/fixtures/runtime_gate_browser.f32`, captured by `npm run gate:browser` (Playwright dev dependency, `npx playwright install chromium` once), asserted at the measured level (≥ 97 %, p95 < 0.15, Jaccard ≥ 0.9; 5/200 flips on both the old and the new heads). **Headline under the pinned runtime:** test 0.019 [0.000, 0.103] / 0.953 · authored 0.000 [0.000, 0.142] / 0.944 · ood 0.013 [0.000, 0.072] / 0.867 — the earlier "0.000 everywhere" was the server's 1.27 kernels. Follow-up **B10**: train/eval on device embeddings.
 - **Device embeddings (B10, ADR D33, uncommitted):** `QORGAN_EMBED_BACKEND=device` (`classifier/device_embed.py`) posts texts to `npm run device:serve` — the site's real `embed-worker.js` in headless Chromium (Playwright; `--pages 4` ≈ 0.1 s/text; sqlite cache `data/cache/device_embeddings.sqlite` keyed by model + browser build + text). The shipped heads are trained and every eval table computed with it; `metadata.json::embed_backend = device`; the server's `onnx` backend loads them as the documented proxy (`linear_train._PROXY_BACKENDS`). **Headline, on the device (corpus repaired, ADR D34):** test 0.000 [0.000, 0.070] / 0.953 (n=115) · authored 0.000 [0.000, 0.142] / 0.889 (16/18: `customs_ru` 0.515, `prize_phone_kk` 0.514) · ood 0.000 [0.000, 0.049] / 0.886 (n=118) · styled FPR 0 on every split · cue-free adversarial 0.917, legit-sounding 0.815 · streaming test 3/51 & 62/64, authored 3/24 & 15/18 — with the inspection ledger applied (`eval.stream` reports `(clean)`/`(inspected)` rows now): clean 1/19 [0.001, 0.260], inspected 2/5 · **browser gate 0/200, |Δrisk| 0.000, Jaccard 1.000**. The previously shipped heads decide the same on the device (their 1/52 and 1/75 FPs were the server runtime's). Server proxy vs device: 6/200, p95 0.114 — reported, not gated. Retrain needs the bridge running; the cache makes reruns free. Rollbacks (gitignored): `models/linear_d32` (native-1.21-trained), `linear_d30` (1.27, pre-D31 lexicon).
-- **Streamlit `app/`:** still runs (local embedder, Streamlit-side mic uses in-process Vosk) but is no longer the served product; retire per D4 once the PWA covers the three demo scenes.
+- **Streamlit `app/`:** kept on purpose (D4, decided 2026-09-21) as the easily-run local demo / dev harness — `streamlit run app/streamlit_app.py`, degrades to the `mock` backend without a model. Not a gate, not the deployed product: it scores in the server process and its mic mode sends audio to wherever Streamlit runs.
 - `models/linear_fp32/` (the fp32-trained heads) and `models/linear_embed_only/` are the local rollback bundles (gitignored); `models/xlmr/` and the e5-small experiment were deleted on 2026-09-14.
 
 ---

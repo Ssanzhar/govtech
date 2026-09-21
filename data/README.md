@@ -163,6 +163,30 @@ scam baiting calls"* (arXiv:2307.01965).
   scammers; a human attacker may be cruder or cleverer. The split must be regenerated
   whenever the lexicon changes (the manifest records the lexicon hash it was built against).
 
+## Generator-shift split — `data/authored/shift/` → `processed/shift.jsonl` (PLAN A12, ADR D35, 2026-09-21)
+- **What:** 66 hand-authored dialogues (33 scams / 33 confusable legitimate calls; 22 each in
+  ru / kk / mixed) written by a **second generator** — Claude (Opus 5) in a Claude Code
+  session — from its own knowledge of Kazakhstani call patterns, with different prompting and
+  **no sight of the corpus, the generation prompts or the cue / reassurance lexicons**. Every
+  language file covers all 15 tactics; per file ≥ 4 scams are deliberately subtle
+  (institutional register, requests phrased indirectly), ≥ 2 are short (4–5 turns), ≥ 2 long
+  (12–16 turns). Legit rows are the confusable kind: real fraud alerts that say "we never ask
+  for a code", card couriers, tariff notices, debt collectors, a friend asking for a transfer.
+- **Why:** `test` shares its generator (Gemini) and prompts with `train`, and the two adversarial
+  splits are Gemini paraphrasing Gemini; none of them measures how much of the headline is one
+  model's house style. This set does. It is an **evaluation split only** — never train on it,
+  never derive lexicon entries from it (its author has read it, so it is "inspected" by
+  construction, like `authored_heldout`; it is still the only cross-generator signal we have).
+- **Format:** raw rows are plain turns + verbatim `trigger_phrases` (+ a `scenario` gloss);
+  `python -m qorgan.data.shift_set` grounds phrases into spans (`spans_from_phrases`, a
+  non-verbatim phrase raises), runs `clean_dialogue` + `scrub_dialogue`, deduplicates, refuses
+  any overlap with train / val / test / authored_heldout / ood / adversarial / adversarial_legit
+  (normalised transcript), and writes `processed/shift.jsonl` + `shift.manifest.json`
+  (counts, content hash, scenarios). `tests/data/test_shift_set.py` asserts the balance, the
+  tactic coverage and the disjointness on the committed files.
+- **Limits:** one author, 66 rows (recall CI on 33 positives is ±0.15); the author's Kazakh is
+  competent, not native; it is still synthetic — only real calls (A3) can replace it.
+
 ## Real calls — `data/real/` (PLAN_2026-09 A8; never in git)
 - Protocol, batch format, roles and the split rule are in `docs/DATA_INTAKE.md`;
   ingest with `scripts/ingest_partner_calls.py`. Utterances are scrubbed, caller numbers

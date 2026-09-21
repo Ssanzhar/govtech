@@ -957,3 +957,119 @@ Streaming (with the inspection ledger):
 Versus the D33 tables: test and authored unchanged (the dropped test row was a legit call the
 model already cleared); ood recall 0.867 → **0.886** (one of the dropped rows was a scam the
 model missed — corrupted text, not a detection failure); everything else within a call.
+
+
+## Addendum (2026-09-21, evening) — a second generator's calls (ADR D35), utterance-level heads (ADR D36), a server-tier embedder (ADR D37)
+
+### The generator-shift split: `python -m qorgan.eval.run --split shift --by-language`
+
+66 dialogues authored by a second generator (Claude, no sight of the corpus / prompts /
+lexicons; `data/README.md`), 33 scams / 33 confusable legit, 22 per language, evaluation-only.
+Shipped device-trained heads, device embeddings, threshold 0.59:
+
+| Split | FPR [95% CI] | Precision | Recall [95% CI] | F1 | PR-AUC [95% CI] | N |
+|---|---|---|---|---|---|---|
+| shift | 0.030 [0.001, 0.158] | 0.889 | 0.242 [0.111, 0.423] | 0.381 | 0.870 [0.749, 0.961] | 66 |
+| test | 0.000 [0.000, 0.070] | 1.000 | 0.953 [0.869, 0.990] | 0.976 | 1.000 [1.000, 1.000] | 115 |
+
+| Split | FPR [95% CI] | Precision | Recall [95% CI] | F1 | PR-AUC [95% CI] | N |
+|---|---|---|---|---|---|---|
+| kk | 0.000 [0.000, 0.285] | 1.000 | 0.182 [0.023, 0.518] | 0.308 | 0.911 [0.738, 1.000] | 22 |
+| mixed | 0.091 [0.002, 0.413] | 0.500 | 0.091 [0.002, 0.413] | 0.154 | 0.779 [0.533, 0.991] | 22 |
+| ru | 0.000 [0.000, 0.285] | 1.000 | 0.455 [0.167, 0.766] | 0.625 | 0.942 [0.788, 1.000] | 22 |
+
+Read plainly: **the shipped model catches 8 of 33 scams written in another register.** Median
+scam risk 0.31; 17 / 33 above 0.30, 14 / 33 above 0.40 (where two legit calls also sit:
+`shift_legit_mixed_05`, a teacher collecting money for a class trip, 0.62; `shift_legit_kk_11`,
+a deposit sales call, 0.47). The cue lexicon fired on 6 / 33 scams — and one of those is the
+*callee* quoting the SMS warning ("никому не говорите", `shift_scam_mixed_03`, risk 0.02).
+Textbook schemes score near zero: customs-fee courier (`kk_03`, 0.02), prize with delivery fee
+(`kk_06` 0.03, `mixed_06` 0.00), relative-in-trouble (`mixed_08` 0.04, `kk_08` 0.10), mule
+recruitment (`mixed_07` 0.07). What still works: the three real fraud-alert calls and the card
+courier — the reassurance feature — score ≤ 0.01; the two police / safe-account long calls
+score 0.73–0.87; the subtle "read me what the app shows" calls reach 0.21–0.51. The tactic
+head is at F1 0 for 11 of 15 tactics on this set. The two adversarial splits (0.917 / 0.807)
+did not predict this: they are Gemini paraphrasing Gemini. This number replaces the headline
+until real calls exist; the mitigation ladder is in ADR D35.
+
+### Utterance-level tactic head — measured no-go (ADR D36)
+
+Device embeddings (already computed per utterance for the highlights), weak instance labels
+(evidence utterances × dialogue tags, styled copies inherit the mask), grouped 5-fold
+out-of-fold threshold tuning as in D30, verbatim-cue merge as in `predict`. Micro-F1 over
+(dialogue, tactic) pairs after the cue merge; the baseline row reproduces the shipped head on
+the device runtime (the D30 table was the server runtime's):
+
+| Variant | test micro-F1 | authored micro-F1 | ood micro-F1 |
+|---|---|---|---|
+| shipped dialogue head (D30 thresholds) — baseline | 0.804 (P 0.78 / R 0.83, 2.07 tags) | 0.609 (P 0.60 / R 0.61, 1.38 tags) | 0.490 (P 0.35 / R 0.82, 0.87 tags) |
+| utterance head, balanced LR, max pooling | 0.545 (P 0.38 / R 0.94, 4.71 tags) | 0.538 (P 0.40 / R 0.81, 2.71 tags) | 0.255 (P 0.15 / R 0.93, 2.36 tags) |
+| + 2 MIL relabel rounds | 0.552 (P 0.39 / R 0.95, 4.69 tags) | 0.573 (P 0.44 / R 0.82, 2.55 tags) | 0.248 (P 0.14 / R 0.93, 2.43 tags) |
+| utterance head, mean of top-2 | 0.692 (P 0.56 / R 0.91, 3.17 tags) | 0.545 (P 0.52 / R 0.58, 1.52 tags) | 0.376 (P 0.24 / R 0.93, 1.47 tags) |
+| utterance head, unbalanced LR, max, wide grid | 0.675 (P 0.82 / R 0.58, 1.37 tags) | 0.458 (P 0.73 / R 0.33, 0.62 tags) | 0.328 (P 0.25 / R 0.48, 0.71 tags) |
+| utterance head, balanced C=0.3, softmax pooling | 0.743 (P 0.74 / R 0.74, 1.93 tags) | 0.596 (P 0.60 / R 0.60, 1.36 tags) | 0.475 (P 0.37 / R 0.66, 0.66 tags) |
+| stacking: transcript embedding + utterance aggregates | 0.783 (P 0.76 / R 0.81, 2.04 tags) | 0.608 (P 0.69 / R 0.54, 1.07 tags) | 0.416 (P 0.30 / R 0.70, 0.89 tags) |
+| ensemble 0.5 / 0.5 (dialogue + utterance-max) | 0.814 (P 0.84 / R 0.79, 1.81 tags) | 0.620 (P 0.72 / R 0.54, 1.02 tags) | 0.493 (P 0.37 / R 0.75, 0.76 tags) |
+| ensemble 0.5 / 0.5 (dialogue + softmax pooling) | 0.823 (P 0.85 / R 0.80, 1.81 tags) | 0.598 (P 0.64 / R 0.56, 1.19 tags) | 0.464 (P 0.36 / R 0.66, 0.69 tags) |
+
+Max pooling over-fires (4.7 tags per dialogue); the best ensemble is +0.01–0.02 on `test`
+and ±0.01 elsewhere — noise at these sizes. The spans are not tied to tactics, so the instance
+labels add nothing the whole-transcript embedding does not already carry.
+
+### Utterance-level risk mixed into the dialogue risk — a knob, not a ship (ADR D36)
+
+A separate calibrated utterance-risk head (same weak labels, 2 MIL rounds); risk = (1 − w) ×
+dialogue head + w × max utterance prob. As an extra *feature* or as pure max pooling the FPR
+gate fails (1–2 ood negatives fire, one at 0.98) — those rows are in the scratchpad JSON.
+The mix, at 0.59:
+
+| w (utterance share) | test FP / max neg | authored FP / max neg | ood FP / max neg | shift FP / max neg | recall test · authored · ood · adv · adv-legit · shift |
+|---|---|---|---|---|---|
+| 0.0 | 0 / 0.28 | 0 / 0.51 | 0 / 0.31 | 1 / 0.62 | 0.953 · 0.889 · 0.886 · 0.917 · 0.807 · 0.242 |
+| 0.15 | 0 / 0.31 | 0 / 0.46 | 0 / 0.30 | 0 / 0.53 | 0.953 · 0.889 · 0.886 · 0.917 · 0.853 · 0.212 |
+| 0.25 | 0 / 0.33 | 0 / 0.42 | 0 / 0.31 | 0 / 0.46 | 0.953 · 0.889 · 0.864 · 0.908 · 0.872 · 0.242 |
+| 0.35 | 0 / 0.36 | 0 / 0.39 | 0 / 0.40 | 0 / 0.40 | 0.969 · 0.944 · 0.841 · 0.908 · 0.881 · 0.273 |
+| 0.5 | 0 / 0.39 | 0 / 0.34 | 0 / 0.52 | 0 / 0.31 | 0.953 · 0.889 · 0.886 · 0.917 · 0.936 · 0.273 |
+
+w = 0.15 is nearly free (only adversarial-legit recall and the authored margin move);
+w = 0.35 buys authored 17 / 18 and test 0.969 at the price of two ood scams and a 0.40 ood
+margin; w = 0.5 buys adversarial-legit 0.936 with an ood negative at 0.52. None of it moves
+`shift` beyond 0.27. Not shipped: a second head + JS port + fixtures + gate re-capture for
+≤ 5 adversarial dialogues, before real calls can say which end of the trade matters.
+
+### Streaming on `shift`: `python -m qorgan.eval.stream --split shift --backend linear`
+
+| Split | False-Latch Rate [95% CI] | Alert-Hit Rate [95% CI] | Median Turns | P90 Turns | N+ | N- |
+|---|---|---|---|---|---|---|
+| shift | 0.000 [0.000, 0.106] | 0.485 [0.308, 0.665] | 5.000 | 8.000 | 33 | 33 |
+
+The live meter (windows + hard-signal floors) alerts on 16 / 33 — twice the whole-transcript
+recall — with no false latch on the 33 legit calls; median 5 turns to alert.
+
+### A stronger server-side embedder — `multilingual-e5-large`, same heads (ADR D37)
+
+`QORGAN_EMBED_BACKEND=sentence-transformers QORGAN_EMBED_MODEL_NAME=intfloat/multilingual-e5-large
+QORGAN_LINEAR_MODEL_DIR=models/linear_e5large python -m qorgan.eval.run --split shift --split test
+--split authored_heldout --split ood --split adversarial --split adversarial_legit --by-language`
+
+| Split | FPR [95% CI] | Precision | Recall [95% CI] | F1 | PR-AUC [95% CI] | N |
+|---|---|---|---|---|---|---|
+| shift | 0.000 [0.000, 0.106] | 1.000 | 0.242 [0.111, 0.423] | 0.390 | 0.953 [0.897, 0.990] | 66 |
+| test | 0.000 [0.000, 0.070] | 1.000 | 0.953 [0.869, 0.990] | 0.976 | 1.000 [0.999, 1.000] | 115 |
+| authored_heldout | 0.000 [0.000, 0.142] | 1.000 | 0.889 [0.653, 0.986] | 0.941 | 1.000 [1.000, 1.000] | 42 |
+| authored_heldout (clean) | 0.000 [0.000, 0.176] | 1.000 | 0.889 [0.653, 0.986] | 0.941 | 1.000 [1.000, 1.000] | 37 |
+| authored_heldout (inspected) | 0.000 [0.000, 0.522] | 0.000 | 0.000 [-] | 0.000 | 0.000 [-] | 5 |
+| ood | 0.000 [0.000, 0.049] | 1.000 | 0.864 [0.726, 0.948] | 0.927 | 0.995 [0.985, 1.000] | 118 |
+| adversarial | 0.000 [-] | 1.000 | 0.917 [0.849, 0.962] | 0.957 | 0.000 [-] | 109 |
+| adversarial_legit | 0.000 [-] | 1.000 | 0.853 [0.773, 0.914] | 0.921 | 0.000 [-] | 109 |
+
+| Split | FPR [95% CI] | Precision | Recall [95% CI] | F1 | PR-AUC [95% CI] | N |
+|---|---|---|---|---|---|---|
+| kk | 0.000 [0.000, 0.285] | 0.000 | 0.000 [0.000, 0.285] | 0.000 | 0.952 [0.842, 1.000] | 22 |
+| mixed | 0.000 [0.000, 0.285] | 1.000 | 0.273 [0.060, 0.610] | 0.429 | 0.975 [0.889, 1.000] | 22 |
+| ru | 0.000 [0.000, 0.285] | 1.000 | 0.455 [0.167, 0.766] | 0.625 | 0.969 [0.861, 1.000] | 22 |
+
+Same model on every Gemini split (adversarial-legit +0.04 is the only visible move), the same
+8 / 33 on `shift` with Kazakh at 0 / 11, one fewer false positive, a better threshold-free
+ranking (PR-AUC 0.953 vs 0.870). A 3× encoder does not buy cross-generator recall: the
+bottleneck is one generator's register in `train`. No tier.

@@ -547,3 +547,72 @@ committed augment files stay as generated for provenance; the drop is a build-ti
 reconstructing the lost letters (each `\n` stands for a different letter; guessing would
 fabricate evaluation data) and hand-editing the eval files (the rule is reproducible, the
 edit would not be).
+
+### D35 — A second-generator evaluation split (`shift`): the headline recall was the generator's style (2026-09-21, PLAN A12)
+Every evaluation split so far shared a generator with `train`: `test` is Gemini with the same
+prompts, `adversarial` / `adversarial_legit` are Gemini paraphrasing Gemini, `ood` is a July
+Gemini stress set; `authored_heldout` (42 rows, 18 scams) is the only exception and it was
+partly used for feature engineering. **Decision:** a hand-authored split written by a
+*different* generator (Claude, Opus 5) from its own knowledge of Kazakhstani calls, with
+different prompting and no access to the corpus, the prompts or the lexicons — 66 dialogues,
+33 scams / 33 confusable legit, 22 per language, all 15 tactics per language, with subtle,
+short and long scams on purpose (`data/authored/shift/`, built by `qorgan.data.shift_set`,
+proven disjoint from every other split before it is written). It is evaluation-only and is
+recorded as inspected by construction. **What it measured, on the device runtime, at 0.59:**
+recall **0.242 [0.111, 0.423]** (8 / 33) against 0.953 on `test`; FPR 0.030 (1 / 33 — a
+teacher collecting money for a school trip, 0.62); ru 0.455 · kk 0.182 · mixed 0.091; tactic
+F1 near zero. The cue lexicon fired on 6 / 33 scams (the requests are phrased as "read me what
+the app shows", "защищённый счёт", "оқып беріңіз"); the embedding head scored textbook
+prize / customs-fee / relative-in-trouble scams at 0.00–0.10. The reassurance feature did its
+job (the three real fraud-alert calls and the courier scored ≤ 0.01). **Consequence:** the
+0.95 / 0.92 recall figures describe Gemini's register, not scam calls in general; the number
+the README leads with is now this one until real calls (A3) exist. The threshold is not the
+lever (0.40 catches 14 / 33 and fires on 2 legit). Utterance-level pooling is not the lever
+(D36). The lexicon must **not** be extended from this set's phrasing (that would make it a
+second `authored_heldout`); a third generator or real calls are the only ways to move it
+honestly. What can move it: a stronger embedder (D37), the cloud second opinion (the `llm`
+backend has no current numbers — its key is not on this machine), and training data from
+more than one generator. **Rejected:** treating `shift` as a data top-up (it is the only
+cross-generator signal we have), and re-authoring it "harder" or "easier" after seeing scores.
+
+### D36 — Utterance-level heads: measured no-go for tactics, a recorded knob for risk (2026-09-21)
+Both inference paths already embed every utterance (for the highlights), so utterance-level
+heads cost nothing extra on the device. Tried on the device embeddings with weak labels
+(evidence utterances = those overlapping a trigger span; styled copies inherit the source's
+mask; 2 MIL relabel rounds), grouped out-of-fold threshold tuning exactly like D30, cue merge
+exactly like `predict`: **tactics** — max / top-2 / top-3 / softmax pooling, balanced or
+unbalanced instance LR, wide threshold grid, stacking, 30 / 50 % ensembles. Best ensemble test
+micro-F1 0.816–0.823 vs 0.804 (device baseline), authored 0.60–0.63 vs 0.609, ood ≤ 0.490:
+noise; every stand-alone utterance head is worse (max pooling over-fires: 4.7 tags per
+dialogue). The spans are not tied to tactics, so the instance labels are too weak to add to
+what the whole-transcript embedding already carries. **Decision: no.** A tactic-per-span
+relabel (needs the LLM key) is the only version worth retrying. **Risk** — a separate
+utterance-level calibrated risk head (same weak labels, MIL-refined), mixed into the dialogue
+risk at weight *w*: as an extra feature or as pure max pooling it fails the FPR gate (1–2 ood
+negatives fire, one at 0.98); as a mix, at *w* = 0.15 nothing moves except legit-register
+adversarial recall 0.807 → 0.853 and the authored margin (0.51 → 0.46); at *w* = 0.35 test
+0.969 / authored 17 / 18 but ood loses two calls and its margin drops 0.31 → 0.40; at
+*w* = 0.5 adversarial-legit 0.936 with the ood margin at 0.52 — a hairline the runtime
+history says not to trust. On `shift` the mix moves recall 0.24 → 0.27 at best and removes
+the one FP. **Decision: not shipped** — a second head, a JS port, new fixtures and a gate
+re-capture for ≤ 5 adversarial dialogues; recorded as the knob it is, to be re-judged on real
+calls. Scripts and JSON in the session scratchpad; the numbers are in `docs/eval_report.md`.
+
+### D37 — A stronger server-side embedder (`multilingual-e5-large`) does not earn a tier (2026-09-21)
+The council's publication posture (D15) left room for "a stronger private model behind the
+partner API". Measured: the same hybrid heads on `intfloat/multilingual-e5-large` (fp32,
+1024-d, 2.2 GB, `QORGAN_EMBED_BACKEND=sentence-transformers`, bundle `models/linear_e5large`,
+gitignored) against the shipped e5-base device bundle. On every Gemini-generated split the
+two are the same model to within a call: test 0.953 / 0.953, authored 0.889 / 0.889, ood 0.864
+/ 0.886, cue-free adversarial 0.917 / 0.917, legit-sounding adversarial 0.853 / 0.815, FPR 0
+everywhere. On the second-generator split (D35) it catches **the same 8 of 33** (kk 0 / 11,
+mixed 3 / 11, ru 5 / 11 — Kazakh got worse, the others slightly better), with the one
+e5-base false positive gone and a better threshold-free ranking (PR-AUC 0.953 vs 0.870).
+**Decision: no server tier.** Three times the parameters do not move cross-generator recall,
+so the ceiling is the training distribution — one generator's register — not the embedder;
+a tier that costs 2.2 GB, a PyTorch runtime and ~15 min of CPU for six eval splits, and
+that the partner API has no scoring endpoint for, buys nothing measurable. Re-open only
+with training data from more than one generator or real calls (A3), where a larger encoder
+might finally have something different to learn from. **Not tried:** BGE-M3 (same reasoning
+applies: the data is the bottleneck), contrastive fine-tuning of the encoder (would learn
+the same register better — the wrong direction until A3).

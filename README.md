@@ -113,7 +113,16 @@ misses are named in the report; test's 0.000 is **[0.000, 0.070]** on 51 negativ
 authored negatives were read during feature engineering and are reported separately
 (`data/anchors/inspection_ledger.yaml`). The server's native runtime is a cosine-0.98 proxy
 of the device and disagrees on 6/200 borderline calls — reported, not hidden. The harness
-prints intervals on every run. Methodology + caveats: [`docs/eval_report.md`](docs/eval_report.md), data
+prints intervals on every run.
+
+**The number to lead with, though, is this one (2026-09-21, ADR D35):** on a 66-call split
+written by a *second generator* (`shift`: 33 scams / 33 confusable legit, ru / kk / mixed,
+authored without sight of the corpus or the lexicons — `data/README.md`), the same model has
+**recall 0.242 [0.111, 0.423] and FPR 0.030 [0.001, 0.158]** — 8 of 33 scams. Every other
+split above shares its generator (Gemini) with the training data, so their recall is largely
+that generator's register. The reassurance feature still holds (real fraud alerts score
+≤ 0.01) and the FPR story survives, but until real calls exist the recall claim is "one
+generator's scams", and the `shift` table in the eval report is the honest one. Methodology + caveats: [`docs/eval_report.md`](docs/eval_report.md), data
 provenance: [`data/README.md`](data/README.md).
 
 ## Microphone mode (on-device speech recognition)
