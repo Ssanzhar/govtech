@@ -103,3 +103,11 @@ def test_export_names_the_embedder_the_browser_must_load(monkeypatch):
     }
     assert web_model_id(Path("site/models/qorgan/multilingual-e5-base-static-int8")) == "qorgan/multilingual-e5-base-static-int8"
     assert web_model_id(Path("/elsewhere/vendor/model")) == "vendor/model"
+
+
+def test_export_names_the_on_device_asr_models():
+    data = export_client_config()
+    cfg = get_config()
+    assert data["asr"]["models"]["kk"] == {"id": cfg.vosk_model_kk, "url": f"vosk/{cfg.vosk_model_kk}.tar.gz"}
+    assert data["asr"]["models"]["ru"]["id"] == cfg.vosk_model_ru
+    assert data["asr"]["sample_rate"] == cfg.asr_sample_rate

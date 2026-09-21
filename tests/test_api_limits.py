@@ -44,3 +44,15 @@ def test_normal_requests_pass_through(client):
     assert client.get("/api/health").status_code == 200
     res = client.post("/api/analyze", json={"transcript": "Алло, это банк.", "backend": "mock"})
     assert res.status_code == 200
+
+
+def test_only_the_live_page_and_its_worker_scripts_are_cross_origin_isolated(client):
+    for path in ("/live.html", "/core/embed-worker.js", "/core/asr.js"):
+        res = client.get(path)
+        assert res.status_code == 200, path
+        assert res.headers["cross-origin-opener-policy"] == "same-origin"
+        assert res.headers["cross-origin-embedder-policy"] == "require-corp"  # workers inherit the document's COEP
+        assert res.headers["cache-control"] == "no-cache"  # stale cached headers would block the worker
+    for path in ("/", "/admin.html", "/api/health"):
+        res = client.get(path)
+        assert res.status_code == 200 and "cross-origin-embedder-policy" not in res.headers, path

@@ -1,0 +1,47 @@
+<!doctype html><meta charset="utf-8"><title>B9 harness</title>
+<select id="clip"><option>ru_scam</option><option>ru_legit</option><option>kk_scam</option></select>
+<button id="run">Run</button><pre id="out">idle</pre>
+<script type="module">
+import { createDeviceAsr, isSupported } from "./core/asr.js";
+import { createDeviceRuntime } from "./core/device.js";
+const out = document.getElementById("out");
+const log = (s) => { out.textContent += "\n" + s; };
+let asr = null, runtime = null;
+document.getElementById("run").onclick = async () => {
+  out.textContent = "running; support=" + JSON.stringify(isSupported());
+  const clip = document.getElementById("clip").value; window.__raw = [];
+  try {
+    runtime ??= await createDeviceRuntime({});
+    await runtime.warmup();
+    const cfg = runtime.config;
+    const models = Object.fromEntries(Object.entries(cfg.asr.models).map(([l, m]) => [l, { id: m.id, url: new URL("models/" + m.url, location.href).href }]));
+    const utterances = [];
+    let state = runtime.newSession("ru");
+    let queue = Promise.resolve();
+    window.__onUtt = (u) => { utterances.push(u); queue = queue.then(async () => { const o = await runtime.advance(state, u.text, u.confidence); state = o.state; log(`utt[${u.language} ${u.confidence.toFixed(2)}] meter=${o.update.meter.score.toFixed(0)} band=${o.update.band} :: ${u.text}`); }); };
+    asr ??= await createDeviceAsr({
+      models,
+      onPartial: ({ text }) => { window.__lastPartial = text; },
+      onUtterance: (u) => window.__onUtt(u),
+      onStatus: (m) => log("status: " + m),
+      onError: (e) => log("ERROR " + e),
+      onRaw: (ev) => { const d = typeof ev.detail === "string" ? JSON.parse(ev.detail) : ev.detail; const words = d.result || d.partial_result || []; const conf = words.length ? words.reduce((a, w) => a + (w.conf ?? 1), 0) / words.length : null; if (ev.type === "result" || (d.partial || "").length > 0) window.__raw.push(`${ev.type} ${ev.language} @${(ev.at / 1000).toFixed(1)} conf=${conf?.toFixed(2)} words=${words.length} :: ${(d.text || d.partial || "").slice(0, 70)}`); },
+    });
+    const audio = new Audio(`clips/${clip}.wav`);
+    audio.crossOrigin = "anonymous";
+    await new Promise((r) => { audio.oncanplaythrough = r; audio.load(); });
+    const stream = audio.captureStream();
+    const t0 = performance.now();
+    await asr.start(stream);
+    await audio.play();
+    await new Promise((r) => { audio.onended = r; });
+    await new Promise((r) => setTimeout(r, 1500));
+    await asr.stop();
+    await queue;
+    const summary = runtime.summarize(state);
+    for (const r of window.__raw.filter((x) => x.startsWith("result")).slice(-6)) log("raw " + r);
+    log(`clip ${clip}: ${utterances.length} utterances in ${((performance.now() - t0) / 1000).toFixed(1)} s wall (audio ${audio.duration.toFixed(1)} s); final ${summary.final_score.toFixed(0)}/100 ${summary.band}`);
+  } catch (e) { log("ERROR " + (e.stack || e)); }
+  log("DONE");
+};
+</script>

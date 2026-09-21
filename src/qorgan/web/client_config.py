@@ -82,7 +82,20 @@ def export_client_config() -> dict[str, Any]:
             "prefix": "query: ",
             "model_name": cfg.embed_model_name,
         },
+        # On-device speech recognition (PLAN B9): the same small Vosk models the July
+        # server path used, self-hosted as USTAR tarballs under site/models/vosk/.
+        "asr": {
+            "models": {
+                "kk": {"id": cfg.vosk_model_kk, "url": f"{WEB_ASR_MODELS_SUBDIR}/{cfg.vosk_model_kk}.tar.gz"},
+                "ru": {"id": cfg.vosk_model_ru, "url": f"{WEB_ASR_MODELS_SUBDIR}/{cfg.vosk_model_ru}.tar.gz"},
+            },
+            "sample_rate": cfg.asr_sample_rate,
+        },
     }
+
+
+# Relative to site/models/ (the page resolves it against `models/`).
+WEB_ASR_MODELS_SUBDIR = "vosk"
 
 
 def web_model_id(onnx_dir: Path) -> str:

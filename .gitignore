@@ -19,6 +19,10 @@ htmlcov/
 # ...but not the self-hosted 278 MB ONNX embedder (deploy_bootstrap downloads it)
 site/models/Xenova/
 site/models/qorgan/
+# ...nor the Vosk speech models (~106 MB, packaged by deploy_bootstrap for on-device ASR)
+site/models/vosk/
+# ...nor the pinned Vosklet runtime (2.5 MB wasm, hash-verified by deploy_bootstrap)
+site/vendor/
 data/raw/
 data/synthetic/
 # Real partner calls (docs/DATA_INTAKE.md): scrubbed + hashed, still never in git.

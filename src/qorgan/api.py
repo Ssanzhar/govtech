@@ -24,7 +24,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from qorgan.api_admin import router as admin_router
 from qorgan.api_admin_stats import router as admin_stats_router
-from qorgan.api_limits import BodySizeLimitMiddleware, validation_error_handler
+from qorgan.api_limits import BodySizeLimitMiddleware, CrossOriginIsolationMiddleware, validation_error_handler
 from qorgan.api_live import router as live_router
 from qorgan.api_partner import router as partner_router
 from qorgan.api_partner_export import router as partner_export_router
@@ -43,6 +43,7 @@ app = FastAPI(
 )
 # Request hygiene for every route: bounded bodies, 422s that never echo the payload.
 app.add_middleware(BodySizeLimitMiddleware)
+app.add_middleware(CrossOriginIsolationMiddleware)  # live.html only: on-device ASR needs SharedArrayBuffer
 app.add_exception_handler(RequestValidationError, validation_error_handler)
 
 

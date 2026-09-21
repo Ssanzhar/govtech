@@ -1,6 +1,7 @@
-/* Qorğan live call — replay runs ON THIS DEVICE (site/core, no server round-trip); only an
-   microphone (on-device, pending) drive the same meter UI; both end in a
-   post-call summary with the consent-gated report button (POST .../report). */
+/* Qorğan live call — replay and microphone both run ON THIS DEVICE (site/core: the
+   classifier in a worker, speech recognition in Vosklet/WASM — PLAN B9); neither sends
+   audio or text anywhere. Both end in a post-call summary with the consent-gated report
+   button (POST /api/reports is the only content-carrying request). */
 (() => {
   "use strict";
 
@@ -304,9 +305,13 @@
 
   startBtn.addEventListener("click", runReplay);
 
-  // ── microphone mode ──────────────────────────────────────────────────────────
+  // ── microphone mode (on-device speech recognition, PLAN B9) ──────────────────
 
-  let micSessionId = null;
+  const ASR_MODELS_BASE = "models/"; // config urls are relative to site/models/
+  let asr = null; // the running recogniser
+  let micStream = null;
+  let micState = null; // the live session while the microphone runs
+  let micQueue = Promise.resolve(); // utterances are scored one at a time, in order
 
   const disableMicChip = (reason) => {
     const input = micChip?.querySelector("input");
@@ -317,14 +322,110 @@
   };
 
   const checkMicCapability = async () => {
-    // No server probe: microphone mode arrives as on-device speech recognition (PLAN B7).
-    const reason = "microphone mode is coming as an on-device feature — this server never accepts audio";
-    disableMicChip(reason);
-    setNote(micNote, reason);
+    // No server probe — the server never accepts audio (ADR D12); support is a property
+    // of this browser: cross-origin isolation, AudioWorklet, a microphone, and (for now)
+    // not a phone (ADR D25: the on-device model is unmeasured there).
+    try {
+      const { isSupported } = await import("./core/asr.js");
+      const support = isSupported();
+      if (support.ok) {
+        setNote(micNote, "on-device speech recognition — audio never leaves this browser; the two speech models (~106 MB) download once");
+        return;
+      }
+      const reason = `microphone mode is unavailable here: ${support.reasons.join("; ")}`;
+      disableMicChip(reason);
+      setNote(micNote, reason);
+    } catch (e) {
+      disableMicChip(String(e.message || e));
+      setNote(micNote, `microphone mode is unavailable here: ${e.message || e}`, true);
+    }
   };
 
-  // Microphone capture returns as an on-device feature (no audio leaves the browser);
-  // until then the chip is disabled with the server's stated reason.
+  const modelSpecs = (config) =>
+    Object.fromEntries(
+      Object.entries(config.asr?.models || {}).map(([language, m]) => [language, { id: m.id, url: new URL(ASR_MODELS_BASE + m.url, location.href).href }])
+    );
+
+  const onMicUtterance = ({ text, confidence, language }) => {
+    micQueue = micQueue
+      .then(async () => {
+        if (!micState) return;
+        const runtime = await deviceRuntime();
+        const out = await runtime.advance(micState, text, confidence);
+        micState = out.state;
+        showPartial("");
+        applyUpdate(toUpdate(out.update, micState), `${text}  ·  ${language.toUpperCase()} ${(confidence * 100).toFixed(0)}%`);
+      })
+      .catch((e) => setNote(micNote, `analysis failed — ${e.message || e}`, true));
+  };
+
+  const startMic = async () => {
+    if (running) return;
+    running = true;
+    micStartBtn.disabled = true;
+    resetCallUi();
+    try {
+      setNote(micNote, "preparing the on-device model…");
+      const runtime = await deviceRuntime();
+      const { createDeviceAsr } = await import("./core/asr.js");
+      if (!asr) {
+        asr = await createDeviceAsr({
+          models: modelSpecs(runtime.config),
+          onPartial: ({ text }) => showPartial(text),
+          onUtterance: onMicUtterance,
+          onStatus: (message) => setNote(micNote, message),
+          onError: (e) => setNote(micNote, `recognition error — ${e.message || e}`, true),
+        });
+      }
+      setNote(micNote, "waiting for microphone permission…");
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
+      micState = runtime.newSession(locale());
+      await asr.start(micStream);
+      micStopBtn.hidden = false;
+      micStartBtn.hidden = true;
+    } catch (e) {
+      running = false;
+      micStartBtn.disabled = false;
+      setNote(micNote, `could not start the microphone — ${e.message || e}`, true);
+      stopTracks();
+    }
+  };
+
+  const stopTracks = () => {
+    for (const track of micStream?.getTracks() || []) track.stop();
+    micStream = null;
+  };
+
+  const stopMic = async () => {
+    micStopBtn.disabled = true;
+    try {
+      if (asr) await asr.stop();
+      stopTracks();
+      await micQueue; // let the last utterance finish scoring
+      const runtime = await deviceRuntime();
+      if (micState && micState.meter?.turn_index > 0) {
+        lastState = micState;
+        renderSummary(runtime.summarize(micState), null);
+      } else {
+        setNote(micNote, "no speech was recognised");
+      }
+    } catch (e) {
+      setNote(micNote, `could not end the call cleanly — ${e.message || e}`, true);
+    } finally {
+      micState = null;
+      running = false;
+      micStopBtn.hidden = true;
+      micStopBtn.disabled = false;
+      micStartBtn.hidden = false;
+      micStartBtn.disabled = false;
+    }
+  };
+
+  micStartBtn?.addEventListener("click", startMic);
+  micStopBtn?.addEventListener("click", stopMic);
+  window.addEventListener("pagehide", () => { stopTracks(); asr?.dispose(); });
 
   // ── mode toggle ──────────────────────────────────────────────────────────────
 

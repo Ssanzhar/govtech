@@ -141,6 +141,19 @@ def test_site_ships_no_server_streaming_microphone_client():
         assert "WebSocket" not in js.read_text(encoding="utf-8"), f"{js.name} opens a WebSocket"
 
 
+_NETWORK_CALLS = ("fetch(", "XMLHttpRequest", "WebSocket", "sendBeacon", "EventSource", "RTCPeerConnection")
+
+
+def test_on_device_asr_module_makes_no_network_calls():
+    """The only module that holds microphone audio (site/core/asr.js, PLAN B9) must not be
+    able to send anything: no fetch, XHR, sockets or beacons. Model files are fetched by the
+    recogniser runtime from this origin; the audio itself never leaves the AudioWorklet."""
+    source = (Path(__file__).resolve().parents[1] / "site" / "core" / "asr.js").read_text(encoding="utf-8")
+    offending = [call for call in _NETWORK_CALLS if call in source]
+    assert not offending, f"site/core/asr.js contains network primitives: {offending}"
+    assert "getUserMedia(" not in source  # capture is the page's explicit action, not the module's (a support check may name it)
+
+
 # sanity: the guard list is not silently empty
 def test_guarded_module_list_is_populated():
     names = {p.name for p in _GUARDED_MODULES}

@@ -14,6 +14,9 @@ already exists, so re-running (container restart, local dev) is a fast no-op.
    site/models/ at the dir `QORGAN_EMBED_ONNX_DIR` names — the browser never contacts
    huggingface.co and the server runs the same file (ADR D17); plus the exported head
    weights (`site/models/weights.json`).
+6. Speech models   ← the small Vosk KK + RU models as USTAR tarballs under site/models/vosk/
+   for the on-device microphone mode (PLAN B9, ADR D25); ~106 MB, from ~/.cache/vosk or
+   the official alphacephei zips.
 """
 
 from __future__ import annotations
@@ -173,6 +176,25 @@ def ensure_web_model() -> None:
         _log("web model: no exported head weights (run python -m qorgan.classifier.web_bundle)")
 
 
+def ensure_asr_models() -> None:
+    """Self-host the two small Vosk models for on-device recognition (B9)."""
+    from qorgan.asr.web_models import ensure_vosk_model_tarball, ensure_vosklet_runtime
+    from qorgan.config import get_config
+
+    try:
+        vendor = ensure_vosklet_runtime(REPO_ROOT / "site")
+        _log(f"asr runtime: {vendor.relative_to(REPO_ROOT)} (pinned, hash-verified)")
+    except Exception as exc:  # noqa: BLE001 - offline / tampered download: mic mode reports it
+        _log(f"asr runtime: unavailable ({exc}); microphone mode will report it")
+    cfg = get_config()
+    for name in (cfg.vosk_model_kk, cfg.vosk_model_ru):
+        try:
+            target = ensure_vosk_model_tarball(name, site_models_dir=SITE_MODELS)
+            _log(f"asr model: {target.relative_to(REPO_ROOT)} ({target.stat().st_size / 1e6:.0f} MB)")
+        except Exception as exc:  # offline / upstream down: the mic mode degrades, the demo does not
+            _log(f"asr model: {name} unavailable ({exc}); microphone mode will report it")
+
+
 def main() -> None:
     os.environ.setdefault("QORGAN_CLASSIFIER_BACKEND", "linear")
     ensure_corpus()
@@ -180,6 +202,7 @@ def main() -> None:
     ensure_model()
     ensure_l2_seeds()
     ensure_web_model()
+    ensure_asr_models()
     _log("done — serve with: uvicorn qorgan.api:app --host 0.0.0.0 --port $PORT")
 
 
