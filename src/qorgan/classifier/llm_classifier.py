@@ -12,19 +12,33 @@ constructs a network client at import time, so importing it never requires
 
 from __future__ import annotations
 
+import concurrent.futures
+import functools
 import hashlib
 import json
+import time
 from pathlib import Path
 from typing import Any
 
 from qorgan.config import get_config
 from qorgan.data.schema import ScoreResult, TacticTag, spans_from_phrases
-from qorgan.llm_tools import LLMResponseError, generate_json, thinking_budget_for
+from qorgan.llm_tools import LLMResponseError, build_client, generate_json, thinking_budget_for
 
 # Headroom so Gemini 2.5 thinking tokens (which count against this budget) never truncate
 # the JSON verdict -- this is the shipping/demo backend, so truncation here breaks the demo.
 _MAX_TOKENS = 2048
-_CACHE_VERSION = "v1"
+# A stalled connection must fail, not hang the eval: every live call has the transport
+# timeout from `llm_tools.build_client`, and a transient transport / 5xx / 429 error is
+# retried a bounded number of times with a short backoff (2026-09-22).
+_LIVE_ATTEMPTS = 3
+_RETRY_BACKOFF_S = 2.0
+# Wall-clock deadline per call, independent of the transport: httpx's read timeout is the gap
+# *between* bytes, and a long-thinking response that trickles keep-alive bytes never trips
+# it (observed: 40-minute hangs on one ESTABLISHED socket at 0 % CPU). Past the deadline the
+# call is abandoned in its thread and retried on a fresh client.
+_CALL_DEADLINE_S = 180.0
+_RETRYABLE_STATUS = frozenset({408, 429, 500, 502, 503, 504})
+_CACHE_VERSION = "v2"  # v2: the system instruction enumerates the taxonomy (2026-09-21)
 
 _SYSTEM_PROMPT = (
     "You are a fraud-detection assistant for Qorgan, a Kazakhstani scam-call screening "
@@ -36,8 +50,21 @@ _SYSTEM_PROMPT = (
     "the exact phrase appears verbatim in the transcript -- never paraphrase or invent "
     "phrases. If the call looks legitimate (e.g. a real bank confirmation, a family "
     "request, a genuine government/service call), return a low risk and empty "
-    "tactic_tags/trigger_phrases."
+    "tactic_tags/trigger_phrases. tactic_tags ids MUST come from this closed list -- any "
+    "other id is discarded:\n<<TAXONOMY>>"
 )
+
+
+def _taxonomy_block() -> str:
+    """One `id -- description` line per tactic, so the model tags with the taxonomy's ids
+    (the explainer and the eval only understand those) instead of inventing its own."""
+    from qorgan.taxonomy import get_taxonomy
+
+    return "\n".join(f"- {t.id} -- {t.description}" for t in get_taxonomy().tactics)
+
+
+def system_instruction() -> str:
+    return _SYSTEM_PROMPT.replace("<<TAXONOMY>>", _taxonomy_block())
 
 _RESPONSE_SCHEMA = {
     "type": "object",
@@ -106,19 +133,7 @@ def classify(
         if cached is not None:
             return cached
 
-    active_client = client if client is not None else _default_client(cfg)
-    try:
-        payload = generate_json(
-            active_client,
-            model=active_model,
-            prompt=transcript,
-            response_schema=_RESPONSE_SCHEMA,
-            system_instruction=_SYSTEM_PROMPT,
-            max_output_tokens=_MAX_TOKENS,
-            thinking_budget=thinking_budget_for(active_model),
-        )
-    except LLMResponseError as exc:
-        raise LLMClassifierError(str(exc)) from exc
+    payload = _generate_with_retries(client, cfg.gemini_api_key, active_model, transcript)
 
     result = _build_score_result(payload, transcript)
 
@@ -127,10 +142,72 @@ def classify(
     return result
 
 
-def _default_client(cfg) -> Any:  # pragma: no cover - real network client, not exercised in tests
-    from google import genai
+def _generate_with_retries(client: Any, api_key: str | None, model: str, transcript: str) -> dict[str, Any]:
+    """One JSON verdict from the model; a transient transport error or a retryable HTTP
+    status is retried up to `_LIVE_ATTEMPTS` times, anything else fails at once. An injected
+    `client` is reused as is; the default live client is re-resolved on every attempt so a
+    deadline hit (which drops the cached one) retries on a fresh connection pool."""
+    last: Exception | None = None
+    for attempt in range(1, _LIVE_ATTEMPTS + 1):
+        active = client if client is not None else _default_client(api_key)
+        try:
+            return _generate_with_deadline(active, model, transcript)
+        except LLMResponseError as exc:
+            raise LLMClassifierError(str(exc)) from exc
+        except Exception as exc:  # transport / SDK errors: retry only the transient ones
+            if not _is_transient(exc):
+                raise
+            last = exc
+            if attempt < _LIVE_ATTEMPTS:
+                time.sleep(_RETRY_BACKOFF_S * attempt)
+    raise LLMClassifierError(f"Gemini call failed after {_LIVE_ATTEMPTS} attempts: {last!r}") from last
 
-    return genai.Client(api_key=cfg.gemini_api_key)
+
+def _generate_with_deadline(client: Any, model: str, transcript: str) -> dict[str, Any]:
+    """`generate_json` under `_CALL_DEADLINE_S`: the call runs in a worker thread; past the
+    deadline it is abandoned (the thread ends when its socket does), the cached live client
+    is dropped so the retry gets a fresh connection pool, and `TimeoutError` is raised."""
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    future = executor.submit(
+        generate_json,
+        client,
+        model=model,
+        prompt=transcript,
+        response_schema=_RESPONSE_SCHEMA,
+        system_instruction=system_instruction(),
+        max_output_tokens=_MAX_TOKENS,
+        thinking_budget=thinking_budget_for(model),
+    )
+    try:
+        return future.result(timeout=_CALL_DEADLINE_S)
+    except concurrent.futures.TimeoutError as exc:
+        _default_client.cache_clear()
+        raise TimeoutError(f"Gemini call exceeded the {_CALL_DEADLINE_S:.0f} s deadline") from exc
+    finally:
+        executor.shutdown(wait=False)
+
+
+def _is_transient(exc: Exception) -> bool:
+    """Timeouts, connection drops and retryable HTTP statuses (the SDK's `APIError.code`)."""
+    if isinstance(exc, (TimeoutError, ConnectionError)):
+        return True
+    try:
+        import httpx
+
+        if isinstance(exc, httpx.HTTPError):
+            return True
+    except ImportError:  # pragma: no cover
+        pass
+    code = getattr(exc, "code", None) or getattr(exc, "status_code", None)
+    return isinstance(code, int) and code in _RETRYABLE_STATUS
+
+
+@functools.lru_cache(maxsize=4)
+def _default_client(api_key: str | None) -> Any:
+    """One live client per process (and per key): the SDK's HTTP client owns a connection
+    pool, and building a fresh one per call leaked pools until a stuck connection hung the
+    whole evaluation. Built with the transport timeout from `llm_tools.build_client`."""
+    return build_client(api_key)
 
 
 def _build_score_result(payload: dict[str, Any], transcript: str) -> ScoreResult:
@@ -160,12 +237,18 @@ def _build_score_result(payload: dict[str, Any], transcript: str) -> ScoreResult
 
 
 def _build_tags(raw_tags: list[Any]) -> tuple[TacticTag, ...]:
+    """Tags in the payload that name a taxonomy tactic; anything else (the model's own
+    synonyms, dotted sub-ids) is dropped -- a tag the explainer cannot template is not
+    evidence. The risk verdict is unaffected."""
+    from qorgan.taxonomy import get_taxonomy
+
+    known = set(get_taxonomy().tactic_ids())
     tags: list[TacticTag] = []
     for item in raw_tags:
         if not isinstance(item, dict):
             continue
         tag_id = item.get("id")
-        if not tag_id or not str(tag_id).strip():
+        if not tag_id or str(tag_id).strip() not in known:
             continue
         weight = item.get("weight", 1.0)
         try:

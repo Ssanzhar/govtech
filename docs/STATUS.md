@@ -2,7 +2,7 @@
 
 _Last updated: **2026-09-21**. Current-state doc for anyone picking the project up. Read this,
 then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECISIONS.md`
-(ADRs D11–D37), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
+(ADRs D11–D38), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
 kept as history._
 
 ## TL;DR (September 2026)
@@ -31,6 +31,11 @@ kept as history._
   the embedding head puts textbook prize / customs / relative-in-trouble scams at ≤ 0.10; the
   reassurance feature and the FPR story hold. Do not extend the lexicon from this set. The
   utterance-level heads were a measured no-go (D36); the e5-large server tier is D37.
+- **The cloud second opinion generalises (2026-09-22, ADR D38):** the `llm` backend (Gemini 2.5 Pro,
+  prompt now grounded in the 15 taxonomy ids) scores `shift` **33 / 33 · 0 / 33**, `authored_heldout`
+  18 / 18 · 0 / 24, `test` 1.000 recall with 4 / 51 FPs. Device = privacy tier, cloud = accuracy
+  tier, offered on the citizen's explicit request (D11). Client hardened: one client per process,
+  transport timeout, 180 s wall-clock deadline + retries (the eval used to hang on idle sockets).
 - **Tests:** `pytest -q` → 1038 offline (+2 skipped until a real held-out set exists) · `npm test` → 28 (JS core parity, the ASR vote/alignment reducer, the int8
   runtime gate on 200 transcripts — which needs the self-hosted model files). Branch `sanzh-ts`.
 - **Verified in Chromium (2026-09-14, Playwright):** scene 1 on-device → 90/100 CRITICAL with
@@ -79,7 +84,7 @@ accept numbered reports), `QORGAN_REPORT_RETENTION_DAYS=180`.
 | `tests/test_architecture.py` | The privacy invariants as tests. |
 
 ## Open threads (see PLAN_2026-09 for owners/estimates)
-- **Cross-generator recall (A12, ADR D35):** 8 / 33 on `shift`. Levers that are honest: real calls (A3), a third generator for *training* data, the `llm` cloud second opinion (needs `GEMINI_API_KEY` — not on this machine, so its numbers are still July's), the e5-large tier (D37). Not honest: lexicon entries mined from `shift`.
+- **Cross-generator recall (A12, ADR D35):** 8 / 33 on `shift`. Levers that are honest: real calls (A3), a third generator for *training* data, the `llm` cloud second opinion (Gemini 2.5 Pro, taxonomy-grounded prompt since 2026-09-21: 33 / 33 recall and 0 / 33 FPR on `shift` — the calls the device model misses are exactly the ones the cloud tier catches), the e5-large tier (D37). Not honest: lexicon entries mined from `shift`.
 - **Real data (A3):** no real calls yet; everything is synthetic or author-written. Stakeholders were asked for both scam and legit recordings. The intake protocol + tooling exist (A8: `docs/DATA_INTAKE.md`, `scripts/ingest_partner_calls.py`, hash-locked `real_heldout_v2`, `tests/data/test_heldout_lock.py` skips until a set exists); the legal owner has not reviewed the protocol yet.
 - **On-device ASR (B9, ADR D26):** microphone mode is live on **desktop** browsers — `site/core/asr.js` runs the small KK + RU Vosk models in Vosklet (one WASM instance each), votes per utterance, and feeds the same session/meter as replay; the live page and `/core/*` are served cross-origin isolated (COOP/COEP, `no-cache`). The three demo scenes pass through the recogniser (RU scam 81, bank call 14, KK scam 61). **Phones stay disabled until the Android bench passes** (`scripts/spikes/vosklet_bench/`). `deploy_bootstrap` packages the tarballs (~106 MB, gitignored). Whisper is a no-go (D25); server-side audio is gone for good (D12).
 - **B8 static quantisation — closed, no-go (2026-09-17, ADR D18):** int8 graphs drift

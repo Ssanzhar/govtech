@@ -1073,3 +1073,62 @@ Same model on every Gemini split (adversarial-legit +0.04 is the only visible mo
 8 / 33 on `shift` with Kazakh at 0 / 11, one fewer false positive, a better threshold-free
 ranking (PR-AUC 0.953 vs 0.870). A 3× encoder does not buy cross-generator recall: the
 bottleneck is one generator's register in `train`. No tier.
+
+### The cloud second opinion — the `llm` backend, re-benchmarked with a taxonomy-grounded prompt (2026-09-22, ADR D38)
+
+`QORGAN_CLASSIFIER_BACKEND=llm python -m qorgan.eval.run --split shift --split test --split authored_heldout --by-language`
+(`gemini-2.5-pro`, JSON mode, on-disk cache v2; the system instruction now enumerates the 15
+taxonomy ids and any other id the model returns is dropped — before this the model invented
+its own ids, so its tags were unusable by the explainer and unscored by the harness).
+
+| Split | FPR [95% CI] | Precision | Recall [95% CI] | F1 | PR-AUC [95% CI] | N |
+|---|---|---|---|---|---|---|
+| shift | 0.000 [0.000, 0.106] | 1.000 | 1.000 [0.894, 1.000] | 1.000 | 1.000 [1.000, 1.000] | 66 |
+| test | 0.078 [0.022, 0.189] | 0.941 | 1.000 [0.944, 1.000] | 0.970 | 0.992 [0.979, 1.000] | 115 |
+| authored_heldout | 0.000 [0.000, 0.142] | 1.000 | 1.000 [0.815, 1.000] | 1.000 | 1.000 [1.000, 1.000] | 42 |
+| authored_heldout (clean) | 0.000 [0.000, 0.176] | 1.000 | 1.000 [0.815, 1.000] | 1.000 | 1.000 [1.000, 1.000] | 37 |
+| authored_heldout (inspected) | 0.000 [0.000, 0.522] | 0.000 | 0.000 [-] | 0.000 | 0.000 [-] | 5 |
+
+| Split | FPR [95% CI] | Precision | Recall [95% CI] | F1 | PR-AUC [95% CI] | N |
+|---|---|---|---|---|---|---|
+| kk | 0.000 [0.000, 0.285] | 1.000 | 1.000 [0.715, 1.000] | 1.000 | 1.000 [1.000, 1.000] | 22 |
+| mixed | 0.000 [0.000, 0.285] | 1.000 | 1.000 [0.715, 1.000] | 1.000 | 1.000 [1.000, 1.000] | 22 |
+| ru | 0.000 [0.000, 0.285] | 1.000 | 1.000 [0.715, 1.000] | 1.000 | 1.000 [1.000, 1.000] | 22 |
+
+| Tactic | shift | test | authored_heldout | authored_heldout (clean) | authored_heldout (inspected) |
+|---|---|---|---|---|---|
+| credentials_request | 1.000 | 0.733 | 0.833 | 0.833 | 0.000 |
+| fear_threat | 0.778 | 0.677 | 0.571 | 0.571 | 0.000 |
+| impersonation_bank | 0.933 | 0.938 | 1.000 | 1.000 | 0.000 |
+| impersonation_gov_police | 0.923 | 1.000 | 1.000 | 1.000 | 0.000 |
+| impersonation_telecom_delivery | 0.909 | 0.903 | 0.857 | 0.857 | 0.000 |
+| investment_scam | 1.000 | 1.000 | 1.000 | 1.000 | 0.000 |
+| mule_recruitment | 1.000 | 1.000 | 1.000 | 1.000 | 0.000 |
+| otp_request | 1.000 | 0.952 | 1.000 | 1.000 | 0.000 |
+| payment_redirect | 0.556 | 0.667 | 0.750 | 0.750 | 0.000 |
+| prize_lottery | 1.000 | 0.800 | 0.889 | 0.889 | 0.000 |
+| remote_access | 1.000 | 1.000 | 1.000 | 1.000 | 0.000 |
+| safe_account | 1.000 | 0.909 | 1.000 | 1.000 | 0.000 |
+| secrecy | 1.000 | 0.857 | 1.000 | 1.000 | 0.000 |
+| urgency | 0.889 | 0.667 | 0.875 | 0.875 | 0.000 |
+| verification_ploy | 0.143 | 0.500 | 0.000 | 0.000 | 0.000 |
+
+**Read plainly:** the cloud tier catches **33 / 33** of the second-generator scams the device
+model misses 25 of, with **0 / 33** legit flagged, in all three languages, and tags them with
+the taxonomy at F1 ≥ 0.9 for 12 of 15 tactics (`payment_redirect` 0.56 and `verification_ploy`
+0.14 are the fuzzy ones). On `authored_heldout` it is 18 / 18 and 0 / 24. Its only misses are
+**four false positives on Gemini's own synthetic hard negatives** (`test` FPR 0.078
+[0.022, 0.189]): `neg_delivery_notification_kk_7`, `neg_general_conversation_mixed_8`,
+`neg_general_conversation_mixed_21`, `aug_neg_legit_gov_service_mixed_3` — all kk / mixed
+calls that open by confirming the callee's identity, which the model reads as a verification
+ploy. It costs ~3–4 s and an API call per transcript, and it is a Gemini model judging (in
+part) Gemini-written calls — on `test` that cuts both ways. This is the tier ADR D11 reserved
+for the citizen's explicit request; the numbers say it is the tier that generalises.
+
+Client hygiene found on the way (same commit): the classifier built a new SDK client with
+**no timeout** on every cache miss, and httpx's read timeout is the gap *between* bytes — a
+long-thinking response that trickles keep-alive bytes hung the evaluation twice for 40 min on
+one idle socket. Now: one client per process with the transport timeout, a 180 s wall-clock
+deadline per call (the call is abandoned in its thread and retried on a fresh client), three
+attempts with backoff on transient errors. Predictions are cached per (prompt version, model,
+transcript), so a rerun resumes.

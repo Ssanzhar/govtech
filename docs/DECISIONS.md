@@ -571,7 +571,7 @@ lever (0.40 catches 14 / 33 and fires on 2 legit). Utterance-level pooling is no
 (D36). The lexicon must **not** be extended from this set's phrasing (that would make it a
 second `authored_heldout`); a third generator or real calls are the only ways to move it
 honestly. What can move it: a stronger embedder (D37), the cloud second opinion (the `llm`
-backend has no current numbers — its key is not on this machine), and training data from
+backend — measured the same evening, see the eval report: 33 / 33 and 0 / 33 on this set), and training data from
 more than one generator. **Rejected:** treating `shift` as a data top-up (it is the only
 cross-generator signal we have), and re-authoring it "harder" or "easier" after seeing scores.
 
@@ -616,3 +616,29 @@ with training data from more than one generator or real calls (A3), where a larg
 might finally have something different to learn from. **Not tried:** BGE-M3 (same reasoning
 applies: the data is the bottleneck), contrastive fine-tuning of the encoder (would learn
 the same register better — the wrong direction until A3).
+
+### D38 — The cloud second opinion is the tier that generalises: `llm` backend grounded in the taxonomy and made robust (2026-09-22)
+The re-benchmark that D35 asked for. Two defects first: the LLM classifier's system prompt
+never listed the taxonomy, so Gemini tagged calls with ids of its own (`impersonation.bank`,
+`code_request`, `phishing.credentials.2fa_code`) that the explainer cannot template and the
+harness cannot score; and `_default_client` built a fresh SDK client with no timeout on every
+cache miss, which leaked connection pools and, because httpx's read timeout is the gap
+*between* bytes, hung an evaluation for 40 minutes on one idle socket — twice. **Decision:**
+the system instruction enumerates the 15 tactic ids with their descriptions and declares the
+list closed; `_build_tags` drops any id outside the taxonomy (the verdict is untouched); the
+prediction cache is versioned (`v2`) so old free-form answers are not reused; one live client
+per process, built with the transport timeout; a 180 s wall-clock deadline per call that
+abandons the call in its worker thread, drops the cached client and retries on a fresh pool;
+three attempts with backoff on transient transport / 408 / 429 / 5xx errors. **Measured
+(`gemini-2.5-pro`):** `shift` **33 / 33 recall, 0 / 33 FPR**, every language, taxonomy tags at
+F1 ≥ 0.9 for 12 of 15 tactics; `authored_heldout` 18 / 18 and 0 / 24; `test` 1.000 recall with
+**4 / 51 false positives** (kk / mixed synthetic legit calls that open by confirming identity —
+`verification_ploy` in the model's reading). **Consequence:** the device model (D35: 8 / 33)
+is the privacy tier and the cloud model is the accuracy tier; the product story in D11 — score
+on the device, offer the cloud second opinion on the citizen's explicit request — is now the
+story the numbers support, not just the privacy one. **Not decided here:** making the cloud
+tier automatic (it sends the transcript off-device, which D11/D12 forbid without the citizen's
+request), or using it as a labeller to close the device model's gap — the latter is the
+obvious next experiment (relabel spans per tactic, generate training data with a second
+generator) and needs its own entry. **Caveat on record:** a Gemini judge on Gemini-written
+`test` negatives cuts both ways; the hand-written sets are the ones to read.

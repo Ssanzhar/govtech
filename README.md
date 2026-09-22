@@ -122,7 +122,10 @@ authored without sight of the corpus or the lexicons — `data/README.md`), the 
 split above shares its generator (Gemini) with the training data, so their recall is largely
 that generator's register. The reassurance feature still holds (real fraud alerts score
 ≤ 0.01) and the FPR story survives, but until real calls exist the recall claim is "one
-generator's scams", and the `shift` table in the eval report is the honest one. Methodology + caveats: [`docs/eval_report.md`](docs/eval_report.md), data
+generator's scams", and the `shift` table in the eval report is the honest one. The cloud
+second opinion (`llm` backend, Gemini 2.5 Pro, offered on the citizen's explicit request) scores
+the same 66 calls at **33 / 33 recall and 0 / 33 FPR** (ADR D38) — that is the accuracy tier;
+the device model is the privacy tier. Methodology + caveats: [`docs/eval_report.md`](docs/eval_report.md), data
 provenance: [`data/README.md`](data/README.md).
 
 ## Microphone mode (on-device speech recognition)
