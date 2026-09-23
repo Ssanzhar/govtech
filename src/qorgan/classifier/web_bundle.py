@@ -19,6 +19,8 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping
 from pathlib import Path
+
+from qorgan.classifier.cue_match import MATCHER_VERSION
 from typing import Any
 
 import numpy as np
@@ -51,6 +53,9 @@ def export_web_bundle(bundle: Any, *, thresholds: Mapping[str, float]) -> dict[s
         "embedding_dim": first_dim - extra,
         "feature_order": feature_order(bundle.hard_signal_enabled),
         "feature_version": bundle.feature_version,
+        # The cue block is a model input, so the browser must refuse weights trained under a
+        # different matcher exactly as `load_linear` does server-side (review, 2026-09-23).
+        "cue_matcher_version": MATCHER_VERSION,
         "risk_head": {"type": _RISK_HEAD_TYPE, "members": members},
         "tactic_head": {
             "threshold": float(bundle.tactic_threshold),

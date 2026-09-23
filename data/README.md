@@ -187,6 +187,22 @@ scam baiting calls"* (arXiv:2307.01965).
 - **Limits:** one author, 66 rows (recall CI on 33 positives is ±0.15); the author's Kazakh is
   competent, not native; it is still synthetic — only real calls (A3) can replace it.
 
+## Recogniser-output capture — `data/asr_capture/pairs.jsonl` (ADR D39, 2026-09-23)
+- **What:** 272 `(reference, hypothesis)` pairs. Each is a corpus utterance spoken by macOS
+  `say` (Milena `ru_RU`, Aru `kk_KZ`; `mixed` is read by Milena) and decoded by the **same
+  Vosk small KK+RU models the browser ships**, through the shipped dual-recogniser vote —
+  so the errors are the product's own. 112 utterances carry a hard-signal cue, 160 do not
+  (a seeded sample, the false-alarm side). Regenerate: `python
+  scripts/spikes/asr_cue_survival/capture.py` (resumable); score: `measure.py`.
+- **Why:** to choose cue matching against real recogniser errors instead of a hand-written
+  corruption model, which would only prove what it was designed to prove.
+- **Derived from** `data/processed/` text that is already PII-scrubbed, so it is publishable;
+  it carries no audio (the WAVs are scratch and deleted).
+- **Limits (state them whenever the numbers are quoted):** synthesised speech is far cleaner
+  than a speakerphone, so cue-survival figures are **lower bounds**; one voice per language;
+  the `mixed` rows are read by a Russian voice and their errors are a property of the voice,
+  not of the system.
+
 ## Real calls — `data/real/` (PLAN_2026-09 A8; never in git)
 - Protocol, batch format, roles and the split rule are in `docs/DATA_INTAKE.md`;
   ingest with `scripts/ingest_partner_calls.py`. Utterances are scrubbed, caller numbers

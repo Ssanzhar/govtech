@@ -3,32 +3,37 @@
    `qorgan/classifier/reassurance.py`. Pure functions over the lexicon block that ships
    inside weights.json, so the client can never drift from the weights it was trained with. */
 
-/** Case-insensitive substring presence per hard-signal tactic, in the fixed column order. */
+import { findCue } from "./cue-match.js";
+
+/** Cue presence per hard-signal tactic, in the fixed column order. Matching is `findCue`
+    (verbatim, then bounded-edit over the de-spaced text), so the feature and the highlight
+    can never disagree. */
 export function hardSignalFeatures(text, cues, hardSignalIds) {
-  const lowered = text.toLowerCase();
   return hardSignalIds.map((tacticId) =>
-    (cues[tacticId] || []).some((cue) => lowered.includes(cue.toLowerCase())) ? 1 : 0,
+    (cues[tacticId] || []).some((cue) => findCue(text, cue) !== null) ? 1 : 0,
   );
 }
 
-/** One grounded (verbatim) match per tactic that fired: `{tacticId, span:{text,start,end}}`. */
+/** One grounded match per tactic that fired: `{tacticId, span:{text,start,end}}`. The span is
+    sliced from the ORIGINAL text, so a fuzzy hit highlights what was actually said. */
 export function matchCues(text, cues, hardSignalIds) {
-  const lowered = text.toLowerCase();
   const matches = [];
   for (const tacticId of hardSignalIds) {
-    const span = firstGroundedSpan(text, lowered, cues[tacticId] || []);
+    const span = firstGroundedSpan(text, cues[tacticId] || []);
     if (span) matches.push({ tacticId, span });
   }
   return matches;
 }
 
-function firstGroundedSpan(text, lowered, cueList) {
+function firstGroundedSpan(text, cueList) {
   for (const cue of cueList) {
-    const index = lowered.indexOf(cue.toLowerCase());
-    if (index === -1) continue;
-    const candidate = text.slice(index, index + cue.length);
-    if (candidate.toLowerCase() === cue.toLowerCase()) {
-      return { text: candidate, start: index, end: index + candidate.length };
+    const found = findCue(text, cue);
+    if (!found) continue;
+    const [start, end] = found;
+    const candidate = text.slice(start, end);
+    // An exact hit must slice back to the cue; a fuzzy hit is the recogniser's own wording.
+    if (candidate && (candidate.length !== cue.length || candidate.toLowerCase() === cue.toLowerCase())) {
+      return { text: candidate, start, end };
     }
   }
   return null;

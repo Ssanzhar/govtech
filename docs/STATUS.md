@@ -2,7 +2,7 @@
 
 _Last updated: **2026-09-21**. Current-state doc for anyone picking the project up. Read this,
 then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECISIONS.md`
-(ADRs D11–D38), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
+(ADRs D11–D39), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
 kept as history._
 
 ## TL;DR (September 2026)
@@ -31,6 +31,13 @@ kept as history._
   the embedding head puts textbook prize / customs / relative-in-trouble scams at ≤ 0.10; the
   reassurance feature and the FPR story hold. Do not extend the lexicon from this set. The
   utterance-level heads were a measured no-go (D36); the e5-large server tier is D37.
+- **Cue matching survives the recogniser (2026-09-23, ADR D39):** cues were matched by exact
+  substring, so one mis-recognised character killed the hard-signal floor. Measured on 272 real
+  recogniser outputs (`data/asr_capture/`), then fixed two ways — a bounded-edit matcher over
+  de-spaced text (`classifier/cue_match.py` + `site/core/cue-match.js`, 1:1, 3,200-case fixture)
+  and three behaviour-based Kazakh `remote_access` cues. Cue recovery **67 % → 76 %** (lexicon
+  fixes Kazakh 76→86 %, matcher fixes Russian 74→84 %), false fires 0/160 throughout, every
+  gate held after the retrain. `cue_matcher_version` is now part of the bundle contract.
 - **The cloud second opinion generalises (2026-09-22, ADR D38):** the `llm` backend (Gemini 2.5 Pro,
   prompt now grounded in the 15 taxonomy ids) scores `shift` **33 / 33 · 0 / 33**, `authored_heldout`
   18 / 18 · 0 / 24, `test` 1.000 recall with 4 / 51 FPs. Device = privacy tier, cloud = accuracy
@@ -71,6 +78,8 @@ accept numbered reports), `QORGAN_REPORT_RETENTION_DAYS=180`.
 | `site/core/asr.js`, `asr/web_models.py`, `api_limits.CrossOriginIsolationMiddleware` | On-device dual-language speech recognition (Vosklet), model tarball packaging, the COOP/COEP headers the live page needs (ADR D26). |
 | `eval/meter_sweep.py` | Offline live-meter sweep: per-turn traces cached once, variants replayed through the production meter (the A6 methodology, ADR D29). |
 | `eval/asr_realism.py` | Paired clean-vs-ASR-styled evaluation (FPR first, cue/reassurance survival, `--drop-latin` worst case) — the A10 gate (ADR D31). |
+| `classifier/cue_match.py`, `site/core/cue-match.js` | Cue matching that survives the recogniser (ADR D39): verbatim first, then bounded-edit over de-spaced text; pigeonhole prefilter; versioned as part of the bundle's feature contract. |
+| `scripts/spikes/asr_cue_survival/`, `data/asr_capture/` | The capture + measurement harness behind D39: corpus utterances spoken by `say`, decoded by the shipped Vosk models; recovery / false-fire / clean-drift tables. |
 | `data/shift_set.py`, `data/authored/shift/` | The generator-shift split (A12, ADR D35): 66 calls by a second generator, grounded from verbatim phrases, scrubbed, refused if they overlap any split; `python -m qorgan.data.shift_set` → `processed/shift.jsonl` + manifest. |
 | `data/clean.py` | Generation-artefact repair run by `build_corpus` (and by hand on `ood.jsonl`): unwrap/split jammed turns, delete backspaces, decode escapes; rows with lost Kazakh letters are dropped and listed in the manifest (ADR D34). |
 | `classifier/device_embed.py` | The `device` embed backend: the browser's own vectors through the headless-Chromium bridge (`npm run device:serve`), sqlite-cached; a warm cache works with the bridge down (ADR D33). |

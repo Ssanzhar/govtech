@@ -24,6 +24,7 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.linear_model import LogisticRegression
 
 from qorgan.classifier import embed, labels
+from qorgan.classifier.cue_match import MATCHER_VERSION
 from qorgan.classifier.multilabel import MultiLabelHead, out_of_fold_proba  # MultiLabelHead re-exported: keep import path stable
 from qorgan.config import get_config
 from qorgan.data.schema import Dialogue
@@ -220,6 +221,7 @@ def export_linear(bundle: LinearBundle, out_dir: Path) -> dict:
         "hard_signal_enabled": bundle.hard_signal_enabled,
         "feature_version": bundle.feature_version,
         "cue_lexicon_hash": bundle.cue_lexicon_hash,
+        "cue_matcher_version": MATCHER_VERSION,
         "reassurance_hash": bundle.reassurance_hash,
         "embed_backend": bundle.embed_backend,
     }
@@ -262,6 +264,13 @@ def load_linear(model_dir: Path) -> LinearBundle:
             f"{runtime_backend!r}; set the backend to match or retrain."
         )
     hard_signal_enabled = bool(metadata.get("hard_signal_enabled", False))
+    trained_matcher = metadata.get("cue_matcher_version", 1)
+    if hard_signal_enabled and trained_matcher != MATCHER_VERSION:
+        raise LinearFeatureMismatchError(
+            f"{model_dir} was trained with cue matcher v{trained_matcher} but this build uses "
+            f"v{MATCHER_VERSION}; the cue features are computed with it, so retrain "
+            "(`python -m qorgan.classifier.linear_train`)."
+        )
     cue_hash = metadata.get("cue_lexicon_hash", "")
     reass_hash = metadata.get("reassurance_hash", "")
 

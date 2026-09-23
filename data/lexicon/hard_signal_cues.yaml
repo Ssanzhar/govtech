@@ -53,3 +53,8 @@ cues:
     - "Скачайте программу для защиты"
     - "қосымшасын орнатыңыз"
     - "бағдарламасын жүктеңіз"
+    # Behaviour, not brand: the recogniser renders AnyDesk / TeamViewer as «аны десіп»,
+    # «не доски», «сиам жібер» -- unmatchable across alphabets, so cue the action (ADR D39).
+    - "қашықтан кіру"
+    - "қашықтан қосыл"
+    - "бағдарламасын орнат"

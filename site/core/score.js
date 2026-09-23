@@ -4,6 +4,7 @@
 
 import { selectTopUtteranceSpans } from "./attribution.js";
 import { decodeTactics, hybridRow, riskProba, tacticProba } from "./head.js";
+import { MATCHER_VERSION } from "./cue-match.js";
 import { compileReassurance, hardSignalFeatures, matchCues, reassuranceFeature } from "./lexicon.js";
 
 export const BACKEND = "linear";
@@ -12,6 +13,13 @@ export const BACKEND = "linear";
 export function createScorer({ weights, config, embed }) {
   if (weights.format_version !== 1) throw new Error(`unsupported weights format ${weights.format_version}`);
   if (!weights.lexicon) throw new Error("web scorer needs a hybrid bundle (lexicon block)");
+  // The cue block is a model input: weights trained under another matcher would be scored
+  // with features they were never fitted on (review, 2026-09-23).
+  if (weights.cue_matcher_version !== MATCHER_VERSION) {
+    throw new Error(
+      `weights were trained with cue matcher v${weights.cue_matcher_version} but this build uses v${MATCHER_VERSION}`,
+    );
+  }
   const hardIds = config.taxonomy.hard_signal_ids;
   const matcher = compileReassurance(weights.lexicon.reassurance);
   const join = config.window.join;

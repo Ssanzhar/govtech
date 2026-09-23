@@ -48,3 +48,5 @@ error.txt
 Qorgan_transcript.md
 node_modules
 .playwright-mcp/
+# scratch audio from the ASR capture spike; pairs.jsonl itself IS tracked (ADR D39)
+data/asr_capture/_wav/

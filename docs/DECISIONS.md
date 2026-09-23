@@ -642,3 +642,67 @@ request), or using it as a labeller to close the device model's gap — the latt
 obvious next experiment (relabel spans per tactic, generate training data with a second
 generator) and needs its own entry. **Caveat on record:** a Gemini judge on Gemini-written
 `test` negatives cuts both ways; the hand-written sets are the ones to read.
+
+### D39 — Cue matching that survives the recogniser: bounded-edit matching + behaviour-based Kazakh cues (2026-09-23, STT Tier A)
+The hard-signal lexicon is matched against a transcript that, in microphone mode, is
+recogniser output — but matching was exact substring containment, so one mis-recognised
+character killed the hard-signal floor. **Measured first, on real recogniser output**
+(`scripts/spikes/asr_cue_survival/`: 272 corpus utterances spoken by macOS `say` and decoded
+by the very Vosk models the browser ships; `data/asr_capture/pairs.jsonl`). A synthetic error
+model was rejected as circular — it would prove whatever it was designed to prove. The
+capture showed three distinct failures: **moved word boundaries** («три цифры на обороте» →
+«три цифры наоборот де»), **morphology** («сотрудникам» → «сотрудником»), and **Latin brand
+names** the recogniser transliterates («AnyDesk» → «аны десіп» / «не доски», «TeamViewer» →
+«сиам жібер»), which no edit distance can bridge across alphabets.
+
+**Decision, two parts.** (1) `classifier/cue_match.py` + its 1:1 port `site/core/cue-match.js`:
+a cue is searched verbatim first and, only if that fails, as a bounded-edit substring of the
+**de-spaced** normalised text, which makes a boundary shift free. Budget ≈ one edit per ten
+characters and **zero below twelve characters**, so short cues cannot drift. A pigeonhole
+prefilter (with `budget + 1` disjoint blocks, one must survive intact) skips the quadratic
+search for almost every pair and keeps the browser fast; a test asserts the prefilter never
+changes an answer. (2) Three **behaviour-based** Kazakh `remote_access` cues — «қашықтан
+кіру», «қашықтан қосыл», «бағдарламасын орнат» — cueing the action instead of the brand.
+
+**Measured (112 cue-bearing utterances, 160 cue-free):** cue recovery **67 % → 76 %**; the
+two parts are separable — the lexicon fixes Kazakh (76 % → 86 %), the matcher fixes Russian
+(74 % → 84 %). **False fires stayed 0/160 throughout**, in all three languages. Under the
+ASR-styled register the shipped model now keeps 8/8 cues (was 6). **Clean-text drift** — the
+thing that makes a lexicon change dangerous (the July KK-boundary rollback, ADR D27) — is 5
+dialogues in 2,075 for the matcher and 20 for the new cues, and **every one of them is a scam
+row: zero hard negatives drift, on any candidate tested.** That is why this did not repeat
+July's failure. Rejected candidates, on that evidence: «кодты айтыңыз» (+1 recovery for 50
+drifted rows), «қауіпсіз шотқа» (no recovery, 25 rows), «удалённый доступ» (no recovery).
+
+**Gates, retrained on device embeddings:** test 0.000 / 0.953 · authored 0.000 / 0.889 · ood
+0.000 / 0.886 · adversarial 0.917 · adversarial-legit 0.807 (0.815, one call) · shift 0.030 /
+0.242 · streaming test 0.059 & 0.969, authored clean 0.053 & 0.833 · styled FPR 0 everywhere ·
+1,122 pytest, 35 npm including a 3,200-case Python↔JS fixture. The bundle now records
+`cue_matcher_version` and `load_linear` refuses a bundle trained under a different one — the
+cue block is a model input, so the matcher is part of the feature contract. Rollback:
+`models/linear_d38_rollback` (gitignored). **Limits, on record:** the capture is synthesised
+speech, cleaner than a speakerphone in a kitchen, so these are lower bounds; the `mixed` row
+(55 %) is unreliable because a Russian voice reading Kazakh produces «ешь ком я и тп а», not
+what a bilingual speaker produces. Real speakerphone recordings are the missing input.
+**Found in review, fixed before shipping (the reason for the extra rules above):** de-spacing
+also dissolved the **utterance boundary**, so the tail of one turn and the head of the next
+could concatenate into a cue neither contained — «…назовите три цифры на» + «обороте карты…»
+scored a `credentials_request` hit at weight 1.0, bypassing the calibrated head. Structurally
+new (exact matching kept the newline) and squarely against the FPR-first rule, so the fuzzy
+pass now runs per utterance; measured cost: **zero dialogues in 2,075, scam or negative,
+relied on bridging**, and recovery stayed 85/112. Also from the review: the browser never
+checked the matcher version against the weights it loads (`weights.json` now carries
+`cue_matcher_version`, `createScorer` refuses a mismatch — the server-side guard alone was
+half a rail); the exact branch's slice-back verification, dropped when the fuzzy branch was
+added, is restored for exact hits only; the prefilter-soundness test skips instead of
+crashing when the capture corpus is absent, and the scratch audio directory is gitignored
+while `pairs.jsonl` is tracked as the ADR's evidence. **Accepted, not fixed:** Python offsets
+are code points and JavaScript's are UTF-16 code units, so they would differ for
+supplementary-plane characters — which `normalize` drops in both languages, and which no
+Kazakh/Russian recogniser emits; the docstrings now say this instead of claiming
+byte-identical offsets. Independent fuzzing (8,000 randomised cross-language cases, 20,000
+prefilter cases) found no other divergence.
+
+**Not done here (STT Tier A, remaining):** reading the recogniser's N-best alternatives
+instead of only the top hypothesis, and A/B-ing the browser's `noiseSuppression` / AGC, which
+are tuned for human listening and may hurt recognition. Both now have a harness to measure in.

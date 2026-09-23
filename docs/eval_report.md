@@ -1132,3 +1132,82 @@ one idle socket. Now: one client per process with the transport timeout, a 180 s
 deadline per call (the call is abandoned in its thread and retried on a fresh client), three
 attempts with backoff on transient errors. Predictions are cached per (prompt version, model,
 transcript), so a rerun resumes.
+
+## Addendum (2026-09-23) — cue matching that survives the recogniser (ADR D39, STT Tier A)
+
+### The measurement set
+
+`scripts/spikes/asr_cue_survival/capture.py` speaks 272 corpus utterances with macOS `say`
+(Milena ru / Aru kk) and decodes them with the **same Vosk models the browser ships**, through
+the shipped dual-recogniser vote → `data/asr_capture/pairs.jsonl` (112 cue-bearing, 160
+cue-free). Real recogniser errors, not a synthetic corruption model — the latter proves
+whatever it was built to prove. Synthesised speech is cleaner than a speakerphone, so every
+number below is a **lower bound**.
+
+### Cue recovery — the tactic the reference carried, still found in the hypothesis
+
+| set | n | exact + old lexicon | exact + new cues | bounded-edit + new cues |
+|---|---|---|---|---|
+| all | 112 | 75 (67 %) | 80 (71 %) | **85 (76 %)** |
+| ru | 50 | 37 (74 %) | 37 (74 %) | **42 (84 %)** |
+| kk | 29 | 22 (76 %) | **25 (86 %)** | 25 (86 %) |
+| mixed | 33 | 16 (48 %) | 18 (55 %) | 18 (55 %) |
+
+The two levers are separable: the **lexicon** fix recovers Kazakh, the **matcher** recovers
+Russian. False fires on the 160 cue-free hypotheses stayed **0/160 for every variant**, in
+every language.
+
+What the matcher recovers (real pairs): «три цифры на обороте» → «три цифры наоборот де»
+(moved boundary); «не сообщайте сотрудникам банка» → «не сообщайте сотрудником банка»
+(morphology); «установите приложение» → «установите приложения». What it cannot: «AnyDesk» →
+«аны десіп» / «не доски», «TeamViewer» → «сиам жібер», «SMS-тегі» → «түсім тегі» — Latin
+across alphabets, which is why the Kazakh fix cues the **action** («қашықтан кіру»,
+«қашықтан қосыл», «бағдарламасын орнат») instead of the brand.
+
+### Clean-text drift — the safety check that matters
+
+A lexicon change is dangerous because the joint LR refits on every feature (July's KK-boundary
+rollback, ADR D27). Measured over 2,075 dialogues in all eight splits: the matcher moves 5,
+the three new cues move 20 — and **every drifted row is a scam; zero hard negatives moved, on
+any candidate tested.** Candidates rejected on that evidence: «кодты айтыңыз» (+1 recovery,
+50 rows drifted), «қауіпсіз шотқа» (no recovery, 25 rows), «удалённый доступ» (no recovery).
+
+### Gates after the retrain (device embeddings, threshold 0.59)
+
+| Split | FPR [95% CI] | Precision | Recall [95% CI] | F1 | PR-AUC [95% CI] | N |
+|---|---|---|---|---|---|---|
+| test | 0.000 [0.000, 0.070] | 1.000 | 0.953 [0.869, 0.990] | 0.976 | 1.000 [1.000, 1.000] | 115 |
+| authored_heldout | 0.000 [0.000, 0.142] | 1.000 | 0.889 [0.653, 0.986] | 0.941 | 1.000 [1.000, 1.000] | 42 |
+| authored_heldout (clean) | 0.000 [0.000, 0.176] | 1.000 | 0.889 [0.653, 0.986] | 0.941 | 1.000 [1.000, 1.000] | 37 |
+| authored_heldout (inspected) | 0.000 [0.000, 0.522] | 0.000 | 0.000 [-] | 0.000 | 0.000 [-] | 5 |
+| ood | 0.000 [0.000, 0.049] | 1.000 | 0.886 [0.754, 0.962] | 0.940 | 0.995 [0.982, 1.000] | 118 |
+| adversarial | 0.000 [-] | 1.000 | 0.917 [0.849, 0.962] | 0.957 | 0.000 [-] | 109 |
+| adversarial_legit | 0.000 [-] | 1.000 | 0.807 [0.721, 0.877] | 0.893 | 0.000 [-] | 109 |
+
+Streaming: test false-latch 0.059 [0.012, 0.162] / alert-hit 0.969 [0.892, 0.996]; authored
+(clean) 0.053 [0.001, 0.260] / 0.833 [0.586, 0.964] — unchanged. Paired ASR-styled evaluation,
+with more cues now firing (8, was 6) and all of them surviving the styled register:
+
+| Split | Text | FPR [95% CI] | Recall [95% CI] | Flips → alert / → clear | Cues kept | Reassurance kept | N+ | N- |
+|---|---|---|---|---|---|---|---|---|
+| test | clean | 0.000 [0.000, 0.070] | 0.953 [0.869, 0.990] | - | 8 | 5 | 64 | 51 |
+| test | styled | 0.000 [0.000, 0.070] | 0.953 [0.869, 0.990] | 0 / 0 | 8/8 | 5/5 | 64 | 51 |
+| authored_heldout | clean | 0.000 [0.000, 0.142] | 0.889 [0.653, 0.986] | - | 13 | 9 | 18 | 24 |
+| authored_heldout | styled | 0.000 [0.000, 0.142] | 1.000 [0.815, 1.000] | 0 / 0 | 13/13 | 9/9 | 18 | 24 |
+| ood | clean | 0.000 [0.000, 0.049] | 0.886 [0.754, 0.962] | - | 9 | 6 | 44 | 74 |
+| ood | styled | 0.000 [0.000, 0.049] | 0.864 [0.726, 0.948] | 0 / 3 | 9/9 | 6/6 | 44 | 74 |
+
+Every stated gate holds; `adversarial_legit` moves 0.815 → 0.807, one call, at the documented
+resolution of these sets. `cue_matcher_version` is now part of the bundle contract and
+`load_linear` refuses a mismatch; Python↔JS agreement is pinned by a 3,200-case fixture
+(`tests_js/fixtures/cue_match.json`).
+
+### Limits
+
+Synthesised speech, one TTS voice per language, one acoustic model pair. The `mixed` row is
+**not trustworthy**: a Russian voice reading Kazakh yields «ешь ком я и тп а», which is a
+property of the voice, not of the system. Real speakerphone recordings — twenty or thirty
+scripted calls through an actual phone, in a kitchen, with an older speaker — are the missing
+input, and would also let the two remaining Tier A items be judged: reading the recogniser's
+**N-best alternatives** rather than only the top hypothesis, and **A/B-ing** the browser's
+`noiseSuppression` / AGC, which are tuned for human listening.
