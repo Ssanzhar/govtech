@@ -371,6 +371,7 @@
       if (!asr) {
         asr = await createDeviceAsr({
           models: modelSpecs(runtime.config),
+          lock: runtime.config.asr?.lock ?? null,
           onPartial: ({ text }) => showPartial(text),
           onUtterance: onMicUtterance,
           onStatus: (message) => setNote(micNote, message),

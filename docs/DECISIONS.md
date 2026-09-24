@@ -706,3 +706,56 @@ prefilter cases) found no other divergence.
 **Not done here (STT Tier A, remaining):** reading the recogniser's N-best alternatives
 instead of only the top hypothesis, and A/B-ing the browser's `noiseSuppression` / AGC, which
 are tuned for human listening and may hurt recognition. Both now have a harness to measure in.
+
+### D40 — Language locking: measured, implemented, shipped OFF until real bilingual audio exists (2026-09-24, STT Tier B)
+Microphone mode runs a Kazakh AND a Russian recogniser for the whole call and votes per
+utterance (ADR D26). Two WASM instances is the memory half of the phone gate (ADR D25), so
+the question is whether the loser can be switched off once the language has settled.
+**Measured** by capturing what EACH recogniser said for EACH utterance in order
+(`capture_dual.py` → `data/asr_capture/dual.jsonl`, 108 dialogues / 584 utterances) and
+replaying policies offline — the A6 meter-sweep pattern, decode once and simulate many
+(`lock_sweep.py`). Policy chosen: **lock after 3 voted utterances to the language that won
+most of them, and reopen both whenever the locked recogniser's mean word confidence falls
+below a floor** — a speaker switching language looks exactly like a confidence drop.
+
+**Result at `after=3, floor=0.80`:** 0 cue detections lost, text differs from the
+both-recognisers baseline on 25/584 utterances (4.3 %) — of which 19 are `mixed` rows whose
+audio is a TTS artefact, leaving 5 of ~390 ru+kk utterances (1.3 %); **85 % of dialogues never
+reopen** after locking (ru 39/40, kk 34/35) and 91 % of post-lock utterances use one
+recogniser. Savings are **18 % of decodes on these dialogues (median 5 utterances) but ~39 %
+at 20 utterances and ~42 % at 40** — a real call, not a demo one; the short-dialogue figure
+understates it. A stricter floor of 0.85 trades savings for fidelity (15 differing utterances,
+77 % never reopen).
+
+**Implementation.** Locking is expressed purely as narrowing `state.languages` to one, so
+every alignment rule of D26 still holds untouched: with one language `everyLanguageFired` is
+immediate and the vote has a single candidate. The browser runtime then feeds PCM only to
+`state.languages`. **This saves decode work, not memory** — the losing Vosklet instance stays
+loaded. Freeing memory would mean disposing it and reloading (~0.6 s) on the 15 % of calls
+that reopen, i.e. a mid-call stall exactly when the language changes; not taken.
+
+**Shipped OFF** (`QORGAN_ASR_LOCK_AFTER=0`; set it >0 with `QORGAN_ASR_LOCK_CONF_FLOOR` to
+enable), like the D29 damping knob. **The reason is honest rather than cautious:** the one
+risk that matters is code-switching, and it is the one thing this capture cannot measure — a
+Russian TTS voice reading Kazakh produces «ешь ком я и тп а», which is a property of the
+voice, not of a bilingual speaker. Flip the default when the Android bench runs on real
+bilingual speakerphone audio and the reopen rate holds. Until then the microphone path keeps
+both recognisers, and the knob is there to be measured with.
+
+### D41 — Grammar-constrained decoding is not worth a third decode (2026-09-24, STT Tier B)
+Proper domain biasing — rebuilding the decoding graph with a language model interpolated
+toward scam vocabulary — needs a Kaldi/OpenFST toolchain that is not on this machine
+(`compile-graph`, `arpa2fst`, `fstcompile` all absent), so it stays untested and remains the
+technically right version of this idea. Its reachable cousin was tested: Vosk builds a small
+LM on the fly from a phrase list, giving a recogniser that can emit only those phrases or
+`[unk]` — a keyword spotter rather than a bias (`grammar_probe.py`). **Measured against the
+open recogniser on the same synthesised audio:** Russian, cue recovery **6/12 vs 11/12** and
+1/30 false fires vs 0/30 — worse on both sides; Kazakh, recovery **8/9 vs 7/9** but **2/30
+false fires vs 0/30**. So the only gain anywhere is one Kazakh utterance, bought with a
+6.7 % false-fire rate on speech that carried no cue, under a project whose primary metric is
+FPR — and it would cost a **third** decode per utterance, pulling directly against D40.
+**Decision: no.** Constraining the vocabulary removes the surrounding context that makes an
+open hypothesis matchable, which the bounded-edit matcher (D39) already exploits better.
+**Caveat on record:** 12 and 9 cue-bearing utterances respectively — small, but the direction
+is consistent and the cost is certain. Revisit only with a real toolchain, as biasing rather
+than restriction.

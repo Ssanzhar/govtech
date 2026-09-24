@@ -1211,3 +1211,62 @@ scripted calls through an actual phone, in a kitchen, with an older speaker — 
 input, and would also let the two remaining Tier A items be judged: reading the recogniser's
 **N-best alternatives** rather than only the top hypothesis, and **A/B-ing** the browser's
 `noiseSuppression` / AGC, which are tuned for human listening.
+
+## Addendum (2026-09-24) — STT Tier B: language locking (ADR D40) and grammar decoding (ADR D41)
+
+### Language locking — replayed offline over both recognisers' decisions
+
+`capture_dual.py` records what EACH recogniser said for EACH utterance in dialogue order
+(`data/asr_capture/dual.jsonl`, 108 dialogues / 584 utterances, authored_heldout + shift), so
+policies are replayed without re-decoding (`lock_sweep.py`). Baseline `both` is what ships.
+
+| policy | decodes saved | text differs | cues lost | cues gained | differs (kk) | differs (mixed) | differs (ru) |
+|---|---|---|---|---|---|---|---|
+| both (ships today) | 0% | 0 (0.0%) | 0 | 0 | 0 | 0 | 0 |
+| lock@2 | 32% | 67 (11.5%) | 2 | 0 | 2 | 53 | 12 |
+| lock@3 | 22% | 43 (7.4%) | 1 | 1 | 2 | 36 | 5 |
+| lock@4 | 14% | 30 (5.1%) | 1 | 1 | 1 | 26 | 3 |
+| lock@3 + conf<0.80 | 20% | 25 (4.3%) | 0 | 1 | 1 | 19 | 5 |
+| lock@3 + conf<0.85 | 18% | 15 (2.6%) | 0 | 1 | 1 | 10 | 4 |
+| lock@3 + every 5th | 19% | 35 (6.0%) | 0 | 1 | 2 | 28 | 5 |
+| lock@3 + conf<0.85 + every 5th | 15% | 12 (2.1%) | 0 | 1 | 1 | 7 | 4 |
+
+`differs (mixed)` dominates every row and should be discounted: those dialogues are read by a
+Russian TTS voice over Kazakh text, so their audio is an artefact. On ru + kk alone,
+`lock@3 + conf<0.85` differs on 5 of ~390 utterances (1.3 %).
+
+**Stability after locking** (`lock@3 + conf<0.80`): 85 % of dialogues never reopen — ru 39/40,
+kk 34/35, mixed 19/33 — and 91 % of post-lock utterances run a single recogniser. At
+`conf<0.85`: 77 % never reopen, 82 % single.
+
+**Savings depend on call length**, and these dialogues are short (median 5 utterances):
+
+| call length | ~duration | decodes saved |
+|---|---|---|
+| 5 utterances | ~1 min | 18 % |
+| 10 | ~2 min | 32 % |
+| 20 | ~5 min | 39 % |
+| 40 | ~10 min | 42 % |
+
+So the headline 18 % is a property of the demo corpus; a real five-minute call saves ~39 %.
+It saves **decode work, not memory** — the idle recogniser stays loaded (see D40 for why
+disposal was not taken). Shipped behind `QORGAN_ASR_LOCK_AFTER` (0 = off, the default),
+because the risk that matters — code-switching — is precisely what this TTS cannot produce.
+
+### Grammar-constrained decoding — measured no-go
+
+Vosk can build an on-the-fly LM from a phrase list, giving a recogniser restricted to the cue
+lexicon plus `[unk]`. Same audio, same fuzzy matcher, open recogniser as control:
+
+| language | recogniser | cue recovered | false fire |
+|---|---|---|---|
+| ru | open (ships today) | 11/12 | 0/30 |
+| ru | grammar-constrained | 6/12 | 1/30 |
+| kk | open (ships today) | 7/9 | 0/30 |
+| kk | grammar-constrained | 8/9 | 2/30 |
+
+One Kazakh utterance gained, at 2/30 false fires and the cost of a third decode per utterance
+— against a primary metric of FPR and against D40's whole purpose. Rejected. Restricting the
+vocabulary strips the surrounding context that the bounded-edit matcher (D39) uses to recover
+a mangled cue. Real LM *biasing* was not testable here (no Kaldi/OpenFST toolchain) and stays
+the technically right version of the idea.

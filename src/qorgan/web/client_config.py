@@ -92,6 +92,9 @@ def export_client_config() -> dict[str, Any]:
                 "ru": {"id": cfg.vosk_model_ru, "url": f"{WEB_ASR_MODELS_SUBDIR}/{cfg.vosk_model_ru}.tar.gz"},
             },
             "sample_rate": cfg.asr_sample_rate,
+            # null = both recognisers run for the whole call (ADR D40).
+            "lock": ({"after": cfg.asr_lock_after, "confFloor": cfg.asr_lock_conf_floor}
+                     if cfg.asr_lock_after > 0 else None),
         },
     }
 

@@ -118,6 +118,10 @@ class Config(BaseModel):
     vosk_model_kk: str
     vosk_model_ru: str
     asr_sample_rate: int = Field(gt=0)
+    # Language locking (ADR D40): after this many voted utterances only the winning recogniser
+    # is fed; 0 = off (the shipped default -- the code-switch cost needs real bilingual audio).
+    asr_lock_after: int = Field(ge=0)
+    asr_lock_conf_floor: float = Field(ge=0.0, le=1.0)
 
     # --- Fine-tuned XLM-R backend (D3) ---
     xlmr_model_dir: Path
@@ -311,6 +315,8 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             vosk_model_kk=_read_str(source, "QORGAN_VOSK_MODEL_KK", _DEFAULT_VOSK_MODEL_KK),
             vosk_model_ru=_read_str(source, "QORGAN_VOSK_MODEL_RU", _DEFAULT_VOSK_MODEL_RU),
             asr_sample_rate=_read_int(source, "QORGAN_ASR_SAMPLE_RATE", _DEFAULT_ASR_SAMPLE_RATE),
+            asr_lock_after=_read_int(source, "QORGAN_ASR_LOCK_AFTER", 0),
+            asr_lock_conf_floor=_read_float(source, "QORGAN_ASR_LOCK_CONF_FLOOR", 0.80),
             xlmr_model_dir=_read_path(
                 source, "QORGAN_XLMR_MODEL_DIR", _read_path(source, "QORGAN_MODEL_DIR", _REPO_ROOT / "models") / "xlmr"
             ),

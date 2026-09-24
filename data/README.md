@@ -198,10 +198,15 @@ scam baiting calls"* (arXiv:2307.01965).
   corruption model, which would only prove what it was designed to prove.
 - **Derived from** `data/processed/` text that is already PII-scrubbed, so it is publishable;
   it carries no audio (the WAVs are scratch and deleted).
+- **`dual.jsonl` (ADR D40):** the same idea one level deeper — 584 utterances from 108
+  dialogues (authored_heldout + shift), each decoded **separately by both recognisers**, in
+  dialogue order, so any language-locking policy can be replayed offline without re-decoding
+  (`capture_dual.py`, swept by `lock_sweep.py`). Rows carry `kk`/`ru` `{text, confidence}`.
 - **Limits (state them whenever the numbers are quoted):** synthesised speech is far cleaner
   than a speakerphone, so cue-survival figures are **lower bounds**; one voice per language;
   the `mixed` rows are read by a Russian voice and their errors are a property of the voice,
-  not of the system.
+  not of the system — which is exactly why the code-switching risk of language locking
+  **cannot** be judged from this data (ADR D40).
 
 ## Real calls — `data/real/` (PLAN_2026-09 A8; never in git)
 - Protocol, batch format, roles and the split rule are in `docs/DATA_INTAKE.md`;

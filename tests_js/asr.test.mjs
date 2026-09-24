@@ -133,3 +133,57 @@ test("a language that endpoints twice before the other commits the first window 
   out = reduceAsrEvent(out.state, { type: "tick" }, 2600);
   assert.deepEqual(out.emits, [{ type: "utterance", language: "kk", text: "екі", confidence: 0.9 }]);
 });
+
+// --- language locking (STT Tier B, ADR D40) -------------------------------------------------
+// Two recognisers running for a whole call is the memory half of the phone gate (D25). Once
+// the language is settled the loser can stop being fed; a confidence drop reopens both,
+// because that is what a language switch looks like.
+
+const bothFire = (state, now, kk, ru, opts) => {
+  let emits = [];
+  for (const [language, hyp] of [["kk", kk], ["ru", ru]]) {
+    const step = reduceAsrEvent(state, { type: "result", language, detail: { text: hyp.text, result: [{ conf: hyp.confidence }] } }, now, opts);
+    state = step.state;
+    emits = emits.concat(step.emits);
+  }
+  return { state, emits };
+};
+
+test("locking: after the configured number of utterances only the winning language stays active", () => {
+  const opts = { lock: { after: 2, confFloor: 0 } };
+  let state = initialAsrState(["kk", "ru"]);
+  assert.deepEqual(state.languages, ["kk", "ru"]);
+  for (let i = 0; i < 2; i += 1) {
+    state = bothFire(state, 1000 * (i + 1), { text: "жоқ", confidence: 0.4 }, { text: "здравствуйте это банк", confidence: 0.95 }, opts).state;
+  }
+  assert.deepEqual(state.languages, ["ru"], "the winner should be the only active recognizer");
+  assert.equal(state.locked, "ru");
+});
+
+test("locking: a locked call commits on the winner's result alone, without waiting for the window", () => {
+  const opts = { lock: { after: 1, confFloor: 0 } };
+  let state = initialAsrState(["kk", "ru"]);
+  state = bothFire(state, 1000, { text: "жоқ", confidence: 0.3 }, { text: "это банк", confidence: 0.99 }, opts).state;
+  assert.deepEqual(state.languages, ["ru"]);
+  const step = reduceAsrEvent(state, { type: "result", language: "ru", detail: { text: "назовите код", result: [{ conf: 0.9 }] } }, 2000, opts);
+  assert.equal(step.emits.length, 1, "no second language to wait for");
+  assert.equal(step.emits[0].text, "назовите код");
+});
+
+test("locking: a confidence drop reopens both recognizers", () => {
+  const opts = { lock: { after: 1, confFloor: 0.8 } };
+  let state = initialAsrState(["kk", "ru"]);
+  state = bothFire(state, 1000, { text: "жоқ", confidence: 0.3 }, { text: "это банк", confidence: 0.99 }, opts).state;
+  assert.deepEqual(state.languages, ["ru"]);
+  const step = reduceAsrEvent(state, { type: "result", language: "ru", detail: { text: "мага шорт", result: [{ conf: 0.55 }] } }, 2000, opts);
+  assert.deepEqual(step.state.languages, ["kk", "ru"], "a low-confidence utterance looks like a language switch");
+  assert.equal(step.state.locked, null);
+});
+
+test("locking: off by default — the shipped behaviour is unchanged", () => {
+  let state = initialAsrState(["kk", "ru"]);
+  for (let i = 0; i < 5; i += 1) {
+    state = bothFire(state, 1000 * (i + 1), { text: "жоқ", confidence: 0.4 }, { text: "это банк", confidence: 0.95 }).state;
+  }
+  assert.deepEqual(state.languages, ["kk", "ru"]);
+});

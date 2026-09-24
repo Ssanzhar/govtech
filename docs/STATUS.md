@@ -2,7 +2,7 @@
 
 _Last updated: **2026-09-21**. Current-state doc for anyone picking the project up. Read this,
 then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECISIONS.md`
-(ADRs D11–D39), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
+(ADRs D11–D41), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
 kept as history._
 
 ## TL;DR (September 2026)
@@ -31,6 +31,14 @@ kept as history._
   the embedding head puts textbook prize / customs / relative-in-trouble scams at ≤ 0.10; the
   reassurance feature and the FPR story hold. Do not extend the lexicon from this set. The
   utterance-level heads were a measured no-go (D36); the e5-large server tier is D37.
+- **STT Tier B (2026-09-24, ADRs D40/D41):** language locking — after 3 voted utterances keep
+  only the winning recogniser, reopen both on a confidence drop — costs 0 cue detections and
+  1.3 % of ru+kk utterances, and saves ~39 % of decodes on a five-minute call (18 % on the
+  short demo dialogues); 85 % of calls never reopen. Implemented in the reducer as narrowing
+  `state.languages`, **shipped OFF** (`QORGAN_ASR_LOCK_AFTER=0`) because the one risk that
+  matters, code-switching, is the one thing synthesised audio cannot produce. Grammar-
+  constrained decoding measured and rejected (worse in ru, +2/30 false fires in kk, a third
+  decode).
 - **Cue matching survives the recogniser (2026-09-23, ADR D39):** cues were matched by exact
   substring, so one mis-recognised character killed the hard-signal floor. Measured on 272 real
   recogniser outputs (`data/asr_capture/`), then fixed two ways — a bounded-edit matcher over
@@ -79,6 +87,7 @@ accept numbered reports), `QORGAN_REPORT_RETENTION_DAYS=180`.
 | `eval/meter_sweep.py` | Offline live-meter sweep: per-turn traces cached once, variants replayed through the production meter (the A6 methodology, ADR D29). |
 | `eval/asr_realism.py` | Paired clean-vs-ASR-styled evaluation (FPR first, cue/reassurance survival, `--drop-latin` worst case) — the A10 gate (ADR D31). |
 | `classifier/cue_match.py`, `site/core/cue-match.js` | Cue matching that survives the recogniser (ADR D39): verbatim first, then bounded-edit over de-spaced text; pigeonhole prefilter; versioned as part of the bundle's feature contract. |
+| `scripts/spikes/asr_cue_survival/` (`capture_dual.py`, `lock_sweep.py`, `grammar_probe.py`), `data/asr_capture/dual.jsonl` | Tier B evidence (D40/D41): both recognisers per utterance in dialogue order; offline replay of locking policies; the grammar-decoding probe. |
 | `scripts/spikes/asr_cue_survival/`, `data/asr_capture/` | The capture + measurement harness behind D39: corpus utterances spoken by `say`, decoded by the shipped Vosk models; recovery / false-fire / clean-drift tables. |
 | `data/shift_set.py`, `data/authored/shift/` | The generator-shift split (A12, ADR D35): 66 calls by a second generator, grounded from verbatim phrases, scrubbed, refused if they overlap any split; `python -m qorgan.data.shift_set` → `processed/shift.jsonl` + manifest. |
 | `data/clean.py` | Generation-artefact repair run by `build_corpus` (and by hand on `ood.jsonl`): unwrap/split jammed turns, delete backspaces, decode escapes; rows with lost Kazakh letters are dropped and listed in the manifest (ADR D34). |

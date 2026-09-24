@@ -84,6 +84,10 @@ export function voteFinal(hypotheses, preferred = null) {
 export function initialAsrState(languages) {
   return {
     languages: [...languages],
+    allLanguages: [...languages],
+    locked: null,      // the single language left running, once it is settled
+    committed: 0,      // utterances voted so far (the lock arms on this)
+    wins: {},          // language -> utterances won, the tally the lock reads
     preferred: languages[0],
     pending: {}, // language -> {text, confidence} finals waiting for the vote
     partials: {}, // language -> {text, confidence} latest partials
@@ -97,7 +101,7 @@ export function initialAsrState(languages) {
     "tick", language?, detail?}`, `now` a timestamp (ms). Returns `{state, emits}` where
     emits are `{type: "partial", language, text}` and `{type: "utterance", language,
     text, confidence}`. Inputs are never mutated. */
-export function reduceAsrEvent(state, event, now, { alignWindowMs = ALIGN_WINDOW_MS, suppressMs = DUPLICATE_SUPPRESS_MS } = {}) {
+export function reduceAsrEvent(state, event, now, { alignWindowMs = ALIGN_WINDOW_MS, suppressMs = DUPLICATE_SUPPRESS_MS, lock = null } = {}) {
   if (event.type === "partial") {
     const hyp = parseVoskResult(event.detail);
     const next = { ...state, partials: { ...state.partials, [event.language]: hyp } };
@@ -116,8 +120,8 @@ export function reduceAsrEvent(state, event, now, { alignWindowMs = ALIGN_WINDOW
     if (state.pending[event.language] !== undefined) {
       // This language endpointed twice before the other fired: commit the open window first
       // (voting against the other language's partial), then open a new one -- never overwrite.
-      const closed = commit(state, now, suppressMs);
-      const reopened = reduceAsrEvent(closed.state, event, now, { alignWindowMs, suppressMs });
+      const closed = commit(state, now, suppressMs, lock);
+      const reopened = reduceAsrEvent(closed.state, event, now, { alignWindowMs, suppressMs, lock });
       return { state: reopened.state, emits: [...closed.emits, ...reopened.emits] };
     }
     const hyp = parseVoskResult(event.detail);
@@ -128,11 +132,11 @@ export function reduceAsrEvent(state, event, now, { alignWindowMs = ALIGN_WINDOW
       windowOpenedAt: state.windowOpenedAt ?? now,
     };
     const everyLanguageFired = state.languages.every((l) => next.pending[l] !== undefined);
-    return everyLanguageFired ? commit(next, now, suppressMs) : { state: next, emits: [] };
+    return everyLanguageFired ? commit(next, now, suppressMs, lock) : { state: next, emits: [] };
   }
   if (event.type === "tick") {
     const pruned = pruneSuppressions(state, now);
-    if (pruned.windowOpenedAt !== null && now - pruned.windowOpenedAt >= alignWindowMs) return commit(pruned, now, suppressMs);
+    if (pruned.windowOpenedAt !== null && now - pruned.windowOpenedAt >= alignWindowMs) return commit(pruned, now, suppressMs, lock);
     return { state: pruned, emits: [] };
   }
   throw new Error(`unknown asr event type: ${event.type}`);
@@ -141,7 +145,7 @@ export function reduceAsrEvent(state, event, now, { alignWindowMs = ALIGN_WINDOW
 /** Vote on what is pending; a language that has not fired contributes its current
     partial (like `FinalResult()` at the other's boundary in the Python design) and its
     next `result` is suppressed as a duplicate. */
-function commit(state, now, suppressMs) {
+function commit(state, now, suppressMs, lock = null) {
   const hypotheses = {};
   const suppressUntil = { ...state.suppressUntil };
   for (const language of state.languages) {
@@ -153,7 +157,7 @@ function commit(state, now, suppressMs) {
     }
   }
   const winner = voteFinal(hypotheses, state.preferred);
-  const next = {
+  const next = applyLock({
     ...state,
     pending: {},
     partials: Object.fromEntries(state.languages.map((l) => [l, null])),
@@ -161,8 +165,30 @@ function commit(state, now, suppressMs) {
     suppressUntil,
     lastPartialText: "",
     preferred: winner ? winner.language : state.preferred,
-  };
+    committed: state.committed + (winner ? 1 : 0),
+    wins: winner ? { ...state.wins, [winner.language]: (state.wins[winner.language] ?? 0) + 1 } : state.wins,
+  }, winner, lock);
   return { state: next, emits: winner ? [{ type: "utterance", ...winner }] : [] };
+}
+
+/** Narrow `languages` to the settled winner, or widen it back when the locked recognizer
+    loses confidence -- which is what a speaker switching language looks like. Locking is
+    expressed purely as the active language set, so every alignment rule above still holds:
+    with one language `everyLanguageFired` is immediate and the vote has one candidate. */
+function applyLock(state, winner, lock) {
+  if (!lock) return state;
+  const { after = 3, confFloor = 0 } = lock;
+  if (state.locked) {
+    if (winner && winner.confidence < confFloor) {
+      return { ...state, locked: null, committed: 0, wins: {}, languages: [...state.allLanguages] };
+    }
+    return state;
+  }
+  if (state.committed < after) return state;
+  const ranked = Object.entries(state.wins).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1));
+  if (!ranked.length) return state;
+  const settled = ranked[0][0];
+  return { ...state, locked: settled, languages: [settled] };
 }
 
 function pruneSuppressions(state, now) {
@@ -213,7 +239,7 @@ export function loadVoskletScript(url = VOSKLET_SCRIPT_URL, doc = globalThis.doc
 /** Dual-language on-device ASR. `models` = `{language: {url, id}}` (self-hosted USTAR
     tarballs). Calls `onPartial({language, text})`, `onUtterance({language, text,
     confidence})`, `onStatus(message)`. `start(stream)` takes a microphone MediaStream. */
-export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus = () => {}, onError = () => {}, onRaw = null }) {
+export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus = () => {}, onError = () => {}, onRaw = null, lock = null }) {
   const languages = Object.keys(models);
   if (!languages.length) throw new Error("no ASR models configured");
   const loadVosklet = await loadVoskletScript();
@@ -236,7 +262,7 @@ export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus
   const dispatch = (event) => {
     if (onRaw && event.type !== "tick") onRaw({ ...event, at: performance.now() }); // diagnostics: every recognizer event
     try {
-      const out = reduceAsrEvent(state, event, performance.now());
+      const out = reduceAsrEvent(state, event, performance.now(), { lock });
       state = out.state;
       for (const emit of out.emits) {
         if (emit.type === "partial") onPartial(emit);
@@ -262,7 +288,10 @@ export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus
       }
       transferer = await modules[languages[0]].createTransferer(ctx, TRANSFERER_BUFFER);
       transferer.port.onmessage = (ev) => {
-        for (const language of languages) recognizers[language].acceptWaveform(ev.data.slice()); // a copy each: buffers may be transferred
+        // `state.languages`, not `languages`: once the reducer locks a language the other
+        // recognizer stops being fed, which is the whole compute win (ADR D40). Its instance
+        // stays loaded, so this saves decode work, not memory.
+        for (const language of state.languages) recognizers[language].acceptWaveform(ev.data.slice()); // a copy each: buffers may be transferred
       };
       source = ctx.createMediaStreamSource(stream);
       source.connect(transferer);
