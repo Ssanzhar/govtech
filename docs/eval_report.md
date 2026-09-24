@@ -1270,3 +1270,67 @@ One Kazakh utterance gained, at 2/30 false fires and the cost of a third decode 
 vocabulary strips the surrounding context that the bounded-edit matcher (D39) uses to recover
 a mangled cue. Real LM *biasing* was not testable here (no Kaldi/OpenFST toolchain) and stays
 the technically right version of the idea.
+
+## Addendum (2026-09-24) — register diversity closes half the cross-generator gap (ADR D42)
+
+### What was generated
+
+`scripts/augment_register_diversity.py` runs the SAME Gemini pipeline with a sampled register
+persona in `generate.py`'s `style` hook — caller manner (7), callee manner (6), opening (5),
+texture (5), length (3) — producing 45 scams and 74 hard negatives, of which 31 also carry the
+institutional-reassurance instruction. Train 1,404 → 1,642; eval splits byte-identical. The
+augmentation is deliberately **not** Claude-written: `shift` is, and training on it would
+destroy the only cross-generator signal the project has.
+
+### Result (device embeddings, threshold 0.59)
+
+| Split | FPR [95% CI] | Precision | Recall [95% CI] | F1 | PR-AUC [95% CI] | N |
+|---|---|---|---|---|---|---|
+| shift | 0.061 [0.007, 0.202] | 0.857 | 0.364 [0.204, 0.549] | 0.511 | 0.897 [0.798, 0.969] | 66 |
+| test | 0.000 [0.000, 0.070] | 1.000 | 0.984 [0.916, 1.000] | 0.992 | 1.000 [0.999, 1.000] | 115 |
+| authored_heldout | 0.000 [0.000, 0.142] | 1.000 | 0.889 [0.653, 0.986] | 0.941 | 0.997 [0.982, 1.000] | 42 |
+| authored_heldout (clean) | 0.000 [0.000, 0.176] | 1.000 | 0.889 [0.653, 0.986] | 0.941 | 1.000 [1.000, 1.000] | 37 |
+| authored_heldout (inspected) | 0.000 [0.000, 0.522] | 0.000 | 0.000 [-] | 0.000 | 0.000 [-] | 5 |
+| ood | 0.000 [0.000, 0.049] | 1.000 | 0.932 [0.813, 0.986] | 0.965 | 0.995 [0.982, 1.000] | 118 |
+| adversarial | 0.000 [-] | 1.000 | 0.945 [0.884, 0.980] | 0.972 | 0.000 [-] | 109 |
+
+Against the shipped baseline: `shift` **0.242 → 0.364**, `test` 0.953 → 0.984, `ood`
+0.886 → 0.932, cue-free adversarial 0.917 → 0.945, legit-sounding 0.807 → 0.835 — every split
+up. `shift` FPR went **0.030 → 0.061** (1 → 2 of 33, intervals overlapping): the one metric
+that got worse. The added call is `shift_legit_kk_11`, a pushy but legitimate bank deposit
+sales call, at 0.623.
+
+Streaming is unchanged or better:
+
+| Split | False-Latch Rate [95% CI] | Alert-Hit Rate [95% CI] | Median Turns | P90 Turns | N+ | N- |
+|---|---|---|---|---|---|---|
+| test | 0.059 [0.012, 0.162] | 0.984 [0.916, 1.000] | 3.000 | 3.000 | 64 | 51 |
+| authored_heldout | 0.125 [0.027, 0.324] | 0.889 [0.653, 0.986] | 3.000 | 3.000 | 18 | 24 |
+| authored_heldout (clean) | 0.053 [0.001, 0.260] | 0.889 [0.653, 0.986] | 3.000 | 3.000 | 18 | 19 |
+| authored_heldout (inspected) | 0.400 [0.053, 0.853] | 0.000 [-] | - | - | 0 | 5 |
+
+### The failure that had to be fixed first
+
+The first attempt — scams in new registers plus *generic* negatives — put `authored_heldout`
+FPR at **0.083**, with `real_neg_bank_fraud_alert_ru` (0.662) and `real_neg_telecom_tariff_ru`
+(0.618) firing: the same number and the same two anchors as July (ADR D27). Widening the
+scams' register swamps the reassurance counter-signal, which the taxonomy's negative
+categories do not prompt for. Regenerating with 40 % of negatives carrying the reassurance
+instruction **inside the new registers** restored FPR 0.000 and kept the recall gains.
+
+### The threshold move that looked free and was not
+
+| threshold | test | authored | ood | shift | adversarial | legit-sounding |
+|---|---|---|---|---|---|---|
+| 0.55 | 0.000/0.984 | 0.000/0.944 | 0.000/0.955 | 0.061/0.424 | -/0.954 | -/0.872 |
+| 0.59 | 0.000/0.984 | 0.000/0.889 | 0.000/0.932 | 0.061/0.364 | -/0.945 | -/0.835 |
+| 0.62 | 0.000/0.984 | 0.000/0.889 | 0.000/0.932 | 0.061/0.364 | -/0.927 | -/0.835 |
+| 0.65 | 0.000/0.984 | 0.000/0.889 | 0.000/0.932 | 0.030/0.364 | -/0.927 | -/0.826 |
+| 0.70 | 0.000/0.969 | 0.000/0.889 | 0.000/0.909 | 0.030/0.364 | -/0.927 | -/0.798 |
+
+On val + authored (the only sets rule A5 permits for tuning) FPR is 0.000 anywhere in
+0.55–0.65, so 0.65 looked like a free way to remove the `shift` false positive. Two reasons it
+was rejected: it is **not Pareto** (one false positive saved, three true positives lost), and
+`SINGLE_HARD_SIGNAL_FLOOR` is **61**, so at enter 0.65 a single confident hard signal — a
+verbatim OTP request — scores 61 and would **no longer latch the live meter**. Threshold stays
+0.59. The targeted fix for that one call is sales-call negatives in varied registers.

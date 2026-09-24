@@ -759,3 +759,45 @@ open hypothesis matchable, which the bounded-edit matcher (D39) already exploits
 **Caveat on record:** 12 and 9 cue-bearing utterances respectively — small, but the direction
 is consistent and the cost is certain. Revisit only with a real toolchain, as biasing rather
 than restriction.
+
+### D42 — Widening the training register closes half the cross-generator gap; the threshold move that looked free was not (2026-09-24)
+ADR D35 measured the device model at 8/33 on calls written by a second generator, against
+0.95 on `test`. The hypothesis was that the model had learned **one generator's house style**
+rather than the scam, since every split shares its generator and prompts with `train`.
+Tested by generating through the same Gemini pipeline with a **sampled register persona**
+injected into `generate.py`'s existing `style` hook — caller manner, callee manner, how the
+call opens, verbal texture, length (`scripts/augment_register_diversity.py`). Deliberately
+**not** written by Claude: `shift` is Claude-authored, so training on Claude text would turn
+the only cross-generator test into a test of the model's own author.
+
+**The hypothesis holds.** With 45 register-varied scams + 74 negatives folded into train:
+`shift` recall **0.242 → 0.364** (8 → 12 of 33), `test` 0.953 → 0.984, `ood` 0.886 → 0.932,
+cue-free adversarial 0.917 → 0.945, legit-sounding adversarial 0.807 → 0.835 — every split up,
+at FPR 0.000 on test / authored / ood. So a real part of that gap was register, not semantics.
+
+**The first attempt broke the primary metric, in the exact way ADR D27 predicted.** Scams in
+new registers plus *generic* negatives put `authored_heldout` FPR at **0.083** — the same
+number, and the same two anchors (`real_neg_bank_fraud_alert_ru`,
+`real_neg_telecom_tariff_ru`), as July. The lesson is sharper than "pair augmentation with
+negatives": pair it with negatives carrying **the specific counter-signal the new positives
+would otherwise drown**. Here that is institutional reassurance ("we will never ask for your
+code"), which the taxonomy's negative categories do not prompt for on their own. Regenerating
+with 40 % of negatives carrying the reassurance instruction **in the new registers** returned
+authored FPR to 0.000 with the recall gains intact.
+
+**Rejected: moving the alert threshold to 0.65.** The remaining cost is one extra false
+positive on `shift` (0.030 → 0.061; `shift_legit_kk_11`, a pushy but legitimate bank deposit
+sales call, at 0.623), and a threshold of 0.65 removes it. On the A5 tuning set (val +
+authored) FPR is 0.000 anywhere in 0.55–0.65, so it looked free. It is not: (1) it is not
+Pareto — it saves that one false positive but loses three true positives (adversarial 0.945 →
+0.927, legit-sounding 0.835 → 0.826); (2) `SINGLE_HARD_SIGNAL_FLOOR` is **61**, so at enter
+0.65 one confident hard signal — a verbatim OTP request — would score 61 and **no longer latch
+the live meter**, silently deleting a designed behaviour (the meter test caught it). Threshold
+stays **0.59**; the honest targeted fix for that one call is sales-call negatives in varied
+registers, not an operating-point change.
+
+**Shipped:** train 1,404 → 1,642, eval splits byte-identical, retrained on device embeddings.
+test 0.000/0.984 · authored 0.000/0.889 · ood 0.000/0.932 · shift **0.061/0.364** ·
+adversarial 0.945 · legit-sounding 0.835 · streaming test 0.059 & 0.984, authored (clean)
+0.053 & 0.889. **On record:** `shift` FPR doubled (1 → 2 of 33, overlapping intervals) — the
+one metric that got worse, named rather than buried. Rollback: `models/linear_d41_rollback`.

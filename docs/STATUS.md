@@ -2,7 +2,7 @@
 
 _Last updated: **2026-09-21**. Current-state doc for anyone picking the project up. Read this,
 then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECISIONS.md`
-(ADRs D11–D41), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
+(ADRs D11–D42), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
 kept as history._
 
 ## TL;DR (September 2026)
@@ -31,6 +31,13 @@ kept as history._
   the embedding head puts textbook prize / customs / relative-in-trouble scams at ≤ 0.10; the
   reassurance feature and the FPR story hold. Do not extend the lexicon from this set. The
   utterance-level heads were a measured no-go (D36); the e5-large server tier is D37.
+- **Register diversity (2026-09-24, ADR D42):** the cross-generator gap was half house style.
+  45 register-varied scams + 74 negatives (31 carrying the reassurance counter-signal) folded
+  into train → `shift` recall **0.242 → 0.364**, test 0.953 → 0.984, ood 0.886 → 0.932,
+  adversarial 0.917 → 0.945, legit-sounding 0.807 → 0.835, FPR 0.000 on test/authored/ood.
+  Cost, on record: `shift` FPR 0.030 → 0.061 (one pushy bank sales call at 0.623). Threshold
+  stays 0.59 — 0.65 would remove that call but loses 3 true positives AND would stop a single
+  hard signal latching the meter (floor 61 < 65).
 - **STT Tier B (2026-09-24, ADRs D40/D41):** language locking — after 3 voted utterances keep
   only the winning recogniser, reopen both on a confidence drop — costs 0 cue detections and
   1.3 % of ru+kk utterances, and saves ~39 % of decodes on a five-minute call (18 % on the

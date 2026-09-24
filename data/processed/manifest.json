@@ -8,13 +8,13 @@
   },
   "counts": {
     "train": {
-      "total": 1404,
-      "hard_negatives": 770,
-      "positives": 634,
+      "total": 1642,
+      "hard_negatives": 918,
+      "positives": 724,
       "by_language": {
-        "ru": 452,
-        "kk": 496,
-        "mixed": 456
+        "ru": 532,
+        "kk": 574,
+        "mixed": 536
       }
     },
     "val": {
@@ -48,10 +48,10 @@
       }
     }
   },
-  "total": 1673,
-  "content_hash": "50938c1290443b3d1d2e418f605faa4c27b7932bf3d6e490fd4d0e077ec1f1b9",
-  "train_augment_count": 102,
-  "train_asr_style_count": 702,
+  "total": 1911,
+  "content_hash": "0dff87937603316427ae8ed6487c329f9c60d5f4d10bfdd8bd3d9255dccf6654",
+  "train_augment_count": 221,
+  "train_asr_style_count": 821,
   "dropped_corrupted": [
     "neg_legit_bank_call_mixed_13",
     "neg_legit_bank_call_mixed_16",

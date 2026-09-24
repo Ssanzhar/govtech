@@ -187,6 +187,22 @@ scam baiting calls"* (arXiv:2307.01965).
 - **Limits:** one author, 66 rows (recall CI on 33 positives is ±0.15); the author's Kazakh is
   competent, not native; it is still synthetic — only real calls (A3) can replace it.
 
+## Register diversity — `data/augment/register_diversity{,_negatives}.jsonl` (ADR D42, 2026-09-24)
+- **What:** 45 scam dialogues + 74 hard negatives generated through the SAME Gemini pipeline
+  as the corpus, but with a **sampled register persona** injected into `generate.py`'s `style`
+  hook: caller manner (7 options), callee manner (6), opening (5), verbal texture (5), length
+  (3). 31 of the negatives additionally carry the institutional-reassurance instruction.
+  Regenerate: `python scripts/augment_register_diversity.py --per-tactic 3 --negatives 75`.
+- **Why:** ADR D35 showed the model had learned one generator's house style — 8/33 on calls by
+  a second author. Widening the register (not changing the generator) recovered half that gap.
+- **Why Gemini and not Claude:** the `shift` split is Claude-authored. Training on Claude text
+  would turn the only cross-generator test into a test of the model's own author.
+- **Why the negatives carry reassurance:** scams in new registers alone swamp the "we will
+  never ask for your code" counter-signal and bring the July false positives back at the exact
+  same FPR (0.083, ADR D27). Pair augmentation with the *specific* counter-signal it drowns.
+- **Train-only**, folded by `build_corpus`; `tests/data/test_register_augment.py` asserts the
+  labels, the disjointness from every evaluation split, and that the register really is varied.
+
 ## Recogniser-output capture — `data/asr_capture/pairs.jsonl` (ADR D39, 2026-09-23)
 - **What:** 272 `(reference, hypothesis)` pairs. Each is a corpus utterance spoken by macOS
   `say` (Milena `ru_RU`, Aru `kk_KZ`; `mixed` is read by Milena) and decoded by the **same
