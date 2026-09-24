@@ -66,16 +66,30 @@ def test_invalid_ledgers_raise(tmp_path, text):
         load_inspection_ledger(_write(tmp_path, text))
 
 
-def test_repo_ledger_ids_exist_among_the_anchors():
-    """The committed ledger must only name real anchor ids, and must name the five
-    negatives documented as inspected in docs/eval_report.md and the memory notes."""
+def test_repo_ledger_ids_exist_in_an_evaluation_split():
+    """Every ledger id must name a real evaluated record -- an authored anchor or a row of an
+    evaluation split -- so the `(inspected)` subsets can never be built from phantom ids. The
+    ledger is not anchors-only: `eval.run` applies it to any split, and `shift` rows have been
+    read too (ADR D43)."""
+    import json
+    from pathlib import Path as _Path
+
     ledger = load_inspection_ledger()
-    anchor_ids = {d.id for d in build_anchor_dialogues()}
-    assert ledger.ids <= anchor_ids, ledger.ids - anchor_ids
+    known = {d.id for d in build_anchor_dialogues()}
+    processed = _Path(__file__).resolve().parents[2] / "data" / "processed"
+    for split in ("val", "test", "authored_heldout", "ood", "adversarial", "adversarial_legit", "shift"):
+        path = processed / f"{split}.jsonl"
+        if path.exists():
+            known |= {json.loads(l)["id"] for l in path.read_text(encoding="utf-8").splitlines() if l.strip()}
+    assert ledger.ids <= known, ledger.ids - known
     assert ledger.ids >= {
+        # the five authored negatives read during the July feature engineering
         "real_neg_bank_fraud_alert_ru",
         "real_neg_telecom_tariff_ru",
         "real_neg_bank_card_ready_ru",
         "real_neg_telecom_tariff_notice_mixed",
         "real_neg_bank_card_delivery_kk",
+        # the two shift negatives read while measuring the cross-generator gap (D35, D42)
+        "shift_legit_mixed_05",
+        "shift_legit_kk_11",
     }

@@ -19,3 +19,11 @@ entries:
   - id: real_neg_bank_card_delivery_kk
     inspected_on: 2026-07-15
     reason: borderline at 0.541 during the KK-boundary work; used as a retrain-gate sentinel
+  # `shift` rows read while measuring the cross-generator gap. The ledger is split-agnostic,
+  # so these get the same (clean)/(inspected) treatment the authored anchors do (ADR D43).
+  - id: shift_legit_mixed_05
+    inspected_on: 2026-09-21
+    reason: highest-scoring shift negative at 0.62 when the split was introduced (ADR D35); a teacher collecting money for a class trip
+  - id: shift_legit_kk_11
+    inspected_on: 2026-09-24
+    reason: the false positive register diversity added, at 0.623 (ADR D42); a pushy but legitimate bank deposit sales call. Examined and deliberately NOT fixed with data -- sales-flavoured calls are already 40% of train negatives, so generating more would be fitting to this row

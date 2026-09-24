@@ -1334,3 +1334,21 @@ was rejected: it is **not Pareto** (one false positive saved, three true positiv
 `SINGLE_HARD_SIGNAL_FLOOR` is **61**, so at enter 0.65 a single confident hard signal — a
 verbatim OTP request — scores 61 and would **no longer latch the live meter**. Threshold stays
 0.59. The targeted fix for that one call is sales-call negatives in varied registers.
+
+### `shift` under the inspection ledger (ADR D43)
+
+Two `shift` negatives have been read while debugging — `shift_legit_mixed_05` (D35) and
+`shift_legit_kk_11` (D42) — so the ledger now covers them and `eval.run` reports the subsets:
+
+| Split | FPR [95% CI] | Precision | Recall [95% CI] | F1 | PR-AUC [95% CI] | N |
+|---|---|---|---|---|---|---|
+| shift | 0.061 [0.007, 0.202] | 0.857 | 0.364 [0.204, 0.549] | 0.511 | 0.897 [0.798, 0.969] | 66 |
+| shift (clean) | 0.000 [0.000, 0.112] | 1.000 | 0.364 [0.204, 0.549] | 0.533 | 0.945 [0.886, 0.984] | 64 |
+| shift (inspected) | 1.000 [0.158, 1.000] | 0.000 | 0.000 [-] | 0.000 | 0.000 [-] | 2 |
+
+Both false positives are inspected rows. That is not a clean bill of health — the inspected
+two are the hardest negatives in the split by construction — but it does mean the FPR on the
+64 rows never read is 0.000 [0.000, 0.112]. **Not done, deliberately:** generating sales-call
+negatives to remove `shift_legit_kk_11`. The premise was measured first and is false —
+sales-flavoured calls are already 183 of 459 (40 %) of train negatives — so it would have been
+fitting to one named evaluation row rather than filling a gap.

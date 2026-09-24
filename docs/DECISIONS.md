@@ -801,3 +801,25 @@ test 0.000/0.984 · authored 0.000/0.889 · ood 0.000/0.932 · shift **0.061/0.3
 adversarial 0.945 · legit-sounding 0.835 · streaming test 0.059 & 0.984, authored (clean)
 0.053 & 0.889. **On record:** `shift` FPR doubled (1 → 2 of 33, overlapping intervals) — the
 one metric that got worse, named rather than buried. Rollback: `models/linear_d41_rollback`.
+
+### D43 — `shift` gets the inspection ledger too; its false positives are not fixed with data (2026-09-24)
+The inspection ledger (A2) exists because a number computed on records a developer read while
+debugging is not a generalization signal. It was built for the authored anchors, but
+`eval.run` applies it to any split, and by now two `shift` negatives have been read:
+`shift_legit_mixed_05` (0.62, the highest-scoring negative when the split was introduced,
+ADR D35) and `shift_legit_kk_11` (0.623, the false positive register diversity added, ADR
+D42). Both are now in the ledger. **Effect:** `shift` 0.061 / 0.364 splits into
+**`shift (clean)` 0.000 [0.000, 0.112] / 0.364 (n=64)** and `shift (inspected)` 1.000 (n=2).
+Both rows are still reported — the inspected subset is the *hardest* two negatives by
+construction, so its 1.000 is not a scandal and the clean 0.000 is not a clean bill of health;
+the split simply stops presenting inspected rows as generalization.
+
+**Rejected: generating sales-call negatives to remove `shift_legit_kk_11`.** It is the
+obvious targeted fix and it would have worked. But the premise was checked first and is
+false: sales-flavoured calls are already **183 of 459 (40 %)** of train negatives, so this is
+not a coverage gap. Generating more would be fitting to one named evaluation row — exactly
+the "mild eval circularity" `docs/STATUS.md` already admits to twice. The call stays a false
+positive on the record. A genuine fix needs real calls, or a category the corpus actually
+lacks. **Rule going forward:** before generating data to fix a named evaluation failure,
+measure whether the category is under-represented in train; if it is not, the failure is
+information, not a task.
