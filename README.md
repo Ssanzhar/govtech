@@ -102,11 +102,12 @@ npm run device:serve -- --pages 4 &
 QORGAN_EMBED_BACKEND=device python -m qorgan.classifier.linear_train
 ```
 
-Shipped numbers (threshold 0.59, 2026-09-21, computed on the **browser's own embeddings** —
-ADR D33, so they describe what the device decides, browser gate 0/200; corpus repaired, ADR D34):
-**test FPR 0.000 / recall 0.953 · authored_heldout FPR 0.000 / recall 0.889 · ood FPR 0.000 /
-recall 0.886 · ASR-styled FPR 0.000 on every split · adversarial (cue-free) recall 0.917 ·
-adversarial (legit-sounding) recall 0.815**. Read them with their intervals: `authored_heldout` is
+Shipped numbers (threshold 0.59, 2026-09-24, computed on the **browser's own embeddings** —
+ADR D33, so they describe what the device decides, browser gate 0/200; corpus repaired, ADR D34;
+training register widened, ADR D42):
+**test FPR 0.000 / recall 0.984 · authored_heldout FPR 0.000 / recall 0.889 · ood FPR 0.000 /
+recall 0.932 · ASR-styled FPR 0.000 on every split · adversarial (cue-free) recall 0.945 ·
+adversarial (legit-sounding) recall 0.835**. Read them with their intervals: `authored_heldout` is
 **hand-written, not real calls** (18 scam / 24 legit), so its FPR of 0.000 has a 95 %
 Clopper–Pearson interval of **[0.000, 0.142]** and its recall of 0.889 is 16/18 — the two
 misses are named in the report; test's 0.000 is **[0.000, 0.070]** on 51 negatives; five
@@ -115,17 +116,23 @@ authored negatives were read during feature engineering and are reported separat
 of the device and disagrees on 6/200 borderline calls — reported, not hidden. The harness
 prints intervals on every run.
 
-**The number to lead with, though, is this one (2026-09-21, ADR D35):** on a 66-call split
+**The number to lead with, though, is this one (ADRs D35/D42/D43):** on a 66-call split
 written by a *second generator* (`shift`: 33 scams / 33 confusable legit, ru / kk / mixed,
 authored without sight of the corpus or the lexicons — `data/README.md`), the same model has
-**recall 0.242 [0.111, 0.423] and FPR 0.030 [0.001, 0.158]** — 8 of 33 scams. Every other
+**recall 0.364 [0.204, 0.549] and FPR 0.061 [0.007, 0.202]** — 12 of 33 scams. It was 8 of 33
+until the training register was widened (D42), which is the honest measure of how much of the
+earlier gap was one generator's house style rather than scam semantics. Both of that split's
+false positives are rows read while debugging and are ledger-marked, so the harness also
+prints `shift (clean)` — FPR **0.000 [0.000, 0.112]** on the 64 rows never looked at (D43). Every other
 split above shares its generator (Gemini) with the training data, so their recall is largely
 that generator's register. The reassurance feature still holds (real fraud alerts score
 ≤ 0.01) and the FPR story survives, but until real calls exist the recall claim is "one
 generator's scams", and the `shift` table in the eval report is the honest one. The cloud
 second opinion (`llm` backend, Gemini 2.5 Pro, offered on the citizen's explicit request) scores
 the same 66 calls at **33 / 33 recall and 0 / 33 FPR** (ADR D38) — that is the accuracy tier;
-the device model is the privacy tier. Methodology + caveats: [`docs/eval_report.md`](docs/eval_report.md), data
+the device model is the privacy tier. The gap between 12/33 and 33/33 is the honest measure of
+what running on-device currently costs, and closing it needs real calls (A3), not more
+synthetic data. Methodology + caveats: [`docs/eval_report.md`](docs/eval_report.md), data
 provenance: [`data/README.md`](data/README.md).
 
 ## Microphone mode (on-device speech recognition)
