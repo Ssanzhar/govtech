@@ -54,3 +54,36 @@ def test_entries_are_frozen():
     entry = _entry()
     with pytest.raises(ValidationError):
         entry.outcome = "changed"  # type: ignore[misc]
+
+
+# --- system-generated ids are not call content (found 2026-09-24) ---------------------------
+
+def test_a_receipt_subject_whose_hex_looks_like_a_number_is_still_accepted():
+    """`subject="receipt:<32 hex>"` is a system-generated opaque id. ~0.46 % of random
+    receipts contain a digit run the PII scrubber reads as a phone number, which used to make
+    the audit write fail — losing the audit record for roughly 1 partner submission in 217."""
+    from qorgan.audit import AuditEntry
+
+    entry = AuditEntry(
+        timestamp=datetime(2026, 9, 24, tzinfo=UTC),
+        actor_kind="partner",
+        actor_id="partner:acme",
+        action="report.submit",
+        subject="receipt:743c0ef8f88913843287eaa388fd69bc",
+        outcome="stored",
+    )
+    assert entry.subject == "receipt:743c0ef8f88913843287eaa388fd69bc"
+
+
+def test_a_subject_carrying_real_call_content_is_still_refused():
+    from qorgan.audit import AuditEntry
+
+    with pytest.raises(ValidationError):
+        AuditEntry(
+            timestamp=datetime(2026, 9, 24, tzinfo=UTC),
+            actor_kind="partner",
+            actor_id="partner:acme",
+            action="report.submit",
+            subject="caller +7 701 234 56 78 said to transfer",
+            outcome="stored",
+        )

@@ -9,6 +9,7 @@ the audit log into a second copy of the data it is supposed to account for.
 from __future__ import annotations
 
 from datetime import datetime
+import re
 from pathlib import Path
 from typing import Literal
 
@@ -35,9 +36,20 @@ class AuditEntry(BaseModel):
     @field_validator("actor_id", "action", "subject", "outcome")
     @classmethod
     def _content_free(cls, value: str | None) -> str | None:
-        if value is not None and scrub_text(value) != value:
+        if value is not None and not _is_system_id(value) and scrub_text(value) != value:
             raise ValueError("audit fields must not carry numbers, cards, IINs or other call content")
         return value
+
+
+# A system-generated opaque id is not call content, but its random hex can contain a digit run
+# the PII scrubber reads as a phone number -- measured at ~0.46 % of receipts, i.e. one partner
+# submission in ~217 losing its audit record (found 2026-09-24). These exact shapes are exempt;
+# everything else still goes through the scrubber unchanged.
+_SYSTEM_ID = re.compile(r"^(receipt|report|incident|organization):[0-9a-f]{8,64}$")
+
+
+def _is_system_id(value: str) -> bool:
+    return bool(_SYSTEM_ID.match(value))
 
 
 def append_audit(entry: AuditEntry, path: Path) -> Path:
