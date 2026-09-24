@@ -62,6 +62,14 @@ kept as history._
   transport timeout, 180 s wall-clock deadline + retries (the eval used to hang on idle sockets).
 - **Tests:** `pytest -q` → 1038 offline (+2 skipped until a real held-out set exists) · `npm test` → 28 (JS core parity, the ASR vote/alignment reducer, the int8
   runtime gate on 200 transcripts — which needs the self-hosted model files). Branch `sanzh-ts`.
+- **Verified in Chromium (2026-09-24, Playwright), after the D39/D42 model changes:** all
+  **three** demo scenes now ship in the replay path (the Kazakh one existed only in the ASR
+  bench until today) — RU scam **100/100 CRITICAL**, **KK scam 97/100 CRITICAL** with
+  secrecy / otp_request / safe_account at weight 1.00 (verbatim cue hits), real bank call
+  **26/100 LOW, no tags**. Kazakh advice renders from `advice_kk.yaml` on a fresh run.
+  **Network: zero POSTs and zero requests carrying call content** — only static GETs for the
+  model, config, tokenizer and WASM runtime. Known wart: switching the ru/kk locale mid-call
+  does not re-render advice already on screen (a fresh run is correct).
 - **Verified in Chromium (2026-09-14, Playwright):** scene 1 on-device → 90/100 CRITICAL with
   cue-grounded tags/advice/summary; scene 2 (real bank call) → 5/100 LOW; report submit →
   receipt, digest + `+7 700 ***` on disk, raw number absent; delete → gone. Only network

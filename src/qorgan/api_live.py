@@ -42,6 +42,7 @@ _DEFAULT_UTTERANCE_CONFIDENCE = 1.0
 # Human-readable scenario labels (RU-facing UI copy for the demo picker).
 _SCENARIO_LABELS: dict[str, str] = {
     "live_scam_bank_ru": "Bank security scam (RU)",
+    "live_scam_bank_kk": "Bank security scam (KK)",
     "live_hard_negative_bank_ru": "Real bank call — hard negative (RU)",
 }
 Locale = Literal["ru", "kk"]
