@@ -66,3 +66,21 @@ def test_manifest_records_how_it_was_made():
     manifest = json.loads(path.read_text(encoding="utf-8"))
     assert manifest["seed"] and manifest["model"]
     assert manifest["scams"] > 0 and manifest["negatives"] >= manifest["scams"], "negatives must not be outnumbered (ADR D27)"
+
+
+def test_every_augment_file_is_already_scrubbed():
+    """`data/README.md` promises `data/augment/` is scrubbed and therefore publishable, and
+    `scripts/hf_upload.py` uploads the whole directory. A generator that forgets
+    `scrub_dialogue` would publish fabricated phone numbers and IINs (found 2026-09-24)."""
+    from qorgan.data.scrub import scrub_text
+
+    offenders = []
+    for path in sorted(_AUGMENT.glob("*.jsonl")):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            dialogue = Dialogue.model_validate_json(line)
+            for utterance in dialogue.utterances:
+                if scrub_text(utterance.text) != utterance.text:
+                    offenders.append(f"{path.name}:{dialogue.id}")
+    assert not offenders, f"unscrubbed augment rows: {sorted(set(offenders))}"

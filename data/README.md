@@ -201,7 +201,10 @@ scam baiting calls"* (arXiv:2307.01965).
   never ask for your code" counter-signal and bring the July false positives back at the exact
   same FPR (0.083, ADR D27). Pair augmentation with the *specific* counter-signal it drowns.
 - **Train-only**, folded by `build_corpus`; `tests/data/test_register_augment.py` asserts the
-  labels, the disjointness from every evaluation split, and that the register really is varied.
+  labels, the disjointness from every evaluation split, that the register really is varied, and
+  that **every** file in `data/augment/` is already a scrub fixed point — the generator forgot
+  `scrub_dialogue` on its first run and two rows carried a fabricated phone number and IIN,
+  which `hf_upload.py` would have published verbatim (caught 2026-09-24, before any upload).
 
 ## Recogniser-output capture — `data/asr_capture/pairs.jsonl` (ADR D39, 2026-09-23)
 - **What:** 272 `(reference, hypothesis)` pairs. Each is a corpus utterance spoken by macOS

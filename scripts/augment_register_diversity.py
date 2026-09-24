@@ -36,6 +36,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from qorgan.config import get_config  # noqa: E402
+from qorgan.data.build_corpus import scrub_dialogue  # noqa: E402
 from qorgan.data.generate import (  # noqa: E402
     generate_dialogue,
     generate_hard_negative,
@@ -166,7 +167,7 @@ def main(argv: list[str] | None = None) -> int:
             except Exception as exc:  # noqa: BLE001 - one bad generation must not stop the batch
                 failures.append({"kind": "scam", "tactic": tactic.id, "language": language, "error": str(exc)[:200]})
                 continue
-            scams.append(dialogue)
+            scams.append(scrub_dialogue(dialogue))  # published verbatim; never ship fabricated PII
             print(f"  scam  {tactic.id:32s} {language:5s} {len(dialogue.utterances)} turns", flush=True)
 
     categories = list(taxonomy.negatives)
@@ -185,7 +186,7 @@ def main(argv: list[str] | None = None) -> int:
         except Exception as exc:  # noqa: BLE001
             failures.append({"kind": "negative", "category": category.id, "language": language, "error": str(exc)[:200]})
             continue
-        negatives.append(dialogue)
+        negatives.append(scrub_dialogue(dialogue))
         print(f"  neg   {category.id:32s} {language:5s} {len(dialogue.utterances)} turns", flush=True)
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
