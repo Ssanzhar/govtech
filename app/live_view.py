@@ -18,6 +18,8 @@ from qorgan.asr.stream import replay_transcript
 from qorgan.data.demo_transcripts import LIVE_DEMO_CALLS
 from qorgan.live.meter import Band
 from qorgan.live.session import LiveSessionState, advance, initial_session
+from qorgan.config import get_config
+from qorgan.privacy.numbers import MissingHmacKeyError
 from qorgan.live.summary import ReportDraft, build_report, submit_report, summarize
 
 # Pause between replayed turns — long enough to watch the meter move, short enough for
@@ -173,11 +175,12 @@ def _render_post_call(state: LiveSessionState) -> None:
                     ),
                 }
             )
-            path = submit_report(draft)
-        except ValueError as exc:
+            stored = submit_report(draft, hmac_key=get_config().number_hmac_key)
+        except (ValueError, MissingHmacKeyError) as exc:  # blank transcript, bad number, no key
             st.error(f"Could not submit the report: {exc}")
             return
         st.success(
-            f"Report saved to `{path}`. Open the **Level 2 — Analyst view** tab and click "
+            f"Report stored (receipt `{stored.receipt_id}`; number kept only as `{stored.number_prefix or '—'}`, "
+            "transcript PII-scrubbed). Open the **Level 2 — Analyst view** tab and click "
             "*Ingest into analysis* to see it in the intelligence picture."
         )

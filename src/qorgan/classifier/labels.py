@@ -7,7 +7,7 @@ Invariant: positive class = scam = 1, negative = legitimate = 0 (same convention
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 _BINARY_VALUES = (0, 1)
 _POSITIVE_THRESHOLD = 0.5
@@ -51,23 +51,29 @@ def encode_tactics(ids: Sequence[str], label_space: Sequence[str]) -> list[float
 
 
 def decode_tactics(
-    probs: Sequence[float], label_space: Sequence[str], threshold: float
+    probs: Sequence[float],
+    label_space: Sequence[str],
+    threshold: float,
+    per_tactic: Mapping[str, float] | None = None,
 ) -> list[tuple[str, float]]:
-    """Return `(id, prob)` pairs for every position at or above `threshold`, sorted by
-    prob DESC then id ASC.
+    """Return `(id, prob)` pairs for every position at or above its threshold, sorted by
+    prob DESC then id ASC. `per_tactic` overrides `threshold` for the tactics it names
+    (tuned on out-of-fold train + `val`, ADR D30); the rest use `threshold`.
 
-    Raises `ValueError` if `probs` and `label_space` differ in length, or `threshold`
+    Raises `ValueError` if `probs` and `label_space` differ in length, or a threshold
     is not in `[0, 1]`.
     """
     if len(probs) != len(label_space):
         raise ValueError(
             f"probs and label_space must have the same length, got {len(probs)} and {len(label_space)}"
         )
-    if not 0.0 <= threshold <= 1.0:
-        raise ValueError(f"threshold must be in [0, 1], got {threshold}")
+    overrides = dict(per_tactic or {})
+    for value in (threshold, *overrides.values()):
+        if not 0.0 <= value <= 1.0:
+            raise ValueError(f"threshold must be in [0, 1], got {value}")
 
     selected = [
-        (label, prob) for label, prob in zip(label_space, probs) if prob >= threshold
+        (label, prob) for label, prob in zip(label_space, probs) if prob >= overrides.get(label, threshold)
     ]
     return sorted(selected, key=lambda pair: (-pair[1], pair[0]))
 

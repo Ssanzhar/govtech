@@ -27,6 +27,7 @@ cues:
     - "Назовите шесть цифр"
     - "шесть цифр из push"
     - "SMS-тегі кодты айтыңыз"
+    - "SMS тегі кодты айтыңыз"  # ASR form: the recogniser drops the suffix hyphen (PLAN A10)
     - "алты санды атаңыз"
   credentials_request:
     - "Назовите номер карты"
@@ -35,6 +36,7 @@ cues:
     - "Продиктуйте ваш ИИН"
     - "Карта нөмірі мен арт жағындағы"
     - "ЖСН-іңізді айтыңыз"
+    - "ЖСН іңізді айтыңыз"  # ASR form: no suffix hyphen (PLAN A10)
   safe_account:
     - "на безопасный счёт"
     - "безопасный счёт"
@@ -51,3 +53,8 @@ cues:
     - "Скачайте программу для защиты"
     - "қосымшасын орнатыңыз"
     - "бағдарламасын жүктеңіз"
+    # Behaviour, not brand: the recogniser renders AnyDesk / TeamViewer as «аны десіп»,
+    # «не доски», «сиам жібер» -- unmatchable across alphabets, so cue the action (ADR D39).
+    - "қашықтан кіру"
+    - "қашықтан қосыл"
+    - "бағдарламасын орнат"

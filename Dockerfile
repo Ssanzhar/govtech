@@ -1,5 +1,6 @@
 # Qorğan demo — FastAPI site (landing + live call + analyst dashboard) in one container.
-# Model, corpus, demo seeds, and Vosk ASR models are baked at BUILD time by
+# This server never accepts audio (PLAN_2026-09 §2); ASR belongs on the device.
+# Model, corpus, and demo seeds are baked at BUILD time by
 # scripts/deploy_bootstrap.py, so cold starts are instant.
 
 FROM python:3.11-slim
@@ -19,12 +20,13 @@ RUN pip install "torch>=2.2" --index-url https://download.pytorch.org/whl/cpu
 
 COPY pyproject.toml README.md ./
 COPY src ./src
-# vosk: server-side streaming ASR for the live-mic mode (no audio-device deps needed).
-RUN pip install -e . && pip install "vosk>=0.3.44"
+RUN pip install -e .
 
 COPY . .
 
-# Bake corpus + model + Level-2 seeds + Vosk models into the image.
+# Bake corpus + model into the image. Level-2 seeds are created on first start, because
+# their caller numbers are HMAC-hashed with QORGAN_NUMBER_HMAC_KEY (a runtime secret that
+# must never be baked into the image) -- pass it with `docker run -e QORGAN_NUMBER_HMAC_KEY=...`.
 RUN python scripts/deploy_bootstrap.py
 
 EXPOSE 8000

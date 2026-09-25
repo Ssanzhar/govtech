@@ -19,6 +19,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
+from qorgan.privacy.numbers import display_prefix, hash_phone_number
 from qorgan.data.schema import Incident, Label
 
 # Scam risk assigned to every synthesized incident (they are confirmed scams for L2).
@@ -53,13 +54,16 @@ def synthesize_incidents(
     count: int,
     seed: int,
     start_time: datetime,
+    hmac_key: bytes,
     span_days: float = 30.0,
 ) -> list[Incident]:
     """Sample `count` incidents across `families`, deterministically for `seed`.
 
     Each incident draws a transcript + phone number from its family's pools and a timestamp
-    in `[start_time, start_time + span_days]` (novel families only in the recent tail).
-    Raises `ValueError` if `families` is empty or `count <= 0`.
+    in `[start_time, start_time + span_days]` (novel families only in the recent tail). The
+    number is stored only as its HMAC digest + display prefix (`hmac_key`, ADR D14) -- the
+    fabricated pool numbers never leave this function. Raises `ValueError` if `families` is
+    empty or `count <= 0`.
     """
     if not families:
         raise ValueError("families must not be empty")
@@ -81,6 +85,7 @@ def synthesize_incidents(
                 transcript=rng.choice(family.transcripts),
                 phone_number=rng.choice(family.phone_numbers),
                 timestamp=_sample_timestamp(rng, start_time, span_seconds, family.is_novel),
+                hmac_key=hmac_key,
             )
         )
     return incidents
@@ -95,14 +100,21 @@ def _sample_timestamp(
 
 
 def _build_incident(
-    *, index: int, family: ScriptFamily, transcript: str, phone_number: str, timestamp: datetime
+    *,
+    index: int,
+    family: ScriptFamily,
+    transcript: str,
+    phone_number: str,
+    timestamp: datetime,
+    hmac_key: bytes,
 ) -> Incident:
     return Incident(
         id=f"inc_{index:04d}",
         dialogue_id=f"{family.id}_{index}",
         transcript=transcript,
         label=Label(risk=_INCIDENT_RISK, is_hard_negative=False),
-        phone_number=phone_number,
+        number_hash=hash_phone_number(phone_number, key=hmac_key),
+        number_prefix=display_prefix(phone_number),
         timestamp=timestamp,
         script_family=family.id,
     )

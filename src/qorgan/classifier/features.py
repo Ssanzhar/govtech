@@ -20,6 +20,7 @@ import numpy as np
 
 from qorgan.classifier import embed as embed_mod
 from qorgan.classifier.cue_lexicon import CueLexicon
+from qorgan.classifier.cue_match import find_cue
 from qorgan.data.schema import Span
 from qorgan.taxonomy import get_taxonomy
 
@@ -54,50 +55,53 @@ def hard_signal_feature_ids() -> tuple[str, ...]:
 def match_cues(text: str, lexicon: CueLexicon) -> tuple[CueMatch, ...]:
     """Locate hard-signal request cues in `text` (one grounded match per tactic that fired).
 
-    Case-insensitive substring search; the span is recovered verbatim from the ORIGINAL text
-    (so `text[start:end] == span.text`). A cue that matches case-insensitively but cannot be
-    sliced back verbatim (length-changing lowercase) still counts toward the feature but is
-    dropped here rather than fabricating a span.
+    Matching is `cue_match.find_cue`: verbatim first, then a bounded-edit search over the
+    de-spaced text, so a phrase the recogniser broke across a word boundary («на обороте» →
+    «наоборот де») is still found (ADR D39). The span is always sliced from the ORIGINAL text
+    (so `text[start:end] == span.text`) -- for a fuzzy hit that is what was actually said,
+    which is the right thing to highlight.
     """
-    lowered = text.lower()
     matches: list[CueMatch] = []
     for tactic_id in hard_signal_feature_ids():
-        span = _first_grounded_span(text, lowered, lexicon.entries.get(tactic_id, ()))
+        span = _first_grounded_span(text, lexicon.entries.get(tactic_id, ()))
         if span is not None:
             matches.append(CueMatch(tactic_id=tactic_id, span=span))
     return tuple(matches)
 
 
-def _first_grounded_span(text: str, lowered: str, cues: Sequence[str]) -> Span | None:
+def _first_grounded_span(text: str, cues: Sequence[str]) -> Span | None:
     for cue in cues:
-        index = lowered.find(cue.lower())
-        if index == -1:
+        found = find_cue(text, cue)
+        if found is None:
             continue
-        candidate = text[index : index + len(cue)]
-        if candidate.lower() == cue.lower():
-            return Span(text=candidate, start=index, end=index + len(candidate))
+        start, end = found
+        candidate = text[start:end]
+        # An exact hit must slice back to the cue (a length-changing casefold would mean the
+        # offsets lie); a fuzzy hit is the recogniser's wording and never equals the cue.
+        if candidate and (len(candidate) != len(cue) or candidate.lower() == cue.lower()):
+            return Span(text=candidate, start=start, end=end)
     return None
 
 
 def hard_signal_features(texts: Sequence[str], lexicon: CueLexicon) -> np.ndarray:
     """Presence matrix `(n, K)`: 1.0 if the text contains any cue for a hard-signal tactic.
 
-    Presence is case-insensitive substring containment (independent of verbatim span
-    recovery), so the feature is robust even when a span can't be sliced back.
+    Presence uses the same `cue_match.find_cue` as the span search, so the feature and the
+    highlight can never disagree.
     """
     ids = hard_signal_feature_ids()
     text_list = list(texts)
     if not text_list:
         return np.zeros((0, len(ids)), dtype=np.float32)
     rows = [
-        [1.0 if _tactic_present(text.lower(), lexicon.entries.get(tid, ())) else 0.0 for tid in ids]
+        [1.0 if _tactic_present(text, lexicon.entries.get(tid, ())) else 0.0 for tid in ids]
         for text in text_list
     ]
     return np.array(rows, dtype=np.float32)
 
 
-def _tactic_present(lowered_text: str, cues: Sequence[str]) -> bool:
-    return any(cue.lower() in lowered_text for cue in cues)
+def _tactic_present(text: str, cues: Sequence[str]) -> bool:
+    return any(find_cue(text, cue) is not None for cue in cues)
 
 
 def compute_feature_blocks(

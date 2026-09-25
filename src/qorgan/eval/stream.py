@@ -29,7 +29,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from qorgan.asr.stream import CommittedUtterance
 from qorgan.config import get_config
+from qorgan.data.ledger import load_inspection_ledger
 from qorgan.data.schema import Dialogue
+from qorgan.eval import intervals
 from qorgan.eval.run import _TRUTH_THRESHOLD, load_split
 from qorgan.live.meter import Band
 from qorgan.live.session import advance, initial_session
@@ -37,16 +39,17 @@ from qorgan.live.session import advance, initial_session
 # Utterances are replayed as if perfectly transcribed -- streaming ASR confidence loss is a
 # separate concern (`qorgan.asr.stream.stream_transcribe`), not what this harness measures.
 _REPLAY_CONFIDENCE = 1.0
-_DEFAULT_SPLITS: tuple[str, ...] = ("test", "real_heldout")
+_DEFAULT_SPLITS: tuple[str, ...] = ("test", "authored_heldout")
 
-# (column label, StreamReport field) -- false-latch rate first, per the CLI's contract.
-_REPORT_COLUMNS: tuple[tuple[str, str], ...] = (
-    ("False-Latch Rate", "false_latch_rate"),
-    ("Alert-Hit Rate", "alert_hit_rate"),
-    ("Median Turns", "median_turns_to_alert"),
-    ("P90 Turns", "p90_turns_to_alert"),
-    ("N+", "n_positive"),
-    ("N-", "n_negative"),
+# (column label, StreamReport field, interval field or None) -- false-latch rate first, per
+# the CLI's contract; rates carry their exact binomial 95 % CI inline (PLAN_2026-09 A1).
+_REPORT_COLUMNS: tuple[tuple[str, str, str | None], ...] = (
+    ("False-Latch Rate [95% CI]", "false_latch_rate", "false_latch_ci"),
+    ("Alert-Hit Rate [95% CI]", "alert_hit_rate", "alert_hit_ci"),
+    ("Median Turns", "median_turns_to_alert", None),
+    ("P90 Turns", "p90_turns_to_alert", None),
+    ("N+", "n_positive", None),
+    ("N-", "n_negative", None),
 )
 
 
@@ -70,7 +73,10 @@ class StreamReport(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     false_latch_rate: float = Field(ge=0.0, le=1.0)
+    # Exact binomial 95 % interval as (low, high); None when the class is absent.
+    false_latch_ci: tuple[float, float] | None = None
     alert_hit_rate: float = Field(ge=0.0, le=1.0)
+    alert_hit_ci: tuple[float, float] | None = None
     median_turns_to_alert: float | None = Field(default=None, ge=1.0)
     p90_turns_to_alert: float | None = Field(default=None, ge=1.0)
     n_positive: int = Field(ge=0)
@@ -124,20 +130,60 @@ def evaluate_stream(
         raise ValueError("dialogues must not be empty")
 
     results = tuple(replay_dialogue(d, locale=locale, backend=backend) for d in dialogues)
+    return aggregate_stream(results)
+
+
+def aggregate_stream(results: Sequence[StreamResult]) -> StreamReport:
+    """A `StreamReport` over already-replayed dialogues (so subsets never replay twice).
+    Raises `ValueError` for an empty sequence."""
+    if not results:
+        raise ValueError("results must not be empty")
     positives = [r for r in results if r.is_scam]
     negatives = [r for r in results if not r.is_scam]
     latch_turns = [
         r.turns_to_alert for r in positives if r.latched and r.turns_to_alert is not None
     ]
 
+    false_latches = sum(1 for r in negatives if r.latched)
+    hits = sum(1 for r in positives if r.latched)
     return StreamReport(
-        false_latch_rate=_rate(sum(1 for r in negatives if r.latched), len(negatives)),
-        alert_hit_rate=_rate(sum(1 for r in positives if r.latched), len(positives)),
+        false_latch_rate=_rate(false_latches, len(negatives)),
+        false_latch_ci=_ci_tuple(false_latches, len(negatives)),
+        alert_hit_rate=_rate(hits, len(positives)),
+        alert_hit_ci=_ci_tuple(hits, len(positives)),
         median_turns_to_alert=_percentile(latch_turns, 0.5) if latch_turns else None,
         p90_turns_to_alert=_percentile(latch_turns, 0.9) if latch_turns else None,
         n_positive=len(positives),
         n_negative=len(negatives),
     )
+
+
+def evaluate_streams(
+    splits: Mapping[str, Sequence[Dialogue]], *, locale: str, backend: str | None = None,
+    ledger_ids: frozenset[str] = frozenset(),
+) -> dict[str, StreamReport]:
+    """`{split_name: report}` for several splits, with the inspection ledger applied as
+    `eval.run` applies it (PLAN A2): a split containing inspected ids also gets
+    `<split> (clean)` and `<split> (inspected)` rows, so a false-latch rate computed on
+    records that were read during feature engineering is never the generalization number.
+    Every dialogue is replayed exactly once."""
+    out: dict[str, StreamReport] = {}
+    for name, dialogues in splits.items():
+        replays = tuple(replay_dialogue(d, locale=locale, backend=backend) for d in dialogues)
+        out[name] = aggregate_stream(replays)
+        inspected = tuple(r for r in replays if r.dialogue_id in ledger_ids)
+        if not inspected:
+            continue
+        clean = tuple(r for r in replays if r.dialogue_id not in ledger_ids)
+        if clean:
+            out[f"{name} (clean)"] = aggregate_stream(clean)
+        out[f"{name} (inspected)"] = aggregate_stream(inspected)
+    return out
+
+
+def _ci_tuple(numerator: int, denominator: int) -> tuple[float, float] | None:
+    interval = intervals.binomial_interval(numerator, denominator)
+    return interval.as_tuple() if interval else None
 
 
 def _rate(numerator: int, denominator: int) -> float:
@@ -167,11 +213,15 @@ def _percentile(values: Sequence[int], q: float) -> float:
 def format_stream_report(results: Mapping[str, StreamReport]) -> str:
     """Render a compact markdown table, one row per split, false-latch rate first among the
     metric columns (per the CLI's contract). `None` percentiles render as `-`."""
-    header = "| Split | " + " | ".join(label for label, _ in _REPORT_COLUMNS) + " |"
+    header = "| Split | " + " | ".join(label for label, _, _ in _REPORT_COLUMNS) + " |"
     divider = "|---|" + "|".join("---" for _ in _REPORT_COLUMNS) + "|"
     rows = [header, divider]
     for split_name, report in results.items():
-        cells = [split_name] + [_fmt(getattr(report, field)) for _, field in _REPORT_COLUMNS]
+        cells = [split_name] + [
+            _fmt_with_interval(getattr(report, field), getattr(report, ci_field))
+            if ci_field else _fmt(getattr(report, field))
+            for _, field, ci_field in _REPORT_COLUMNS
+        ]
         rows.append("| " + " | ".join(cells) + " |")
     return "\n".join(rows)
 
@@ -184,8 +234,14 @@ def _fmt(value: object) -> str:
     return str(value)
 
 
+def _fmt_with_interval(value: object, interval: tuple[float, float] | None) -> str:
+    if interval is None:
+        return f"{_fmt(value)} [-]"
+    return f"{_fmt(value)} [{_fmt(interval[0])}, {_fmt(interval[1])}]"
+
+
 def main(argv: Sequence[str] | None = None) -> None:
-    """CLI: `python -m qorgan.eval.stream --split real_heldout --split test [--backend mock]`."""
+    """CLI: `python -m qorgan.eval.stream --split authored_heldout --split test [--backend mock]`."""
     cfg = get_config()
     parser = argparse.ArgumentParser(
         description="Streaming (per-turn) live-meter evaluation over corpus splits."
@@ -200,10 +256,11 @@ def main(argv: Sequence[str] | None = None) -> None:
     processed_dir = args.processed_dir or (cfg.data_dir / "processed")
     locale = args.locale or cfg.default_locale
 
-    results = {
-        name: evaluate_stream(load_split(processed_dir, name), locale=locale, backend=args.backend)
-        for name in split_names
-    }
+    ledger_ids = load_inspection_ledger(cfg.inspection_ledger_path).ids
+    results = evaluate_streams(
+        {name: load_split(processed_dir, name) for name in split_names},
+        locale=locale, backend=args.backend, ledger_ids=ledger_ids,
+    )
     print(format_stream_report(results))
 
 

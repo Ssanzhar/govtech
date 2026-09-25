@@ -12,9 +12,9 @@ def test_defaults_with_empty_env():
     cfg = load_config({})
     assert cfg.classifier_backend == "linear"
     assert cfg.gemini_api_key is None
-    assert cfg.risk_threshold == 0.55
-    assert cfg.risk_threshold_enter == 0.55
-    assert cfg.risk_threshold_exit == 0.45
+    assert cfg.risk_threshold == 0.59
+    assert cfg.risk_threshold_enter == 0.59
+    assert cfg.risk_threshold_exit == 0.49
     assert cfg.default_seed == 42
     assert cfg.supported_locales == ("ru", "kk")
     assert cfg.default_locale == "ru"
@@ -178,3 +178,52 @@ def test_repo_root_is_absolute_and_contains_pyproject():
 
 def test_load_config_returns_config_instance():
     assert isinstance(load_config({}), Config)
+
+
+# --- privacy knobs (PLAN_2026-09 C2/C3) ------------------------------------------------------
+
+
+def test_number_hmac_key_defaults_to_none_and_reads_env():
+    assert load_config({}).number_hmac_key is None
+    assert load_config({"QORGAN_NUMBER_HMAC_KEY": ""}).number_hmac_key is None
+    assert load_config({"QORGAN_NUMBER_HMAC_KEY": "s3cret"}).number_hmac_key == b"s3cret"
+
+
+def test_report_retention_days_default_and_override():
+    assert load_config({}).report_retention_days == 180
+    assert load_config({"QORGAN_REPORT_RETENTION_DAYS": "30"}).report_retention_days == 30
+
+
+def test_report_retention_days_must_be_positive():
+    with pytest.raises(ConfigError):
+        load_config({"QORGAN_REPORT_RETENTION_DAYS": "0"})
+
+
+# --- partner intake API (PLAN_2026-09 C5) ---------------------------------------------------
+
+
+def test_partner_registry_defaults_to_closed():
+    cfg = load_config({})
+    assert cfg.partner_credentials == ()
+    assert cfg.partner_quota_window_hours == 24
+
+
+def test_partner_registry_is_parsed_with_default_and_explicit_quotas():
+    cfg = load_config({
+        "QORGAN_PARTNER_API_KEYS": "bank_a:0123456789abcdefghij:5,telecom_b:abcdefghij0123456789",
+        "QORGAN_PARTNER_DAILY_QUOTA": "42",
+    })
+    assert [(c.id, c.daily_quota) for c in cfg.partner_credentials] == [("bank_a", 5), ("telecom_b", 42)]
+    assert "0123456789abcdefghij" not in repr(cfg)
+
+
+def test_weak_partner_key_fails_fast():
+    with pytest.raises(ConfigError):
+        load_config({"QORGAN_PARTNER_API_KEYS": "bank_a:short"})
+
+
+def test_asr_style_train_fraction_defaults_and_env_override():
+    assert load_config({}).asr_style_train_fraction == 1.0
+    assert load_config({"QORGAN_ASR_STYLE_TRAIN_FRACTION": "0.25"}).asr_style_train_fraction == 0.25
+    with pytest.raises(ValueError):
+        load_config({"QORGAN_ASR_STYLE_TRAIN_FRACTION": "1.5"})

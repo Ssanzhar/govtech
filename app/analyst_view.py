@@ -194,7 +194,7 @@ def _render_drilldown(organizations, names, by_id, locale: str) -> None:
                     "Date": incident.timestamp.strftime("%Y-%m-%d %H:%M")
                     if incident.timestamp
                     else "—",
-                    "Number": incident.phone_number or "—",
+                    "Number": incident.number_prefix or "—",
                     "Risk": f"{incident.label.risk:.0%}",
                     "Excerpt": incident.transcript[:_EXCERPT_CHARS],
                 }

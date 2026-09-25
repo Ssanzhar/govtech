@@ -2,6 +2,8 @@
 
 import json
 
+import pytest
+
 from qorgan.classifier.embed import embed_texts
 from qorgan.classifier.linear_train import (
     LinearBundle,
@@ -119,5 +121,177 @@ def test_hybrid_load_raises_on_lexicon_drift(tmp_path, fake_embedder, monkeypatc
     drifted.write_text(original + '    - "новая фраза дрейфа"\n', encoding="utf-8")
     monkeypatch.setenv("QORGAN_CUE_LEXICON_PATH", str(drifted))
 
+    with pytest.raises(LinearFeatureMismatchError):
+        load_linear(out)
+
+
+# --- embed backend is part of the bundle contract (PLAN_2026-09 A4) --------------------------
+
+
+def test_export_records_the_embed_backend_and_load_refuses_a_mismatch(tmp_path, fake_embedder, monkeypatch):
+    from qorgan.classifier.linear_train import LinearFeatureMismatchError
+
+    out = tmp_path / "linear"
+    monkeypatch.setenv("QORGAN_EMBED_BACKEND", "onnx")
+    meta = train_and_export(_corpus(), label_space=_LABEL_SPACE, out_dir=out, embedder=fake_embedder)
+    assert meta["embed_backend"] == "onnx"
+    assert load_linear(out).embed_backend == "onnx"
+
+    monkeypatch.setenv("QORGAN_EMBED_BACKEND", "sentence-transformers")
+    with pytest.raises(LinearFeatureMismatchError):
+        load_linear(out)
+
+
+def test_legacy_bundle_without_embed_backend_loads_as_sentence_transformers(tmp_path, fake_embedder, monkeypatch):
+    monkeypatch.setenv("QORGAN_EMBED_BACKEND", "sentence-transformers")
+    out = tmp_path / "linear"
+    train_and_export(_corpus(), label_space=_LABEL_SPACE, out_dir=out, embedder=fake_embedder)
+    meta_path = out / "metadata.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta.pop("embed_backend")
+    meta_path.write_text(json.dumps(meta), encoding="utf-8")
+    assert load_linear(out).embed_backend == "sentence-transformers"
+
+
+# --- per-tactic thresholds (ADR D30): tuned on out-of-fold train + val ------------------------
+
+
+def _val():
+    return [_d("v0", "Скажите код из SMS быстро", risk=0.9, tags=["otp_request"]), _d("v1", "Поговорим о погоде", risk=0.05)]
+
+
+def test_out_of_fold_proba_predicts_every_row_from_a_head_that_did_not_see_it(monkeypatch):
+    import numpy as np
+
+    from qorgan.classifier import multilabel
+
+    fits, predictions = [], []
+    real_fit, real_predict = multilabel.MultiLabelHead.fit, multilabel.MultiLabelHead.predict_proba
+
+    def spy_fit(self, features, targets, sample_weight=None):
+        fits.append(features.shape[0])
+        return real_fit(self, features, targets, sample_weight=sample_weight)
+
+    def spy_predict(self, features):
+        predictions.append(features.shape[0])
+        return real_predict(self, features)
+
+    monkeypatch.setattr(multilabel.MultiLabelHead, "fit", spy_fit)
+    monkeypatch.setattr(multilabel.MultiLabelHead, "predict_proba", spy_predict)
+    rng = np.random.default_rng(0)
+    features = rng.normal(size=(20, 8))
+    targets = np.array([[1.0, 0.0]] * 10 + [[0.0, 1.0]] * 10)
+    first = multilabel.out_of_fold_proba(features, targets, ("a", "b"), folds=5, seed=1)
+    assert first.shape == (20, 2)
+    assert fits == [16] * 5 and predictions == [4] * 5  # each fold: fit on the rest, predict the held-out rows
+    second = multilabel.out_of_fold_proba(features, targets, ("a", "b"), folds=5, seed=1)
+    assert np.array_equal(first, second)  # a seeded permutation -- reproducible exports
+
+
+def test_out_of_fold_proba_rejects_bad_folds():
+    import numpy as np
+
+    from qorgan.classifier.multilabel import out_of_fold_proba
+
+    with pytest.raises(ValueError):
+        out_of_fold_proba(np.zeros((3, 2)), np.zeros((3, 1)), ("a",), folds=1, seed=0)
+    with pytest.raises(ValueError):
+        out_of_fold_proba(np.zeros((3, 2)), np.zeros((3, 1)), ("a",), folds=4, seed=0)  # more folds than rows
+
+
+def test_train_linear_tunes_a_threshold_for_every_tactic_from_train_oof_plus_val(fake_embedder):
+    from qorgan.classifier.calibrate import TACTIC_THRESHOLD_GRID
+
+    bundle = train_linear(_corpus(), label_space=_LABEL_SPACE, embedder=fake_embedder, tuning_dialogues=_val())
+    assert set(bundle.tactic_thresholds) == set(_LABEL_SPACE)
+    allowed = {0.5, *TACTIC_THRESHOLD_GRID}
+    assert all(v in allowed for v in bundle.tactic_thresholds.values())
+    again = train_linear(_corpus(), label_space=_LABEL_SPACE, embedder=fake_embedder, tuning_dialogues=_val())
+    assert again.tactic_thresholds == bundle.tactic_thresholds
+    assert train_linear(_corpus(), label_space=_LABEL_SPACE, embedder=fake_embedder).tactic_thresholds == {}
+
+
+def test_train_positives_count_toward_the_tuning_support(fake_embedder, monkeypatch):
+    """`otp_request` has 10 train positives and 1 val positive: with val alone it would sit
+    under the support guard and keep the default; out-of-fold train rows make it tunable."""
+    from qorgan.classifier import linear_train
+
+    seen = {}
+
+    def spy(probs, truth, label_space, **kwargs):
+        seen["positives"] = {tid: sum(int(r[j]) for r in truth) for j, tid in enumerate(label_space)}
+        return {tid: 0.5 for tid in label_space}
+
+    monkeypatch.setattr("qorgan.classifier.calibrate.tune_tactic_thresholds", spy)
+    linear_train.train_linear(_corpus(), label_space=_LABEL_SPACE, embedder=fake_embedder, tuning_dialogues=_val())
+    assert seen["positives"]["otp_request"] == 11 and seen["positives"]["urgency"] == 10
+
+
+# --- sample weights (ADR D31): a (clean, ASR-styled) pair is ONE sample -----------------------
+
+
+def test_train_linear_passes_sample_weights_to_both_heads_and_the_tuner(fake_embedder, monkeypatch):
+    import numpy as np
+
+    from qorgan.classifier import linear_train, multilabel
+
+    seen = {}
+    real_fit = multilabel.MultiLabelHead.fit
+
+    def spy_fit(self, features, targets, sample_weight=None):
+        seen.setdefault("tactic", []).append(None if sample_weight is None else float(np.sum(sample_weight)))
+        return real_fit(self, features, targets, sample_weight=sample_weight)
+
+    real_risk = linear_train._fit_risk_head
+
+    def spy_risk(features, y_risk, sample_weight=None):
+        seen["risk"] = None if sample_weight is None else float(np.sum(sample_weight))
+        return real_risk(features, y_risk, sample_weight=sample_weight)
+
+    monkeypatch.setattr(multilabel.MultiLabelHead, "fit", spy_fit)
+    monkeypatch.setattr(linear_train, "_fit_risk_head", spy_risk)
+    corpus = _corpus()
+    weights = [0.5] * len(corpus)
+    bundle = train_linear(corpus, label_space=_LABEL_SPACE, embedder=fake_embedder, tuning_dialogues=_val(), sample_weights=weights)
+    assert seen["risk"] == 10.0  # 20 rows × 0.5
+    assert seen["tactic"][0] == 10.0  # the full-data tactic head
+    assert all(w is not None and w < 10.0 for w in seen["tactic"][1:])  # every out-of-fold fit got its fold's weights
+    assert bundle.tactic_thresholds
+    with pytest.raises(ValueError):
+        train_linear(corpus, label_space=_LABEL_SPACE, embedder=fake_embedder, sample_weights=[1.0])
+
+
+def test_pair_weighted_doubling_reproduces_the_single_copy_tactic_head(fake_embedder):
+    """Two identical copies at weight 0.5 each fit the same per-label head as one copy at 1.0
+    (no refolding involved) -- the property that keeps the coefficient norm where it was."""
+    import numpy as np
+
+    from qorgan.classifier.multilabel import MultiLabelHead
+
+    rng = np.random.default_rng(0)
+    features = rng.normal(size=(30, 6))
+    targets = np.array([[1.0, 0.0]] * 15 + [[0.0, 1.0]] * 15)
+    single = MultiLabelHead(("a", "b")).fit(features, targets)
+    doubled = MultiLabelHead(("a", "b")).fit(np.vstack([features, features]), np.vstack([targets, targets]), sample_weight=np.full(60, 0.5))
+    unweighted = MultiLabelHead(("a", "b")).fit(np.vstack([features, features]), np.vstack([targets, targets]))
+    for tid in ("a", "b"):
+        assert np.allclose(single.models[tid].coef_, doubled.models[tid].coef_, atol=1e-4)
+        assert np.linalg.norm(unweighted.models[tid].coef_) > np.linalg.norm(single.models[tid].coef_)  # the effect being cancelled
+
+
+# --- backend guard (ADR D33): the server's native ORT is the documented PROXY for device heads
+
+
+def test_device_trained_bundle_loads_under_the_onnx_proxy_but_not_under_sentence_transformers(tmp_path, fake_embedder, monkeypatch):
+    from qorgan.classifier.linear_train import LinearFeatureMismatchError
+
+    out = tmp_path / "linear"
+    monkeypatch.setenv("QORGAN_EMBED_BACKEND", "device")  # get_config() re-reads the environment
+    train_and_export(_corpus(), label_space=_LABEL_SPACE, out_dir=out, embedder=fake_embedder)
+    assert json.loads((out / "metadata.json").read_text())["embed_backend"] == "device"
+
+    monkeypatch.setenv("QORGAN_EMBED_BACKEND", "onnx")
+    assert load_linear(out).embed_backend == "device"  # the proxy pair, allowed
+    monkeypatch.setenv("QORGAN_EMBED_BACKEND", "sentence-transformers")
     with pytest.raises(LinearFeatureMismatchError):
         load_linear(out)

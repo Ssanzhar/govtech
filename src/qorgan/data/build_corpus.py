@@ -1,6 +1,6 @@
 """Assemble the shippable corpus (D2-4): read generated synthetic dialogues + the curated
-`real_heldout` anchors, PII-scrub them, deduplicate, deterministically split the synthetic
-set into train/val/test, keep `real_heldout` entirely separate, and write each split plus a
+`authored_heldout` anchors, PII-scrub them, deduplicate, deterministically split the synthetic
+set into train/val/test, keep `authored_heldout` entirely separate, and write each split plus a
 reproducibility `manifest.json` (counts + content hash) to `data/processed/`.
 
 Determinism is the whole point (`docs/DECISIONS.md` D9 -- seeded build + manifest instead
@@ -20,6 +20,8 @@ from pathlib import Path
 
 from qorgan.config import get_config
 from qorgan.data.anchors import build_anchor_dialogues
+from qorgan.data.asr_style import asr_style_augment
+from qorgan.data.clean import clean_dialogue
 from qorgan.data.generate import load_corpus_config
 from qorgan.data.schema import Dialogue, Label, Utterance, spans_from_phrases
 from qorgan.data.scrub import scrub_text
@@ -130,17 +132,17 @@ def _split_counts(dialogues: Sequence[Dialogue]) -> dict:
 
 def build_manifest(
     splits: Mapping[str, Sequence[Dialogue]],
-    real_heldout: Sequence[Dialogue],
+    authored_heldout: Sequence[Dialogue],
     *,
     seed: int,
     train_fraction: float,
     val_fraction: float,
 ) -> dict:
     """Build the reproducibility manifest: per-split counts, grand total, seed, fractions,
-    and a content hash over every record (splits + real_heldout)."""
+    and a content hash over every record (splits + authored_heldout)."""
     counts = {name: _split_counts(splits.get(name, ())) for name in _SPLIT_NAMES}
-    counts["real_heldout"] = _split_counts(real_heldout)
-    all_records = [d for name in _SPLIT_NAMES for d in splits.get(name, ())] + list(real_heldout)
+    counts["authored_heldout"] = _split_counts(authored_heldout)
+    all_records = [d for name in _SPLIT_NAMES for d in splits.get(name, ())] + list(authored_heldout)
     return {
         "schema": _MANIFEST_SCHEMA_NOTE,
         "seed": seed,
@@ -184,50 +186,80 @@ def build_corpus(
     seed: int | None = None,
     train_fraction: float | None = None,
     val_fraction: float | None = None,
+    asr_style_fraction: float | None = None,
 ) -> dict:
     """Assemble, clean, split, and persist the corpus; return the manifest.
 
     Inputs default to the configured locations so the CLI is zero-arg, but every input is
-    injectable for tests. Synthetic dialogues are scrubbed + deduped + split; the curated
-    anchors become `real_heldout`, scrubbed but never mixed into train/val/test.
+    injectable for tests. Synthetic dialogues are repaired (`data.clean`, ADR D34; rows with
+    unrecoverable artefacts are dropped and listed in the manifest), scrubbed, deduped, split; the curated
+    anchors become `authored_heldout`, scrubbed but never mixed into train/val/test.
     `augment_dialogues` (targeted training data, e.g. reassurance hard negatives) are scrubbed
-    and added to **train only** -- never val/test/real_heldout, so the eval sets stay a clean
-    held-out signal.
+    and added to **train only** -- never val/test/authored_heldout, so the eval sets stay a clean
+    held-out signal. `asr_style_fraction` of the final train rows also get an ASR-styled copy
+    (`data.asr_style`, PLAN A10) so the heads see the recogniser's register; eval sets stay clean.
     """
     cfg = get_config()
     active_seed = cfg.default_seed if seed is None else seed
     active_train = cfg.split_train_fraction if train_fraction is None else train_fraction
     active_val = cfg.split_val_fraction if val_fraction is None else val_fraction
     active_processed = processed_dir or (cfg.data_dir / "processed")
+    active_asr_fraction = cfg.asr_style_train_fraction if asr_style_fraction is None else asr_style_fraction
 
     if dialogues is None:
         active_synthetic_path = synthetic_path or load_corpus_config().output_path
         dialogues = _read_jsonl(active_synthetic_path)
     anchors = build_anchor_dialogues() if anchor_dialogues is None else anchor_dialogues
 
-    scrubbed = [scrub_dialogue(d) for d in dialogues]
+    cleaned = [(d.id, clean_dialogue(d)) for d in dialogues]
+    dropped_corrupted = [dialogue_id for dialogue_id, d in cleaned if d is None]
+    scrubbed = [scrub_dialogue(d) for _, d in cleaned if d is not None]
     deduped = deduplicate(scrubbed)
     splits = split_dialogues(
         deduped, seed=active_seed, train_fraction=active_train, val_fraction=active_val
     )
 
-    scrubbed_augment = tuple(scrub_dialogue(d) for d in (augment_dialogues or ()))
+    cleaned_augment = [(d.id, clean_dialogue(d)) for d in (augment_dialogues or ())]
+    dropped_corrupted += [dialogue_id for dialogue_id, d in cleaned_augment if d is None]
+    scrubbed_augment = tuple(scrub_dialogue(d) for _, d in cleaned_augment if d is not None)
     if scrubbed_augment:
         splits = {**splits, "train": deduplicate(splits["train"] + scrubbed_augment)}
-    real_heldout = tuple(scrub_dialogue(d) for d in anchors)
+    asr_styled = asr_style_augment(splits["train"], fraction=active_asr_fraction, seed=active_seed)
+    if asr_styled:
+        splits = {**splits, "train": deduplicate(splits["train"] + asr_styled)}
+    cleaned_anchors = [(d.id, clean_dialogue(d)) for d in anchors]
+    corrupted_anchors = [dialogue_id for dialogue_id, d in cleaned_anchors if d is None]
+    if corrupted_anchors:  # hand-written data is fixed at the source, never silently dropped
+        raise ValueError(f"corrupted anchor dialogue(s): {corrupted_anchors}")
+    authored_heldout = tuple(scrub_dialogue(d) for _, d in cleaned_anchors)
 
     for name in _SPLIT_NAMES:
         _write_jsonl(splits[name], active_processed / f"{name}.jsonl")
-    _write_jsonl(real_heldout, active_processed / "real_heldout.jsonl")
+    _write_jsonl(authored_heldout, active_processed / "authored_heldout.jsonl")
 
     manifest = build_manifest(
-        splits, real_heldout, seed=active_seed, train_fraction=active_train, val_fraction=active_val
+        splits, authored_heldout, seed=active_seed, train_fraction=active_train, val_fraction=active_val
     )
     manifest["train_augment_count"] = len(scrubbed_augment)
+    manifest["train_asr_style_count"] = len(asr_styled)
+    manifest["dropped_corrupted"] = dropped_corrupted  # ADR D34: unrecoverable generation artefacts
+    manifest["asr_style_fraction"] = active_asr_fraction
+    manifest["adversarial_count"] = _copy_adversarial(cfg.data_dir / "adversarial", active_processed)
     (active_processed / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     return manifest
+
+
+def _copy_adversarial(source_dir: Path, processed_dir: Path) -> int:
+    """The lexicon-free paraphrase split (PLAN A9) is eval-only: copied next to the other
+    splits when present, never folded into train/val/test, not part of the content hash."""
+    total = 0
+    for source in sorted(source_dir.glob("adversarial*.jsonl")) if source_dir.is_dir() else ():
+        dialogues = _read_jsonl(source)
+        _write_jsonl(dialogues, processed_dir / source.name)
+        total += len(dialogues)
+    return total
 
 
 def _read_augment_dir(augment_dir: Path) -> list[Dialogue]:

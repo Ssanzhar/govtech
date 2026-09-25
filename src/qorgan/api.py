@@ -18,13 +18,17 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
 from qorgan.api_admin import router as admin_router
 from qorgan.api_admin_stats import router as admin_stats_router
+from qorgan.api_limits import BodySizeLimitMiddleware, CrossOriginIsolationMiddleware, validation_error_handler
 from qorgan.api_live import router as live_router
-from qorgan.api_live_ws import router as live_ws_router
+from qorgan.api_partner import router as partner_router
+from qorgan.api_partner_export import router as partner_export_router
+from qorgan.api_reports import router as reports_router
 from qorgan.classifier import predict
 from qorgan.config import get_config
 from qorgan.explain.explainer import ExplainerError, explain
@@ -37,6 +41,10 @@ app = FastAPI(
     description="Scam-pattern verdicts with grounded evidence. A human always decides.",
     version="0.1.0",
 )
+# Request hygiene for every route: bounded bodies, 422s that never echo the payload.
+app.add_middleware(BodySizeLimitMiddleware)
+app.add_middleware(CrossOriginIsolationMiddleware)  # live.html only: on-device ASR needs SharedArrayBuffer
+app.add_exception_handler(RequestValidationError, validation_error_handler)
 
 
 class AnalyzeRequest(BaseModel):
@@ -128,7 +136,9 @@ def analyze(req: AnalyzeRequest) -> AnalyzeResponse:
 app.include_router(admin_router)
 app.include_router(admin_stats_router)
 app.include_router(live_router)
-app.include_router(live_ws_router)
+app.include_router(reports_router)
+app.include_router(partner_router)
+app.include_router(partner_export_router)
 
 if _SITE_DIR.is_dir():
     app.mount("/", StaticFiles(directory=_SITE_DIR, html=True), name="site")

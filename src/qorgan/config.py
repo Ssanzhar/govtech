@@ -19,6 +19,8 @@ from typing import Literal
 from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from qorgan.partners import DEFAULT_PARTNER_DAILY_QUOTA, PartnerCredential, parse_partner_credentials
+
 # Anchor for all repo-relative defaults: src/qorgan/config.py -> src/qorgan -> src -> repo root.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -32,26 +34,48 @@ _DEFAULT_VOSK_MODEL_KK = "vosk-model-small-kz-0.42"
 _DEFAULT_VOSK_MODEL_RU = "vosk-model-small-ru-0.22"
 _DEFAULT_ASR_SAMPLE_RATE = 16000
 _DEFAULT_EMBED_MODEL_NAME = "intfloat/multilingual-e5-base"
-# Shipped default for the hybrid model, post the 2026-07-15 KK-negatives-augmentation +
-# reassurance-lexicon retrain: at 0.55, real_heldout (42 anchors) is FPR 0.000 / recall
-# 1.000 (`eval/threshold.py`'s own max-recall-s.t.-FPR<=0.05 tuner now recommends 0.620,
-# fpr=0.000/recall=1.000 on the same set -- 0.55 is kept as the shipped default since it
-# already clears the FPR bar with equal recall). See docs/eval_report.md.
-_DEFAULT_RISK_THRESHOLD = 0.55
-_DEFAULT_RISK_THRESHOLD_ENTER = 0.55
-_DEFAULT_RISK_THRESHOLD_EXIT = 0.45
+# "sentence-transformers" (fp32 PyTorch) or "onnx" (the int8 graph the browser ships;
+# PLAN_2026-09 A4 -- server and device then embed identically).
+_DEFAULT_EMBED_BACKEND = "onnx"
+_EMBED_BACKENDS = ("sentence-transformers", "onnx", "device")
+# "device" = the browser's own WASM embeddings via the bridge `npm run device:serve` (ADR D33).
+_DEFAULT_DEVICE_EMBED_URL = "http://127.0.0.1:8765"
+_DEFAULT_DEVICE_EMBED_CACHE_SUBDIR = "cache/device_embeddings.sqlite"
+_DEFAULT_EMBED_ONNX_SUBDIR = Path("site") / "models" / "Xenova" / "multilingual-e5-base"
+# Shipped default (2026-09-14, PLAN_2026-09 A4/A5): heads trained on the int8 ONNX
+# embeddings the browser ships (server + device embed identically). At 0.59 every FPR
+# gate is 0 (test / authored_heldout / ood) with test recall 0.953 and authored recall
+# 1.000; the one ood negative that crossed 0.55 sat at 0.551. ood recall is 0.844 (was
+# 0.889 with fp32-trained heads) -- reported, not hidden. See docs/eval_report.md.
+_DEFAULT_RISK_THRESHOLD = 0.59
+# Consented reports are kept this long before the purge removes them (PLAN_2026-09 C3).
+_DEFAULT_REPORT_RETENTION_DAYS = 180
+# Partner intake API (PLAN_2026-09 C5): rolling window for the per-partner report budget.
+_DEFAULT_PARTNER_QUOTA_WINDOW_HOURS = 24
+_DEFAULT_RISK_THRESHOLD_ENTER = 0.59
+_DEFAULT_RISK_THRESHOLD_EXIT = 0.49
 # Live suspicion-meter smoothing (design spec §08): the displayed 0-100 score follows an
 # asymmetric EMA -- it rises fast (two consistent turns reach the target band) and decays
 # slowly (a scammer changing topic doesn't reset accumulated evidence). Launch defaults,
 # to be re-tuned on pilot recordings with the FPR-first harness.
 _DEFAULT_METER_ALPHA_UP = 0.5
 _DEFAULT_METER_ALPHA_DOWN = 0.12
+# PLAN_2026-09 A6 (2026-09-19): the first one or two windows of a call are short and noisy --
+# a bank's opener reads like a scam opener until context arrives -- so the warning latch
+# cannot engage before this many committed utterances unless a confident hard signal fired
+# (measured: removes the transient false latches at turn 2 without losing an alert).
+_DEFAULT_METER_MIN_TURNS_TO_ARM = 3
+# Optional damping of the rise on short windows: alpha_up is scaled by min(1, turn / N);
+# 1 = off (it trades one hairline scam for three fewer transient latches on test).
+_DEFAULT_METER_SHORT_WINDOW_TURNS = 1
 _DEFAULT_SEED = 42
 _DEFAULT_SUPPORTED_LOCALES: tuple[str, ...] = ("ru", "kk")
 _DEFAULT_LOCALE = "ru"
 # Corpus split fractions (test fraction is the remainder). Consumed by
 # `qorgan.data.build_corpus` for the deterministic train/val/test partition.
 _DEFAULT_SPLIT_TRAIN_FRACTION = 0.7
+# Share of train rows that also get an ASR-styled copy at corpus build (PLAN A10, ADR D31).
+_DEFAULT_ASR_STYLE_TRAIN_FRACTION = 1.0
 _DEFAULT_SPLIT_VAL_FRACTION = 0.15
 
 ClassifierBackend = Literal["linear", "llm", "xlmr", "mock"]
@@ -86,12 +110,18 @@ class Config(BaseModel):
     corpus_config_path: Path
     cue_lexicon_path: Path
     reassurance_patterns_path: Path
+    # Ids of authored_heldout anchors read during feature engineering (PLAN_2026-09 A2).
+    inspection_ledger_path: Path
 
     # --- ASR ---
     whisper_model_size: str
     vosk_model_kk: str
     vosk_model_ru: str
     asr_sample_rate: int = Field(gt=0)
+    # Language locking (ADR D40): after this many voted utterances only the winning recogniser
+    # is fed; 0 = off (the shipped default -- the code-switch cost needs real bilingual audio).
+    asr_lock_after: int = Field(ge=0)
+    asr_lock_conf_floor: float = Field(ge=0.0, le=1.0)
 
     # --- Fine-tuned XLM-R backend (D3) ---
     xlmr_model_dir: Path
@@ -99,6 +129,10 @@ class Config(BaseModel):
     # --- Embeddings + linear classifier backend ("linear") ---
     linear_model_dir: Path
     embed_model_name: str
+    embed_backend: str
+    embed_onnx_dir: Path
+    device_embed_url: str
+    device_embed_cache: Path
 
     # --- Risk thresholds / hysteresis (gap G8) ---
     risk_threshold: float = Field(ge=0.0, le=1.0)
@@ -108,10 +142,23 @@ class Config(BaseModel):
     # --- Live suspicion-meter smoothing (design spec §08) ---
     meter_alpha_up: float = Field(gt=0.0, le=1.0)
     meter_alpha_down: float = Field(gt=0.0, le=1.0)
+    meter_min_turns_to_arm: int = Field(ge=1)
+    meter_short_window_turns: int = Field(ge=1)
 
     # --- Corpus splits (test fraction is the remainder) ---
     split_train_fraction: float = Field(gt=0.0, lt=1.0)
+    asr_style_train_fraction: float = Field(ge=0.0, le=1.0)
     split_val_fraction: float = Field(gt=0.0, lt=1.0)
+
+    # --- Privacy (PLAN_2026-09 C2/C3, ADR D14) ---
+    # Salt for phone-number HMACs; None means numbers cannot be accepted at all.
+    number_hmac_key: bytes | None
+    report_retention_days: int = Field(gt=0)
+
+    # --- Partner intake API (PLAN_2026-09 C5, ADR D19) ---
+    # Parsed `QORGAN_PARTNER_API_KEYS`; empty means the /api/v1 ingress is closed.
+    partner_credentials: tuple[PartnerCredential, ...]
+    partner_quota_window_hours: int = Field(gt=0)
 
     # --- Reproducibility / localization ---
     default_seed: int
@@ -122,6 +169,12 @@ class Config(BaseModel):
     def split_test_fraction(self) -> float:
         """The held-out test fraction: whatever is left after train + val."""
         return 1.0 - self.split_train_fraction - self.split_val_fraction
+
+    @model_validator(mode="after")
+    def _embed_backend_known(self) -> "Config":
+        if self.embed_backend not in _EMBED_BACKENDS:
+            raise ValueError(f"embed_backend must be one of {_EMBED_BACKENDS}, got {self.embed_backend!r}")
+        return self
 
     @model_validator(mode="after")
     def _hysteresis_exit_not_above_enter(self) -> "Config":
@@ -191,6 +244,12 @@ def _read_int(env: Mapping[str, str], key: str, default: int) -> int:
         raise ConfigError(f"{key}={raw!r} is not a valid int") from exc
 
 
+def _read_secret_bytes(env: Mapping[str, str], key: str) -> bytes | None:
+    """An optional secret as bytes; unset or blank means "not configured" (None)."""
+    value = env.get(key, "").strip()
+    return value.encode("utf-8") if value else None
+
+
 def _read_path(env: Mapping[str, str], key: str, default: Path) -> Path:
     raw = env.get(key)
     return default if not raw else Path(raw)
@@ -247,12 +306,17 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             reassurance_patterns_path=_read_path(
                 source, "QORGAN_REASSURANCE_PATTERNS_PATH", data_dir / "lexicon" / "reassurance_patterns.yaml"
             ),
+            inspection_ledger_path=_read_path(
+                source, "QORGAN_INSPECTION_LEDGER_PATH", data_dir / "anchors" / "inspection_ledger.yaml"
+            ),
             whisper_model_size=_read_str(
                 source, "QORGAN_WHISPER_MODEL_SIZE", _DEFAULT_WHISPER_MODEL_SIZE
             ),
             vosk_model_kk=_read_str(source, "QORGAN_VOSK_MODEL_KK", _DEFAULT_VOSK_MODEL_KK),
             vosk_model_ru=_read_str(source, "QORGAN_VOSK_MODEL_RU", _DEFAULT_VOSK_MODEL_RU),
             asr_sample_rate=_read_int(source, "QORGAN_ASR_SAMPLE_RATE", _DEFAULT_ASR_SAMPLE_RATE),
+            asr_lock_after=_read_int(source, "QORGAN_ASR_LOCK_AFTER", 0),
+            asr_lock_conf_floor=_read_float(source, "QORGAN_ASR_LOCK_CONF_FLOOR", 0.80),
             xlmr_model_dir=_read_path(
                 source, "QORGAN_XLMR_MODEL_DIR", _read_path(source, "QORGAN_MODEL_DIR", _REPO_ROOT / "models") / "xlmr"
             ),
@@ -260,6 +324,10 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
                 source, "QORGAN_LINEAR_MODEL_DIR", _read_path(source, "QORGAN_MODEL_DIR", _REPO_ROOT / "models") / "linear"
             ),
             embed_model_name=_read_str(source, "QORGAN_EMBED_MODEL_NAME", _DEFAULT_EMBED_MODEL_NAME),
+            embed_backend=_read_str(source, "QORGAN_EMBED_BACKEND", _DEFAULT_EMBED_BACKEND),
+            embed_onnx_dir=_read_path(source, "QORGAN_EMBED_ONNX_DIR", _REPO_ROOT / _DEFAULT_EMBED_ONNX_SUBDIR),
+            device_embed_url=_read_str(source, "QORGAN_DEVICE_EMBED_URL", _DEFAULT_DEVICE_EMBED_URL),
+            device_embed_cache=_read_path(source, "QORGAN_DEVICE_EMBED_CACHE", data_dir / _DEFAULT_DEVICE_EMBED_CACHE_SUBDIR),
             risk_threshold=_read_float(source, "QORGAN_RISK_THRESHOLD", _DEFAULT_RISK_THRESHOLD),
             risk_threshold_enter=_read_float(
                 source, "QORGAN_RISK_THRESHOLD_ENTER", _DEFAULT_RISK_THRESHOLD_ENTER
@@ -271,13 +339,33 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             meter_alpha_down=_read_float(
                 source, "QORGAN_METER_ALPHA_DOWN", _DEFAULT_METER_ALPHA_DOWN
             ),
+            meter_min_turns_to_arm=_read_int(
+                source, "QORGAN_METER_MIN_TURNS_TO_ARM", _DEFAULT_METER_MIN_TURNS_TO_ARM
+            ),
+            meter_short_window_turns=_read_int(
+                source, "QORGAN_METER_SHORT_WINDOW_TURNS", _DEFAULT_METER_SHORT_WINDOW_TURNS
+            ),
             split_train_fraction=_read_float(
                 source, "QORGAN_SPLIT_TRAIN_FRACTION", _DEFAULT_SPLIT_TRAIN_FRACTION
+            ),
+            asr_style_train_fraction=_read_float(
+                source, "QORGAN_ASR_STYLE_TRAIN_FRACTION", _DEFAULT_ASR_STYLE_TRAIN_FRACTION
             ),
             split_val_fraction=_read_float(
                 source, "QORGAN_SPLIT_VAL_FRACTION", _DEFAULT_SPLIT_VAL_FRACTION
             ),
             default_seed=_read_int(source, "QORGAN_SEED", _DEFAULT_SEED),
+            number_hmac_key=_read_secret_bytes(source, "QORGAN_NUMBER_HMAC_KEY"),
+            report_retention_days=_read_int(
+                source, "QORGAN_REPORT_RETENTION_DAYS", _DEFAULT_REPORT_RETENTION_DAYS
+            ),
+            partner_credentials=parse_partner_credentials(
+                source.get("QORGAN_PARTNER_API_KEYS", ""),
+                default_quota=_read_int(source, "QORGAN_PARTNER_DAILY_QUOTA", DEFAULT_PARTNER_DAILY_QUOTA),
+            ),
+            partner_quota_window_hours=_read_int(
+                source, "QORGAN_PARTNER_QUOTA_WINDOW_HOURS", _DEFAULT_PARTNER_QUOTA_WINDOW_HOURS
+            ),
             supported_locales=_read_csv_tuple(
                 source, "QORGAN_SUPPORTED_LOCALES", _DEFAULT_SUPPORTED_LOCALES
             ),

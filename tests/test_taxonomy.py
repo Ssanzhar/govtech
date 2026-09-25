@@ -1,6 +1,7 @@
 """TDD tests for `qorgan.taxonomy` — load + validate `tactics.yaml`."""
 
 import pytest
+from pathlib import Path
 
 from qorgan.config import get_config
 from qorgan.taxonomy import TaxonomyError, get_taxonomy, load_taxonomy
@@ -198,3 +199,23 @@ def test_taxonomy_is_frozen():
     taxonomy = load_taxonomy(REAL_TAXONOMY_PATH)
     with pytest.raises(Exception):  # noqa: B017 - pydantic frozen-model assignment error
         taxonomy.version = 99
+
+
+def test_get_taxonomy_is_cached_per_path_and_invalidated_by_edits(tmp_path, monkeypatch):
+    import os
+    import shutil
+
+    from qorgan import taxonomy as tx
+
+    copy = tmp_path / "tactics.yaml"
+    shutil.copy(Path("data/taxonomy/tactics.yaml"), copy)
+    monkeypatch.setenv("QORGAN_TAXONOMY_PATH", str(copy))
+    first = tx.get_taxonomy()
+    assert tx.get_taxonomy() is first  # same file, same object
+    copy.write_text(copy.read_text(encoding="utf-8"), encoding="utf-8")  # rewrite -> new mtime
+    os.utime(copy, ns=(copy.stat().st_atime_ns, copy.stat().st_mtime_ns + 1_000_000))
+    second = tx.get_taxonomy()
+    assert second is not first and second.tactic_ids() == first.tactic_ids()
+    monkeypatch.setenv("QORGAN_TAXONOMY_PATH", str(tmp_path / "missing.yaml"))
+    with pytest.raises(tx.TaxonomyError):
+        tx.get_taxonomy()

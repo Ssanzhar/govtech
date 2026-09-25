@@ -1,0 +1,19 @@
+{
+  "generated_at": "2026-09-17T17:47:21.642727+00:00",
+  "model": "gemini-2.5-flash",
+  "lexicon_hash": "75255af7a15f1eba4680210d7117cbfc6a13b4ac4b4ffeb12f11801d7beef25e",
+  "prompt_sha256_first_source": "b6925b5f1312ea719d59bcb6b65702041d6293ba7eff24635d2de093c8a43567",
+  "max_attempts": 3,
+  "sources": {
+    "test": 64,
+    "ood": 45
+  },
+  "produced": 109,
+  "failed": [],
+  "by_language": {
+    "ru": 37,
+    "kk": 34,
+    "mixed": 38
+  },
+  "seconds": 463.7
+}

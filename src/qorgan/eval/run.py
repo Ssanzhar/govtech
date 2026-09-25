@@ -1,5 +1,5 @@
 """FPR-first evaluation harness (D2-6): score a corpus split with the configured classifier
-and report metrics on `test` **and** `real_heldout` **separately** (CLAUDE.md SS6).
+and report metrics on `test` **and** `authored_heldout` **separately** (CLAUDE.md SS6).
 
 Two thresholds are in play and kept distinct:
 - the *label* threshold (`_TRUTH_THRESHOLD`) turns a corpus record's labeled risk into the
@@ -19,6 +19,7 @@ from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
 from qorgan.config import get_config
+from qorgan.data.ledger import load_inspection_ledger
 from qorgan.data.schema import Dialogue, ScoreResult
 from qorgan.eval import metrics
 from qorgan.eval.threshold import ThresholdChoice, select_threshold
@@ -96,7 +97,7 @@ def tune_alert_threshold(
     dialogues: Sequence[Dialogue], *, score_fn: ScoreFn, max_fpr: float = _DEFAULT_MAX_FPR
 ) -> ThresholdChoice:
     """Pick the alert threshold on `dialogues` that maximises recall subject to
-    `fpr <= max_fpr` -- run on `real_heldout` to set an honest, low-FPR operating point
+    `fpr <= max_fpr` -- run on `authored_heldout` to set an honest, low-FPR operating point
     (D4-4). Falls back to the minimum-FPR threshold if the budget is unreachable."""
     y_true, y_scores, _, _ = _collect(dialogues, score_fn)
     return select_threshold(y_true, y_scores, max_fpr=max_fpr)
@@ -109,19 +110,45 @@ def run(
     score_fn: ScoreFn | None = None,
     backend: str | None = None,
     alert_threshold: float | None = None,
+    ledger_ids: frozenset[str] = frozenset(),
 ) -> dict[str, dict]:
-    """Evaluate each named split separately and return `{split_name: metrics}`."""
+    """Evaluate each named split separately and return `{split_name: metrics}`.
+
+    `ledger_ids` (the inspection ledger, PLAN_2026-09 A2) splits any evaluated split that
+    contains inspected ids into two extra rows, `<split> (clean)` and `<split> (inspected)`,
+    so a number computed on records that were read during feature engineering is never
+    presented as a generalization signal.
+    """
     cfg = get_config()
     active_threshold = cfg.risk_threshold if alert_threshold is None else alert_threshold
     active_score_fn = score_fn or _default_score_fn(backend)
-    return {
-        name: evaluate_split(
-            load_split(processed_dir, name),
-            score_fn=active_score_fn,
-            alert_threshold=active_threshold,
+    results: dict[str, dict] = {}
+    for name in split_names:
+        dialogues = load_split(processed_dir, name)
+        results[name] = evaluate_split(dialogues, score_fn=active_score_fn, alert_threshold=active_threshold)
+        results.update(
+            _subset_rows(name, dialogues, ledger_ids, score_fn=active_score_fn, alert_threshold=active_threshold)
         )
-        for name in split_names
-    }
+    return results
+
+
+def _subset_rows(
+    split_name: str,
+    dialogues: Sequence[Dialogue],
+    ledger_ids: frozenset[str],
+    *,
+    score_fn: ScoreFn,
+    alert_threshold: float,
+) -> dict[str, dict]:
+    inspected = tuple(d for d in dialogues if d.id in ledger_ids)
+    if not inspected:
+        return {}
+    clean = tuple(d for d in dialogues if d.id not in ledger_ids)
+    rows: dict[str, dict] = {}
+    if clean:
+        rows[f"{split_name} (clean)"] = evaluate_split(clean, score_fn=score_fn, alert_threshold=alert_threshold)
+    rows[f"{split_name} (inspected)"] = evaluate_split(inspected, score_fn=score_fn, alert_threshold=alert_threshold)
+    return rows
 
 
 def _default_score_fn(backend: str | None) -> ScoreFn:
@@ -130,17 +157,29 @@ def _default_score_fn(backend: str | None) -> ScoreFn:
     return lambda transcript: score(transcript, backend=backend)
 
 
-_REPORT_COLUMNS = ("fpr", "precision", "recall", "f1", "pr_auc", "support")
+# (column label, metric key, interval key or None) -- rates carry their 95 % CI inline so a
+# `0.000` on a small split is never read as certainty (PLAN_2026-09 A1).
+_REPORT_COLUMNS: tuple[tuple[str, str, str | None], ...] = (
+    ("FPR [95% CI]", "fpr", "fpr_ci"),
+    ("Precision", "precision", None),
+    ("Recall [95% CI]", "recall", "recall_ci"),
+    ("F1", "f1", None),
+    ("PR-AUC [95% CI]", "pr_auc", "pr_auc_ci"),
+    ("N", "support", None),
+)
 
 
 def format_report(results: Mapping[str, dict]) -> str:
     """Render an FPR-first markdown summary table (one row per split), followed by a
     per-tactic F1 table for the tactics that were detected in at least one split."""
-    header = "| Split | FPR | Precision | Recall | F1 | PR-AUC | N |"
-    divider = "|---|---|---|---|---|---|---|"
+    header = "| Split | " + " | ".join(label for label, _, _ in _REPORT_COLUMNS) + " |"
+    divider = "|---|" + "|".join("---" for _ in _REPORT_COLUMNS) + "|"
     rows = [header, divider]
     for split_name, metric in results.items():
-        cells = [split_name] + [_fmt(metric.get(col)) for col in _REPORT_COLUMNS]
+        cells = [split_name] + [
+            _fmt_with_interval(metric.get(key), metric.get(ci_key)) if ci_key else _fmt(metric.get(key))
+            for _, key, ci_key in _REPORT_COLUMNS
+        ]
         rows.append("| " + " | ".join(cells) + " |")
 
     per_tactic = _format_per_tactic(results)
@@ -175,8 +214,16 @@ def _fmt(value) -> str:
     return str(value)
 
 
+def _fmt_with_interval(value, interval) -> str:
+    """`0.000 [0.000, 0.142]`; an undefined interval (absent class) renders as `[-]`."""
+    if interval is None:
+        return f"{_fmt(value)} [-]"
+    low, high = interval
+    return f"{_fmt(value)} [{_fmt(float(low))}, {_fmt(float(high))}]"
+
+
 def main(argv: Sequence[str] | None = None) -> None:
-    """CLI: `python -m qorgan.eval.run --split test --split real_heldout [--backend mock]`."""
+    """CLI: `python -m qorgan.eval.run --split test --split authored_heldout [--backend mock]`."""
     cfg = get_config()
     parser = argparse.ArgumentParser(description="FPR-first evaluation over corpus splits.")
     parser.add_argument("--split", action="append", dest="splits", default=None, help="Split name (repeatable)")
@@ -185,10 +232,11 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--by-language", action="store_true", help="Also break each split down by language")
     args = parser.parse_args(argv)
 
-    split_names = args.splits or ["test", "real_heldout"]
+    split_names = args.splits or ["test", "authored_heldout"]
     processed_dir = args.processed_dir or (cfg.data_dir / "processed")
     score_fn = _default_score_fn(args.backend)
-    results = run(processed_dir, split_names, score_fn=score_fn)
+    ledger_ids = load_inspection_ledger(cfg.inspection_ledger_path).ids
+    results = run(processed_dir, split_names, score_fn=score_fn, ledger_ids=ledger_ids)
     print(format_report(results))
 
     if args.by_language:
@@ -199,10 +247,11 @@ def main(argv: Sequence[str] | None = None) -> None:
             print(f"\n{split_name} by language:")
             print(format_report(by_language))
 
-    if "real_heldout" in split_names:
-        choice = tune_alert_threshold(load_split(processed_dir, "real_heldout"), score_fn=score_fn)
+    if "authored_heldout" in split_names:
+        # Tuned on the authored set only -- never on a locked real held-out (PLAN_2026-09 A5).
+        choice = tune_alert_threshold(load_split(processed_dir, "authored_heldout"), score_fn=score_fn)
         print(
-            f"\nRecommended alert threshold (fpr<={_DEFAULT_MAX_FPR:.2f} on real_heldout): "
+            f"\nRecommended alert threshold (fpr<={_DEFAULT_MAX_FPR:.2f} on authored_heldout): "
             f"{choice.threshold:.3f}  -> fpr={choice.fpr:.3f} recall={choice.recall:.3f}"
         )
 

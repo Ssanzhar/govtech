@@ -1,6 +1,7 @@
-/* Qorğan live call — replay (POST /api/live/session + /utterance + /end) and
-   microphone (WS /api/live/ws via live_mic.js) drive the same meter UI; both end in a
-   post-call summary with the consent-gated report button (POST .../report). */
+/* Qorğan live call — replay and microphone both run ON THIS DEVICE (site/core: the
+   classifier in a worker, speech recognition in Vosklet/WASM — PLAN B9); neither sends
+   audio or text anywhere. Both end in a post-call summary with the consent-gated report
+   button (POST /api/reports is the only content-carrying request). */
 (() => {
   "use strict";
 
@@ -38,7 +39,8 @@
 
   let scenarios = [];
   let running = false;
-  let lastSessionId = null; // set once a call finishes; consumed by the report button
+  let lastSessionId = null; // legacy (server sessions); kept for renderSummary's signature
+  let lastState = null; // the finished on-device session; consumed by the report button
 
   const esc = (s) =>
     String(s ?? "").replace(/[&<>"']/g, (ch) =>
@@ -89,6 +91,39 @@
   };
 
   // One committed utterance → meter, band, tags, advice, transcript line.
+  // Adapt the on-device core's update to the fields this page renders.
+  const toUpdate = (update, state) => ({
+    turn: update.meter.turn_index,
+    meter: update.meter.score,
+    band: update.band,
+    latched: update.meter.latched,
+    risk: update.result.risk,
+    advice: update.recommendation.advices,
+    note: update.recommendation.note,
+    new_evidence: update.new_evidence,
+    tactics: state.tags,
+  });
+
+  let runtimePromise = null;
+  const deviceRuntime = () => {
+    if (!runtimePromise) {
+      runtimePromise = import("./core/device.js").then(async ({ createDeviceRuntime }) => {
+        const runtime = await createDeviceRuntime({
+          onProgress: (p) => {
+            if (p.type === "progress" && p.status === "progress" && p.file?.endsWith(".onnx")) {
+              setNote(setupNote, `downloading the on-device model… ${Math.round(p.progress || 0)}% (278 MB, cached after the first time)`);
+            }
+          },
+        });
+        setNote(setupNote, "preparing the on-device model…");
+        await runtime.warmup();
+        setNote(setupNote, "on-device model ready — nothing leaves this browser");
+        return runtime;
+      });
+    }
+    return runtimePromise;
+  };
+
   const applyUpdate = (update, lineText) => {
     turnEl.textContent = String(update.turn);
     scoreEl.textContent = `${update.meter.toFixed(0)} / 100`;
@@ -132,7 +167,8 @@
       `<button type="button" id="lvReportSend" class="btn btn-paper">Send report</button>` +
       `</div>` +
       `<p class="lv-report-note" id="lvReportNote">Consent-gated: nothing is sent until you click. ` +
-      `The transcript and detected tactics join the analyst dashboard's pending queue.</p>` +
+      `What is kept: the transcript with numbers/IDs redacted, the caller number only as a keyed hash ` +
+      `plus its prefix (e.g. +7 700 ***), and the detected tactics. You get a receipt to delete it.</p>` +
       `</div>` +
       `</div>`;
     document.getElementById("lvReportSend").addEventListener("click", sendReport);
@@ -142,26 +178,46 @@
     const btn = document.getElementById("lvReportSend");
     const note = document.getElementById("lvReportNote");
     const phone = document.getElementById("lvReportPhone").value.trim();
-    if (!lastSessionId) return;
+    if (!lastState) return;
     btn.disabled = true;
     try {
-      const res = await fetch(`/api/live/session/${encodeURIComponent(lastSessionId)}/report`, {
+      const runtime = await deviceRuntime();
+      const draft = runtime.buildReport(lastState, { phoneNumber: phone || null });
+      const res = await fetch("/api/reports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone_number: phone || null }),
+        body: JSON.stringify({ ...draft, consent: true }),
       });
-      if (res.status === 404) throw new Error("this call was already reported");
-      if (res.status === 422) throw new Error("nothing to report — no utterances were scored");
+      if (res.status === 422) throw new Error((await res.json()).detail || "the report was rejected");
+      if (res.status === 503) throw new Error("this server is not configured to accept caller numbers");
+      if (res.status === 429) throw new Error("too many reports from this device — try again in a minute");
       if (!res.ok) throw new Error(`API returned ${res.status}`);
       const body = await res.json();
       note.className = "lv-report-note is-success";
       note.innerHTML =
-        `Report <b>${esc(body.report_id)}</b> submitted — it is now a pending report on the ` +
-        `<a href="admin.html">analyst dashboard</a>, where “ingest reports” folds it into the cluster analysis.`;
+        `Stored — receipt <b>${esc(body.receipt_id)}</b>. Number kept as <b>${esc(body.number_prefix || "—")}</b>; ` +
+        `transcript as stored (redacted):` +
+        `<pre class="lv-stored mono">${esc(body.stored_transcript)}</pre>` +
+        `It is now a pending report on the <a href="admin.html">analyst dashboard</a>. ` +
+        `<button type="button" id="lvReportDelete" class="btn btn-ghost">Delete my report</button>`;
+      document.getElementById("lvReportDelete").addEventListener("click", () => deleteReport(body.receipt_id, note));
     } catch (e) {
       btn.disabled = false;
       note.className = "lv-report-note is-error";
       note.textContent = `Could not submit — ${e.message || e}`;
+    }
+  };
+
+  const deleteReport = async (receiptId, note) => {
+    try {
+      const res = await fetch(`/api/reports/${encodeURIComponent(receiptId)}`, { method: "DELETE" });
+      if (res.status === 404) throw new Error("already deleted");
+      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      note.className = "lv-report-note";
+      note.textContent = "Report deleted — removed from the pending queue and from the analysis if it had been ingested.";
+    } catch (e) {
+      note.className = "lv-report-note is-error";
+      note.textContent = `Could not delete — ${e.message || e}`;
     }
   };
 
@@ -173,6 +229,7 @@
     adviceEl.hidden = true;
     showPartial("");
     lastSessionId = null;
+    lastState = null;
     turnEl.textContent = "0";
     scoreEl.textContent = "0 / 100";
     meterFill.style.width = "0%";
@@ -184,8 +241,8 @@
 
   const loadScenarios = async () => {
     try {
-      const res = await fetch("/api/live/scenarios");
-      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      const res = await fetch("core/scenarios.json");
+      if (!res.ok) throw new Error(`scenarios returned ${res.status}`);
       const body = await res.json();
       scenarios = body.scenarios || [];
       scenarioSel.innerHTML =
@@ -223,32 +280,20 @@
     resetCallUi();
 
     try {
-      const createRes = await fetch("/api/live/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locale: locale(), backend: null }),
-      });
-      if (!createRes.ok) throw new Error(`session create returned ${createRes.status}`);
-      const { session_id: sessionId } = await createRes.json();
-
+      const runtime = await deviceRuntime();
+      let state = runtime.newSession(locale());
       for (const line of lines) {
         await sleep(TURN_DELAY_MS);
-        const res = await fetch(`/api/live/session/${sessionId}/utterance`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: line }),
-        });
-        if (!res.ok) throw new Error(`utterance returned ${res.status}`);
-        applyUpdate(await res.json(), line);
+        const out = await runtime.advance(state, line, 1);
+        state = out.state;
+        applyUpdate(toUpdate(out.update, state), line);
       }
-
-      const endRes = await fetch(`/api/live/session/${sessionId}/end`, { method: "POST" });
-      if (!endRes.ok) throw new Error(`end returned ${endRes.status}`);
-      renderSummary(await endRes.json(), sessionId);
+      lastState = state;
+      renderSummary(runtime.summarize(state), null);
     } catch (e) {
       setNote(
         setupNote,
-        `Live analysis offline — ${e.message || e}. Serve the page through the API: python -m qorgan.api`,
+        `On-device analysis failed — ${e.message || e}. The model files under /models/ may still be downloading.`,
         true
       );
     } finally {
@@ -260,9 +305,13 @@
 
   startBtn.addEventListener("click", runReplay);
 
-  // ── microphone mode ──────────────────────────────────────────────────────────
+  // ── microphone mode (on-device speech recognition, PLAN B9) ──────────────────
 
-  let micSessionId = null;
+  const ASR_MODELS_BASE = "models/"; // config urls are relative to site/models/
+  let asr = null; // the running recogniser
+  let micStream = null;
+  let micState = null; // the live session while the microphone runs
+  let micQueue = Promise.resolve(); // utterances are scored one at a time, in order
 
   const disableMicChip = (reason) => {
     const input = micChip?.querySelector("input");
@@ -273,69 +322,111 @@
   };
 
   const checkMicCapability = async () => {
-    if (!window.QorganMic?.supported()) {
-      disableMicChip("this browser cannot capture microphone audio");
-      return;
-    }
+    // No server probe — the server never accepts audio (ADR D12); support is a property
+    // of this browser: cross-origin isolation, AudioWorklet, a microphone, and (for now)
+    // not a phone (ADR D25: the on-device model is unmeasured there).
     try {
-      const res = await fetch("/api/live/capabilities");
-      const body = await res.json();
-      if (!body.microphone) {
-        disableMicChip("server lacks streaming ASR — pip install -e '.[live]'");
+      const { isSupported } = await import("./core/asr.js");
+      const support = isSupported();
+      if (support.ok) {
+        setNote(micNote, "on-device speech recognition — audio never leaves this browser; the two speech models (~106 MB) download once");
+        return;
       }
-    } catch {
-      disableMicChip("could not reach /api/live/capabilities");
+      const reason = `microphone mode is unavailable here: ${support.reasons.join("; ")}`;
+      disableMicChip(reason);
+      setNote(micNote, reason);
+    } catch (e) {
+      disableMicChip(String(e.message || e));
+      setNote(micNote, `microphone mode is unavailable here: ${e.message || e}`, true);
     }
   };
 
-  const micIdle = () => {
-    micStartBtn.disabled = false;
-    micStartBtn.hidden = false;
-    micStopBtn.hidden = true;
+  const modelSpecs = (config) =>
+    Object.fromEntries(
+      Object.entries(config.asr?.models || {}).map(([language, m]) => [language, { id: m.id, url: new URL(ASR_MODELS_BASE + m.url, location.href).href }])
+    );
+
+  const onMicUtterance = ({ text, confidence, language }) => {
+    micQueue = micQueue
+      .then(async () => {
+        if (!micState) return;
+        const runtime = await deviceRuntime();
+        const out = await runtime.advance(micState, text, confidence);
+        micState = out.state;
+        showPartial("");
+        applyUpdate(toUpdate(out.update, micState), `${text}  ·  ${language.toUpperCase()} ${(confidence * 100).toFixed(0)}%`);
+      })
+      .catch((e) => setNote(micNote, `analysis failed — ${e.message || e}`, true));
   };
 
-  const handleMicEvent = (msg) => {
-    switch (msg.type) {
-      case "ready":
-        micSessionId = msg.session_id;
-        micStartBtn.hidden = true;
-        micStopBtn.hidden = false;
-        setNote(micNote, `listening — backend: ${msg.backend}. Speak, then click “End call”.`);
-        break;
-      case "partial":
-        showPartial(msg.text);
-        break;
-      case "utterance":
-        showPartial("");
-        applyUpdate(msg, msg.text);
-        break;
-      case "summary":
-        showPartial("");
-        renderSummary(msg, msg.session_id || micSessionId);
-        setNote(micNote, "");
-        micIdle();
-        break;
-      case "error":
-        setNote(micNote, msg.message, true);
-        micIdle();
-        break;
-      default:
-        break;
-    }
-  };
-
-  micStartBtn?.addEventListener("click", () => {
+  const startMic = async () => {
+    if (running) return;
+    running = true;
     micStartBtn.disabled = true;
-    setNote(micNote, "connecting…");
     resetCallUi();
-    window.QorganMic.start({ locale: locale(), onEvent: handleMicEvent });
-  });
+    try {
+      setNote(micNote, "preparing the on-device model…");
+      const runtime = await deviceRuntime();
+      const { createDeviceAsr } = await import("./core/asr.js");
+      if (!asr) {
+        asr = await createDeviceAsr({
+          models: modelSpecs(runtime.config),
+          lock: runtime.config.asr?.lock ?? null,
+          onPartial: ({ text }) => showPartial(text),
+          onUtterance: onMicUtterance,
+          onStatus: (message) => setNote(micNote, message),
+          onError: (e) => setNote(micNote, `recognition error — ${e.message || e}`, true),
+        });
+      }
+      setNote(micNote, "waiting for microphone permission…");
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
+      micState = runtime.newSession(locale());
+      await asr.start(micStream);
+      micStopBtn.hidden = false;
+      micStartBtn.hidden = true;
+    } catch (e) {
+      running = false;
+      micStartBtn.disabled = false;
+      setNote(micNote, `could not start the microphone — ${e.message || e}`, true);
+      stopTracks();
+    }
+  };
 
-  micStopBtn?.addEventListener("click", () => {
-    micStopBtn.hidden = true;
-    setNote(micNote, "finishing — flushing the last words…");
-    window.QorganMic.stop();
-  });
+  const stopTracks = () => {
+    for (const track of micStream?.getTracks() || []) track.stop();
+    micStream = null;
+  };
+
+  const stopMic = async () => {
+    micStopBtn.disabled = true;
+    try {
+      if (asr) await asr.stop();
+      stopTracks();
+      await micQueue; // let the last utterance finish scoring
+      const runtime = await deviceRuntime();
+      if (micState && micState.meter?.turn_index > 0) {
+        lastState = micState;
+        renderSummary(runtime.summarize(micState), null);
+      } else {
+        setNote(micNote, "no speech was recognised");
+      }
+    } catch (e) {
+      setNote(micNote, `could not end the call cleanly — ${e.message || e}`, true);
+    } finally {
+      micState = null;
+      running = false;
+      micStopBtn.hidden = true;
+      micStopBtn.disabled = false;
+      micStartBtn.hidden = false;
+      micStartBtn.disabled = false;
+    }
+  };
+
+  micStartBtn?.addEventListener("click", startMic);
+  micStopBtn?.addEventListener("click", stopMic);
+  window.addEventListener("pagehide", () => { stopTracks(); asr?.dispose(); });
 
   // ── mode toggle ──────────────────────────────────────────────────────────────
 

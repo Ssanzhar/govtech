@@ -1,4 +1,4 @@
-/* Qorğan try-widget — the real connection: POST /api/analyze on the qorgan API. */
+/* Qorğan try-widget — analyses ON THIS DEVICE by default (site/core); POST /api/analyze only on explicit opt-in. */
 (() => {
   "use strict";
 
@@ -57,22 +57,57 @@
     out.hidden = false;
   };
 
+  // On-device by default: the transcript never leaves the browser. The server path is an
+  // explicit opt-in (stateless POST /api/analyze) for devices that cannot hold the model.
+  let runtimePromise = null;
+  const deviceRuntime = () => {
+    if (!runtimePromise) {
+      runtimePromise = import("./core/device.js").then(async ({ createDeviceRuntime }) => {
+        const runtime = await createDeviceRuntime({
+          onProgress: (p) => {
+            if (p.type === "progress" && p.status === "progress" && p.file?.endsWith(".onnx")) {
+              go.textContent = `Downloading model… ${Math.round(p.progress || 0)}%`;
+            }
+          },
+        });
+        await runtime.warmup();
+        return runtime;
+      });
+    }
+    return runtimePromise;
+  };
+
+  const analyzeOnDevice = async (transcript, locale) => {
+    const runtime = await deviceRuntime();
+    const { result, explanation, threshold } = await runtime.analyze(transcript, locale);
+    return {
+      risk: result.risk, flagged: result.risk >= threshold, threshold, backend: `${result.backend} · on this device`,
+      fallback: false, tags: result.tags, spans: result.attributions, explanation,
+    };
+  };
+
+  const analyzeOnServer = async (transcript, locale) => {
+    const res = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transcript, locale }),
+    });
+    if (!res.ok) throw new Error(`API returned ${res.status}`);
+    const body = await res.json();
+    return { ...body, backend: `${body.backend} · on the server (explicit request, nothing stored)` };
+  };
+
   go.addEventListener("click", async () => {
     const transcript = input.value.trim();
     if (!transcript) { input.focus(); return; }
     const locale = document.querySelector('input[name="loc"]:checked')?.value || "ru";
+    const onServer = document.getElementById("twServer")?.checked;
     go.disabled = true;
     go.textContent = "Analyzing…";
     try {
-      const res = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript, locale }),
-      });
-      if (!res.ok) throw new Error(`API returned ${res.status}`);
-      render(await res.json(), transcript);
+      render(await (onServer ? analyzeOnServer(transcript, locale) : analyzeOnDevice(transcript, locale)), transcript);
     } catch (e) {
-      fail(`analyzer offline — ${e.message || e}`);
+      fail(`${onServer ? "server" : "on-device"} analysis failed — ${e.message || e}`);
     } finally {
       go.disabled = false;
       go.textContent = "Analyze";

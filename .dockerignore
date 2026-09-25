@@ -14,6 +14,5 @@ data/synthetic/
 data/processed/
 data/cache/
 notebooks/
-error_log.txt
 error.txt
 Qorgan_transcript.md

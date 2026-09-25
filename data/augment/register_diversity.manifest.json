@@ -1,0 +1,23 @@
+{
+  "purpose": "register diversity for TRAIN (ADR D35 follow-up): same generator, widened prompting",
+  "seed": 20260924,
+  "model": "gemini-2.5-flash",
+  "scams": 45,
+  "negatives": 74,
+  "failures": [
+    {
+      "kind": "negative",
+      "category": "legit_gov_service",
+      "language": "kk",
+      "error": "[Errno 54] Connection reset by peer"
+    }
+  ],
+  "reassurance_share": 0.4,
+  "axes": {
+    "caller": 7,
+    "callee": 6,
+    "opening": 5,
+    "texture": 5,
+    "length": 3
+  }
+}

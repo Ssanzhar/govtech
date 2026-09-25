@@ -21,7 +21,9 @@ from qorgan.classifier import predict
 from qorgan.data.demo_transcripts import LIVE_DEMO_CALLS
 from qorgan.live.session import LiveUpdate, advance, initial_session
 from qorgan.live.session_store import SessionStore
+from qorgan.config import get_config
 from qorgan.live.summary import build_report, submit_report, summarize
+from qorgan.privacy.numbers import MissingHmacKeyError
 
 router = APIRouter(prefix="/api/live", tags=["live"])
 
@@ -40,6 +42,7 @@ _DEFAULT_UTTERANCE_CONFIDENCE = 1.0
 # Human-readable scenario labels (RU-facing UI copy for the demo picker).
 _SCENARIO_LABELS: dict[str, str] = {
     "live_scam_bank_ru": "Bank security scam (RU)",
+    "live_scam_bank_kk": "Bank security scam (KK)",
     "live_hard_negative_bank_ru": "Real bank call — hard negative (RU)",
 }
 Locale = Literal["ru", "kk"]
@@ -112,9 +115,37 @@ class ReportRequest(BaseModel):
 
 
 class ReportResponse(BaseModel):
+    """What was stored, so the citizen sees exactly what left the device (PLAN_2026-09 B5):
+    the scrubbed transcript, the coarse number prefix, and a receipt for deletion."""
+
     report_id: str
+    receipt_id: str
     risk_score: float
     status: str
+    number_prefix: str | None
+    stored_transcript: str
+    flagged_phrases: list[str]
+
+
+class CapabilitiesResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    microphone: bool
+    reason: str
+
+
+# Raw call audio never reaches this server (PLAN_2026-09 §2 invariant 1; ADR D12). The
+# microphone mode returns once ASR runs on the device itself (spike B7).
+_MICROPHONE_UNAVAILABLE_REASON = (
+    "this server does not accept audio -- microphone analysis will run on your device "
+    "once on-device speech recognition ships"
+)
+
+
+@router.get("/capabilities", response_model=CapabilitiesResponse)
+def capabilities() -> CapabilitiesResponse:
+    """What the live page can offer on this install. Audio is never one of them."""
+    return CapabilitiesResponse(microphone=False, reason=_MICROPHONE_UNAVAILABLE_REASON)
 
 
 @router.get("/scenarios", response_model=ScenariosResponse)
@@ -227,9 +258,22 @@ def report_session(session_id: str, req: ReportRequest) -> ReportResponse:
     except ValueError as exc:  # blank transcript — nothing was said yet
         raise HTTPException(status_code=422, detail="nothing to report yet") from exc
 
-    submit_report(draft)
+    try:
+        stored = submit_report(draft, hmac_key=get_config().number_hmac_key)
+    except MissingHmacKeyError as exc:  # server misconfigured: refuse rather than store raw
+        raise HTTPException(
+            status_code=503, detail="reports with a caller number are not accepted: server has no number-hashing key"
+        ) from exc
+    except ValueError as exc:  # unparseable number
+        raise HTTPException(status_code=422, detail=f"caller number not understood: {exc}") from exc
     return ReportResponse(
-        report_id=report_incident_id(draft), risk_score=draft.risk_score, status="submitted"
+        report_id=report_incident_id(stored),
+        receipt_id=stored.receipt_id,
+        risk_score=stored.risk_score,
+        status="submitted",
+        number_prefix=stored.number_prefix,
+        stored_transcript=stored.transcript,
+        flagged_phrases=list(stored.flagged_phrases),
     )
 
 

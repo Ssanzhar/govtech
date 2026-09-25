@@ -25,8 +25,9 @@ from qorgan.analytics.pipeline import (
     write_organizations_jsonl,
 )
 from qorgan.data.incident_seed import load_incidents_jsonl, write_incidents_jsonl
+from support.numbers import hashed, prefix, stored_report
+
 from qorgan.data.schema import Incident, Label
-from qorgan.live.summary import ReportDraft
 
 KNOWN_NUMBER = "+7 700 101 20 30"
 OTHER_NUMBER = "+7 701 202 30 40"
@@ -54,20 +55,14 @@ def _incident(iid, number):
         dialogue_id=iid,
         transcript="это служба безопасности банка продиктуйте код",
         label=Label(risk=0.9),
-        phone_number=number,
+        number_hash=hashed(number), number_prefix=prefix(number),
         timestamp=datetime(2026, 7, 10, 12, 0),
     )
 
 
 def _draft(number=KNOWN_NUMBER, transcript="алло переведите деньги на безопасный счёт"):
-    return ReportDraft(
-        phone_number=number,
-        transcript=transcript,
-        flagged_phrases=("переведите деньги на безопасный счёт",),
-        tactic_ids=("safe_account",),
-        timestamp=datetime(2026, 7, 15, 10, 0, tzinfo=UTC),
-        risk_score=84.0,
-    )
+    # Reports reach intake already minimised (number hashed, transcript scrubbed).
+    return stored_report(number=number, transcript=transcript, receipt_id="c" * 24)
 
 
 @pytest.fixture
@@ -224,3 +219,112 @@ def test_summary_is_frozen(seeded):
     summary = _ingest(paths, embedder)
     with pytest.raises(Exception):
         summary.ingested = 99  # type: ignore[misc]
+
+
+# --- forget_report: a citizen's deletion reaches the analysis too (PLAN_2026-09 C3) ----------
+
+
+def _forget(paths, receipt_id):
+    from qorgan.analytics.intake import forget_report
+
+    return forget_report(
+        receipt_id,
+        reports_path=paths["reports"],
+        incidents_path=paths["incidents"],
+        organizations_path=paths["organizations"],
+        embeddings_path=paths["embeddings"],
+        now=datetime(2026, 7, 15, 12, 0),
+    )
+
+
+def test_forget_removes_an_ingested_report_from_reports_incidents_and_cache(seeded):
+    from qorgan.analytics.pipeline import load_embeddings_npz, load_organizations_jsonl
+    from qorgan.data.incident_seed import load_incidents_jsonl
+    from qorgan.reports.store import load_reports
+
+    paths, embedder = seeded
+    draft = _draft()
+    _write_reports(paths["reports"], [draft])
+    _ingest(paths, embedder)
+    incident_id = report_incident_id(draft)
+    assert incident_id in {i.id for i in load_incidents_jsonl(paths["incidents"])}
+
+    summary = _forget(paths, draft.receipt_id)
+
+    assert summary is not None and summary.incident_removed
+    assert load_reports(paths["reports"]) == []
+    remaining = load_incidents_jsonl(paths["incidents"])
+    assert incident_id not in {i.id for i in remaining}
+    cached_ids, matrix = load_embeddings_npz(paths["embeddings"])
+    assert cached_ids == [i.id for i in remaining] and len(matrix) == len(remaining)
+    members = {m for org in load_organizations_jsonl(paths["organizations"]) for m in org.members}
+    assert incident_id not in members and members == {i.id for i in remaining}
+
+
+def test_forget_a_pending_report_only_touches_the_reports_file(seeded):
+    from qorgan.data.incident_seed import load_incidents_jsonl
+
+    paths, _ = seeded
+    draft = _draft()
+    _write_reports(paths["reports"], [draft])
+    before = load_incidents_jsonl(paths["incidents"])
+
+    summary = _forget(paths, draft.receipt_id)
+
+    assert summary is not None and not summary.incident_removed
+    assert load_incidents_jsonl(paths["incidents"]) == before
+
+
+def test_forget_unknown_receipt_returns_none(seeded):
+    paths, _ = seeded
+    assert _forget(paths, "f" * 24) is None
+
+
+# --- signals-only partner reports (PLAN C9) -----------------------------------------------------
+
+
+def _signals_only_draft(number, reference="CASE-1"):
+    from qorgan.reports.store import prepare_report
+    from support.numbers import TEST_HMAC_KEY
+
+    return prepare_report(
+        transcript="", phone_number=number, flagged_phrases=(), tactic_ids=("otp_request", "safe_account"),
+        timestamp=datetime(2026, 9, 17, 10, 0, tzinfo=UTC), risk_score=100.0, hmac_key=TEST_HMAC_KEY,
+        source="partner", consent_basis="customer_consent", partner_id="bank_a", partner_reference=reference,
+    )
+
+
+def test_signals_only_report_with_known_number_joins_that_organization(seeded):
+    """No transcript to embed -- the number graph alone places it (a zero embedding row)."""
+    paths, embedder = seeded
+    _write_reports(paths["reports"], [_signals_only_draft(KNOWN_NUMBER)])
+
+    summary = _ingest(paths, embedder)
+
+    assert summary.ingested == 1
+    placement = summary.placements[0]
+    org = next(o for o in load_organizations_jsonl(paths["organizations"]) if o.id == placement.org_id)
+    assert {"a0", "a1", placement.incident_id} <= set(org.members) and not org.is_novel
+    ids, matrix = load_embeddings_npz(paths["embeddings"])
+    assert placement.incident_id in ids
+    assert not matrix[ids.index(placement.incident_id)].any()  # zero row, nothing fabricated
+    incident = next(i for i in load_incidents_jsonl(paths["incidents"]) if i.id == placement.incident_id)
+    assert incident.transcript == "" and {t.id for t in incident.label.tactic_tags} == {"otp_request", "safe_account"}
+
+
+def test_signals_only_report_with_unknown_number_is_a_singleton_but_never_novel(seeded):
+    paths, embedder = seeded
+    _write_reports(paths["reports"], [_signals_only_draft("+7 777 000 00 99")])
+
+    summary = _ingest(paths, embedder)
+
+    org = next(o for o in load_organizations_jsonl(paths["organizations"]) if summary.placements[0].incident_id in o.members)
+    assert set(org.members) == {summary.placements[0].incident_id}
+    assert org.is_novel is False  # no text evidence: a zero vector is not "far from everything"
+    assert org.representative_script is None
+
+
+def test_signals_only_reports_are_pending_like_any_other(seeded):
+    paths, _ = seeded
+    _write_reports(paths["reports"], [_signals_only_draft(KNOWN_NUMBER)])
+    assert len(pending_reports(paths["reports"], load_incidents_jsonl(paths["incidents"]))) == 1

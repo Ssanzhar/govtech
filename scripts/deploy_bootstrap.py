@@ -10,7 +10,13 @@ already exists, so re-running (container restart, local dev) is a fast no-op.
    hash-validation (drift), retrain from the corpus — seconds on CPU.
 4. Level-2 seeds  ← `demo_seed` + `analytics.pipeline`, deterministic (seed 42). The
    fabricated demo phone numbers live only in the running instance, never in git.
-5. Vosk KK/RU streaming models pre-downloaded so the live-mic mode has no first-use lag.
+5. Embedder      ← `Xenova/multilingual-e5-base` int8 ONNX (+ tokenizer) self-hosted under
+   site/models/ at the dir `QORGAN_EMBED_ONNX_DIR` names — the browser never contacts
+   huggingface.co and the server runs the same file (ADR D17); plus the exported head
+   weights (`site/models/weights.json`).
+6. Speech models   ← the small Vosk KK + RU models as USTAR tarballs under site/models/vosk/
+   for the on-device microphone mode (PLAN B9, ADR D25); ~106 MB, from ~/.cache/vosk or
+   the official alphacephei zips.
 """
 
 from __future__ import annotations
@@ -25,8 +31,11 @@ PROCESSED = REPO_ROOT / "data" / "processed"
 MODEL_DIR = REPO_ROOT / "models" / "linear"
 DATASET_REPO = "sanzh-ts/govtech_ds"
 MODEL_REPO = "sanzh-ts/govtech"
-SPLIT_FILES = ("train.jsonl", "val.jsonl", "test.jsonl", "real_heldout.jsonl", "ood.jsonl", "manifest.json")
+SPLIT_FILES = ("train.jsonl", "val.jsonl", "test.jsonl", "authored_heldout.jsonl", "ood.jsonl", "adversarial.jsonl", "adversarial_legit.jsonl", "manifest.json")
 DIALOGUE_POOL_SPLITS = ("train.jsonl", "val.jsonl", "test.jsonl")
+# `real_heldout` was renamed `authored_heldout` (it is hand-written, not real calls --
+# PLAN_2026-09 A2); Hub snapshots published before that still use the old name.
+LEGACY_SPLIT_NAMES = {"authored_heldout.jsonl": "real_heldout.jsonl"}
 
 # Scored once to prove the linear backend actually loads (also warms the embedder cache).
 _PROBE_SNIPPET = (
@@ -55,6 +64,8 @@ def ensure_corpus() -> None:
     PROCESSED.mkdir(parents=True, exist_ok=True)
     for name in SPLIT_FILES:
         source = snapshot / name
+        if not source.exists() and name in LEGACY_SPLIT_NAMES:
+            source = snapshot / LEGACY_SPLIT_NAMES[name]  # dataset published before the rename
         if source.exists():
             (PROCESSED / name).write_bytes(source.read_bytes())
     _log("corpus: splits in place")
@@ -108,29 +119,80 @@ def ensure_l2_seeds() -> None:
     if (PROCESSED / "organizations.jsonl").exists():
         _log("L2 seeds: present")
         return
+    if not os.environ.get("QORGAN_NUMBER_HMAC_KEY", "").strip():
+        # Seeded numbers are stored as HMAC digests (ADR D14). Without the runtime key
+        # (never baked into an image) seeding is deferred to the first start.
+        _log("L2 seeds: skipped -- QORGAN_NUMBER_HMAC_KEY not set (seeds on first start with the key)")
+        return
     _log("L2 seeds: seeding incidents + clustering (embeds ~500 transcripts on CPU)")
     _run([sys.executable, "scripts/demo_seed.py"])
     _run([sys.executable, "-m", "qorgan.analytics.pipeline"])
     _log("L2 seeds: organizations ready")
 
 
-def ensure_vosk_models() -> None:
-    try:
-        from vosk import Model  # noqa: F401  (the [live]/deploy extra)
-    except ImportError:
-        _log("vosk not installed — live-mic mode will be reported unavailable")
-        return
+# The embedder the browser AND the server run (ADR D17): the Hub's dynamically-quantised
+# int8 graph. Static (calibrated) quantisation was measured and rejected -- ADR D18.
+EMBED_HUB_REPO = "Xenova/multilingual-e5-base"
+EMBED_FILES = ("config.json", "tokenizer.json", "tokenizer_config.json", "onnx/model_quantized.onnx")
+SITE_MODELS = REPO_ROOT / "site" / "models"
+
+
+def _model_dir_complete(model_dir: Path) -> bool:
+    return all((model_dir / name).exists() for name in EMBED_FILES)
+
+
+def _download_embedder(target: Path) -> None:
+    from huggingface_hub import hf_hub_download
+
+    for name in EMBED_FILES:
+        destination = target / name
+        if destination.exists():
+            continue
+        _log(f"web model: downloading {EMBED_HUB_REPO}/{name}")
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(Path(hf_hub_download(EMBED_HUB_REPO, name)).read_bytes())
+
+
+def ensure_web_model() -> None:
+    """Self-host the int8 embedder at the dir the config names (server + browser load the
+    same files), and copy the exported head weights next to it."""
+    from qorgan.config import get_config
+    from qorgan.web.client_config import web_model_id
+
+    target = get_config().embed_onnx_dir
+    model_id = web_model_id(target)
+    if _model_dir_complete(target):
+        _log(f"web model: {model_id} present")
+    elif model_id == EMBED_HUB_REPO:
+        _download_embedder(target)
+        _log(f"web model: {model_id} in place")
+    else:
+        _log(f"web model: WARNING {target} is incomplete and is not the Hub graph -- nothing downloaded")
+    weights = MODEL_DIR / "web" / "weights.json"
+    if weights.exists():
+        (SITE_MODELS / "weights.json").write_bytes(weights.read_bytes())
+        _log("web model: head weights in place")
+    else:
+        _log("web model: no exported head weights (run python -m qorgan.classifier.web_bundle)")
+
+
+def ensure_asr_models() -> None:
+    """Self-host the two small Vosk models for on-device recognition (B9)."""
+    from qorgan.asr.web_models import ensure_vosk_model_tarball, ensure_vosklet_runtime
     from qorgan.config import get_config
 
+    try:
+        vendor = ensure_vosklet_runtime(REPO_ROOT / "site")
+        _log(f"asr runtime: {vendor.relative_to(REPO_ROOT)} (pinned, hash-verified)")
+    except Exception as exc:  # noqa: BLE001 - offline / tampered download: mic mode reports it
+        _log(f"asr runtime: unavailable ({exc}); microphone mode will report it")
     cfg = get_config()
-    for model_name in (cfg.vosk_model_kk, cfg.vosk_model_ru):
-        marker = Path.home() / ".cache" / "vosk" / model_name
-        if marker.exists():
-            _log(f"vosk: {model_name} cached")
-            continue
-        _log(f"vosk: downloading {model_name}")
-        snippet = f"from vosk import Model; Model(model_name={model_name!r})"
-        subprocess.run([sys.executable, "-c", snippet], check=True, cwd=REPO_ROOT)
+    for name in (cfg.vosk_model_kk, cfg.vosk_model_ru):
+        try:
+            target = ensure_vosk_model_tarball(name, site_models_dir=SITE_MODELS)
+            _log(f"asr model: {target.relative_to(REPO_ROOT)} ({target.stat().st_size / 1e6:.0f} MB)")
+        except Exception as exc:  # offline / upstream down: the mic mode degrades, the demo does not
+            _log(f"asr model: {name} unavailable ({exc}); microphone mode will report it")
 
 
 def main() -> None:
@@ -139,7 +201,8 @@ def main() -> None:
     ensure_dialogue_pool()
     ensure_model()
     ensure_l2_seeds()
-    ensure_vosk_models()
+    ensure_web_model()
+    ensure_asr_models()
     _log("done — serve with: uvicorn qorgan.api:app --host 0.0.0.0 --port $PORT")
 
 

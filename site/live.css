@@ -158,3 +158,5 @@
   .lv-setup-row{flex-direction:column;align-items:flex-start}
   .lv-controls{flex-direction:column;align-items:flex-start}
 }
+
+.lv-stored { white-space: pre-wrap; max-height: 12rem; overflow: auto; margin: .5rem 0; padding: .5rem .75rem; font-size: .8rem; border: 1px solid currentColor; opacity: .85; }

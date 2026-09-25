@@ -1,6 +1,8 @@
 /* Qorğan admin dashboard — overview, priority queue with sort/search/filter, drill-down
    with a searchable calls table, and per-call on-demand model analysis (the rank graph:
-   GET /api/admin/incidents/{id}/analysis). All list management is client-side. */
+   GET /api/admin/incidents/{id}/analysis — verdict, tags, trigger phrases, an excerpt).
+   The full transcript is shown only after an explicit "open case" (POST .../open), which
+   the server records in its audit log (PLAN C4). All list management is client-side. */
 (() => {
   "use strict";
 
@@ -170,7 +172,7 @@
     const rows = visible
       .map(
         (o) => `<tr data-org="${esc(o.id)}" class="${o.id === selectedId ? "is-selected" : ""}">` +
-          `<td>${esc(o.name)}${o.is_novel ? '<span class="queue-badge">NEW</span>' : ""}</td>` +
+          `<td>${esc(o.name)}${o.is_novel ? '<span class="queue-badge">NEW</span>' : ""}${feedbackBadge(o.feedback)}</td>` +
           `<td>${o.priority.toFixed(2)}</td>` +
           `<td>${o.incidents}</td>` +
           `<td>${o.numbers.length}</td>` +
@@ -230,11 +232,26 @@
         `<div class="dd-script">${esc(detail.representative_script)}</div>`
       : "";
 
+    const others = orgs.filter((o) => o.id !== detail.id);
+    const mergeOptions = others.map((o) => `<option value="${esc(o.id)}">${esc(o.name)} (${o.incidents})</option>`).join("");
+    const feedback =
+      `<div class="dd-feedback mono">` +
+      `<span class="dd-feedback-label">analyst verdict${detail.feedback ? ` · <b>${esc(detail.feedback)}</b>` : ""}</span>` +
+      `<button type="button" class="btn dd-fb-btn" data-fb="confirm">Confirm</button>` +
+      `<button type="button" class="btn dd-fb-btn" data-fb="dismiss">Dismiss</button>` +
+      (others.length
+        ? `<label class="dd-fb-merge">merge into <select id="ddMergeTarget">${mergeOptions}</select>` +
+          `<button type="button" class="btn dd-fb-btn" data-fb="merge">Merge</button></label>`
+        : "") +
+      `<span class="dd-fb-note tw-dim">logged with your analyst id; a dismissed operation drops to 20 % priority</span>` +
+      `</div>`;
+
     modalTitle.textContent = `organization · ${detail.id}`;
     modalDot.className = `p-dot${detail.is_novel ? "" : " tone-moss"}`;
     ddEl.innerHTML =
-      `<div class="dd-title">${esc(detail.name)} ${badge}</div>` +
+      `<div class="dd-title">${esc(detail.name)} ${badge}${feedbackBadge(detail.feedback)}</div>` +
       `<div class="dd-meta mono">priority ${detail.priority.toFixed(2)}</div>` +
+      feedback +
       `<div class="dd-section-label mono">linked numbers</div><div class="dd-chips">${numbers}</div>` +
       `<div class="dd-section-label mono">tactic profile</div><div class="dd-chips">${tactics}</div>` +
       script +
@@ -245,6 +262,9 @@
       `<span class="dd-call-note" id="ddCallNote"></span>` +
       `</div>` +
       `<div id="ddCalls"></div>`;
+    ddEl.querySelectorAll("button[data-fb]").forEach((btn) => {
+      btn.addEventListener("click", () => sendFeedback(detail.id, btn.dataset.fb));
+    });
     document.getElementById("ddCallSearch").addEventListener("input", (ev) => {
       callQuery = ev.target.value;
       renderCalls();
@@ -292,8 +312,13 @@
         `&nbsp;&middot;&nbsp;risk ${a.risk.toFixed(2)} / threshold ${a.threshold.toFixed(2)}` +
         `&nbsp;&middot;&nbsp;backend ${esc(a.backend)}${a.fallback ? " (fallback)" : ""}</div>` +
         `<div class="dd-rank">${rank}</div>` +
-        `<div class="dd-section-label mono">transcript &middot; trigger phrases</div>` +
-        `<div class="dd-script dd-analysis-script">${highlightSpans(a.transcript, a.spans)}</div>` +
+        (a.transcript
+          ? `<div class="dd-section-label mono">full transcript &middot; trigger phrases &middot; <span class="tone-moss">opened, logged</span></div>` +
+            `<div class="dd-script dd-analysis-script">${highlightSpans(a.transcript, a.spans)}</div>`
+          : `<div class="dd-section-label mono">excerpt &middot; trigger phrases</div>` +
+            `<div class="dd-script dd-analysis-script">${esc(a.excerpt)}</div>` +
+            `<div class="dd-spans">${a.spans.map((sp) => `<mark>${esc(sp.text)}</mark>`).join(" ") || '<span class="tw-dim">no trigger phrases</span>'}</div>` +
+            `<button type="button" class="btn dd-open-btn" data-open="${esc(a.incident_id)}">Open full transcript (audited)</button>`) +
         `<p class="dd-analysis-reason">${esc(a.reason)}</p>` +
         `<p class="dd-analysis-caveat mono">${esc(a.caveat)}</p>`;
     }
@@ -317,9 +342,9 @@
       .map((c) => {
         const expanded = c.id === expandedCall;
         return (
-          `<tr data-incident="${esc(c.id)}" class="${expanded ? "is-expanded" : ""}">` +
+          `<tr data-incident="${esc(c.id)}" data-has-transcript="${c.has_transcript === false ? "0" : "1"}" class="${expanded ? "is-expanded" : ""}">` +
           `<td>${esc(c.date || "—")}</td><td>${esc(c.number || "—")}</td>` +
-          `<td>${(c.risk * 100).toFixed(0)}%</td><td>${esc(c.excerpt)}</td></tr>` +
+          `<td>${(c.risk * 100).toFixed(0)}%</td><td>${c.has_transcript === false ? '<span class="tw-dim">signals only — partner report without a transcript</span>' : esc(c.excerpt)}</td></tr>` +
           (expanded ? analysisBlock(c.id) : "")
         );
       })
@@ -335,8 +360,35 @@
       });
     });
     callsEl.querySelectorAll("tr[data-incident]").forEach((tr) => {
+      if (tr.dataset.hasTranscript === "0") return; // nothing to analyse or open
       tr.addEventListener("click", () => expandCall(tr.dataset.incident));
     });
+    callsEl.querySelectorAll("button[data-open]").forEach((btn) => {
+      btn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        openCase(btn.dataset.open);
+      });
+    });
+  };
+
+  // The explicit, audited action (PLAN C4): the server returns the full transcript and
+  // writes an audit line naming the analyst (X-Analyst-Id, from the URL ?analyst=…).
+  const analystId = () => new URLSearchParams(location.search).get("analyst") || "";
+  const openCase = async (incidentId) => {
+    const key = `${incidentId}|${locale()}`;
+    try {
+      const headers = { "Content-Type": "application/json" };
+      if (analystId()) headers["X-Analyst-Id"] = analystId();
+      const res = await fetch(
+        `/api/admin/incidents/${encodeURIComponent(incidentId)}/open?locale=${locale()}`,
+        { method: "POST", headers, body: "{}" }
+      );
+      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      analysisCache.set(key, await res.json());
+    } catch (e) {
+      analysisCache.set(key, { error: String(e.message || e) });
+    }
+    if (expandedCall === incidentId) renderCalls();
   };
 
   // ── per-call model analysis (the rank graph) ─────────────────────────────────
@@ -361,6 +413,33 @@
       analysisCache.set(key, { error: String(e.message || e) });
     }
     if (expandedCall === incidentId) renderCalls();
+  };
+
+  // ── analyst feedback (PLAN C6): confirm / dismiss / merge, applied server-side ──
+
+  const feedbackBadge = (state) =>
+    state ? `<span class="queue-badge fb-${esc(state)}">${esc(state.toUpperCase())}</span>` : "";
+
+  const sendFeedback = async (orgId, action) => {
+    const body = { action };
+    if (action === "merge") {
+      const target = document.getElementById("ddMergeTarget")?.value;
+      if (!target) return;
+      body.target_org_id = target;
+    }
+    const headers = { "Content-Type": "application/json" };
+    if (analystId()) headers["X-Analyst-Id"] = analystId();
+    try {
+      const res = await fetch(`/api/admin/organizations/${encodeURIComponent(orgId)}/feedback?locale=${locale()}`, {
+        method: "POST", headers, body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      const shown = await res.json();
+      await load(); // the queue, KPIs and stats all change; re-read everything
+      selectOrg(shown.id);
+    } catch (e) {
+      ddEl.insertAdjacentHTML("afterbegin", `<div class="dd-loading">feedback failed — ${esc(e.message || e)}</div>`);
+    }
   };
 
   // ── data loading ─────────────────────────────────────────────────────────────

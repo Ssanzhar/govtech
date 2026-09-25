@@ -231,9 +231,37 @@ def test_incident_verbatim_validation_fails():
 
 def test_incident_optional_fields_default_none():
     incident = Incident(id="i1", dialogue_id="d1", transcript="hi", label=Label(risk=0.1))
-    assert incident.phone_number is None
+    assert incident.number_hash is None
+    assert incident.number_prefix is None
     assert incident.timestamp is None
     assert incident.script_family is None
+
+
+def test_incident_accepts_a_hashed_number_with_its_display_prefix():
+    from qorgan.privacy.numbers import display_prefix, hash_phone_number
+
+    digest = hash_phone_number("+7 700 101 20 30", key=b"k")
+    incident = Incident(
+        id="i1", dialogue_id="d1", transcript="hi", label=Label(risk=0.1),
+        number_hash=digest, number_prefix=display_prefix("+7 700 101 20 30"),
+    )
+    assert incident.number_hash == digest
+    assert incident.number_prefix == "+7 700 ***"
+
+
+@pytest.mark.parametrize("raw", ["+7 700 101 20 30", "77001012030", "7001012030", "not-a-hash"])
+def test_incident_refuses_anything_but_a_number_hash(raw):
+    """A raw caller number can never be persisted through the schema (ADR D14)."""
+    with pytest.raises(ValidationError):
+        Incident(id="i1", dialogue_id="d1", transcript="hi", label=Label(risk=0.1), number_hash=raw)
+
+
+def test_incident_prefix_must_be_a_prefix_not_a_number():
+    with pytest.raises(ValidationError):
+        Incident(
+            id="i1", dialogue_id="d1", transcript="hi", label=Label(risk=0.1),
+            number_hash="a" * 24, number_prefix="+7 700 101 20 30",
+        )
 
 
 # --- ScoreResult -----------------------------------------------------------------------

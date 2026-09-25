@@ -198,14 +198,14 @@ def test_build_manifest_counts_and_metadata():
         "val": [_dialogue("v1", ["e f"], language="kk")],
         "test": [_dialogue("te1", ["g h"], language="mixed")],
     }
-    real_heldout = [_dialogue("r1", ["i j"], hard_negative=True, risk=0.02)]
+    authored_heldout = [_dialogue("r1", ["i j"], hard_negative=True, risk=0.02)]
     manifest = build_manifest(
-        splits, real_heldout, seed=42, train_fraction=0.7, val_fraction=0.15
+        splits, authored_heldout, seed=42, train_fraction=0.7, val_fraction=0.15
     )
     assert manifest["seed"] == 42
     assert manifest["counts"]["train"]["total"] == 2
     assert manifest["counts"]["train"]["hard_negatives"] == 1
-    assert manifest["counts"]["real_heldout"]["total"] == 1
+    assert manifest["counts"]["authored_heldout"]["total"] == 1
     assert manifest["total"] == 5
     assert manifest["fractions"] == {"train": 0.7, "val": 0.15, "test": pytest.approx(0.15)}
     assert len(manifest["content_hash"]) == 64
@@ -231,14 +231,15 @@ def test_build_corpus_end_to_end_writes_splits_and_manifest(tmp_path):
         seed=42,
         train_fraction=0.7,
         val_fraction=0.15,
+        asr_style_fraction=0.0,  # this test pins the split itself; the ASR copies have their own test
     )
 
-    for name in ("train", "val", "test", "real_heldout"):
+    for name in ("train", "val", "test", "authored_heldout"):
         assert (processed / f"{name}.jsonl").exists()
     assert (processed / "manifest.json").exists()
 
-    # real_heldout equals the anchors, kept fully separate from the split corpus.
-    heldout_lines = (processed / "real_heldout.jsonl").read_text(encoding="utf-8").strip().splitlines()
+    # authored_heldout equals the anchors, kept fully separate from the split corpus.
+    heldout_lines = (processed / "authored_heldout.jsonl").read_text(encoding="utf-8").strip().splitlines()
     assert len(heldout_lines) == 2
     split_ids = []
     for name in ("train", "val", "test"):
@@ -294,7 +295,7 @@ def test_build_corpus_adds_augmentation_to_train_only(tmp_path):
         return [Dialogue.model_validate_json(x).id for x in text.splitlines() if x]
 
     train_ids = ids("train")
-    other_ids = ids("val") + ids("test") + ids("real_heldout")
+    other_ids = ids("val") + ids("test") + ids("authored_heldout")
     assert all(f"aug_{i}" in train_ids for i in range(6))  # augmentation lands in train
     assert not any(x.startswith("aug_") for x in other_ids)  # and nowhere else
     assert manifest["train_augment_count"] == 6
@@ -328,3 +329,57 @@ def test_build_corpus_deduplicates_synthetic(tmp_path):
     # 3 in, 1 duplicate removed -> 2 across splits.
     split_total = sum(manifest["counts"][n]["total"] for n in ("train", "val", "test"))
     assert split_total == 2
+
+
+def test_build_corpus_adds_asr_styled_copies_to_train_only(tmp_path):
+    synthetic = [_dialogue(f"syn_{i}", [f"Синтетический текст {i}!"]) for i in range(40)]
+    processed = tmp_path / "processed"
+    manifest = build_corpus(
+        dialogues=synthetic, anchor_dialogues=[], processed_dir=processed,
+        seed=42, train_fraction=0.7, val_fraction=0.15, asr_style_fraction=1.0,
+    )
+
+    def rows(name):
+        text = (processed / f"{name}.jsonl").read_text(encoding="utf-8").strip()
+        return [Dialogue.model_validate_json(x) for x in text.splitlines() if x]
+
+    train = rows("train")
+    styled = [d for d in train if d.id.endswith("-asr")]
+    assert styled and len(styled) == manifest["train_asr_style_count"]
+    assert all(d.transcript() == d.transcript().lower() for d in styled)
+    assert {d.id.removesuffix("-asr") for d in styled} <= {d.id for d in train}  # copies of train rows only
+    assert not any(d.id.endswith("-asr") for name in ("val", "test", "authored_heldout") for d in rows(name))
+    none = build_corpus(dialogues=synthetic, anchor_dialogues=[], processed_dir=tmp_path / "p2", seed=42, train_fraction=0.7, val_fraction=0.15, asr_style_fraction=0.0)
+    assert none["train_asr_style_count"] == 0
+
+
+def test_build_corpus_repairs_wrapped_rows_and_drops_corrupted_ones(tmp_path):
+    synthetic = [_dialogue(f"syn_{i}", [f"Синтетический текст {i}!"]) for i in range(40)]
+    wrapped = _dialogue("syn_wrapped", ['"\r\nҚайырлы күн! Бұл банк.\r\n"'], risk=0.05, hard_negative=True)
+    corrupted = _dialogue("syn_corrupted", ["Allo, s\ntyzba?", "S\ntyzba. B\rghyn ta\rdan."], risk=0.05, hard_negative=True)
+    processed = tmp_path / "processed"
+    manifest = build_corpus(dialogues=synthetic + [wrapped, corrupted], anchor_dialogues=[], processed_dir=processed, seed=42, train_fraction=0.7, val_fraction=0.15, asr_style_fraction=0.0)
+
+    rows = {}
+    for name in ("train", "val", "test"):
+        text = (processed / f"{name}.jsonl").read_text(encoding="utf-8").strip()
+        for line in text.splitlines():
+            d = Dialogue.model_validate_json(line); rows[d.id] = d
+    assert "syn_corrupted" not in rows and manifest["dropped_corrupted"] == ["syn_corrupted"]
+    assert rows["syn_wrapped"].utterances[0].text == "Қайырлы күн! Бұл банк."
+    assert manifest["total"] == 41
+
+
+def test_build_corpus_cleans_augment_rows_too_and_refuses_a_corrupted_anchor(tmp_path):
+    synthetic = [_dialogue(f"syn_{i}", [f"Синтетический текст {i}!"]) for i in range(40)]
+    augment = [
+        _dialogue("aug_wrapped", ['"\r\nБұл банк.\r\n"'], risk=0.05, hard_negative=True),
+        _dialogue("aug_corrupted", ["Iya, d\r s. Men k\r tetin edim."], risk=0.05, hard_negative=True),
+    ]
+    manifest = build_corpus(dialogues=synthetic, anchor_dialogues=[], augment_dialogues=augment, processed_dir=tmp_path / "p", seed=42, train_fraction=0.7, val_fraction=0.15, asr_style_fraction=0.0)
+    train = {Dialogue.model_validate_json(l).id: Dialogue.model_validate_json(l) for l in (tmp_path / "p" / "train.jsonl").read_text(encoding="utf-8").splitlines() if l}
+    assert train["aug_wrapped"].utterances[0].text == "Бұл банк." and "aug_corrupted" not in train
+    assert manifest["dropped_corrupted"] == ["aug_corrupted"] and manifest["train_augment_count"] == 1
+
+    with pytest.raises(ValueError, match="anchor"):
+        build_corpus(dialogues=synthetic, anchor_dialogues=[_dialogue("anc_bad", ["S\ntyzba?"], risk=0.05, hard_negative=True)], processed_dir=tmp_path / "p2", seed=42, train_fraction=0.7, val_fraction=0.15, asr_style_fraction=0.0)

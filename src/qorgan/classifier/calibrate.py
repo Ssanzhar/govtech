@@ -110,3 +110,54 @@ def load_temperature(path: Path) -> float:
     if not path.exists():
         return 1.0
     return float(json.loads(path.read_text(encoding="utf-8"))["temperature"])
+
+
+# --- per-tactic decision thresholds (2026-09-20, ADR D30) ---------------------------------------
+# The class-weighted per-tactic LRs over-predict at a flat 0.5 (recall ~0.9, precision 0.3
+# on the rare tactics). Each tactic gets the threshold that maximises its F1 on the tuning
+# split (`val`). Guard rails, measured on 2026-09-20: a threshold tuned on fewer than 8 val
+# positives overfits (gov_police tuned on 4 collapsed to F1 0 on test), so those tactics keep
+# the default; and the grid stops at 0.70 so a confident hard signal (weight >= 0.8, the live
+# meter's floor) can never be filtered out -- the streaming behaviour is provably unchanged.
+TACTIC_THRESHOLD_GRID: tuple[float, ...] = tuple(round(0.5 + 0.05 * i, 2) for i in range(5))  # 0.50 .. 0.70
+TACTIC_THRESHOLD_MIN_POSITIVES = 8
+
+
+def tune_tactic_thresholds(
+    probs: Sequence[Sequence[float]],
+    truth: Sequence[Sequence[int]],
+    label_space: Sequence[str],
+    *,
+    default: float = 0.5,
+    grid: Sequence[float] = TACTIC_THRESHOLD_GRID,
+    min_positives: int = TACTIC_THRESHOLD_MIN_POSITIVES,
+) -> dict[str, float]:
+    """`{tactic_id: threshold}` maximising per-tactic F1 over `grid` on a tuning set
+    (`probs`/`truth` are `(n, L)`, columns in `label_space` order). Ties go to the LOWEST
+    threshold (keep recall); a tactic with fewer than `min_positives` positives, or one
+    where no threshold beats the default's F1, keeps `default`. Raises `ValueError` on
+    shape mismatch."""
+    rows = [list(r) for r in probs]
+    labels = [list(r) for r in truth]
+    if len(rows) != len(labels) or any(len(r) != len(label_space) for r in rows) or any(len(r) != len(label_space) for r in labels):
+        raise ValueError("probs and truth must be (n, len(label_space))")
+    chosen: dict[str, float] = {}
+    for j, tactic_id in enumerate(label_space):
+        column = [(r[j], l[j]) for r, l in zip(rows, labels)]
+        if sum(t for _, t in column) < min_positives:
+            chosen[tactic_id] = default
+            continue
+        best_threshold, best_f1 = default, _f1_at(column, default)
+        for threshold in grid:
+            f1 = _f1_at(column, threshold)
+            if f1 > best_f1 + 1e-12:
+                best_threshold, best_f1 = threshold, f1
+        chosen[tactic_id] = float(best_threshold)
+    return chosen
+
+
+def _f1_at(column: Sequence[tuple[float, int]], threshold: float) -> float:
+    tp = sum(1 for p, t in column if p >= threshold and t)
+    fp = sum(1 for p, t in column if p >= threshold and not t)
+    fn = sum(1 for p, t in column if p < threshold and t)
+    return 2 * tp / (2 * tp + fp + fn) if (2 * tp + fp + fn) else 0.0

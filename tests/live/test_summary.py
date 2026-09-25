@@ -21,6 +21,8 @@ from qorgan.live.summary import (
     summarize,
 )
 
+KEY = b"tests-only-key"
+
 SCAM_TURNS = (
     "Алло, здравствуйте. Это служба безопасности вашего банка.",
     "Зафиксирована подозрительная операция, действовать нужно прямо сейчас.",
@@ -98,22 +100,24 @@ def test_report_timestamp_is_overridable():
 # --- report_to_incident -----------------------------------------------------------------------
 
 
-def test_report_converts_to_a_valid_l2_incident():
+def test_report_converts_to_a_valid_l2_incident(tmp_path):
     draft = build_report(_scam_state(), phone_number="+7 700 000 00 00")
-    incident = report_to_incident(draft, incident_id="report-001")
+    stored = submit_report(draft, hmac_key=KEY, reports_path=tmp_path / "r.jsonl")
+    incident = report_to_incident(stored, incident_id="report-001")
 
     assert incident.id == "report-001"
-    assert incident.transcript == draft.transcript
-    assert incident.phone_number == draft.phone_number
+    assert incident.transcript == stored.transcript
+    assert incident.number_hash == stored.number_hash and incident.number_prefix == "+7 700 ***"
     assert incident.label.risk == pytest.approx(draft.risk_score / 100.0)
     validate_verbatim_spans(incident.label.trigger_spans, incident.transcript)
 
 
-def test_incident_drops_phrases_not_verbatim_in_transcript():
+def test_incident_drops_phrases_not_verbatim_in_transcript(tmp_path):
     draft = build_report(_scam_state())
     edited = draft.model_copy(update={"flagged_phrases": ("не из этого разговора",)})
 
-    incident = report_to_incident(edited, incident_id="report-002")
+    stored = submit_report(edited, hmac_key=KEY, reports_path=tmp_path / "r.jsonl")
+    incident = report_to_incident(stored, incident_id="report-002")
 
     assert incident.label.trigger_spans == ()  # never fabricate evidence
 
@@ -127,15 +131,26 @@ def test_submit_report_appends_one_jsonl_line_per_submission(tmp_path):
     reports_path = tmp_path / "citizen_reports.jsonl"
     draft = build_report(_scam_state(), phone_number="+7 700 000 00 00")
 
-    submit_report(draft, reports_path=reports_path)
-    submit_report(draft.model_copy(update={"phone_number": None}), reports_path=reports_path)
+    submit_report(draft, hmac_key=KEY, reports_path=reports_path)
+    submit_report(draft.model_copy(update={"phone_number": None}), hmac_key=KEY, reports_path=reports_path)
 
     lines = reports_path.read_text(encoding="utf-8").strip().splitlines()
     assert len(lines) == 2
     first = json.loads(lines[0])
-    assert first["phone_number"] == "+7 700 000 00 00"
+    assert "phone_number" not in first  # the raw number is never written
+    assert first["number_prefix"] == "+7 700 ***" and len(first["number_hash"]) == 24
+    assert "000 00 00" not in lines[0] and "0000000" not in lines[0]
     assert first["risk_score"] >= 81.0
-    assert json.loads(lines[1])["phone_number"] is None
+    assert json.loads(lines[1])["number_hash"] is None
+
+
+def test_submit_report_with_a_number_requires_the_hashing_key(tmp_path):
+    from qorgan.privacy.numbers import MissingHmacKeyError
+
+    draft = build_report(_scam_state(), phone_number="+7 700 000 00 00")
+    with pytest.raises(MissingHmacKeyError):
+        submit_report(draft, hmac_key=None, reports_path=tmp_path / "r.jsonl")
+    assert not (tmp_path / "r.jsonl").exists()
 
 
 def test_models_are_frozen():

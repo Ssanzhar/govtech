@@ -15,6 +15,11 @@ import json
 from typing import Any
 
 
+# Per-request ceiling for build-time calls (ms): a hung connection must fail and be
+# retried by the caller, not stall a 100-call batch (seen 2026-09-17 on the paraphrase run).
+_HTTP_TIMEOUT_MS = 120_000
+
+
 class LLMResponseError(RuntimeError):
     """Raised when a Gemini response cannot be parsed into the expected JSON object."""
 
@@ -31,8 +36,9 @@ def build_client(api_key: str | None) -> Any:  # pragma: no cover - real network
             "Add it to .env or the environment."
         )
     from google import genai
+    from google.genai import types
 
-    return genai.Client(api_key=api_key)
+    return genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=_HTTP_TIMEOUT_MS))
 
 
 def thinking_budget_for(model: str) -> int:

@@ -3,6 +3,40 @@
 Web-first, Python-only, L1-centric. This supersedes the two-subsystem/on-device design in
 `DOCUMENTATION.md` for the sprint.
 
+> **September 2026 layer (current).** Level 1 runs on the citizen's device (`site/core/`,
+> the JS port of the classifier + `Xenova/multilingual-e5-base` int8 in a Web Worker); the
+> FastAPI server (`qorgan.api`) hosts the site, a stateless `/api/analyze` fallback, and
+> the analyst layer. The target diagram is `PLAN_2026-09.md §2`. Its invariants are
+> **tests**, not prose (`tests/test_architecture.py`):
+>
+> 1. **No route accepts audio** — no WebSocket, no audio/multipart bodies (ADR D12).
+> 2. **`/api/analyze` persists nothing** (snapshot of `data/` before/after).
+> 3. **Level 2 has only consented ingresses** — `POST /api/reports` (citizen, ADR D13)
+>    and `POST /api/v1/reports` (partner, ADR D19). Every module on the citizen/partner
+>    path (`live/*`, `api.py`, `api_live*`, `api_reports*`, `api_partner.py`) is
+>    import-graph-checked against the analytics write paths.
+> 4. **Stored minimised** — numbers only as salted HMAC digests + `+7 700 ***`, transcripts
+>    PII-scrubbed, receipts, `DELETE`, retention purge (ADR D14; schema-enforced).
+> 5. **Analysts see aggregates by default** — drill-downs carry excerpts; a full transcript
+>    is an explicit `POST …/open` that leaves an audit line naming the analyst (ADR D20).
+> 6. **The partner ingress is not a bulk feed** — API key per partner, one report per
+>    request, structured tactic hits preferred, transcripts accepted only pre-scrubbed,
+>    `consent_basis` required, per-partner rate limit + rolling daily quota, content-free
+>    audit log (`data/processed/audit_log.jsonl`), aggregates-only export.
+> 7. **The device is the runtime the numbers describe** (ADR D32) — the browser embeds
+>    on WASM only (WebGPU is refused: measured broken for the int8 graph), the server
+>    pins `onnxruntime` to the version transformers.js bundles for Node
+>    (`tests/test_runtime_pin.py`), and the decision gate runs on the browser's own
+>    embeddings (`tests_js/integration/browser_gate.test.mjs`, captured by
+>    `npm run gate:browser`), not on a Node proxy. The heads are trained and evaluated on the
+>    browser's own embeddings (`QORGAN_EMBED_BACKEND=device`, `classifier/device_embed.py`,
+>    ADR D33); the server loads them with native ORT as the documented proxy.
+>
+> Modules: `api_reports.py` · `api_partner.py` + `api_partner_export.py` · `partners.py`
+> (credential registry) · `audit.py` · `reports/` (store, purge, partner views) ·
+> `privacy/numbers.py`. The rest of this file is the July design and still describes the
+> classifier, explainer and Level-2 internals.
+
 ## Flow
 
 ```
@@ -31,13 +65,18 @@ Web-first, Python-only, L1-centric. This supersedes the two-subsystem/on-device 
 - `label.py` — Gemini labels each dialogue with tactic tags + **verbatim** trigger spans
   (spans must be substrings of the transcript — validate).
 - `build_corpus.py` — assemble, dedupe, PII-scrub, split `train/val/test` + hold out a
-  separate small `real_heldout` (transcribed real anchors). Writes a manifest + hash.
+  separate small `authored_heldout` (transcribed real anchors). Writes a manifest + hash.
+- `asr_style.py` — the on-device recogniser's register (lowercase, no punctuation, numerals
+  → words) as a deterministic transform; `build_corpus` adds a styled copy of every train row
+  (ADR D31) and `eval/asr_realism.py` scores eval splits clean vs styled, paired.
 
 ### `src/qorgan/classifier/`
 - `llm_classifier.py` — Gemini JSON-mode output → `{risk, tactic_tags, trigger_spans}`.
   Ships first; baseline + fallback.
 - `train.py` — fine-tune XLM-R base, multi-label head, **class weighting for low FPR**.
-- `calibrate.py` — temperature/isotonic → calibrated `confidence`.
+- `calibrate.py` — temperature/isotonic → calibrated `confidence`; per-tactic decision
+  thresholds for the tactic head (`tune_tactic_thresholds`, ADR D30), tuned at training time on
+  out-of-fold train + val (`multilabel.out_of_fold_proba`) and shipped in the bundle metadata.
 - `attribution.py` — Captum integrated gradients / attention rollout → token spans.
 - `predict.py` — **single interface** `score(transcript) -> ScoreResult` selecting backend
   via config. All callers depend on this, not on a specific model.
@@ -58,7 +97,7 @@ Web-first, Python-only, L1-centric. This supersedes the two-subsystem/on-device 
 ### `src/qorgan/eval/`
 - `metrics.py` — FPR (primary), precision, recall, F1, PR-AUC, per-tactic F1;
   cluster purity/ARI on labeled synthetic groups.
-- `run.py` — regenerates metric tables for `test` and `real_heldout` **separately**;
+- `run.py` — regenerates metric tables for `test` and `authored_heldout` **separately**;
   fixed seeds; logs configs.
 
 ### `src/qorgan/asr/`
@@ -90,5 +129,5 @@ def cluster(incidents: list[Incident]) -> list[Organization]:
 ## Non-negotiable properties
 - Deterministic corpus build (seeds + manifest) → reproducible metrics.
 - Explanations grounded in attributed spans; localized RU/KK; never hallucinated.
-- FPR reported on `test` **and** `real_heldout` separately.
+- FPR reported on `test` **and** `authored_heldout` separately.
 - Nothing "sends" or "decides" automatically — human-in-the-loop by construction.

@@ -4,6 +4,8 @@ from datetime import datetime
 
 import pytest
 
+from support.numbers import TEST_HMAC_KEY
+
 from qorgan.data.incident_seed import (
     build_families_from_dialogues,
     load_incidents_jsonl,
@@ -84,14 +86,14 @@ def test_build_families_scrubs_iin_pii_from_corpus_transcripts():
 
 
 def test_seed_incidents_produces_incidents_from_corpus():
-    incidents = seed_incidents(_corpus(), count=50, seed=42, start_time=_START)
+    incidents = seed_incidents(_corpus(), count=50, seed=42, start_time=_START, hmac_key=TEST_HMAC_KEY)
     assert len(incidents) == 50
     assert all(isinstance(i, Incident) for i in incidents)
     assert any(i.script_family == "crypto_giveaway_new" for i in incidents) or True  # novel may or may not sample
 
 
 def test_write_and_load_incidents_round_trips(tmp_path):
-    incidents = seed_incidents(_corpus(), count=20, seed=1, start_time=_START)
+    incidents = seed_incidents(_corpus(), count=20, seed=1, start_time=_START, hmac_key=TEST_HMAC_KEY)
     path = tmp_path / "incidents.jsonl"
     write_incidents_jsonl(incidents, path)
     loaded = load_incidents_jsonl(path)
@@ -101,3 +103,22 @@ def test_write_and_load_incidents_round_trips(tmp_path):
 def test_load_missing_incidents_raises(tmp_path):
     with pytest.raises(FileNotFoundError):
         load_incidents_jsonl(tmp_path / "nope.jsonl")
+
+
+def test_written_incidents_never_contain_a_raw_pool_number(tmp_path):
+    """ADR D14 end-to-end: the fabricated operating numbers exist only in code; the file on
+    disk holds digests + coarse prefixes."""
+    import re
+
+    from qorgan.data.incident_seed import _FAMILY_DEFINITIONS
+
+    incidents = seed_incidents(_corpus(), count=30, seed=3, start_time=_START, hmac_key=TEST_HMAC_KEY)
+    path = tmp_path / "incidents.jsonl"
+    write_incidents_jsonl(incidents, path)
+    text = path.read_text(encoding="utf-8")
+    pool = [n for _, _, numbers in _FAMILY_DEFINITIONS for n in numbers]
+    assert pool, "family definitions must carry numbers"
+    for number in pool:
+        digits = re.sub(r"\D", "", number)
+        assert number not in text and digits[-7:] not in text
+    assert "number_hash" in text and '"number_prefix":"+7 7' in text

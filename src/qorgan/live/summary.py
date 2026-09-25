@@ -17,7 +17,13 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 import qorgan.explain as explain_pkg
 from qorgan.config import get_config
-from qorgan.data.schema import Incident, Label, TacticTag, spans_from_phrases
+from qorgan.reports.model import (  # noqa: F401  (report_to_incident re-exported for callers)
+    CITIZEN_CONSENT_BASIS,
+    ReportSource,
+    StoredReport,
+    report_to_incident,
+)
+from qorgan.reports.store import append_report, prepare_report
 from qorgan.explain.recommend import recommend
 from qorgan.explain.templates import load_templates
 from qorgan.live.meter import Band, band
@@ -101,38 +107,33 @@ def build_report(
     )
 
 
-def report_to_incident(
-    draft: ReportDraft, *, incident_id: str, dialogue_id: str | None = None
-) -> Incident:
-    """Convert a (possibly user-edited) draft into a Level-2 `Incident`.
+def submit_report(
+    draft: ReportDraft,
+    *,
+    hmac_key: bytes | None,
+    reports_path: Path | None = None,
+    source: ReportSource = "citizen",
+    consent_basis: str = CITIZEN_CONSENT_BASIS,
+) -> StoredReport:
+    """Persist the reviewed draft as a minimised `StoredReport` (one JSON line).
 
-    Flagged phrases are re-grounded against the (possibly edited) transcript via
-    verbatim search; anything no longer present is dropped, never fabricated.
-    """
-    spans = spans_from_phrases(draft.flagged_phrases, draft.transcript)
-    label = Label(
-        risk=draft.risk_score / 100.0,
-        tactic_tags=tuple(TacticTag(id=tactic_id) for tactic_id in draft.tactic_ids),
-        trigger_spans=spans,
-    )
-    return Incident(
-        id=incident_id,
-        dialogue_id=dialogue_id or f"live-{incident_id}",
-        transcript=draft.transcript,
-        label=label,
-        phone_number=draft.phone_number,
-        timestamp=draft.timestamp,
-    )
-
-
-def submit_report(draft: ReportDraft, *, reports_path: Path | None = None) -> Path:
-    """Append the reviewed draft to the intake file (one JSON line per report).
-
-    Only ever called from an explicit user action — there is no automatic path here.
-    Returns the path written, defaulting to `data/processed/citizen_reports.jsonl`.
+    Only ever called from an explicit user action -- there is no automatic path here. The
+    transcript is PII-scrubbed and the caller number reduced to a digest + prefix before
+    anything touches disk (`reports.store.prepare_report`); the raw draft is never written.
+    Returns the stored report (its `receipt_id` is what the citizen keeps for deletion).
+    Raises `MissingHmacKeyError` if a number was given but no key is configured.
     """
     path = reports_path or get_config().data_dir / "processed" / _DEFAULT_REPORTS_FILENAME
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(draft.model_dump_json() + "\n")
-    return path
+    stored = prepare_report(
+        transcript=draft.transcript,
+        phone_number=draft.phone_number,
+        flagged_phrases=draft.flagged_phrases,
+        tactic_ids=draft.tactic_ids,
+        timestamp=draft.timestamp,
+        risk_score=draft.risk_score,
+        hmac_key=hmac_key,
+        source=source,
+        consent_basis=consent_basis,
+    )
+    append_report(stored, path)
+    return stored

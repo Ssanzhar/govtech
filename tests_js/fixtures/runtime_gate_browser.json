@@ -1,0 +1,17 @@
+{
+  "cases": 200,
+  "dim": 768,
+  "device": "wasm",
+  "transcript_hash": "53b94dd98f91d6ca188b563a0a0b3e79cd8c8220921ebc21b61f3b1baca27f9c",
+  "transformers_js": "3.8.1",
+  "onnxruntime_web": "1.22.0-dev.20250409-89f8206ba4",
+  "model": {
+    "dtype": "q8",
+    "model_id": "Xenova/multilingual-e5-base",
+    "model_name": "intfloat/multilingual-e5-base",
+    "prefix": "query: "
+  },
+  "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+  "ms_per_transcript": 700,
+  "generated_at": "2026-09-21T03:26:42.438Z"
+}

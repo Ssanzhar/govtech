@@ -21,7 +21,7 @@ from qorgan.live.meter import (
     update,
 )
 
-# With the default alphas (up 0.5, down 0.12) and latch (enter 55, exit 45):
+# With the default alphas (up 0.5, down 0.12), latch (enter 59, exit 49) and min_turns_to_arm 3:
 # risk 1.0 from 0 → 50 → 75 → ...; decay from 75 → 66 → 58.08 → 51.11 → 44.98.
 
 
@@ -50,12 +50,34 @@ def test_single_high_risk_turn_rises_gradually_not_instantly():
     assert state.latched is False  # 50 < enter threshold 55
 
 
-def test_two_consistent_high_risk_turns_reach_high_band_and_latch():
+def test_two_consistent_high_risk_turns_reach_high_band_but_arm_only_on_the_third():
+    """PLAN A6: two openers are not evidence -- the latch waits for the third utterance."""
     state = update(update(initial_state(), risk=1.0), risk=1.0)
 
     assert state.score == pytest.approx(75.0)
     assert band(state.score) == "high"
-    assert state.latched is True
+    assert state.latched is False
+    assert update(state, risk=1.0).latched is True
+
+
+def test_min_turns_to_arm_is_configurable_and_a_hard_signal_arms_immediately():
+    from qorgan.config import load_config
+
+    legacy = load_config({"QORGAN_METER_MIN_TURNS_TO_ARM": "1"})
+    assert update(update(initial_state(), risk=1.0, config=legacy), risk=1.0, config=legacy).latched is True
+    armed_by_signal = update(initial_state(), risk=0.2, hard_signals={"otp_request": 0.95})
+    assert armed_by_signal.latched is True and armed_by_signal.score == SINGLE_HARD_SIGNAL_FLOOR
+
+
+def test_short_window_damping_halves_the_first_rise_and_is_off_by_default():
+    from qorgan.config import load_config
+
+    assert update(initial_state(), risk=1.0).score == pytest.approx(50.0)  # off: full alpha_up
+    damped = load_config({"QORGAN_METER_SHORT_WINDOW_TURNS": "2"})
+    first = update(initial_state(), risk=1.0, config=damped)
+    assert first.score == pytest.approx(25.0)  # turn 1: alpha_up * 1/2
+    second = update(first, risk=1.0, config=damped)
+    assert second.score == pytest.approx(25.0 + 0.5 * 75.0)  # turn 2: full alpha_up again
 
 
 def test_decay_is_slower_than_rise():

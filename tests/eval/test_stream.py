@@ -6,6 +6,8 @@ from verbatim taxonomy example phrases so the mock backend detects them turn by 
 the meter escalates to a latch; the benign script never latches.
 """
 
+import re
+
 import pytest
 
 from qorgan.asr.stream import CommittedUtterance
@@ -206,7 +208,7 @@ def test_format_stream_report_places_false_latch_rate_first():
 
 def test_format_stream_report_renders_dash_for_none_percentiles():
     report = evaluate_stream([_benign_dialogue("b1"), _benign_dialogue("b2")], locale="ru", backend="mock")
-    text = format_stream_report({"real_heldout": report})
+    text = format_stream_report({"authored_heldout": report})
     assert "-" in text
 
 
@@ -240,3 +242,38 @@ def test_stream_report_is_frozen():
     report = evaluate_stream([_scam_dialogue()], locale="ru", backend="mock")
     with pytest.raises(Exception):
         report.false_latch_rate = 1.0  # type: ignore[misc]
+
+
+def test_stream_report_carries_binomial_intervals():
+    report = evaluate_stream([_scam_dialogue("s1"), _benign_dialogue("b1"), _benign_dialogue("b2")], locale="ru", backend="mock")
+    assert report.false_latch_ci is not None
+    low, high = report.false_latch_ci
+    assert low <= report.false_latch_rate <= high
+    assert report.alert_hit_ci is not None
+
+
+def test_format_stream_report_renders_interval_next_to_false_latch_rate():
+    report = evaluate_stream([_scam_dialogue("s1"), _benign_dialogue("b1")], locale="ru", backend="mock")
+    text = format_stream_report({"test": report})
+    assert "95% CI" in text.splitlines()[0]
+    assert re.search(r"\| 0\.000 \[0\.000, 0\.\d{3}\] \|", text), text
+
+
+def test_evaluate_streams_adds_clean_and_inspected_rows_from_the_ledger():
+    """The inspection ledger (A2) applies to the streaming table too: a split containing
+    inspected ids gets `<split> (clean)` and `<split> (inspected)` rows, each dialogue
+    replayed once. A split without inspected ids gets no extra rows."""
+    from qorgan.eval.stream import evaluate_streams
+
+    inspected_false_latch = _dialogue("read_during_fe", SCAM_TURNS, risk=0.02)
+    splits = {
+        "authored_heldout": [_scam_dialogue("s1"), _benign_dialogue("b1"), inspected_false_latch],
+        "test": [_scam_dialogue("s2"), _benign_dialogue("b2")],
+    }
+    results = evaluate_streams(splits, locale="ru", backend="mock", ledger_ids=frozenset({"read_during_fe"}))
+
+    assert list(results) == ["authored_heldout", "authored_heldout (clean)", "authored_heldout (inspected)", "test"]
+    assert results["authored_heldout"].false_latch_rate == pytest.approx(0.5)  # 1 of 2 negatives
+    assert results["authored_heldout (clean)"].false_latch_rate == 0.0 and results["authored_heldout (clean)"].n_negative == 1
+    assert results["authored_heldout (inspected)"].false_latch_rate == 1.0 and results["authored_heldout (inspected)"].n_positive == 0
+    assert results["test"].n_negative == 1

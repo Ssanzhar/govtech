@@ -2,7 +2,7 @@
 fallback (gap G10).
 
 Used only to transcribe a few demo clips -- never streaming, never fine-tuned (per
-`docs/SCOPE.md`). `real_heldout` anchors (Day 2) can be supplied as pre-transcribed text
+`docs/SCOPE.md`). `authored_heldout` anchors (Day 2) can be supplied as pre-transcribed text
 via `manual_transcript` when no audio pipeline is available yet, so the eval split isn't
 blocked on ASR landing first.
 """
@@ -24,7 +24,7 @@ def transcribe(
     """Return a transcript string.
 
     If `manual_transcript` is given, it is returned as-is (no ASR call at all) -- this is
-    the fallback path for demo clips / real_heldout anchors that already have a trusted
+    the fallback path for demo clips / authored_heldout anchors that already have a trusted
     transcript. Otherwise, `audio_path` is transcribed offline via faster-whisper.
 
     Args:

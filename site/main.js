@@ -1,5 +1,7 @@
-/* Qorğan analyzer — draws a seeded waveform + mel spectrogram and loops two cases:
-   a "spoof" verdict and a "bonafide" one. Pure canvas, no assets, no network. */
+/* Qorğan analyzer — an illustrative call-activity view (seeded canvas art) looping the two
+   demo scenes: a scam script that trips the hard-signal cues, and a real bank call that
+   does not. The log lines are the real feature names; the verdicts are the real demo
+   outputs. Pure canvas, no assets, no network. */
 (() => {
   "use strict";
 
@@ -8,17 +10,19 @@
       seed: 7,
       bursts: [[0.05, 0.32], [0.40, 0.57], [0.65, 0.96]],
       drift: 0.6, breaths: [], hif: 0.05,
-      log: ["// stream in", "$ analyzing 4.2 s clip", "formants: drifting",
-            "hi-freq energy: low", "breath markers: 2", "// reading the signal…"],
-      verdict: { label: '"spoof"', p: "0.97", reason: "kk · ru", time: "1.3 s", tone: "oxide" },
+      log: ["// turn 4 of 6 · rolling window", "$ embed · multilingual-e5 int8, on device",
+            "cue otp_request: «Продиктуйте код из SMS»", "cue secrecy: «Никому не говорите»",
+            "cue safe_account: «на безопасный счёт»", "reassurance: none", "// calibrating…"],
+      verdict: { label: '"scam_risk"', p: "0.93", reason: "meter 90 · critical", time: "0.6 s", tone: "oxide" },
     },
     {
       seed: 21,
       bursts: [[0.04, 0.21], [0.28, 0.46], [0.53, 0.60], [0.68, 0.78], [0.85, 0.97]],
       drift: 0.08, breaths: [0.24, 0.49, 0.63, 0.81], hif: 0.3,
-      log: ["// stream in", "$ analyzing 5.1 s clip", "formants: stable",
-            "hi-freq energy: natural", "breath markers: 6", "// reading the signal…"],
-      verdict: { label: '"bonafide"', p: "0.04", reason: "kk", time: "1.2 s", tone: "moss" },
+      log: ["// turn 4 of 4 · rolling window", "$ embed · multilingual-e5 int8, on device",
+            "cues: none of 5", "reassurance: «коды … называть не нужно»",
+            "hard-signal floor: not raised", "// calibrating…"],
+      verdict: { label: '"clear"', p: "0.05", reason: "meter 5 · low", time: "0.6 s", tone: "moss" },
     },
   ];
 
@@ -114,7 +118,7 @@
     const noise = makeNoise(rand);
     ctx.clearRect(0, 0, W, H);
     const cw = 5, ch = 4;
-    const centers = [0.10, 0.24, 0.40, 0.58];       // formant bands (0 = bottom)
+    const centers = [0.10, 0.24, 0.40, 0.58];       // activity bands (decorative)
     for (let x = 0; x < W; x += cw) {
       const t = x / W;
       const e = envelope(t, c.bursts);
@@ -161,8 +165,8 @@
     verdictEl.className = `a-side a-verdict mono tone-${v.tone}`;
     verdictEl.innerHTML =
       `<div>label: <b>${v.label}</b></div>` +
-      `<div>spoof_probability: ${v.p}</div>` +
-      `<div>threshold: 0.50</div>` +
+      `<div>scam_probability: ${v.p}</div>` +
+      `<div>threshold: 0.59</div>` +
       `<div>reason → ${v.reason}</div>` +
       `<div class="v-dim">// verdict in ${v.time}</div>`;
     pDot.className = `p-dot tone-${v.tone}`;
@@ -221,7 +225,7 @@
       for (const e of entries) {
         if (e.isIntersecting && !started) {
           started = true;
-          idx = 1;                    // first animated pass shows the bonafide case
+          idx = 1;                    // first animated pass shows the clear (legit) case
           later(runLoop, 900);
           io.disconnect();
         }

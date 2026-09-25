@@ -5,8 +5,10 @@ it rises fast (two consistent turns reach the target band) and decays slowly (a 
 changing topic does not reset accumulated evidence). Each update is weighted by the ASR
 confidence of the utterance that produced it, hard-signal tactics floor the score at the
 High/Critical band edges, the warning latch uses the shipped FPR-tuned hysteresis pair
-(`config.risk_threshold_enter/_exit`), and every change is recorded in an evidence
-ledger so the meter can always answer "why did you just go up?".
+(`config.risk_threshold_enter/_exit`) and arms only from `config.meter_min_turns_to_arm`
+on unless a hard signal fired (PLAN A6: a short opening window is not evidence), and every
+change is recorded in an evidence ledger so the meter can always answer "why did you just
+go up?".
 
 Pure and immutable: `update()` returns a new `MeterState`, never mutates its input.
 """
@@ -108,9 +110,14 @@ def update(
 
     cfg = config or get_config()
 
-    # §08 step 3: asymmetric, confidence-weighted EMA toward the calibrated target.
+    # §08 step 3: asymmetric, confidence-weighted EMA toward the calibrated target. The
+    # rise is damped on the first `meter_short_window_turns` windows (A6; off by default).
+    turn = state.turn_index + 1
     target = SCORE_MAX * risk
-    alpha = cfg.meter_alpha_up if target > state.score else cfg.meter_alpha_down
+    if target > state.score:
+        alpha = cfg.meter_alpha_up * min(1.0, turn / cfg.meter_short_window_turns)
+    else:
+        alpha = cfg.meter_alpha_down
     score = state.score + alpha * asr_confidence * (target - state.score)
 
     # §08 step 4: hard-signal floors (never lower the score).
@@ -129,9 +136,12 @@ def update(
     # §08 step 5: the warning latch reuses the shipped FPR-tuned hysteresis pair,
     # deliberately independent of the cosmetic band edges. Same enter/exit semantics as
     # `explain.windowing.apply_hysteresis`, on the 0-100 scale.
+    # A6: the latch arms only from `meter_min_turns_to_arm` on -- a short opening window
+    # is not evidence -- unless a confident hard signal is on the record.
     enter = cfg.risk_threshold_enter * SCORE_MAX
     exit_ = cfg.risk_threshold_exit * SCORE_MAX
-    latched = (score > exit_) if state.latched else (score >= enter)
+    armed = turn >= cfg.meter_min_turns_to_arm or bool(accumulated)
+    latched = (score > exit_) if state.latched else (armed and score >= enter)
 
     event = MeterEvent(
         turn_index=state.turn_index + 1,

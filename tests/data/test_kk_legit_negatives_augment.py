@@ -3,7 +3,7 @@ negatives (bank / gov / telecom "no code/data needed" calls) that stabilize the 
 decision boundary in train (see `docs/eval_report.md` addendum + CLAUDE.md SS6/SS7).
 
 Core invariants: every record is schema-valid, labeled as a risk-0 hard negative, and --
-critically -- **no utterance is copied or lightly paraphrased from the `real_heldout` anchor
+critically -- **no utterance is copied or lightly paraphrased from the `authored_heldout` anchor
 set** (`src/qorgan/data/anchors.py`). That set is the held-out generalization signal; any
 verbatim overlap between train-only augmentation and it would be leakage.
 """
@@ -83,7 +83,7 @@ def test_several_dialogues_reassure_in_kazakh():
 
 
 def test_no_augment_utterance_appears_verbatim_in_any_anchor_dialogue():
-    """The held-out `real_heldout` anchor set must stay leakage-free: no augment utterance
+    """The held-out `authored_heldout` anchor set must stay leakage-free: no augment utterance
     (normalized: whitespace-collapsed, lowercased) may exactly match any anchor utterance."""
     anchor_utterance_texts = {
         normalize_for_dedup(utterance.text)

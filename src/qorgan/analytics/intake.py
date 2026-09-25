@@ -22,7 +22,7 @@ from typing import Any
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field
 
-from qorgan.analytics.embed import embed_incidents
+from qorgan.analytics.embed import embed_incidents, embed_transcripts
 from qorgan.analytics.pipeline import (
     analyze_incidents,
     load_embeddings_npz,
@@ -30,10 +30,10 @@ from qorgan.analytics.pipeline import (
     save_embeddings_npz,
     write_organizations_jsonl,
 )
-from qorgan.classifier.embed import embed_texts
 from qorgan.data.incident_seed import load_incidents_jsonl, write_incidents_jsonl
 from qorgan.data.schema import Incident
-from qorgan.live.summary import ReportDraft, report_to_incident
+from qorgan.reports.model import StoredReport, report_to_incident
+from qorgan.reports.store import load_reports, remove_report
 
 _ID_HASH_CHARS = 10
 
@@ -58,39 +58,37 @@ class IngestSummary(BaseModel):
     organizations_total: int = Field(ge=0)
 
 
-def report_incident_id(draft: ReportDraft) -> str:
-    """Deterministic, content-addressed incident id for a report draft.
+def report_incident_id(report: StoredReport) -> str:
+    """Deterministic, content-addressed incident id for a stored report.
 
-    Same transcript + timestamp → same id, which is what makes ingest idempotent.
+    Same (scrubbed) transcript + timestamp → same id, which is what makes ingest idempotent.
+    A signals-only report (no transcript) is addressed by its tactic set + number digest.
     """
-    digest = hashlib.sha1(
-        f"{draft.transcript}|{draft.timestamp.isoformat()}".encode()
-    ).hexdigest()
+    content = report.transcript or f"{','.join(report.tactic_ids)}|{report.number_hash or ''}"
+    digest = hashlib.sha1(f"{content}|{report.timestamp.isoformat()}".encode()).hexdigest()
     return f"report-{digest[:_ID_HASH_CHARS]}"
 
 
-def load_report_drafts(reports_path: Path) -> list[ReportDraft]:
+def load_report_drafts(reports_path: Path) -> list[StoredReport]:
     """Parse the submitted-reports JSONL; missing file means no reports yet."""
-    if not reports_path.exists():
-        return []
-    return [
-        ReportDraft.model_validate_json(line)
-        for line in reports_path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
+    return load_reports(reports_path)
 
 
-def pending_reports(reports_path: Path, incidents: Sequence[Incident]) -> list[ReportDraft]:
-    """Drafts not yet ingested (by deterministic id), deduplicated within the file."""
+def pending_reports(reports_path: Path, incidents: Sequence[Incident]) -> list[StoredReport]:
+    """Stored reports not yet ingested (by deterministic id), deduplicated within the file.
+
+    Signals-only partner reports (no transcript) are pending too: they are placed through
+    the number graph alone, with a zero embedding row (PLAN_2026-09 C9).
+    """
     existing = {incident.id for incident in incidents}
     seen: set[str] = set()
-    pending: list[ReportDraft] = []
-    for draft in load_report_drafts(reports_path):
-        draft_id = report_incident_id(draft)
-        if draft_id in existing or draft_id in seen:
+    pending: list[StoredReport] = []
+    for report in load_reports(reports_path):
+        report_id = report_incident_id(report)
+        if report_id in existing or report_id in seen:
             continue
-        seen.add(draft_id)
-        pending.append(draft)
+        seen.add(report_id)
+        pending.append(report)
     return pending
 
 
@@ -149,6 +147,67 @@ def ingest_pending(
     )
 
 
+class ForgetSummary(BaseModel):
+    """Outcome of a citizen's deletion (PLAN_2026-09 C3): the report is gone; if it had
+    already been folded into the analysis, so is its incident, and the organizations were
+    recomputed without it."""
+
+    model_config = ConfigDict(frozen=True)
+
+    receipt_id: str
+    incident_removed: bool
+    organizations_total: int = Field(ge=0)
+
+
+def forget_report(
+    receipt_id: str,
+    *,
+    reports_path: Path,
+    incidents_path: Path,
+    organizations_path: Path,
+    embeddings_path: Path,
+    now: datetime | None = None,
+) -> ForgetSummary | None:
+    """Delete the report with `receipt_id` everywhere it reached. `None` if unknown.
+
+    The derived incident (content-addressed id) is removed from the incident stream and
+    the embedding cache, and organizations are re-analysed from the cached rows -- no
+    re-embedding is needed, because deletion only ever shrinks the stream.
+    """
+    report = remove_report(receipt_id, reports_path)
+    if report is None:
+        return None
+    incident_id = report_incident_id(report)
+    incidents = load_incidents_jsonl(incidents_path) if incidents_path.exists() else []
+    remaining = [incident for incident in incidents if incident.id != incident_id]
+    organizations = load_organizations_jsonl(organizations_path) if organizations_path.exists() else []
+    if len(remaining) == len(incidents):
+        return ForgetSummary(receipt_id=receipt_id, incident_removed=False, organizations_total=len(organizations))
+
+    embeddings = _drop_cached_row(incidents, remaining, embeddings_path)
+    organizations = analyze_incidents(remaining, embeddings=embeddings, now=now or datetime.now()) if remaining else []
+    write_incidents_jsonl(remaining, incidents_path)
+    write_organizations_jsonl(organizations, organizations_path)
+    if embeddings is not None:
+        save_embeddings_npz([i.id for i in remaining], embeddings, embeddings_path)
+    return ForgetSummary(receipt_id=receipt_id, incident_removed=True, organizations_total=len(organizations))
+
+
+def _drop_cached_row(
+    incidents: Sequence[Incident], remaining: Sequence[Incident], embeddings_path: Path
+) -> np.ndarray | None:
+    """Cached embedding rows for `remaining`, or `None` when the cache is absent/misaligned
+    (the next ingest then rebuilds it -- correctness over speed)."""
+    if not embeddings_path.exists():
+        return None
+    cached_ids, cached = load_embeddings_npz(embeddings_path)
+    if cached_ids != [incident.id for incident in incidents] or len(cached) != len(incidents):
+        return None
+    keep = {incident.id for incident in remaining}
+    rows = [row for incident_id, row in zip(cached_ids, cached) if incident_id in keep]
+    return np.vstack(rows) if rows else cached[:0]
+
+
 def _normalize_timestamp(incident: Incident) -> Incident:
     """Convert a tz-aware report timestamp to the incident store's naive-UTC convention.
 
@@ -173,8 +232,10 @@ def _extend_or_rebuild_embeddings(
     if embeddings_path.exists():
         cached_ids, cached = load_embeddings_npz(embeddings_path)
         if cached_ids == [incident.id for incident in incidents] and len(cached) == len(incidents):
-            new_vectors = embed_texts(
+            new_vectors = embed_transcripts(
                 [incident.transcript for incident in new_incidents], embedder=embedder
             )
+            if len(cached) and new_vectors.shape[1] == 0:  # only signals-only rows are new
+                new_vectors = np.zeros((len(new_incidents), cached.shape[1]), dtype=np.float32)
             return np.vstack([cached, new_vectors]) if len(cached) else new_vectors
     return embed_incidents([*incidents, *new_incidents], embedder=embedder)

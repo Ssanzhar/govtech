@@ -114,7 +114,7 @@ def _xlmr_score(transcript: str, *, bundle: XlmrBundle | None = None) -> ScoreRe
     tactic_probs = calibrate.apply_temperature(tactic_logits, 1.0)  # plain sigmoid for tactics
     tags = tuple(
         TacticTag(id=tactic_id, weight=min(1.0, max(0.0, prob)))
-        for tactic_id, prob in decode_tactics(tactic_probs, active.label_space, active.tactic_threshold)
+        for tactic_id, prob in decode_tactics(tactic_probs, active.label_space, active.tactic_threshold, getattr(active, "tactic_thresholds", None))
     )
     spans = integrated_gradient_spans(
         active.model,
@@ -221,7 +221,7 @@ def _linear_score(transcript: str, *, bundle: Any = None, embedder: Any = None) 
 
     tags = [
         TacticTag(id=tactic_id, weight=min(1.0, max(0.0, prob)))
-        for tactic_id, prob in decode_tactics(tactic_probs, active.label_space, active.tactic_threshold)
+        for tactic_id, prob in decode_tactics(tactic_probs, active.label_space, active.tactic_threshold, getattr(active, "tactic_thresholds", None))
     ]
     spans = list(
         select_top_utterance_spans(

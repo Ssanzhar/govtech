@@ -39,6 +39,16 @@ LIVE_DEMO_CALLS: dict[str, str] = {
         "Продиктуйте код из SMS, чтобы мы отменили операцию.\n"
         "Теперь переведите деньги на безопасный счёт, я продиктую реквизиты."
     ),
+    # Kazakh scam — the scene that demonstrates the bilingual claim. Same script the ASR bench
+    # drives through the recogniser (scripts/spikes/vosklet_bench, ADRs D25/D26), so replay and
+    # microphone mode show the same call.
+    "live_scam_bank_kk": (
+        "Сәлеметсіз бе. Бұл банктің қауіпсіздік қызметі.\n"
+        "Сіздің картаңыздан күдікті операция тіркелді, жағдай шұғыл.\n"
+        "Ешкімге айтпаңыз, бұл құпия операция.\n"
+        "SMS-тегі кодты айтыңыз, біз операцияны тоқтатамыз.\n"
+        "Содан кейін ақшаны қауіпсіз шотқа аударамыз, реквизиттерін айтамын."
+    ),
     "live_hard_negative_bank_ru": (
         "Здравствуйте, это оператор банка, звоню по вашей заявке.\n"
         "Мы подтверждаем, что перевод на 15000 тенге успешно проведён.\n"

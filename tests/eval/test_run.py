@@ -1,6 +1,8 @@
 """SMOKE tests for `qorgan.eval.run` — the FPR-first eval harness, driven by an injected
 score_fn against a tiny on-disk split (no network, no real backend)."""
 
+import re
+
 import pytest
 
 from qorgan.data.generate import write_dialogues_jsonl
@@ -93,13 +95,13 @@ def test_evaluate_split_counts_a_false_positive(tmp_path):
 
 def test_run_evaluates_each_split_separately(tmp_path):
     _make_split(tmp_path, "test")
-    _make_split(tmp_path, "real_heldout")
+    _make_split(tmp_path, "authored_heldout")
     results = run(
-        tmp_path, ["test", "real_heldout"], score_fn=_perfect_score_fn, alert_threshold=0.7
+        tmp_path, ["test", "authored_heldout"], score_fn=_perfect_score_fn, alert_threshold=0.7
     )
-    assert set(results) == {"test", "real_heldout"}
+    assert set(results) == {"test", "authored_heldout"}
     assert results["test"]["fpr"] == 0.0
-    assert results["real_heldout"]["fpr"] == 0.0
+    assert results["authored_heldout"]["fpr"] == 0.0
 
 
 def test_format_report_is_markdown_with_fpr_and_split_names(tmp_path):
@@ -141,8 +143,45 @@ def test_evaluate_by_language_groups_and_reports_each(tmp_path):
 
 
 def test_tune_alert_threshold_returns_low_fpr_choice(tmp_path):
-    dialogues = _make_split(tmp_path, "real_heldout")
+    dialogues = _make_split(tmp_path, "authored_heldout")
     choice = tune_alert_threshold(dialogues, score_fn=_perfect_score_fn, max_fpr=0.05)
     assert isinstance(choice, ThresholdChoice)
     assert choice.fpr <= 0.05
     assert 0.0 <= choice.threshold <= 1.0
+
+
+def test_format_report_renders_confidence_intervals_next_to_rates(tmp_path):
+    _make_split(tmp_path, "test")
+    results = run(tmp_path, ["test"], score_fn=_perfect_score_fn, alert_threshold=0.7)
+    report = format_report(results)
+    header_line = report.splitlines()[0]
+    assert "95% CI" in header_line
+    data_line = report.splitlines()[2]
+    # "0.000 [0.000, 0.842]" -- point estimate followed by its bracketed interval.
+    assert re.search(r"\| 0\.000 \[0\.000, 0\.\d{3}\] \|", data_line), data_line
+
+
+def test_format_report_renders_dash_for_undefined_interval():
+    results = {"only_scams": {"fpr": 0.0, "fpr_ci": None, "precision": 1.0, "precision_ci": (1.0, 1.0),
+                              "recall": 1.0, "recall_ci": (0.5, 1.0), "f1": 1.0, "pr_auc": 0.0,
+                              "pr_auc_ci": None, "support": 2}}
+    report = format_report(results)
+    assert "| 0.000 [-] |" in report
+
+
+def test_run_reports_clean_and_inspected_subsets_when_a_ledger_names_split_ids(tmp_path):
+    dialogues = _make_split(tmp_path, "authored_heldout")
+    inspected = frozenset({dialogues[0].id})
+    results = run(
+        tmp_path, ["authored_heldout"], score_fn=_perfect_score_fn, alert_threshold=0.7,
+        ledger_ids=inspected,
+    )
+    assert list(results) == ["authored_heldout", "authored_heldout (clean)", "authored_heldout (inspected)"]
+    assert results["authored_heldout (inspected)"]["n"] == 1
+    assert results["authored_heldout (clean)"]["n"] == len(dialogues) - 1
+
+
+def test_run_adds_no_subset_rows_when_no_split_id_is_in_the_ledger(tmp_path):
+    _make_split(tmp_path, "test")
+    results = run(tmp_path, ["test"], score_fn=_perfect_score_fn, alert_threshold=0.7, ledger_ids=frozenset({"zzz"}))
+    assert list(results) == ["test"]

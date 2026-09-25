@@ -13,7 +13,11 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Literal
 
+import re
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from qorgan.privacy.numbers import is_number_hash
 
 # Delimiter used to join `Utterance.text` into a single transcript string. Shared by
 # `Dialogue.transcript()` and `qorgan.explain.windowing` so cumulative windows and
@@ -21,6 +25,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 UTTERANCE_JOIN = "\n"
 
 SupportedLanguage = Literal["ru", "kk", "mixed"]
+FeedbackState = Literal["confirmed", "dismissed", "merged"]
 
 
 class SpanValidationError(ValueError):
@@ -164,8 +169,17 @@ class Dialogue(BaseModel):
         return self
 
 
+# `+7 700 ***` / `+380 ***` -- the coarse display form; anything longer is a number.
+_NUMBER_PREFIX_RE = re.compile(r"^\+\d{1,3}( \d{3})? \*\*\*$")
+
+
 class Incident(BaseModel):
-    """A Level-2 incident record: transcript + label + linking metadata (phone/time/script)."""
+    """A Level-2 incident record: transcript + label + linking metadata (number/time/script).
+
+    The caller number exists only as `number_hash` (a salted HMAC digest, see
+    `privacy/numbers.py`) plus a coarse `number_prefix` (`+7 700 ***`) for display. The
+    validators make it impossible to persist a raw number through this schema (ADR D14).
+    """
 
     model_config = ConfigDict(frozen=True)
 
@@ -173,9 +187,24 @@ class Incident(BaseModel):
     dialogue_id: str
     transcript: str
     label: Label
-    phone_number: str | None = None
+    number_hash: str | None = None
+    number_prefix: str | None = None
     timestamp: datetime | None = None
     script_family: str | None = None
+
+    @field_validator("number_hash")
+    @classmethod
+    def _number_is_hashed(cls, value: str | None) -> str | None:
+        if value is not None and not is_number_hash(value):
+            raise ValueError("Incident.number_hash must be a number digest (privacy.numbers.hash_phone_number), never a raw number")
+        return value
+
+    @field_validator("number_prefix")
+    @classmethod
+    def _prefix_is_coarse(cls, value: str | None) -> str | None:
+        if value is not None and not _NUMBER_PREFIX_RE.fullmatch(value):
+            raise ValueError("Incident.number_prefix must look like '+7 700 ***' (privacy.numbers.display_prefix)")
+        return value
 
     @model_validator(mode="after")
     def _trigger_spans_are_verbatim(self) -> "Incident":
@@ -234,6 +263,9 @@ class Organization(BaseModel):
     representative_script: str | None = None
     priority: float = 0.0
     is_novel: bool = False
+    # Analyst feedback applied at read time (`analytics/feedback.py`, PLAN C6); never
+    # persisted into organizations.jsonl, so re-clustering cannot lose it.
+    feedback: FeedbackState | None = None
 
     @field_validator("members")
     @classmethod
