@@ -9,6 +9,8 @@
   "counts": {
     "train": {
       "total": 1642,
+      "scam": 724,
+      "legit": 918,
       "hard_negatives": 918,
       "positives": 724,
       "by_language": {
@@ -19,6 +21,8 @@
     },
     "val": {
       "total": 112,
+      "scam": 43,
+      "legit": 69,
       "hard_negatives": 69,
       "positives": 43,
       "by_language": {
@@ -29,6 +33,8 @@
     },
     "test": {
       "total": 115,
+      "scam": 64,
+      "legit": 51,
       "hard_negatives": 51,
       "positives": 64,
       "by_language": {
@@ -39,8 +45,10 @@
     },
     "authored_heldout": {
       "total": 42,
+      "scam": 18,
+      "legit": 24,
       "hard_negatives": 15,
-      "positives": 27,
+      "positives": 18,
       "by_language": {
         "ru": 18,
         "mixed": 11,

@@ -83,6 +83,41 @@ def load_feedback(path: Path) -> list[FeedbackEvent]:
     return [FeedbackEvent.model_validate_json(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
+def forget_in_feedback(path: Path, *, incident_id: str, number_hash: str | None, live_numbers: set[str]) -> int:
+    """Remove a deleted report's traces from the feedback snapshots (legal review F8 / M4).
+
+    The incident id leaves every snapshot's members; the number digest leaves every snapshot
+    unless `live_numbers` (digests still carried by remaining incidents or reports) holds it.
+    An event whose snapshot (or merge target) no longer names any member is dropped: it was
+    about data that no longer exists. Rewrites the file only if something changed; returns
+    how many events were changed or dropped.
+    """
+    events = load_feedback(path)
+    if not events:
+        return 0
+    drop_number = number_hash is not None and number_hash not in live_numbers
+
+    def _clean(snapshot: OrgSnapshot) -> OrgSnapshot | None:
+        members = tuple(m for m in snapshot.members if m != incident_id)
+        numbers = tuple(n for n in snapshot.numbers if not (drop_number and n == number_hash))
+        return OrgSnapshot(numbers=numbers, members=members) if members else None
+
+    kept: list[FeedbackEvent] = []
+    changed = 0
+    for event in events:
+        org = _clean(event.org)
+        target = _clean(event.target) if event.target is not None else None
+        if org is None or (event.target is not None and target is None):
+            changed += 1
+            continue
+        cleaned = event.model_copy(update={"org": org, "target": target})
+        changed += cleaned != event
+        kept.append(cleaned)
+    if changed:
+        path.write_text("".join(e.model_dump_json() + "\n" for e in kept), encoding="utf-8")
+    return changed
+
+
 # --- application -----------------------------------------------------------------------------
 
 

@@ -9,17 +9,18 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from qorgan.analytics.intake import load_report_drafts, report_incident_id
 from qorgan.analytics.presentation import org_display_name
 from qorgan.analytics.stats import activity_series, weekly_trend
 from qorgan.api_admin import Locale, _load_analysis
+from qorgan.api_admin_auth import require_analyst
 from qorgan.config import get_config
 from qorgan.reports.store import REPORTS_FILENAME
 
-router = APIRouter(prefix="/api/admin", tags=["admin"])
+router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(require_analyst)])
 
 _ACTIVITY_DAYS = 30
 _TOP_ORGANIZATIONS = 6

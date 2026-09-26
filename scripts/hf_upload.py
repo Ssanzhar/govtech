@@ -10,7 +10,22 @@ real_heldout_v2.jsonl / real_train.jsonl (real partner calls, docs/DATA_INTAKE.m
 data/synthetic/, data/real/ -- the allow list below is the guard, keep it explicit.
 """
 
+import sys
+from pathlib import Path
+
 from huggingface_hub import HfApi
+
+from qorgan.data.publish_guard import PUBLISHED_SPLITS, find_unscrubbed
+
+# PII gate (ADR D45): every utterance headed for the public dataset must already be a
+# scrub_text fixed point -- nothing is uploaded otherwise.
+_findings = find_unscrubbed(
+    [Path("data/processed") / name for name in PUBLISHED_SPLITS] + sorted(Path("data/augment").glob("*.jsonl"))
+)
+if _findings:
+    for f in _findings:
+        print(f"PII gate: {f.file} {f.dialogue_id} utterance {f.utterance_index} is not scrubbed", file=sys.stderr)
+    sys.exit("refusing to publish: fix the rows above (qorgan.data.build_corpus.scrub_dialogue)")
 
 api = HfApi()
 
@@ -35,4 +50,7 @@ api.upload_folder(
     delete_patterns=["real_heldout.jsonl"],
 )
 api.upload_folder(repo_id=DATASET_REPO, repo_type="dataset", folder_path="data/augment", path_in_repo="augment")
+# The cards (docs/hf/): what each repo is, its limits and the honest cross-generator number.
+api.upload_file(repo_id=MODEL_REPO, repo_type="model", path_or_fileobj="docs/hf/MODEL_CARD.md", path_in_repo="README.md")
+api.upload_file(repo_id=DATASET_REPO, repo_type="dataset", path_or_fileobj="docs/hf/DATASET_CARD.md", path_in_repo="README.md")
 print(f"uploaded models/linear + lexicons -> {MODEL_REPO}; processed splits + augment -> {DATASET_REPO}")

@@ -27,12 +27,12 @@ from qorgan.classifier import embed, labels
 from qorgan.classifier.cue_match import MATCHER_VERSION
 from qorgan.classifier.multilabel import MultiLabelHead, out_of_fold_proba  # MultiLabelHead re-exported: keep import path stable
 from qorgan.config import get_config
-from qorgan.data.schema import Dialogue
+from qorgan.data.schema import SCAM_RISK_THRESHOLD, Dialogue
 
 __all__ = ["MultiLabelHead", "LinearBundle", "train_linear", "train_and_export", "load_linear", "export_linear"]
 
 # Labeled risk >= this is a scam in the binary target (matches eval/run.py).
-_TRUTH_THRESHOLD = 0.5
+_TRUTH_THRESHOLD = SCAM_RISK_THRESHOLD
 _DEFAULT_TACTIC_THRESHOLD = 0.5
 _MAX_CALIBRATION_FOLDS = 3
 _LR_MAX_ITER = 2000

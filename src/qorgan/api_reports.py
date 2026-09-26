@@ -21,7 +21,8 @@ from qorgan.analytics.intake import forget_report, report_incident_id
 from qorgan.api_ratelimit import SlidingWindowLimiter
 from qorgan.config import get_config
 from qorgan.privacy.numbers import MissingHmacKeyError
-from qorgan.reports.model import RECEIPT_ID_PATTERN
+from qorgan.reports.model import CITIZEN_CONSENT_VERSIONS, RECEIPT_ID_PATTERN
+from qorgan.reports.retention import client_timestamp_in_window, expires_at
 from qorgan.reports.store import REPORTS_FILENAME, append_report, prepare_report
 from qorgan.taxonomy import get_taxonomy
 
@@ -49,7 +50,19 @@ class ReportSubmission(BaseModel):
     tactic_ids: tuple[str, ...] = Field(default=(), max_length=_MAX_TACTICS)
     risk_score: float = Field(ge=0.0, le=100.0)
     consent: Literal[True]
+    # Which consent wording the citizen ticked (`reports.model.CITIZEN_CONSENT_VERSIONS`):
+    # stored with the report as proof of what was agreed to.
+    consent_version: str
+    # When the call happened, by the client's clock -- a hint only: retention runs on the
+    # server's `received_at`, and a claim outside [now - retention, now + skew] is refused.
     timestamp: datetime | None = None
+
+    @field_validator("consent_version")
+    @classmethod
+    def _registered_consent(cls, value: str) -> str:
+        if value not in CITIZEN_CONSENT_VERSIONS:
+            raise ValueError("unknown consent version")
+        return value
 
     @field_validator("transcript")
     @classmethod
@@ -86,6 +99,9 @@ class ReportReceipt(BaseModel):
     flagged_phrases: list[str]
     tactic_ids: list[str]
     timestamp: datetime
+    consent_version: str
+    # The server deletes the report at the latest by then (retention, on its own clock).
+    expires_at: datetime
 
 
 @router.post("", response_model=ReportReceipt, status_code=201)
@@ -94,6 +110,10 @@ def submit(req: ReportSubmission, request: Request) -> ReportReceipt:
         raise HTTPException(status_code=429, detail="too many reports from this client; try again in a minute")
     cfg = get_config()
     now = datetime.now(UTC)
+    if req.timestamp is not None and not client_timestamp_in_window(
+        req.timestamp, now=now, retention_days=cfg.report_retention_days
+    ):
+        raise HTTPException(status_code=422, detail="timestamp is in the future or older than the retention period")
     try:
         stored = prepare_report(
             transcript=req.transcript,
@@ -104,6 +124,7 @@ def submit(req: ReportSubmission, request: Request) -> ReportReceipt:
             risk_score=req.risk_score,
             hmac_key=cfg.number_hmac_key,
             received_at=now,
+            consent_version=req.consent_version,
         )
     except MissingHmacKeyError as exc:  # misconfigured server: refuse, never store raw
         raise HTTPException(
@@ -122,6 +143,8 @@ def submit(req: ReportSubmission, request: Request) -> ReportReceipt:
         flagged_phrases=list(stored.flagged_phrases),
         tactic_ids=list(stored.tactic_ids),
         timestamp=stored.timestamp,
+        consent_version=req.consent_version,
+        expires_at=expires_at(now, retention_days=cfg.report_retention_days),
     )
 
 

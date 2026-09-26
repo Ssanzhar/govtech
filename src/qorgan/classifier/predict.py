@@ -46,8 +46,12 @@ class UnknownBackendError(ValueError):
     """Raised when a requested classifier backend name is not recognized."""
 
 
-def score(transcript: str, *, backend: str | None = None) -> ScoreResult:
-    """Score `transcript` for scam risk using the configured (or overridden) backend."""
+def score(transcript: str, *, backend: str | None = None, use_cache: bool = True) -> ScoreResult:
+    """Score `transcript` for scam risk using the configured (or overridden) backend.
+
+    `use_cache=False` keeps the `llm` backend from writing its on-disk prediction cache
+    (verbatim trigger phrases): request-time scoring on the server must persist nothing;
+    batch evaluation may cache."""
     if not transcript or not transcript.strip():
         raise ValueError("transcript must not be empty")
 
@@ -55,7 +59,7 @@ def score(transcript: str, *, backend: str | None = None) -> ScoreResult:
     active_backend = backend or cfg.classifier_backend
 
     if active_backend == "llm":
-        return llm_classifier.classify(transcript)
+        return llm_classifier.classify(transcript, use_cache=use_cache)
     if active_backend == "mock":
         return _mock_score(transcript)
     if active_backend == "xlmr":

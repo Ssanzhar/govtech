@@ -20,8 +20,17 @@ EMAIL_PLACEHOLDER = "[EMAIL]"
 # Order matters: most-specific (longest/most-constrained) pattern first, so a 16-digit
 # card or 12-digit IIN is fully consumed before the looser 10/11-digit phone rule runs.
 _EMAIL_PATTERN = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
-_CARD_PATTERN = re.compile(r"\b\d{16}\b|\b\d{4}[ -]\d{4}[ -]\d{4}[ -]\d{4}\b")
-_IIN_PATTERN = re.compile(r"\b\d{12}\b")
+# Card / IIN edges: not `\b` -- in Python's Unicode `re` a Cyrillic/Kazakh letter is a word
+# char, so "карта4400123456789010" or "ЖСН940101300123" (ASR output, hand-edited reports)
+# would slip through. Only an ASCII letter/underscore or any digit blocks the match, which
+# keeps ASCII system identifiers (digests, receipt ids) a fixed point for the validators
+# that use `scrub_text` as a "no PII" check.
+_EDGE_BEFORE = r"(?<![A-Za-z_\d])"
+_EDGE_AFTER = r"(?![A-Za-z_\d])"
+_CARD_PATTERN = re.compile(
+    rf"{_EDGE_BEFORE}(?:\d{{16}}|\d{{4}}[ -]\d{{4}}[ -]\d{{4}}[ -]\d{{4}}){_EDGE_AFTER}"
+)
+_IIN_PATTERN = re.compile(rf"{_EDGE_BEFORE}\d{{12}}{_EDGE_AFTER}")
 # KZ phone: "+7"/"8"/bare "7" country/trunk prefix + 10 digits, with optional
 # spaces/dashes/parens between groups. Lookaround guards avoid eating into a longer
 # digit run (e.g. a stray leftover 12/16-digit sequence) from either end.

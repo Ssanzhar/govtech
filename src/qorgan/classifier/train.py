@@ -22,7 +22,7 @@ from torch import nn
 
 from qorgan.classifier import calibrate, labels
 from qorgan.config import get_config
-from qorgan.data.schema import Dialogue
+from qorgan.data.schema import SCAM_RISK_THRESHOLD, Dialogue
 
 _DEFAULT_BASE_MODEL = "xlm-roberta-base"
 _DEFAULT_EPOCHS = 5
@@ -34,7 +34,7 @@ _WEIGHT_DECAY = 0.01
 # Gradient-norm clip: keeps the higher fine-tuning LR from destabilising the encoder.
 _MAX_GRAD_NORM = 1.0
 # Labeled risk >= this is a scam in the binary risk target (matches eval/run.py).
-_TRUTH_THRESHOLD = 0.5
+_TRUTH_THRESHOLD = SCAM_RISK_THRESHOLD
 # Cap class weights: rare tactics otherwise yield huge pos_weights whose gradient spikes
 # collapse the shared encoder to a constant output.
 _MAX_POS_WEIGHT = 10.0

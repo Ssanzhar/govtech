@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from qorgan.api import app
+from support.analysts import as_analyst
 
 
 @pytest.fixture()
@@ -17,7 +18,7 @@ def client() -> TestClient:
 
 
 def test_admin_and_live_routes_are_not_shadowed_by_the_static_mount(client: TestClient) -> None:
-    admin_res = client.get("/api/admin/overview")
+    admin_res = client.get("/api/admin/overview", headers=as_analyst())
     live_res = client.get("/api/live/scenarios")
 
     assert admin_res.status_code == 200

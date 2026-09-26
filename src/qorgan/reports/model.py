@@ -8,7 +8,9 @@ plus a coarse display prefix. Anything else fails validation and is never writte
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import datetime
+from types import MappingProxyType
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -29,6 +31,17 @@ CONSENT_BASIS_PATTERN = r"^[a-z][a-z0-9_]{2,63}$"
 ReportSource = Literal["citizen", "partner"]
 CITIZEN_CONSENT_BASIS = "citizen_explicit_submit"
 
+# The consent sentence a citizen ticked, by version (privacy iteration 2026-09-26; legal review
+# M3, PD Law Art. 25(2)(5)). Each version maps to the SHA-256 of its exact wording in every
+# page language (`site/i18n.js`, keys `report.consent*`, canonical JSON), so a stored
+# `consent_version` proves what was agreed to. `tests/reports/test_consent_versions.py` fails
+# if the page's wording changes without a new version here. Never edit an entry; add one, and
+# drop an old one only after every report citing it has expired.
+CONSENT_VERSION_PATTERN = r"^[a-z][a-z0-9-]{0,31}-v[0-9]{1,4}$"
+CITIZEN_CONSENT_VERSIONS: Mapping[str, str] = MappingProxyType({
+    "report-v1": "1e11422686c366970dcbb06d19fac06c51f269b3f6247caa261b20c759b26f67",
+})
+
 
 class StoredReport(BaseModel):
     """What the reports file holds. Frozen; edits happen on the draft, before this."""
@@ -48,6 +61,10 @@ class StoredReport(BaseModel):
     risk_score: float = Field(ge=0.0, le=_RISK_SCORE_MAX)
     source: ReportSource = "citizen"
     consent_basis: str = Field(default=CITIZEN_CONSENT_BASIS, min_length=1)
+    # Which consent text the citizen ticked (`CITIZEN_CONSENT_VERSIONS`). Required by the
+    # citizen route; None on partner reports (their basis is `consent_basis`) and on rows
+    # stored before it existed.
+    consent_version: str | None = Field(default=None, pattern=CONSENT_VERSION_PATTERN)
     # Partner provenance (PLAN_2026-09 C5): who sent it and their own case reference.
     partner_id: str | None = Field(default=None, pattern=PARTNER_ID_PATTERN)
     partner_reference: str | None = Field(default=None, pattern=PARTNER_REFERENCE_PATTERN)

@@ -16,7 +16,7 @@ import json
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
-from qorgan.data.build_corpus import content_hash, deduplicate, normalize_for_dedup, scrub_dialogue
+from qorgan.data.build_corpus import content_hash, deduplicate, normalize_for_dedup, scrub_dialogue, split_counts
 from qorgan.data.clean import clean_dialogue
 from qorgan.data.schema import Dialogue, Label, TacticTag, Utterance, spans_from_phrases
 
@@ -90,14 +90,6 @@ def _overlaps(dialogues: Sequence[Dialogue], processed_dir: Path) -> dict[str, l
     return found
 
 
-def _counts(dialogues: Sequence[Dialogue]) -> dict:
-    by_language: dict[str, int] = {}
-    for d in dialogues:
-        by_language[d.language] = by_language.get(d.language, 0) + 1
-    negatives = sum(1 for d in dialogues if d.label.is_hard_negative)
-    return {"total": len(dialogues), "positives": len(dialogues) - negatives, "hard_negatives": negatives, "by_language": dict(sorted(by_language.items()))}
-
-
 def build_shift_split(*, raw_dir: Path, processed_dir: Path) -> dict:
     """Ground, clean, scrub and deduplicate the raw rows, refuse any overlap with an existing
     split, then write `processed_dir/shift.jsonl` + `shift.manifest.json`. Returns the manifest."""
@@ -119,7 +111,7 @@ def build_shift_split(*, raw_dir: Path, processed_dir: Path) -> dict:
         "split": SPLIT_NAME,
         "generator": GENERATOR_NOTE,
         "source_files": [p.name for p in sorted(raw_dir.glob("*.jsonl"))],
-        "counts": _counts(dialogues),
+        "counts": split_counts(dialogues),
         "content_hash": content_hash(dialogues),
         "disjoint_from": list(EVAL_SPLITS_CHECKED),
         "scenarios": _scenarios(raw_dir),

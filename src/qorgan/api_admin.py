@@ -5,6 +5,11 @@ Degrades honestly: if the precomputed analysis (`organizations.jsonl` / `inciden
 is missing or corrupt, endpoints return `available: false` / 404 instead of a 500 — the
 demo must never crash just because `scripts/demo_seed.py` +
 `python -m qorgan.analytics.pipeline` haven't been run yet (CLAUDE.md SS9).
+
+Access (`api_admin_auth.py`): every route needs an analyst key; the analyst's identity in
+feedback and audit lines comes only from that key; the full-transcript `open` needs the
+investigator role and a declared purpose, and its audit line is written before anything
+is released.
 """
 
 from __future__ import annotations
@@ -15,7 +20,7 @@ from typing import Any, Literal
 
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from qorgan.analytics.feedback import (
@@ -27,9 +32,12 @@ from qorgan.analytics.feedback import (
     load_feedback,
     snapshot_for,
 )
+from qorgan.analysts import Analyst
 from qorgan.analytics.intake import ingest_pending, pending_reports
-from qorgan.audit import AUDIT_FILENAME, AuditEntry, append_audit
+from qorgan.api_admin_auth import charge_case_open, record_analyst_action, require_analyst, require_investigator
+from qorgan.audit import ACCESS_PURPOSES, AccessPurpose, AuditEntry
 from qorgan.classifier import predict
+from qorgan.cloud_tier import refuse_cloud_for_analysts
 from qorgan.explain.explainer import ExplainerError, explain
 from qorgan.analytics.pipeline import load_organizations_jsonl
 from qorgan.analytics.presentation import (
@@ -44,7 +52,7 @@ from qorgan.data.incident_seed import load_incidents_jsonl
 from qorgan.data.schema import Incident, Organization
 from qorgan.reports.store import REPORTS_FILENAME
 
-router = APIRouter(prefix="/api/admin", tags=["admin"])
+router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(require_analyst)])
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,11 +61,7 @@ _LOGGER = logging.getLogger(__name__)
 _MAX_SAMPLE_INCIDENTS = 60
 _EXCERPT_CHARS = 200
 _ELLIPSIS = "…"
-# Analysts are not authenticated in this demo; the header only names who opened a case in
-# the audit line (PLAN C4). A real deployment puts SSO in front of /api/admin.
-_ANALYST_ID_HEADER = "X-Analyst-Id"
-_DEFAULT_ANALYST_ID = "anonymous-analyst"
-_MAX_OPEN_REASON_CHARS = 160
+_MAX_NOTE_CHARS = 160
 # Test seam: a deterministic fake embedder is injected here; None means the real
 # sentence-transformers model (downloaded/cached on first ingest).
 _EMBEDDER_OVERRIDE: Any = None
@@ -137,7 +141,9 @@ class AnalysisSpanOut(BaseModel):
 class IncidentAnalysisResponse(BaseModel):
     """The live model verdict for one call — same `score()` contract as /api/analyze,
     computed on demand so the analyst always sees the current model, never a cached label.
-    Carries an excerpt only; the full transcript needs an explicit, audited `open` (C4)."""
+    Carries an excerpt only; the full transcript needs an explicit, audited `open` (C4).
+    Trigger phrases outside the excerpt are counted (`withheld_spans`), not quoted -- neither
+    as spans nor inside the templated reason -- so the evidence cannot rebuild the call."""
 
     incident_id: str
     excerpt: str
@@ -148,6 +154,7 @@ class IncidentAnalysisResponse(BaseModel):
     fallback: bool
     tags: list[RankedTagOut]
     spans: list[AnalysisSpanOut]
+    withheld_spans: int = 0
     reason: str
     caveat: str
 
@@ -157,7 +164,7 @@ class FeedbackRequest(BaseModel):
 
     action: FeedbackAction
     target_org_id: str | None = None
-    note: str | None = Field(default=None, max_length=_MAX_OPEN_REASON_CHARS)
+    note: str | None = Field(default=None, max_length=_MAX_NOTE_CHARS)
 
     @model_validator(mode="after")
     def _merge_names_a_target(self) -> "FeedbackRequest":
@@ -167,9 +174,22 @@ class FeedbackRequest(BaseModel):
 
 
 class OpenCaseRequest(BaseModel):
+    """Why the whole call is needed: a closed purpose code (recorded in the audit line) and an
+    optional content-free note (e.g. a ticket reference; a number or call text is refused)."""
+
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    reason: str | None = Field(default=None, max_length=_MAX_OPEN_REASON_CHARS)
+    purpose: AccessPurpose
+    note: str | None = Field(default=None, max_length=_MAX_NOTE_CHARS)
+
+
+class SessionResponse(BaseModel):
+    """Who the key belongs to -- the console shows it and gates the open-case control on it."""
+
+    id: str
+    role: str
+    can_open_cases: bool
+    open_purposes: list[str]
 
 
 class OpenCaseResponse(IncidentAnalysisResponse):
@@ -214,6 +234,16 @@ def _load_analysis() -> _Analysis | None:
     except ValueError:  # a corrupt feedback line must not take the dashboard down
         events = []
     return _Analysis(organizations=apply_feedback(organizations, events), incidents=incidents, pending=pending)
+
+
+@router.get("/session", response_model=SessionResponse)
+def session(analyst: Analyst = Depends(require_analyst)) -> SessionResponse:
+    """Sign-in check for the console; each call is an audited `session.start`."""
+    record_analyst_action(analyst.id, "session.start", outcome=f"ok:{analyst.role}")
+    return SessionResponse(
+        id=analyst.id, role=analyst.role,
+        can_open_cases=analyst.has_role("investigator"), open_purposes=list(ACCESS_PURPOSES),
+    )
 
 
 @router.get("/overview", response_model=OverviewResponse)
@@ -292,10 +322,11 @@ def organization_feedback(
     org_id: str,
     body: FeedbackRequest,
     locale: Locale = "ru",
-    analyst_id: str = Header(default=_DEFAULT_ANALYST_ID, alias=_ANALYST_ID_HEADER),
+    analyst: Analyst = Depends(require_analyst),
 ) -> OrgSummaryOut:
     """Confirm / dismiss / merge an organization (PLAN C6). The event is appended, keyed by
-    the operation's numbers (not its re-assigned id), applied at read time, and audited."""
+    the operation's numbers (not its re-assigned id), applied at read time, and audited
+    first -- an action the audit log cannot record does not happen."""
     analysis = _load_analysis()
     if analysis is None:
         raise HTTPException(status_code=404, detail="analysis unavailable")
@@ -308,22 +339,16 @@ def organization_feedback(
         target = by_org.get(body.target_org_id or "")
         if target is None:
             raise HTTPException(status_code=404, detail=f"unknown target organization {body.target_org_id!r}")
-    now = datetime.now(UTC)
-    who = analyst_id.strip() or _DEFAULT_ANALYST_ID
+    outcome = _with_note("ok", body.note)
     try:
         event = FeedbackEvent(
-            timestamp=now, analyst_id=who, action=body.action, org=snapshot_for(org),
+            timestamp=datetime.now(UTC), analyst_id=analyst.id, action=body.action, org=snapshot_for(org),
             target=snapshot_for(target) if target is not None else None, note=body.note,
         )
-        entry = AuditEntry(
-            timestamp=now, actor_kind="analyst", actor_id=who, action=f"org.{body.action}", subject=f"org:{org.id}",
-            outcome=f"ok: {body.note.strip()}" if body.note and body.note.strip() else "ok",
-        )
+        record_analyst_action(analyst.id, f"org.{body.action}", subject=f"org:{org.id}", outcome=outcome)
     except ValidationError as exc:
         raise HTTPException(status_code=422, detail="feedback must not carry call content or numbers") from exc
-    processed = get_config().data_dir / "processed"
-    append_feedback(event, processed / FEEDBACK_FILENAME)
-    append_audit(entry, processed / AUDIT_FILENAME)
+    append_feedback(event, get_config().data_dir / "processed" / FEEDBACK_FILENAME)
 
     refreshed = _load_analysis()
     survivors = {o.id: o for o in (refreshed.organizations if refreshed else [])}
@@ -343,35 +368,38 @@ def incident_analysis(
     Same backend-resolution contract as /api/analyze: an explicitly unknown backend is
     a 422; a configured-but-unavailable one degrades honestly to `mock` and says so.
     """
-    return _analyse(_find_incident(incident_id), locale, backend)
+    refuse_cloud_for_analysts(backend, get_config())
+    return _analyse(_find_incident(incident_id), locale, backend, full=False)
 
 
 @router.post("/incidents/{incident_id}/open", response_model=OpenCaseResponse)
 def open_case(
     incident_id: str,
-    body: OpenCaseRequest | None = None,
+    body: OpenCaseRequest,
     locale: Locale = "ru",
     backend: str | None = None,
-    analyst_id: str = Header(default=_DEFAULT_ANALYST_ID, alias=_ANALYST_ID_HEADER),
+    analyst: Analyst = Depends(require_investigator),
 ) -> OpenCaseResponse:
-    """The explicit "open case" action (PLAN C4): the only way an analyst sees a full
-    transcript, and every call leaves a content-free audit line naming who opened what."""
+    """The explicit "open case" action (PLAN C4): the only way to see a full transcript.
+    Needs the investigator role and a declared purpose; within an hourly budget; and the
+    content-free audit line (who, which incident, why) is on disk before the transcript
+    leaves the server -- if it cannot be written, nothing is released (503)."""
+    refuse_cloud_for_analysts(backend, get_config())
     incident = _find_incident(incident_id)
-    reason = body.reason if body is not None else None
-    try:
-        entry = AuditEntry(
-            timestamp=datetime.now(UTC),
-            actor_kind="analyst",
-            actor_id=analyst_id.strip() or _DEFAULT_ANALYST_ID,
-            action="case.open",
-            subject=f"incident:{incident.id}",
-            outcome=f"ok: {reason.strip()}" if reason and reason.strip() else "ok",
-        )
-    except ValidationError as exc:  # the reason carried a number / content
-        raise HTTPException(status_code=422, detail="reason must not carry call content or numbers") from exc
-    append_audit(entry, get_config().data_dir / "processed" / AUDIT_FILENAME)
-    analysed = _analyse(incident, locale, backend)
+    subject = f"incident:{incident.id}"
+    try:  # validate the note before anything is charged or recorded
+        AuditEntry(timestamp=datetime.now(UTC), actor_kind="analyst", actor_id=analyst.id,
+                   action="case.open", subject=subject, outcome=_with_note("ok", body.note), purpose=body.purpose)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail="the note must not carry call content or numbers") from exc
+    analysed = _analyse(incident, locale, backend, full=True)  # a failed analysis costs no budget
+    charge_case_open(analyst, subject)
+    record_analyst_action(analyst.id, "case.open", subject=subject, outcome=_with_note("ok", body.note), purpose=body.purpose)
     return OpenCaseResponse(**analysed.model_dump(), transcript=incident.transcript)
+
+
+def _with_note(outcome: str, note: str | None) -> str:
+    return f"{outcome}: {note.strip()}" if note and note.strip() else outcome
 
 
 def _find_incident(incident_id: str) -> Incident:
@@ -386,15 +414,23 @@ def _find_incident(incident_id: str) -> Incident:
     return incident
 
 
-def _analyse(incident: Incident, locale: Locale, backend: str | None) -> IncidentAnalysisResponse:
+def _analyse(incident: Incident, locale: Locale, backend: str | None, *, full: bool) -> IncidentAnalysisResponse:
+    """`full=False` (the unaudited drill-down) keeps only trigger phrases that lie wholly
+    inside the excerpt and explains from those; `full=True` is for the audited `open`."""
     fallback = False
     try:
-        result = predict.score(incident.transcript, backend=backend)
+        result = predict.score(incident.transcript, backend=backend, use_cache=False)
     except (predict.UnknownBackendError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception:  # configured backend unavailable here (weights/keys) — degrade honestly
         result = predict.score(incident.transcript, backend="mock")
         fallback = True
+
+    withheld = 0
+    if not full:
+        visible = tuple(span for span in result.attributions if span.end <= _EXCERPT_CHARS)
+        withheld = len(result.attributions) - len(visible)
+        result = result.model_copy(update={"attributions": visible})
 
     try:
         explanation = explain(result, incident.transcript, locale)
@@ -423,13 +459,14 @@ def _analyse(incident: Incident, locale: Locale, backend: str | None) -> Inciden
             AnalysisSpanOut(text=span.text, start=span.start, end=span.end)
             for span in result.attributions
         ],
+        withheld_spans=withheld,
         reason=explanation.reason,
         caveat=explanation.caveat,
     )
 
 
 @router.post("/ingest", response_model=IngestResponse)
-def ingest(locale: Locale = "ru") -> IngestResponse:
+def ingest(locale: Locale = "ru", analyst: Analyst = Depends(require_analyst)) -> IngestResponse:
     """Ingest pending citizen reports into the analysis (the analyst's explicit click —
     never automatic, per the human-decides principle). Embeds only the new transcripts
     via the cached matrix; the first ingest on a fresh clone may download the embedding
@@ -447,7 +484,9 @@ def ingest(locale: Locale = "ru") -> IngestResponse:
         )
     except Exception as exc:
         _LOGGER.exception("citizen-report ingest failed")
+        record_analyst_action(analyst.id, "reports.ingest", outcome="failed")
         raise HTTPException(status_code=503, detail=f"ingest failed: {exc}") from exc
+    record_analyst_action(analyst.id, "reports.ingest", outcome=f"ok:{summary.ingested}")
 
     org_names = _org_display_names(locale)
     return IngestResponse(

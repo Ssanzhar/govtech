@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- This page holds an analyst key: no inline or third-party script may run here. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
 <title>Qorğan — analyst dashboard</title>
 <meta name="description" content="Qorğan analyst dashboard — clustered scam organizations, priority queue, novelty flags. A human always decides.">
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%230E0C13"/><g fill="%23E29B2E"><rect x="7" y="13" width="2.6" height="6"/><rect x="11.4" y="9" width="2.6" height="14"/><rect x="15.8" y="5" width="2.6" height="22"/><rect x="20.2" y="10" width="2.6" height="12"/><rect x="24.6" y="14" width="2.6" height="4"/></g></svg>'>
@@ -42,7 +45,11 @@
     <p class="body-copy">Confirmed incidents clustered by phone-number co-occurrence and
     tactic profile into a priority queue for the analyst &mdash; never an automatic
     verdict. A human always decides.</p>
-    <div class="adm-toolbar mono">
+    <div class="adm-session mono" id="admSession" hidden>
+      <span class="adm-who" id="admWho" aria-live="polite"></span>
+      <button type="button" id="admSignOut" class="tw-chip">sign out</button>
+    </div>
+    <div class="adm-toolbar mono" id="admToolbar" hidden>
       <span class="tw-loc">
         <label class="tw-chip tw-radio"><input type="radio" name="adm-loc" value="ru" checked>ru</label>
         <label class="tw-chip tw-radio"><input type="radio" name="adm-loc" value="kk">kk</label>
@@ -53,6 +60,25 @@
     </div>
   </section>
 
+  <section class="col-wide adm-signin" id="admSignin" aria-labelledby="admSigninTitle" hidden>
+    <form class="adm-signin-card" id="admSigninForm" autocomplete="off" novalidate>
+      <p class="eyebrow" id="admSigninTitle">Analyst sign-in</p>
+      <label class="adm-signin-label mono" for="admKey">analyst key</label>
+      <div class="adm-signin-row">
+        <input id="admKey" class="adm-key mono" type="password" autocomplete="off" spellcheck="false"
+          placeholder="paste the key issued to you" aria-describedby="admSigninNote admSigninFine">
+        <button type="submit" class="btn btn-fill" id="admSigninBtn">Sign in</button>
+      </div>
+      <p class="adm-note" id="admSigninNote" role="status"></p>
+      <p class="adm-signin-fine mono" id="admSigninFine">Keys are issued per person by the server operator
+      and carry a role: <b>analyst</b> (aggregates, excerpts, verdicts) or <b>investigator</b> (also opens a
+      full transcript, with a stated purpose). The key stays in this tab only and is cleared when you sign
+      out or close it. Sign-ins, refusals and every opened case are written to a tamper-evident audit log
+      under your id.</p>
+    </form>
+  </section>
+
+  <div id="admConsole" hidden>
   <section class="col-wide adm-kpis" id="admKpis" aria-label="Dashboard totals" aria-live="polite"></section>
 
   <section class="col-wide" id="admNovelWrap" aria-live="polite"></section>
@@ -75,6 +101,7 @@
     </div>
     <div id="admQueueWrap"></div>
   </section>
+  </div>
 
 </main>
 

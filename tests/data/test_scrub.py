@@ -189,3 +189,34 @@ def test_phone_then_card_no_corruption():
 def test_non_str_input_raises_value_error(bad):
     with pytest.raises(ValueError):
         scrub_text(bad)
+
+
+# --- PII glued to Cyrillic / Kazakh words (ASR output, hand-edited reports) --------------------
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("карта4400123456789010 без пробела", f"карта{CARD_PLACEHOLDER} без пробела"),
+        ("ЖСН940101300123 бірге жазылған", f"ЖСН{IIN_PLACEHOLDER} бірге жазылған"),
+        ("ИИН940101300123", f"ИИН{IIN_PLACEHOLDER}"),
+        ("номер87071234567записан", f"номер{PHONE_PLACEHOLDER}записан"),
+    ],
+)
+def test_pii_glued_to_cyrillic_is_scrubbed(text, expected):
+    assert scrub_text(text) == expected
+
+
+@pytest.mark.parametrize(
+    "identifier",
+    [
+        "a1b2c3940101300123d4",  # 12 digits inside an ASCII token (hex-like digest)
+        "f4400123456789010e",  # 16 digits inside an ASCII token
+        "report_940101300123",
+        "rcpt-4f2c9a1b77",
+    ],
+)
+def test_ascii_identifiers_with_long_digit_runs_are_untouched(identifier):
+    # audit / feedback / report validators use scrub_text as a "no PII" fixed point on
+    # system identifiers; the Cyrillic fix must not start flagging ASCII tokens.
+    assert scrub_text(identifier) == identifier

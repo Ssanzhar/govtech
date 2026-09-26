@@ -17,8 +17,9 @@ from pathlib import Path
 from typing import Literal
 
 from dotenv import load_dotenv
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretBytes, SecretStr, model_validator
 
+from qorgan.analysts import AnalystCredential, parse_analyst_credentials
 from qorgan.partners import DEFAULT_PARTNER_DAILY_QUOTA, PartnerCredential, parse_partner_credentials
 
 # Anchor for all repo-relative defaults: src/qorgan/config.py -> src/qorgan -> src -> repo root.
@@ -50,8 +51,17 @@ _DEFAULT_EMBED_ONNX_SUBDIR = Path("site") / "models" / "Xenova" / "multilingual-
 _DEFAULT_RISK_THRESHOLD = 0.59
 # Consented reports are kept this long before the purge removes them (PLAN_2026-09 C3).
 _DEFAULT_REPORT_RETENTION_DAYS = 180
+# The server runs that purge itself, at startup and then every N hours (single worker, see the
+# Dockerfile). 0 = never in-process: schedule `python -m qorgan.reports.purge` with cron instead.
+_DEFAULT_REPORT_PURGE_INTERVAL_HOURS = 24
+# The `llm` backend (Gemini) sends text to Google, outside Kazakhstan. It is OFF unless the
+# operator turns it on; even then each /api/analyze call needs the caller's explicit consent,
+# nothing is cached, and analyst-side routes never use it (privacy iteration 2026-09-26).
+_CLOUD_TIER_VALUES = {"off": False, "on": True}
 # Partner intake API (PLAN_2026-09 C5): rolling window for the per-partner report budget.
 _DEFAULT_PARTNER_QUOTA_WINDOW_HOURS = 24
+# Audit-chain HMAC key (tamper-evident audit log): a guessable key protects nothing.
+MIN_AUDIT_CHAIN_KEY_CHARS = 32
 _DEFAULT_RISK_THRESHOLD_ENTER = 0.59
 _DEFAULT_RISK_THRESHOLD_EXIT = 0.49
 # Live suspicion-meter smoothing (design spec §08): the displayed 0-100 score follows an
@@ -97,7 +107,10 @@ class Config(BaseModel):
     repo_root: Path
 
     # --- LLM / classifier routing ---
-    gemini_api_key: str | None
+    # Read through the `gemini_api_key` property; the field itself never prints.
+    gemini_api_secret: SecretStr | None
+    # QORGAN_CLOUD_TIER=on|off (default off): may a request select the `llm` backend at all?
+    cloud_tier_enabled: bool
     llm_model_quality: str
     llm_model_bulk: str
     classifier_backend: ClassifierBackend
@@ -151,19 +164,38 @@ class Config(BaseModel):
     split_val_fraction: float = Field(gt=0.0, lt=1.0)
 
     # --- Privacy (PLAN_2026-09 C2/C3, ADR D14) ---
-    # Salt for phone-number HMACs; None means numbers cannot be accepted at all.
-    number_hmac_key: bytes | None
+    # Salt for phone-number HMACs; None means numbers cannot be accepted at all. Read through
+    # the `number_hmac_key` property; the field itself never prints.
+    number_hmac_secret: SecretBytes | None
     report_retention_days: int = Field(gt=0)
+    # In-process purge cadence; 0 = the server never purges by itself (use cron).
+    report_purge_interval_hours: int = Field(ge=0)
 
     # --- Partner intake API (PLAN_2026-09 C5, ADR D19) ---
     # Parsed `QORGAN_PARTNER_API_KEYS`; empty means the /api/v1 ingress is closed.
     partner_credentials: tuple[PartnerCredential, ...]
     partner_quota_window_hours: int = Field(gt=0)
 
+    # --- Analyst console + audit log (PLAN_2026-09 C4) ---
+    # Parsed `QORGAN_ANALYST_KEYS`; empty means /api/admin is closed (503), never open.
+    analyst_credentials: tuple[AnalystCredential, ...]
+    # HMAC key chaining the audit log (`audit.py`); None means every audited API is closed.
+    audit_chain_key: SecretBytes | None
+
     # --- Reproducibility / localization ---
     default_seed: int
     supported_locales: tuple[str, ...]
     default_locale: str
+
+    @property
+    def number_hmac_key(self) -> bytes | None:
+        """The phone-number HMAC key, or None when numbers cannot be accepted."""
+        return self.number_hmac_secret.get_secret_value() if self.number_hmac_secret is not None else None
+
+    @property
+    def gemini_api_key(self) -> str | None:
+        """The Gemini API key, or None when no cloud client can be built."""
+        return self.gemini_api_secret.get_secret_value() if self.gemini_api_secret is not None else None
 
     @property
     def split_test_fraction(self) -> float:
@@ -192,6 +224,18 @@ class Config(BaseModel):
                 "meter_alpha_down must be <= meter_alpha_up "
                 f"(got down={self.meter_alpha_down}, up={self.meter_alpha_up})"
             )
+        return self
+
+    @model_validator(mode="after")
+    def _console_secrets_are_distinct(self) -> "Config":
+        partner = {c.secret.get_secret_value() for c in self.partner_credentials}
+        if any(c.secret.get_secret_value() in partner for c in self.analyst_credentials):
+            raise ValueError("an analyst secret must not also be a partner secret (one key, one door)")
+        if self.audit_chain_key is not None:
+            if len(self.audit_chain_key.get_secret_value()) < MIN_AUDIT_CHAIN_KEY_CHARS:
+                raise ValueError(f"QORGAN_AUDIT_CHAIN_KEY must be at least {MIN_AUDIT_CHAIN_KEY_CHARS} characters")
+            if self.audit_chain_key.get_secret_value() == self.number_hmac_key:
+                raise ValueError("QORGAN_AUDIT_CHAIN_KEY must differ from QORGAN_NUMBER_HMAC_KEY (separate duties)")
         return self
 
     @model_validator(mode="after")
@@ -250,6 +294,13 @@ def _read_secret_bytes(env: Mapping[str, str], key: str) -> bytes | None:
     return value.encode("utf-8") if value else None
 
 
+def _read_switch(env: Mapping[str, str], key: str, values: Mapping[str, bool], default: str) -> bool:
+    raw = (env.get(key) or default).strip().lower()
+    if raw not in values:
+        raise ConfigError(f"{key}={raw!r} must be one of {sorted(values)}")
+    return values[raw]
+
+
 def _read_path(env: Mapping[str, str], key: str, default: Path) -> Path:
     raw = env.get(key)
     return default if not raw else Path(raw)
@@ -283,7 +334,8 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
     try:
         return Config(
             repo_root=_REPO_ROOT,
-            gemini_api_key=source.get("GEMINI_API_KEY") or source.get("GOOGLE_API_KEY") or None,
+            gemini_api_secret=source.get("GEMINI_API_KEY") or source.get("GOOGLE_API_KEY") or None,
+            cloud_tier_enabled=_read_switch(source, "QORGAN_CLOUD_TIER", _CLOUD_TIER_VALUES, "off"),
             llm_model_quality=_read_str(source, "QORGAN_LLM_MODEL_QUALITY", _DEFAULT_LLM_MODEL_QUALITY),
             llm_model_bulk=_read_str(source, "QORGAN_LLM_MODEL_BULK", _DEFAULT_LLM_MODEL_BULK),
             classifier_backend=_read_str(
@@ -355,9 +407,12 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
                 source, "QORGAN_SPLIT_VAL_FRACTION", _DEFAULT_SPLIT_VAL_FRACTION
             ),
             default_seed=_read_int(source, "QORGAN_SEED", _DEFAULT_SEED),
-            number_hmac_key=_read_secret_bytes(source, "QORGAN_NUMBER_HMAC_KEY"),
+            number_hmac_secret=_read_secret_bytes(source, "QORGAN_NUMBER_HMAC_KEY"),
             report_retention_days=_read_int(
                 source, "QORGAN_REPORT_RETENTION_DAYS", _DEFAULT_REPORT_RETENTION_DAYS
+            ),
+            report_purge_interval_hours=_read_int(
+                source, "QORGAN_REPORT_PURGE_INTERVAL_HOURS", _DEFAULT_REPORT_PURGE_INTERVAL_HOURS
             ),
             partner_credentials=parse_partner_credentials(
                 source.get("QORGAN_PARTNER_API_KEYS", ""),
@@ -366,6 +421,8 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             partner_quota_window_hours=_read_int(
                 source, "QORGAN_PARTNER_QUOTA_WINDOW_HOURS", _DEFAULT_PARTNER_QUOTA_WINDOW_HOURS
             ),
+            analyst_credentials=parse_analyst_credentials(source.get("QORGAN_ANALYST_KEYS", "")),
+            audit_chain_key=_read_secret_bytes(source, "QORGAN_AUDIT_CHAIN_KEY"),
             supported_locales=_read_csv_tuple(
                 source, "QORGAN_SUPPORTED_LOCALES", _DEFAULT_SUPPORTED_LOCALES
             ),

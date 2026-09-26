@@ -11,12 +11,13 @@ from qorgan.analytics.pipeline import write_organizations_jsonl
 from qorgan.api import app
 from qorgan.data.incident_seed import write_incidents_jsonl
 from qorgan.data.schema import Incident, Label, Organization, TacticTag
+from support.analysts import as_analyst
 from support.numbers import stored_report
 
 
 @pytest.fixture()
 def client() -> TestClient:
-    return TestClient(app)
+    return TestClient(app, headers=as_analyst())
 
 
 def _incident(iid: str, *, ts: datetime | None, tags: tuple[str, ...] = ()) -> Incident:

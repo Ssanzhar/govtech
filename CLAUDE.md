@@ -1,138 +1,93 @@
-# CLAUDE.md — Qorğan (GovTech Camp selection sprint)
+# CLAUDE.md — Qorğan
 
-> Master brief for planner/engineer agents. Read this first, then `docs/SCOPE.md`,
-> `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`. `TECHNICAL_TASK.md` is the organizers'
-> ask; `DOCUMENTATION.md` is the **full 10-week vision — do NOT try to build all of it.**
+> Brief for agents and new contributors. It replaces the July 2026 selection-sprint brief
+> (still readable with `git show e26f91e:CLAUDE.md`), whose XLM-R / Streamlit-first plan is
+> history. **Where the truth is, in order:** `docs/STATUS.md` (current state) →
+> `docs/PLAN_2026-09.md` (post-review plan, open items) → `docs/DECISIONS.md` (ADRs; read the
+> newest first) → `docs/eval_report.md` (every number, with intervals). The external review the
+> September plan answers is `qorgan-council-verdict.md` (RU) — read it before proposing scope,
+> Level 2 or privacy changes. `DOCUMENTATION.md` is the long-range vision, not the current state.
 
-> **📍 CURRENT STATE / HANDOFF → [`docs/STATUS.md`](docs/STATUS.md)** — read it before planning
-> new work: what's built, how to run/retrain/eval, known open threads. This brief below is the
-> original plan; STATUS.md is where things actually landed.
->
-> **Trained models + corpus are gitignored** (regenerate from source, or pull from Hugging Face):
-> models `sanzh-ts/govtech` · dataset `sanzh-ts/govtech_ds`. Publish with `python hf_upload.py`
-> (after `hf auth login`). Work is on branch **`sanzhs-branch`** (not merged to `main`).
+## What it is
+Decision support for **phone-scam (social-engineering) detection in Kazakh, Russian and
+code-switched calls**. A human always decides: nothing auto-blocks, auto-reports or hangs up.
+- **Level 1 (citizen), on the device:** `site/` is a static PWA. It transcribes a
+  speakerphone call in the browser (Vosklet KK + RU, voted per utterance) or replays/pastes a
+  transcript, embeds it with `multilingual-e5-base` int8 ONNX in a web worker, and shows a
+  calibrated 0–100 suspicion meter, verbatim trigger spans with tactic tags, templated RU/KK
+  reasons, advice, a post-call summary and a **reviewed, consent-gated, editable report**.
+- **Level 2 (analyst / partner):** fed only by consented reports. Numbers are HMAC-hashed,
+  transcripts scrubbed. Linking into scam "organizations" is mainly via the phone-number
+  co-occurrence graph. Opening a full transcript is an explicit, audited action.
 
-## 1. What this is
+## Architecture invariants — enforced by `tests/test_architecture.py`, never break them
+1. No route accepts audio. 2. `/api/analyze` persists nothing. 3. Level 2 has one citizen
+ingress (`POST /api/reports`) plus the consented partner ingress (`POST /api/v1/reports`).
+4. Raw phone numbers are never persisted (HMAC digest + `+7 700 ***` prefix only).
+5. Stored transcripts are PII-scrubbed. 6. Every report has a receipt, can be deleted, and
+expires on the server's clock (`QORGAN_REPORT_RETENTION_DAYS`, default 180; the server purges at
+startup and daily). Every write route is named in `tests/test_architecture.py`.
+7. Every `/api/admin` route needs an authenticated analyst (`X-Analyst-Key`, `QORGAN_ANALYST_KEYS`)
+and fails closed; a full transcript needs the investigator role and a stated purpose; the
+audit log is an HMAC chain (`QORGAN_AUDIT_CHAIN_KEY`; `python -m qorgan.audit verify`).
 
-Qorğan detects **social-engineering (scam) patterns in phone conversations** for
-Kazakhstan (Kazakh / Russian / code-switched speech), explains *why* a call looks like
-a scam, and — as a secondary view — clusters confirmed reports into scam "organizations"
-for a government analyst. It is a **decision-support tool; a human always decides.**
+`app/` (Streamlit) is a **local dev harness only** (ADR D4): it scores on the server and its
+mic mode uploads audio. Never present it as the product.
 
-## 2. The hard constraint (read this twice)
+## The model that ships (`linear` backend)
+- Head+tail rolling window, `query: ` prefix → 768-d e5-base embedding ⊕ 5 hard-signal cue
+  flags ⊕ 1 reassurance flag → calibrated LR (risk) + 15 per-tactic LRs. Alert at risk ≥ 0.59
+  (hysteresis 0.59 / 0.49); meter arms from the 3rd utterance unless a hard signal fires.
+- Heads are trained on the **browser's own embeddings** (`QORGAN_EMBED_BACKEND=device` via
+  `npm run device:serve`); the server's ONNX is a documented proxy (ADR D32/D33). Server
+  `onnxruntime` is pinned to match transformers.js — do not bump it casually.
+- The bundle hash-validates the lexicons: **any lexicon edit forces a retrain and must come
+  with training data.** Upload model + lexicons together (`scripts/hf_upload.py`).
+- **Parity:** `site/core/*.js` is a 1:1 port of the Python classifier, meter, explain, cue
+  matcher and scrubber, pinned by golden fixtures. Change both sides, regenerate fixtures
+  (`scripts/export_parity_fixtures.py`, `scripts/export_scrub_fixtures.py`), keep `npm test` green.
+- Explanations are verbatim spans + templated RU/KK text (`explain/templates_*.yaml`,
+  `advice_{ru,kk}.yaml`). **Never show LLM prose to the user as an explanation.**
+- Other backends: `mock` (keyword fallback), `llm` (Gemini cloud second opinion — it sends text
+  abroad, so it is off unless `QORGAN_CLOUD_TIER=on`, needs per-request `cloud_consent`, is never
+  cached and never used by analyst routes; ADR D49), `xlmr` (abandoned).
 
-- **Deadline: 2026-07-17 23:59 GMT+5.** Today is 2026-07-10 → **~7 calendar days**,
-  and ~1 of those goes to the demo video + slide deck + README polish.
-- **≈5–6 real build days.** Every decision below exists to fit that. `DOCUMENTATION.md`
-  describes a 10-week product; `docs/SCOPE.md` is the cut we actually build.
-- Deliverables (organizers, mandatory): **GitHub repo + README + demo video + 7–10 slide deck.**
+## Evaluation rules
+- **FPR first**, with Clopper–Pearson intervals, per split and per language. No change ships
+  if it moves FPR on test / authored / ood / ASR-styled data or the browser gate without an ADR.
+- **The honest number is `shift`** (66 calls from a second generator): recall 0.364. Every other
+  split shares its generator with train. Real calls (`docs/DATA_INTAKE.md`) do not exist yet.
+- **Never tune on held-out data**; never extend the lexicon from `shift` or `authored_heldout`
+  (ADRs D35/D43). Any held-out row you read goes into `data/anchors/inspection_ledger.yaml`.
+  Paste numbers from harness output, never by hand.
+- Never publish `data/synthetic/` or `data/processed/{incidents,organizations,citizen_reports,audit_log}.jsonl`.
+  `scripts/hf_upload.py` refuses to publish a split that is not a scrub fixed point (ADR D45).
 
-## 3. Locked decisions (do not relitigate — see `docs/DECISIONS.md`)
-
-1. **Web-first. Mobile / on-device / streaming ASR / ASR fine-tuning are OUT this week**
-   (reframed as Phase 1). No Kotlin, no Android.
-2. **L1-centric.** The centerpiece is: transcript → risk score → **explained** alert.
-   Level 2 (clustering into scam orgs) is a **lighter secondary** that carries the
-   "why the government cares" narrative for the pitch.
-3. **Classifier = hybrid.** Gemini generates + labels the corpus → we **fine-tune a small
-   multilingual transformer** (XLM-R base). The **LLM structured classifier ships first**
-   as the baseline *and* the fallback, so a working demo exists from Day 1.
-4. **Compute = free/limited Colab** → keep the model small and the corpus modest.
-5. **FPR (false-positive rate) is the primary metric**, not recall. Hard negatives are
-   first-class training data.
-6. **Explainability is a hard requirement**, grounded in real features (token attribution
-   + tactic tags), templated and localized RU/KK — never free-form LLM prose.
-7. **Python-only, one repo, one deployable web demo (Streamlit).**
-
-## 4. Tech stack (finalized)
-
-| Layer | Choice | Notes |
-|---|---|---|
-| Language | Python 3.11+ | single language |
-| Synthetic data + LLM classifier | **Google Gemini API** (`google-genai`) | `gemini-2.5-pro` for quality, `gemini-2.5-flash` for bulk gen/labeling; build-time + baseline only |
-| Classifier (trained) | **XLM-RoBERTa base** + multi-label head | class-weighted (low FPR), fits free Colab |
-| Calibration | temperature / isotonic (scikit-learn) | calibrated confidence for explainability |
-| Attribution | **Captum** integrated gradients / attention rollout | → trigger-phrase spans |
-| Text embeddings (L2) | **BGE-M3** (best KZ) or `multilingual-e5-large` | CPU batch over synthetic incidents |
-| Clustering (L2) | **HDBSCAN** + phone-number co-occurrence overlay | no k to pick |
-| Novelty (L2) | distance-to-nearest-cluster / IsolationForest | "new scheme" flag |
-| Storage | **SQLite + FAISS** (in-repo) | no Postgres this week |
-| Demo app | **Streamlit** (single app, both levels) | optional thin FastAPI only if needed |
-| ASR (offline, black-box) | **faster-whisper** + reuse team's Vosk KZ stack | transcribe demo clips only; DO NOT rebuild ASR |
-| Deploy | `docker compose up` **or** `pip install && streamlit run` | judges must self-deploy |
-
-## 5. Repository layout (target)
-
+## Commands
+```bash
+python3.11 -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]" && cp .env.example .env  # runtime + tests; ".[all]" for harness/cloud/research
+python scripts/deploy_bootstrap.py               # corpus + heads from HF, int8 ONNX, Vosk tarballs, L2 seeds
+python -m qorgan.api                             # http://localhost:8000 — index · live.html · admin.html · /docs
+pytest -q && npm install && npm test             # Python suite (offline) + JS parity / core tests
+QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.run --split test --split authored_heldout --split ood --split shift --by-language
+QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.stream --split test --split authored_heldout --backend linear
+python -m qorgan.data.build_corpus && python -m qorgan.classifier.linear_train   # after ANY data/lexicon change
+python -m qorgan.web.client_config && python scripts/export_parity_fixtures.py  # refresh JS config + fixtures
 ```
-pyproject.toml         src-layout install (`pip install -e .` → `qorgan` importable)
-configs/               corpus.yaml + run configs
-scripts/               demo_seed.py (seeds ~500 L2 incidents) etc.
-models/                exported weights (gitignored)
-src/qorgan/
-  config.py            constants + thresholds (NO hardcoded values elsewhere)
-  taxonomy.py          scam-tactic tags (loads data/taxonomy/tactics.yaml)
-  data/                generate.py · label.py · build_corpus.py · schema.py
-  classifier/          llm_classifier.py · train.py · calibrate.py · predict.py · attribution.py
-  explain/             explainer.py  (attributions+tags → localized templated reason)
-  analytics/           embed.py · cluster.py · novelty.py · rank.py   (Level 2, light)
-  asr/                 transcribe.py  (faster-whisper/Vosk wrapper, offline)
-  eval/                metrics.py · run.py  (FPR-first tables: test + authored_heldout)
-app/streamlit_app.py   the demo (L1 centerpiece + L2 panel)
-data/                  taxonomy/ · raw/ · synthetic/ · processed/ · README.md (provenance)
-tests/                 unit tests for deterministic modules
-notebooks/             Colab fine-tuning notebook
-docs/                  SCOPE.md · ARCHITECTURE.md · DECISIONS.md
-```
+Browser checks use Playwright (`tests_js/tools/`); set `QORGAN_E2E_CHANNEL=chrome` to drive an
+installed Chrome when Playwright's own Chromium is unavailable.
 
-## 6. Conventions (project-specific; global rules in `~/.claude/rules/` still apply)
-
-- **Immutability, small files (<400 lines), no hardcoded values** — per global coding-style.
-- **Two classifiers behind one interface.** `classifier/predict.py` exposes a single
-  `score(transcript) -> {risk, tags, attributions}` used by the app and eval, backed by
-  either the LLM or the fine-tuned model. Swapping the backend must not touch callers.
-- **Explanations must be grounded.** Every trigger phrase shown to a user must be a real
-  attributed span from the transcript, tied to a tactic tag with a weight. No hallucinated
-  reasons. Templated strings live in `explain/`, localized RU + KK.
-- **Report FPR first**, then precision/recall/F1/PR-AUC, always on `test` **and**
-  `authored_heldout` **separately**. The eval harness (`eval/run.py`) regenerates the tables.
-- **Data provenance is graded** (ТЗ §9): every dataset/source, its structure, limits,
-  cleaning, and features go in `data/README.md`.
-
-## 7. Sprint adaptations to global rules
-
-- **Testing:** the global 80%-coverage + strict-TDD rule is relaxed for this sprint.
-  Deterministic modules (schema, `build_corpus`, `metrics`, cluster utils, explainer
-  templating) get real unit tests written test-first. ML/LLM/ASR get smoke tests + the
-  eval harness. Do not spend build days chasing coverage on stochastic components.
-- **Research-first** still applies for any NEW instrument choice, but the stack in §4 is
-  already decided — implement it, don't re-shop.
-
-## 8. Milestone plan (front-loaded to guarantee a working demo)
-
-- **Day 1** Skeleton + `tactics.yaml` taxonomy + data schema. Start LLM synthetic gen.
-  Ship the **LLM classifier + minimal Streamlit** → *working transcript→risk→reasons demo today.*
-- **Day 2** Finish corpus + LLM labeling (tags + spans) + splits (incl. small `authored_heldout`).
-  `data/README.md`. Eval harness + FPR baseline on LLM classifier.
-- **Day 3** Fine-tune XLM-R on Colab (class-weighted) + calibration + Captum attribution;
-  wire behind `predict.py`.
-- **Day 4** Explainability polish (localized reasons, confidence, "where it can be wrong",
-  human-decides). Full eval tables (LLM + trained) on test + authored_heldout. FPR tuning + hysteresis.
-- **Day 5** L2 light: embed ~500 synthetic incidents → HDBSCAN + number overlay + novelty +
-  ranking → Streamlit analyst panel (cluster map, priority queue, drill-down, new-scheme flag).
-- **Day 6** Integration, tests, one-command run + Docker, README, deploy, demo dry-run
-  (3 scenes: live scam call; **hard negative = real bank call does NOT trigger**; analyst cluster).
-- **Day 7** Demo video + 7–10 slides + final polish. **Submit before 23:59 GMT+5.** Buffer.
-
-## 9. Definition of done (mapped to the 100-pt rubric)
-
-Working `docker compose up` / `streamlit run`; a scam transcript triggers an **explained**
-alert; a hard-negative bank call does **not**; FPR-first metric tables on test + authored_heldout;
-a Level-2 panel showing at least one clustered scam "organization" + a novelty flag;
-`data/README.md` provenance; README run instructions; demo video; 7–10 slides.
-
-## 10. Framing note for the pitch (not a scope change)
-
-Program partner is **inDrive**; payment-redirect / fake-operator scams map directly to
-ride-hailing fraud — worth one slide. The **government user** is the analyst/law-enforcement
-persona seeing scam *organizations* (Level 2); the **citizen** is the Level-1 user. Keep both
-personas explicit so Problem/Value/User scores land.
+## Working rules
+- Record every decision as the next ADR in `docs/DECISIONS.md` and update `docs/STATUS.md`.
+  Rollbacks are fine; document them.
+- `src/qorgan/config.py` holds every constant; small files; deterministic seeds.
+- Tests first for deterministic code. Each change ends with evidence (a number, a test, a
+  screenshot), never "should work".
+- Secrets live only in `.env` / the deployment's secret store (see `.env.example`): the server
+  refuses to link numbers without `QORGAN_NUMBER_HMAC_KEY`, and closes `/api/admin` and `/api/v1`
+  without `QORGAN_ANALYST_KEYS` / `QORGAN_AUDIT_CHAIN_KEY`.
+- The citizen page's text lives in `site/i18n.js` (kk / ru / en); model content (advice, tactic
+  names, reasons) stays in the reviewed YAML and is never copied there.
+- Ask before anything outward-facing: pushing, opening PRs, publishing to Hugging Face
+  (`sanzh-ts/govtech`, `sanzh-ts/govtech_ds`), deploying.

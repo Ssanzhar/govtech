@@ -20,14 +20,14 @@ from pathlib import Path
 
 from qorgan.config import get_config
 from qorgan.data.ledger import load_inspection_ledger
-from qorgan.data.schema import Dialogue, ScoreResult
+from qorgan.data.schema import SCAM_RISK_THRESHOLD, Dialogue, ScoreResult
 from qorgan.eval import metrics
 from qorgan.eval.threshold import ThresholdChoice, select_threshold
 from qorgan.taxonomy import get_taxonomy
 
 # Labeled risk at/above this is treated as a scam in the ground truth. Corpus labels sit
 # near 0.9 (scam) or 0.02 (legit), so the exact midpoint is unambiguous.
-_TRUTH_THRESHOLD = 0.5
+_TRUTH_THRESHOLD = SCAM_RISK_THRESHOLD
 # Default FPR budget for `tune_alert_threshold` (a false scam alarm on a real bank call is
 # the costliest error -- CLAUDE.md §3.5).
 _DEFAULT_MAX_FPR = 0.05

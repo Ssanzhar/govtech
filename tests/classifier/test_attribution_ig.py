@@ -1,6 +1,8 @@
 """SMOKE test for `integrated_gradient_spans` — tiny model + fake tokenizer, offline."""
 
-import torch
+import pytest
+
+torch = pytest.importorskip("torch")
 
 from qorgan.classifier.attribution import integrated_gradient_spans
 from qorgan.classifier.model import ScamClassifierModel

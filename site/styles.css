@@ -87,6 +87,9 @@ main{position:relative;z-index:1}
 }
 .btn:hover{transform:translateY(-1px)}
 .btn:active{transform:translateY(0)}
+/* `display` above would otherwise override the hidden attribute (mic Start/End, report review). */
+.btn[hidden]{display:none}
+.btn:disabled{opacity:.38;cursor:not-allowed;transform:none}
 .btn-fill{background:var(--ink);color:var(--paper)}
 .btn-fill:hover{background:#2A241B}
 .btn-line{border-color:var(--ink);color:var(--ink)}

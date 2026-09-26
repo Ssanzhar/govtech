@@ -9,18 +9,24 @@ file it is given; the default path is resolved by callers from config.
 from __future__ import annotations
 
 import secrets
+import threading
 from collections.abc import Sequence
-from datetime import datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
 
 from qorgan.data.scrub import scrub_text
 from qorgan.privacy.numbers import display_prefix, hash_phone_number
 from qorgan.reports.model import CITIZEN_CONSENT_BASIS, ReportSource, StoredReport
+from qorgan.reports.retention import is_expired
 
 # Citizen and partner reports share one file under `<data_dir>/processed/`; the `source`
 # field tells them apart.
 REPORTS_FILENAME = "citizen_reports.jsonl"
 _RECEIPT_BYTES = 12  # 24 hex chars, matches RECEIPT_ID_PATTERN
+# Serialises every write to a reports file inside the (single-worker) server: request threads
+# append and delete while the scheduled purge rewrites. Re-entrant so a caller can hold it
+# around a read-modify-write that itself calls these helpers.
+REPORTS_LOCK = threading.RLock()
 
 
 def new_receipt_id() -> str:
@@ -36,12 +42,13 @@ def prepare_report(
     timestamp: datetime,
     risk_score: float,
     hmac_key: bytes | None,
+    received_at: datetime | None = None,
     source: ReportSource = "citizen",
     consent_basis: str = CITIZEN_CONSENT_BASIS,
+    consent_version: str | None = None,
     receipt_id: str | None = None,
     partner_id: str | None = None,
     partner_reference: str | None = None,
-    received_at: datetime | None = None,
 ) -> StoredReport:
     """Reduce a reviewed draft to its storable form.
 
@@ -49,6 +56,9 @@ def prepare_report(
     - flagged phrases -> only those still verbatim in the scrubbed transcript;
     - phone number -> HMAC digest + display prefix (raises `MissingHmacKeyError` without a
       key, `ValueError` for an unparseable number). A report without a number needs no key.
+
+    `received_at` is the server's clock at storage (defaults to now, UTC): retention and quotas
+    anchor on it, never on the client's `timestamp`.
     """
     scrubbed = scrub_text(transcript)
     kept_phrases = tuple(p for p in flagged_phrases if p and p in scrubbed)
@@ -64,16 +74,18 @@ def prepare_report(
         risk_score=risk_score,
         source=source,
         consent_basis=consent_basis,
+        consent_version=consent_version,
         partner_id=partner_id,
         partner_reference=partner_reference,
-        received_at=received_at,
+        received_at=received_at or datetime.now(UTC),
     )
 
 
 def append_report(report: StoredReport, path: Path) -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(report.model_dump_json() + "\n")
+    with REPORTS_LOCK:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(report.model_dump_json() + "\n")
     return path
 
 
@@ -95,23 +107,24 @@ def _rewrite(reports: Sequence[StoredReport], path: Path) -> None:
 
 def remove_report(receipt_id: str, path: Path) -> StoredReport | None:
     """Delete the report with `receipt_id` (rewriting the file); returns it, or `None`."""
-    reports = load_reports(path)
-    match = next((r for r in reports if r.receipt_id == receipt_id), None)
-    if match is None:
-        return None
-    _rewrite([r for r in reports if r.receipt_id != receipt_id], path)
+    with REPORTS_LOCK:
+        reports = load_reports(path)
+        match = next((r for r in reports if r.receipt_id == receipt_id), None)
+        if match is None:
+            return None
+        _rewrite([r for r in reports if r.receipt_id != receipt_id], path)
     return match
 
 
 def purge_expired(path: Path, *, retention_days: int, now: datetime) -> list[StoredReport]:
-    """Remove reports whose timestamp is older than `retention_days` before `now`; returns them."""
+    """Remove reports past retention (server-clock anchored, `reports.retention`); returns them."""
     if retention_days <= 0:
         raise ValueError(f"retention_days must be > 0, got {retention_days}")
-    reports = load_reports(path)
-    cutoff = now - timedelta(days=retention_days)
-    expired = [r for r in reports if as_aware(r.timestamp, now) < cutoff]
-    if expired:
-        _rewrite([r for r in reports if r not in expired], path)
+    with REPORTS_LOCK:
+        reports = load_reports(path)
+        expired = [r for r in reports if is_expired(r, now=now, retention_days=retention_days)]
+        if expired:
+            _rewrite([r for r in reports if r not in expired], path)
     return expired
 
 

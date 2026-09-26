@@ -16,11 +16,11 @@ from pathlib import Path
 
 from qorgan.config import get_config
 from qorgan.data.asr_style import asr_style_dialogue
-from qorgan.data.schema import Dialogue, ScoreResult
+from qorgan.data.schema import SCAM_RISK_THRESHOLD, Dialogue, ScoreResult
 from qorgan.eval.intervals import binomial_interval
 from qorgan.eval.run import load_split
 
-_TRUTH_THRESHOLD = 0.5
+_TRUTH_THRESHOLD = SCAM_RISK_THRESHOLD
 DEFAULT_SPLITS = ("test", "authored_heldout", "ood")
 ScoreFn = Callable[[str], ScoreResult]
 CueHitsFn = Callable[[str], set[str]]

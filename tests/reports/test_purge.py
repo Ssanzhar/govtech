@@ -58,3 +58,13 @@ def test_cli_entry_point_runs_end_to_end(tmp_path, monkeypatch, capsys):
 
     main([])
     assert load_reports(processed / "citizen_reports.jsonl") == []
+
+
+def test_purge_ages_reports_by_the_servers_clock_not_the_clients(tmp_path):
+    # A far-future client timestamp used to make a report immortal (legal review M4).
+    paths = _paths(tmp_path)
+    stale = stored_report(number=None, timestamp=NOW + timedelta(days=3650)).model_copy(
+        update={"received_at": NOW - timedelta(days=200)}
+    )
+    append_report(stale, paths["reports_path"])
+    assert purge(retention_days=180, now=NOW, **paths) == [stale.receipt_id]

@@ -35,6 +35,7 @@ def _submission(**overrides):
         "tactic_ids": ["otp_request"],
         "risk_score": 86.0,
         "consent": True,
+        "consent_version": "report-v1",
     }
     return {**base, **overrides}
 
@@ -103,3 +104,37 @@ def test_submissions_are_rate_limited_per_client(client):
 
 def test_blank_transcript_is_rejected(client):
     assert client.post("/api/reports", json=_submission(transcript="   ")).status_code == 422
+
+
+# --- consent proof and the server's clock (privacy iteration 2026-09-26) -----------------------
+
+
+def test_the_consent_version_is_required_registered_and_stored(client, tmp_path):
+    payload = _submission()
+    del payload["consent_version"]
+    assert client.post("/api/reports", json=payload).status_code == 422
+    assert client.post("/api/reports", json=_submission(consent_version="report-v999")).status_code == 422
+    assert not _reports_file(tmp_path).exists()
+
+    res = client.post("/api/reports", json=_submission())
+    assert res.status_code == 201
+    assert res.json()["consent_version"] == "report-v1"
+    (stored,) = load_reports(_reports_file(tmp_path))
+    assert stored.consent_version == "report-v1"
+
+
+def test_a_client_timestamp_outside_the_retention_window_is_refused(client, tmp_path):
+    from datetime import UTC, datetime, timedelta
+
+    now = datetime.now(UTC)
+    future = (now + timedelta(days=30)).isoformat()
+    ancient = (now - timedelta(days=400)).isoformat()
+    assert client.post("/api/reports", json=_submission(timestamp=future)).status_code == 422
+    assert client.post("/api/reports", json=_submission(timestamp=ancient)).status_code == 422
+    assert not _reports_file(tmp_path).exists()
+
+    res = client.post("/api/reports", json=_submission(timestamp=(now - timedelta(hours=1)).isoformat()))
+    assert res.status_code == 201
+    (stored,) = load_reports(_reports_file(tmp_path))
+    assert stored.received_at is not None and abs((stored.received_at - now).total_seconds()) < 60
+    assert res.json()["expires_at"] > now.isoformat()

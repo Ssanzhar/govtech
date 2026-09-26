@@ -3,6 +3,9 @@
 Degrades to `available: false` whenever the precomputed analysis is missing or corrupt —
 the demo must never 500 just because `scripts/demo_seed.py` +
 `python -m qorgan.analytics.pipeline` haven't been run yet (CLAUDE.md SS9).
+
+The client signs in as the investigator (the widest role) so these tests exercise the
+console's behaviour; authentication, roles and access auditing are `test_api_admin_auth.py`.
 """
 
 from __future__ import annotations
@@ -13,6 +16,7 @@ from fastapi.testclient import TestClient
 from qorgan.analytics.pipeline import write_organizations_jsonl
 from qorgan.api import app
 from qorgan.data.incident_seed import write_incidents_jsonl
+from support.analysts import ANALYST_ID, INVESTIGATOR_ID, as_analyst, as_investigator
 from support.numbers import hashed, prefix, stored_report
 
 from qorgan.data.schema import Incident, Label, Organization, TacticTag
@@ -20,7 +24,7 @@ from qorgan.data.schema import Incident, Label, Organization, TacticTag
 
 @pytest.fixture()
 def client() -> TestClient:
-    return TestClient(app)
+    return TestClient(app, headers=as_investigator())
 
 
 def _incident(
@@ -366,8 +370,7 @@ def test_open_case_returns_the_full_transcript_and_leaves_an_audit_line(
     res = client.post(
         "/api/admin/incidents/i1/open",
         params={"backend": "mock"},
-        json={"reason": "matches a hotline complaint"},
-        headers={"X-Analyst-Id": "analyst-7"},
+        json={"purpose": "pattern_review", "note": "matches a hotline complaint"},
     )
 
     assert res.status_code == 200, res.text
@@ -376,25 +379,27 @@ def test_open_case_returns_the_full_transcript_and_leaves_an_audit_line(
     for span in body["spans"]:
         assert SCAM_TRANSCRIPT[span["start"] : span["end"]] == span["text"]
     [entry] = load_audit(tmp_path / "processed" / "audit_log.jsonl")
-    assert (entry.actor_kind, entry.actor_id, entry.action, entry.subject) == ("analyst", "analyst-7", "case.open", "incident:i1")
-    assert entry.outcome == "ok: matches a hotline complaint"
+    assert (entry.actor_kind, entry.actor_id, entry.action, entry.subject) == ("analyst", INVESTIGATOR_ID, "case.open", "incident:i1")
+    assert entry.outcome == "ok: matches a hotline complaint" and entry.purpose == "pattern_review"
     raw = (tmp_path / "processed" / "audit_log.jsonl").read_text(encoding="utf-8")
     assert "продиктуйте" not in raw.lower() and "101 20 30" not in raw
 
 
-def test_open_case_defaults_the_analyst_id_and_refuses_content_in_the_reason(
+def test_open_case_needs_a_purpose_and_refuses_content_in_the_note(
     client: TestClient, tmp_path, monkeypatch
 ) -> None:
     from qorgan.audit import load_audit
 
     incidents = [_incident("i1", transcript=SCAM_TRANSCRIPT)]
     _seed_analysis(tmp_path, monkeypatch, organizations=[Organization(id="org_0", members=("i1",))], incidents=incidents)
+    url, params = "/api/admin/incidents/i1/open", {"backend": "mock"}
 
-    assert client.post("/api/admin/incidents/i1/open", params={"backend": "mock"}, json={"reason": "caller +7 700 101 20 30"}).status_code == 422
-    assert client.post("/api/admin/incidents/i1/open", params={"backend": "mock"}).status_code == 200
+    assert client.post(url, params=params, json={"purpose": "pattern_review", "note": "caller +7 700 101 20 30"}).status_code == 422
+    assert client.post(url, params=params).status_code == 422  # no purpose, no transcript
+    assert client.post(url, params=params, json={"purpose": "citizen_request"}).status_code == 200
     [entry] = load_audit(tmp_path / "processed" / "audit_log.jsonl")
-    assert entry.actor_id == "anonymous-analyst" and entry.outcome == "ok"
-    assert client.post("/api/admin/incidents/nope/open", params={"backend": "mock"}).status_code == 404
+    assert entry.actor_id == INVESTIGATOR_ID and entry.outcome == "ok" and entry.purpose == "citizen_request"
+    assert client.post("/api/admin/incidents/nope/open", params=params, json={"purpose": "citizen_request"}).status_code == 404
 
 
 def test_signals_only_incidents_are_marked_and_cannot_be_analysed_or_opened(
@@ -410,7 +415,7 @@ def test_signals_only_incidents_are_marked_and_cannot_be_analysed_or_opened(
     rows = {r["id"]: r for r in client.get("/api/admin/organizations/org_0").json()["sample_incidents"]}
     assert rows["i1"]["has_transcript"] is True and rows["s1"]["has_transcript"] is False and rows["s1"]["excerpt"] == ""
     assert client.get("/api/admin/incidents/s1/analysis", params={"backend": "mock"}).status_code == 409
-    assert client.post("/api/admin/incidents/s1/open", params={"backend": "mock"}).status_code == 409
+    assert client.post("/api/admin/incidents/s1/open", params={"backend": "mock"}, json={"purpose": "pattern_review"}).status_code == 409
 
 
 # --- analyst feedback (PLAN C6) ---------------------------------------------------------------
@@ -434,7 +439,7 @@ def test_dismiss_feedback_decays_priority_everywhere_and_is_audited(client: Test
     from qorgan.audit import load_audit
 
     _two_orgs(tmp_path, monkeypatch)
-    res = client.post("/api/admin/organizations/org_1/feedback", json={"action": "dismiss", "note": "known marketing line"}, headers={"X-Analyst-Id": "analyst-3"})
+    res = client.post("/api/admin/organizations/org_1/feedback", json={"action": "dismiss", "note": "known marketing line"}, headers=as_analyst())
 
     assert res.status_code == 200, res.text
     assert res.json()["feedback"] == "dismissed" and res.json()["priority"] == pytest.approx(0.12) and res.json()["is_novel"] is False
@@ -443,9 +448,9 @@ def test_dismiss_feedback_decays_priority_everywhere_and_is_audited(client: Test
     assert overview["org_0"]["feedback"] is None
     assert client.get("/api/admin/organizations/org_1").json()["feedback"] == "dismissed"
     [event] = load_feedback(tmp_path / "processed" / "org_feedback.jsonl")
-    assert event.analyst_id == "analyst-3" and event.action == "dismiss" and event.org.numbers == (hashed("+7 701 202 30 40"),)
+    assert event.analyst_id == ANALYST_ID and event.action == "dismiss" and event.org.numbers == (hashed("+7 701 202 30 40"),)
     [entry] = load_audit(tmp_path / "processed" / "audit_log.jsonl")
-    assert (entry.actor_kind, entry.actor_id, entry.action, entry.subject) == ("analyst", "analyst-3", "org.dismiss", "org:org_1")
+    assert (entry.actor_kind, entry.actor_id, entry.action, entry.subject) == ("analyst", ANALYST_ID, "org.dismiss", "org:org_1")
 
 
 def test_merge_feedback_unions_organizations(client: TestClient, tmp_path, monkeypatch) -> None:

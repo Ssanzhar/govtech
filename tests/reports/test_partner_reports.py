@@ -126,7 +126,8 @@ def test_partner_reports_since_counts_by_receipt_time_for_that_partner_only(tmp_
 
 
 def test_legacy_reports_without_received_at_fall_back_to_timestamp():
-    legacy = _partner_report(timestamp=NOW - timedelta(hours=2))
+    # Rows written before `received_at` existed: prepare_report now always stamps it.
+    legacy = _partner_report(timestamp=NOW - timedelta(hours=2)).model_copy(update={"received_at": None})
     assert legacy.received_at is None
     assert partner_reports_since([legacy], partner_id="bank_a", since=NOW - timedelta(hours=24)) == 1
 

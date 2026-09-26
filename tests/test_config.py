@@ -227,3 +227,106 @@ def test_asr_style_train_fraction_defaults_and_env_override():
     assert load_config({"QORGAN_ASR_STYLE_TRAIN_FRACTION": "0.25"}).asr_style_train_fraction == 0.25
     with pytest.raises(ValueError):
         load_config({"QORGAN_ASR_STYLE_TRAIN_FRACTION": "1.5"})
+
+
+# --- analyst console auth + tamper-evident audit (PLAN C4, security iteration) --------------
+
+_ANALYST_KEY = "analyst-key-0123456789abcdef"
+_INVESTIGATOR_KEY = "investigator-key-0123456789abcdef"
+_AUDIT_KEY = "audit-chain-key-0123456789abcdef0123456789"
+
+
+def test_analyst_registry_defaults_to_closed_and_audit_key_to_none():
+    cfg = load_config({})
+    assert cfg.analyst_credentials == ()
+    assert cfg.audit_chain_key is None
+
+
+def test_analyst_registry_and_audit_key_are_parsed_and_never_in_repr():
+    cfg = load_config({
+        "QORGAN_ANALYST_KEYS": f"aigerim:{_ANALYST_KEY}:analyst,bek:{_INVESTIGATOR_KEY}:investigator",
+        "QORGAN_AUDIT_CHAIN_KEY": _AUDIT_KEY,
+    })
+    assert [(c.id, c.role) for c in cfg.analyst_credentials] == [("aigerim", "analyst"), ("bek", "investigator")]
+    assert cfg.audit_chain_key is not None and cfg.audit_chain_key.get_secret_value() == _AUDIT_KEY.encode()
+    for secret in (_ANALYST_KEY, _INVESTIGATOR_KEY, _AUDIT_KEY):
+        assert secret not in repr(cfg)
+
+
+@pytest.mark.parametrize(
+    "env",
+    [
+        {"QORGAN_ANALYST_KEYS": "aigerim:short:analyst"},  # weak secret
+        {"QORGAN_ANALYST_KEYS": f"aigerim:{_ANALYST_KEY}:root"},  # unknown role
+        {"QORGAN_AUDIT_CHAIN_KEY": "too-short"},  # a guessable chain key protects nothing
+        # one secret must not open two doors (a partner key must not be an analyst key)
+        {"QORGAN_ANALYST_KEYS": f"aigerim:{_ANALYST_KEY}:analyst", "QORGAN_PARTNER_API_KEYS": f"bank_a:{_ANALYST_KEY}"},
+        # separation of duties: the verifier's key must not be the number-pseudonymisation key
+        {"QORGAN_AUDIT_CHAIN_KEY": _AUDIT_KEY, "QORGAN_NUMBER_HMAC_KEY": _AUDIT_KEY},
+    ],
+)
+def test_weak_or_overlapping_console_secrets_fail_fast(env):
+    with pytest.raises(ConfigError):
+        load_config(env)
+
+
+# --- secrets are never printable (privacy iteration, 2026-09-26) -----------------------------
+
+_SECRET_ENV = {
+    "QORGAN_NUMBER_HMAC_KEY": "number-hmac-key-0123456789abcdef",
+    "GEMINI_API_KEY": "gemini-api-key-0123456789abcdef",
+    "QORGAN_PARTNER_API_KEYS": "bank_a:partner-secret-0123456789abcdef:5",
+    "QORGAN_ANALYST_KEYS": "aigerim:analyst-secret-0123456789abcdef:investigator",
+    "QORGAN_AUDIT_CHAIN_KEY": "audit-chain-key-0123456789abcdef0123456789",
+}
+_SECRET_VALUES = {
+    "QORGAN_NUMBER_HMAC_KEY": "number-hmac-key-0123456789abcdef",
+    "GEMINI_API_KEY": "gemini-api-key-0123456789abcdef",
+    "QORGAN_PARTNER_API_KEYS": "partner-secret-0123456789abcdef",
+    "QORGAN_ANALYST_KEYS": "analyst-secret-0123456789abcdef",
+    "QORGAN_AUDIT_CHAIN_KEY": "audit-chain-key-0123456789abcdef0123456789",
+}
+
+
+@pytest.mark.parametrize("env_key", sorted(_SECRET_VALUES))
+def test_no_secret_is_printable_from_the_config(env_key):
+    """repr / str / a JSON dump of the config (what ends up in a traceback, a log line or a
+    debug endpoint) must never carry a secret -- every secret field is a Secret type."""
+    cfg = load_config(_SECRET_ENV)
+    secret = _SECRET_VALUES[env_key]
+    for rendered in (repr(cfg), str(cfg), cfg.model_dump_json(), repr(cfg.model_dump())):
+        assert secret not in rendered, f"{env_key} leaks"
+
+
+def test_secrets_are_still_usable_through_their_accessors():
+    cfg = load_config(_SECRET_ENV)
+    assert cfg.number_hmac_key == _SECRET_VALUES["QORGAN_NUMBER_HMAC_KEY"].encode()
+    assert cfg.gemini_api_key == _SECRET_VALUES["GEMINI_API_KEY"]
+
+
+def test_every_secret_looking_field_is_covered_by_the_repr_test():
+    """A new secret field must join `_SECRET_VALUES` (and be a Secret type), not slip by."""
+    import re
+
+    secretish = {name for name in Config.model_fields if re.search(r"key|secret|token|password|credential", name)}
+    assert secretish == {
+        "number_hmac_secret", "gemini_api_secret", "partner_credentials", "analyst_credentials", "audit_chain_key",
+    }
+
+
+# --- cloud tier + scheduled purge (privacy iteration, 2026-09-26) ----------------------------
+
+
+def test_cloud_tier_is_off_by_default_and_only_on_or_off():
+    assert load_config({}).cloud_tier_enabled is False
+    assert load_config({"QORGAN_CLOUD_TIER": "off"}).cloud_tier_enabled is False
+    assert load_config({"QORGAN_CLOUD_TIER": "on"}).cloud_tier_enabled is True
+    with pytest.raises(ConfigError):
+        load_config({"QORGAN_CLOUD_TIER": "yes"})
+
+
+def test_report_purge_interval_defaults_to_daily_and_zero_disables():
+    assert load_config({}).report_purge_interval_hours == 24
+    assert load_config({"QORGAN_REPORT_PURGE_INTERVAL_HOURS": "0"}).report_purge_interval_hours == 0
+    with pytest.raises(ConfigError):
+        load_config({"QORGAN_REPORT_PURGE_INTERVAL_HOURS": "-1"})

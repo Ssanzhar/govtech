@@ -23,6 +23,7 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field
 
 from qorgan.analytics.embed import embed_incidents, embed_transcripts
+from qorgan.analytics.feedback import FEEDBACK_FILENAME, forget_in_feedback
 from qorgan.analytics.pipeline import (
     analyze_incidents,
     load_embeddings_npz,
@@ -167,12 +168,15 @@ def forget_report(
     organizations_path: Path,
     embeddings_path: Path,
     now: datetime | None = None,
+    feedback_path: Path | None = None,
 ) -> ForgetSummary | None:
     """Delete the report with `receipt_id` everywhere it reached. `None` if unknown.
 
     The derived incident (content-addressed id) is removed from the incident stream and
     the embedding cache, and organizations are re-analysed from the cached rows -- no
-    re-embedding is needed, because deletion only ever shrinks the stream.
+    re-embedding is needed, because deletion only ever shrinks the stream. Analyst feedback
+    (`org_feedback.jsonl`, next to the organizations by default) loses the incident id and,
+    unless another incident or report still carries it, the number digest.
     """
     report = remove_report(receipt_id, reports_path)
     if report is None:
@@ -180,6 +184,15 @@ def forget_report(
     incident_id = report_incident_id(report)
     incidents = load_incidents_jsonl(incidents_path) if incidents_path.exists() else []
     remaining = [incident for incident in incidents if incident.id != incident_id]
+    live_numbers = {i.number_hash for i in remaining if i.number_hash} | {
+        r.number_hash for r in load_reports(reports_path) if r.number_hash
+    }
+    forget_in_feedback(
+        feedback_path or organizations_path.parent / FEEDBACK_FILENAME,
+        incident_id=incident_id,
+        number_hash=report.number_hash,
+        live_numbers=live_numbers,
+    )
     organizations = load_organizations_jsonl(organizations_path) if organizations_path.exists() else []
     if len(remaining) == len(incidents):
         return ForgetSummary(receipt_id=receipt_id, incident_removed=False, organizations_total=len(organizations))

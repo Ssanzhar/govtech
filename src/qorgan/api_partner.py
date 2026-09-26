@@ -22,7 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from qorgan.analytics.intake import forget_report, report_incident_id
 from qorgan.api_ratelimit import SlidingWindowLimiter
-from qorgan.audit import AUDIT_FILENAME, AuditEntry, append_audit
+from qorgan.audit import AUDIT_FILENAME, AuditEntry, AuditIntegrityError, MissingAuditKeyError, append_audit
 from qorgan.config import Config, get_config
 from qorgan.data.scrub import scrub_text
 from qorgan.partners import Partner, PartnerRegistry
@@ -62,11 +62,18 @@ _api_key_scheme = APIKeyHeader(
 
 
 def require_partner(api_key: str | None = Security(_api_key_scheme)) -> Partner:
-    """Authenticate the request's partner and charge its per-minute rate limit."""
-    partner = PartnerRegistry(get_config().partner_credentials).authenticate(api_key)
+    """Authenticate the request's partner and charge its per-minute rate limit. Every partner
+    action is audited, so without an audit-chain key the API is closed (503) before anything
+    is stored -- an action that cannot be accounted for does not happen."""
+    cfg = get_config()
+    partner = PartnerRegistry(cfg.partner_credentials).authenticate(api_key)
     if partner is None:
         raise HTTPException(
             status_code=401, detail="missing or invalid partner API key", headers={"WWW-Authenticate": "ApiKey"}
+        )
+    if cfg.audit_chain_key is None:
+        raise HTTPException(
+            status_code=503, detail="partner API is closed: no audit-chain key is configured (QORGAN_AUDIT_CHAIN_KEY)"
         )
     if not _LIMITER.allow(partner.id):
         raise HTTPException(status_code=429, detail="rate limit exceeded for this partner; try again in a minute")
@@ -79,7 +86,15 @@ def record_partner_action(
     entry = AuditEntry(
         timestamp=now, actor_kind="partner", actor_id=partner.id, action=action, subject=subject, outcome=outcome
     )
-    append_audit(entry, cfg.data_dir / "processed" / AUDIT_FILENAME)
+    key = cfg.audit_chain_key.get_secret_value() if cfg.audit_chain_key is not None else None
+    try:
+        append_audit(entry, cfg.data_dir / "processed" / AUDIT_FILENAME, key=key)
+    except (OSError, AuditIntegrityError, MissingAuditKeyError) as exc:
+        # An action that cannot be accounted for does not happen: callers audit BEFORE they
+        # store or delete, so this refusal leaves the data untouched.
+        raise HTTPException(
+            status_code=503, detail="the audit log is unavailable, so the request was refused and nothing changed"
+        ) from exc
 
 
 # --- schemas ---------------------------------------------------------------------------------
@@ -225,8 +240,9 @@ def submit(req: PartnerReportIn, response: Response, partner: Partner = Depends(
         record_partner_action(partner, "report.submit", subject=None, outcome="rejected:bad_number", cfg=cfg, now=now)
         raise HTTPException(status_code=422, detail=f"caller number not understood: {exc}") from exc
 
-    append_report(stored, reports_path)
+    # Audit first: if the line cannot be written the report is not stored (503).
     record_partner_action(partner, "report.submit", subject=f"receipt:{stored.receipt_id}", outcome="stored", cfg=cfg, now=now)
+    append_report(stored, reports_path)
     charged = QuotaOut(limit=quota.limit, used=quota.used + 1, remaining=quota.remaining - 1, window_hours=quota.window_hours)
     _set_quota_headers(response, charged)
     return _to_out(stored, status="stored", quota=charged)
@@ -245,6 +261,8 @@ def delete(receipt_id: str, partner: Partner = Depends(require_partner)) -> Resp
     if not owned:  # someone else's receipt looks exactly like an unknown one
         record_partner_action(partner, "report.delete", subject=f"receipt:{receipt_id}", outcome="not_found", cfg=cfg, now=now)
         raise HTTPException(status_code=404, detail="unknown receipt")
+    # Audit first: if the line cannot be written the report is kept (503).
+    record_partner_action(partner, "report.delete", subject=f"receipt:{receipt_id}", outcome="deleted", cfg=cfg, now=now)
     forget_report(
         receipt_id,
         reports_path=processed / REPORTS_FILENAME,
@@ -252,7 +270,6 @@ def delete(receipt_id: str, partner: Partner = Depends(require_partner)) -> Resp
         organizations_path=processed / "organizations.jsonl",
         embeddings_path=processed / "incident_embeddings.npz",
     )
-    record_partner_action(partner, "report.delete", subject=f"receipt:{receipt_id}", outcome="deleted", cfg=cfg, now=now)
     return Response(status_code=204)
 
 

@@ -1,7 +1,8 @@
 """SMOKE tests for `qorgan.classifier.model` — tiny random-config encoder, no download."""
 
 import pytest
-import torch
+
+torch = pytest.importorskip("torch")
 
 from qorgan.classifier.model import ScamClassifierModel
 

@@ -23,14 +23,14 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from qorgan.config import Config, get_config
-from qorgan.data.schema import Dialogue, ScoreResult
+from qorgan.data.schema import SCAM_RISK_THRESHOLD, Dialogue, ScoreResult
 from qorgan.eval.run import load_split
 from qorgan.live import meter as meter_mod
 from qorgan.live.session import _rolling_window
 from qorgan.taxonomy import get_taxonomy
 
 _TRACE_FORMAT_VERSION = 1
-_TRUTH_THRESHOLD = 0.5
+_TRUTH_THRESHOLD = SCAM_RISK_THRESHOLD
 _REPLAY_CONFIDENCE = 1.0
 ScoreFn = Callable[[str], ScoreResult]
 

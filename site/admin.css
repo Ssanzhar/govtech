@@ -216,3 +216,52 @@ th.is-sorted .sort-ind{opacity:1}
 .queue-badge.fb-confirmed{background:#67B98C;color:#0B0F0C}
 .queue-badge.fb-dismissed{background:color-mix(in srgb,var(--paper) 25%,transparent);color:var(--paper)}
 .queue-badge.fb-merged{background:#9BB4E0;color:#0B0F0C}
+
+/* ── analyst sign-in + session (the console is closed until a key is accepted) ── */
+.adm-toolbar[hidden],.adm-session[hidden]{display:none}
+.adm-session{display:flex;align-items:center;flex-wrap:wrap;gap:.7rem;margin-top:1.6rem;font-size:.76rem;color:var(--ink-soft)}
+.adm-session .tw-chip{color:var(--ink-soft);border-color:var(--hairline)}
+.adm-session .tw-chip:hover{color:var(--ink);border-color:var(--ink-soft)}
+.adm-who b{color:var(--ink);font-weight:500}
+.adm-role{
+  margin-left:.35rem;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;
+  border:1px solid var(--hairline);border-radius:999px;padding:.12rem .55rem;color:var(--ink-soft);
+}
+.adm-role--investigator{color:var(--oxide);border-color:color-mix(in srgb,var(--oxide) 50%,transparent)}
+.adm-who-note{margin-left:.5rem;font-size:.7rem}
+.adm-signin{margin-top:2.6rem}
+.adm-signin-card{
+  max-width:40rem;border:1px solid var(--hairline);border-radius:10px;background:#FAF8F2;
+  padding:1.6rem 1.7rem 1.4rem;box-shadow:0 20px 50px -34px rgba(24,20,16,.25);
+}
+.adm-signin-card .eyebrow{margin-bottom:1.2rem}
+.adm-signin-label{display:block;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.55rem}
+.adm-signin-row{display:flex;flex-wrap:wrap;gap:.7rem;align-items:center}
+.adm-key{
+  flex:1 1 15rem;min-width:0;font-size:.82rem;padding:.8rem 1.1rem;border-radius:999px;
+  border:1px solid var(--hairline);background:var(--paper);color:var(--ink);
+}
+.adm-key::placeholder{color:var(--ink-soft)}
+.adm-signin-card .adm-note{margin-top:.8rem;min-height:1.2em}
+.adm-signin-fine{margin-top:.9rem;font-size:.72rem;line-height:1.75;color:var(--ink-soft)}
+.adm-signin-fine b{color:var(--ink);font-weight:500}
+
+/* ── open-case control inside the dark drill-down: purpose first, investigator only ── */
+.dd-open{margin-top:.4rem}
+.dd-open-row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+.dd-open-purpose,.dd-open-note{
+  font-size:.74rem;padding:.42rem .65rem;border-radius:6px;background:transparent;color:var(--paper);
+  border:1px solid color-mix(in srgb,var(--paper) 35%,transparent);
+}
+.dd-open-purpose option{color:var(--ink);background:var(--paper)}
+.dd-open-note{flex:1 1 13rem;min-width:0}
+.dd-open-note::placeholder{color:color-mix(in srgb,var(--paper) 38%,transparent)}
+.dd-open-purpose:focus-visible,.dd-open-note:focus-visible{outline:none;box-shadow:inset 0 0 0 1px var(--amber)}
+.dd-open .dd-open-btn{margin-top:0}
+.dd-open .dd-open-btn:disabled{opacity:.38;cursor:not-allowed;background:transparent}
+.dd-open.is-locked .dd-open-purpose,.dd-open.is-locked .dd-open-note{opacity:.4;cursor:not-allowed}
+.dd-open-fine{margin-top:.55rem;font-size:.7rem;line-height:1.65;color:color-mix(in srgb,var(--paper) 55%,transparent)}
+.dd-open-fine b{color:var(--paper);font-weight:500}
+.dd-open-msg{margin-top:.4rem;font-size:.74rem;color:color-mix(in srgb,var(--paper) 80%,transparent)}
+.dd-open-msg.is-error{color:#E06A4C}
+.dd-withheld{margin-top:.5rem;font-size:.72rem;color:color-mix(in srgb,var(--paper) 60%,transparent)}

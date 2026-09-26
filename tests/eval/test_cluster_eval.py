@@ -70,6 +70,7 @@ def test_without_numbers_and_without_text_everything_is_a_singleton():
 
 
 def test_text_overlay_recovers_well_separated_families_without_numbers():
+    pytest.importorskip("hdbscan")  # the optional text overlay (off by default)
     incidents, embeddings = _seeded()
     q = quality(drop_numbers(incidents, keep_fraction=0.0, seed=1), embeddings, text_merge=True)
     assert q["purity"] >= 0.9 and q["ari"] >= 0.8
@@ -85,6 +86,7 @@ def test_subsample_intervals_bracket_the_point_estimate():
 
 
 def test_evaluate_conditions_and_render_table():
+    pytest.importorskip("hdbscan")  # the optional text overlay (off by default)
     incidents, embeddings = _seeded()
     conditions = (Condition("as seeded", 1.0, False), Condition("text only", 0.0, True))
     results = evaluate_conditions(incidents, embeddings, conditions, n_resamples=5, seed=0)

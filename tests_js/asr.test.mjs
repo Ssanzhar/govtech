@@ -3,7 +3,7 @@
    endpoint-alignment state machine over Vosklet events. */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { initialAsrState, isSupported, parseVoskResult, reduceAsrEvent, voteFinal } from "../site/core/asr.js";
+import { SUPPORT_REASONS, initialAsrState, isSupported, parseVoskResult, reduceAsrEvent, supportIssues, voteFinal } from "../site/core/asr.js";
 
 const result = (text, ...confs) =>
   JSON.stringify({ text, result: text.split(" ").map((word, i) => (confs[i] === undefined ? { word } : { word, conf: confs[i] })) });
@@ -116,6 +116,15 @@ test("isSupported names every missing capability and excludes phones for now", (
   assert.match(isSupported(phone).reasons[0], /phones/);
   const bare = { navigator: {} };
   assert.equal(isSupported(bare).reasons.length, 5);
+});
+
+test("supportIssues gives stable codes (the page localises them) in isSupported's order", () => {
+  const ok = { crossOriginIsolated: true, SharedArrayBuffer: function () {}, isSecureContext: true, AudioWorkletNode: function () {}, navigator: { mediaDevices: { getUserMedia() {} }, userAgent: "Chrome desktop" } };
+  assert.deepEqual(supportIssues(ok), []);
+  assert.deepEqual(supportIssues({ ...ok, navigator: { ...ok.navigator, userAgent: "iPhone" } }), ["phone"]);
+  const bare = { navigator: {} };
+  assert.deepEqual(supportIssues(bare), ["isolation", "shared_memory", "secure_context", "audio_worklet", "capture"]);
+  assert.deepEqual(isSupported(bare).reasons, supportIssues(bare).map((code) => SUPPORT_REASONS[code]));
 });
 
 test("a language that endpoints twice before the other commits the first window instead of overwriting it", () => {

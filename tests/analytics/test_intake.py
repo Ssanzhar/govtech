@@ -290,7 +290,7 @@ def _signals_only_draft(number, reference="CASE-1"):
     return prepare_report(
         transcript="", phone_number=number, flagged_phrases=(), tactic_ids=("otp_request", "safe_account"),
         timestamp=datetime(2026, 9, 17, 10, 0, tzinfo=UTC), risk_score=100.0, hmac_key=TEST_HMAC_KEY,
-        source="partner", consent_basis="customer_consent", partner_id="bank_a", partner_reference=reference,
+        received_at=datetime(2026, 9, 17, 10, 0, tzinfo=UTC), source="partner", consent_basis="customer_consent", partner_id="bank_a", partner_reference=reference,
     )
 
 
@@ -328,3 +328,51 @@ def test_signals_only_reports_are_pending_like_any_other(seeded):
     paths, _ = seeded
     _write_reports(paths["reports"], [_signals_only_draft(KNOWN_NUMBER)])
     assert len(pending_reports(paths["reports"], load_incidents_jsonl(paths["incidents"]))) == 1
+
+
+# --- forget_report reaches analyst feedback too (legal review F8 / M4, 2026-09-26) -----------
+
+
+def _feedback_on_org_of(paths, incident_id, action="dismiss"):
+    from qorgan.analytics.feedback import FEEDBACK_FILENAME, FeedbackEvent, append_feedback, snapshot_for
+
+    org = next(o for o in load_organizations_jsonl(paths["organizations"]) if incident_id in o.members)
+    event = FeedbackEvent(timestamp=datetime(2026, 7, 15, 13, 0, tzinfo=UTC), analyst_id="analyst-1",
+                          action=action, org=snapshot_for(org))
+    path = paths["reports"].parent / FEEDBACK_FILENAME
+    append_feedback(event, path)
+    return path, org
+
+
+def test_forget_removes_the_reports_digest_and_incident_from_feedback_snapshots(seeded):
+    """A number reported once and then deleted must not survive in `org_feedback.jsonl`."""
+    paths, embedder = seeded
+    lone = "+7 705 999 88 77"
+    draft = _draft(number=lone)
+    _write_reports(paths["reports"], [draft])
+    _ingest(paths, embedder)
+    feedback_path, org = _feedback_on_org_of(paths, report_incident_id(draft))
+    assert hashed(lone) in feedback_path.read_text(encoding="utf-8")
+
+    _forget(paths, draft.receipt_id)
+
+    text = feedback_path.read_text(encoding="utf-8")
+    assert hashed(lone) not in text and report_incident_id(draft) not in text
+
+
+def test_forget_keeps_a_digest_other_incidents_still_carry(seeded):
+    """The shared scam number is still in the analysis (other reports), so the feedback about
+    that operation keeps it; only the deleted incident leaves the snapshot."""
+    from qorgan.analytics.feedback import load_feedback
+
+    paths, embedder = seeded
+    draft = _draft(number=KNOWN_NUMBER)
+    _write_reports(paths["reports"], [draft])
+    _ingest(paths, embedder)
+    feedback_path, _ = _feedback_on_org_of(paths, report_incident_id(draft))
+
+    _forget(paths, draft.receipt_id)
+
+    [event] = load_feedback(feedback_path)
+    assert hashed(KNOWN_NUMBER) in event.org.numbers
+    assert report_incident_id(draft) not in event.org.members and set(event.org.members) == {"a0", "a1"}

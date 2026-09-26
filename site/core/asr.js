@@ -205,16 +205,33 @@ function bestPartial(state) {
   return { language: state.preferred, text: "" };
 }
 
-/** Can this browser run on-device recognition? `{ok, reasons}`; each reason is
-    user-facing. Phones are excluded until the B9 Android bench passes (ADR D25). */
+/** English text for each `supportIssues` code (developer-facing; the live page localises
+    the codes itself -- site/i18n.js). */
+export const SUPPORT_REASONS = Object.freeze({
+  isolation: "this page is not served cross-origin isolated (COOP/COEP headers)",
+  shared_memory: "SharedArrayBuffer is unavailable",
+  secure_context: "a secure context (https or localhost) is required",
+  audio_worklet: "AudioWorklet is unavailable",
+  capture: "microphone capture is unavailable",
+  phone: "phones are not enabled yet (the on-device model has not been measured there)",
+});
+
+/** What stops on-device recognition here, as stable codes (keys of SUPPORT_REASONS), in a
+    fixed order. Phones are excluded until the B9 Android bench passes (ADR D25). */
+export function supportIssues(env = globalThis) {
+  const codes = [];
+  if (!env.crossOriginIsolated) codes.push("isolation");
+  if (typeof env.SharedArrayBuffer === "undefined") codes.push("shared_memory");
+  if (!env.isSecureContext) codes.push("secure_context");
+  if (typeof env.AudioWorkletNode === "undefined") codes.push("audio_worklet");
+  if (!env.navigator?.mediaDevices?.getUserMedia) codes.push("capture");
+  if (/Android|iPhone|iPad|Mobile/i.test(env.navigator?.userAgent || "")) codes.push("phone");
+  return codes;
+}
+
+/** Can this browser run on-device recognition? `{ok, reasons}` (English, per issue). */
 export function isSupported(env = globalThis) {
-  const reasons = [];
-  if (!env.crossOriginIsolated) reasons.push("this page is not served cross-origin isolated (COOP/COEP headers)");
-  if (typeof env.SharedArrayBuffer === "undefined") reasons.push("SharedArrayBuffer is unavailable");
-  if (!env.isSecureContext) reasons.push("a secure context (https or localhost) is required");
-  if (typeof env.AudioWorkletNode === "undefined") reasons.push("AudioWorklet is unavailable");
-  if (!env.navigator?.mediaDevices?.getUserMedia) reasons.push("microphone capture is unavailable");
-  if (/Android|iPhone|iPad|Mobile/i.test(env.navigator?.userAgent || "")) reasons.push("phones are not enabled yet (the on-device model has not been measured there)");
+  const reasons = supportIssues(env).map((code) => SUPPORT_REASONS[code]);
   return { ok: reasons.length === 0, reasons };
 }
 
@@ -238,17 +255,19 @@ export function loadVoskletScript(url = VOSKLET_SCRIPT_URL, doc = globalThis.doc
 
 /** Dual-language on-device ASR. `models` = `{language: {url, id}}` (self-hosted USTAR
     tarballs). Calls `onPartial({language, text})`, `onUtterance({language, text,
-    confidence})`, `onStatus(message)`. `start(stream)` takes a microphone MediaStream. */
+    confidence})`, `onStatus(message, {code, language?})` -- `code` is one of runtime | model |
+    listening | stopped, so a page can localise the status instead of parsing `message`.
+    `start(stream)` takes a microphone MediaStream. */
 export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus = () => {}, onError = () => {}, onRaw = null, lock = null }) {
   const languages = Object.keys(models);
   if (!languages.length) throw new Error("no ASR models configured");
   const loadVosklet = await loadVoskletScript();
-  onStatus("loading the speech-recognition runtime…");
+  onStatus("loading the speech-recognition runtime…", { code: "runtime" });
   const modules = {};
   const loaded = {};
   for (const language of languages) {
     modules[language] = await loadVosklet(); // one module instance (= one worker thread) per language
-    onStatus(`loading the ${language.toUpperCase()} speech model… (cached after the first time)`);
+    onStatus(`loading the ${language.toUpperCase()} speech model… (cached after the first time)`, { code: "model", language });
     loaded[language] = await modules[language].createModel(models[language].url, storagePathFor(language, models[language].id), models[language].id);
   }
 
@@ -296,7 +315,7 @@ export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus
       source = ctx.createMediaStreamSource(stream);
       source.connect(transferer);
       ticker = setInterval(() => dispatch({ type: "tick" }), 100);
-      onStatus("listening — audio stays on this device");
+      onStatus("listening — audio stays on this device", { code: "listening" });
     },
     async stop() {
       if (ticker) clearInterval(ticker);
@@ -318,7 +337,7 @@ export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus
       for (const emit of flushed.emits) if (emit.type === "utterance") onUtterance(emit);
       if (ctx) { try { await ctx.close(); } catch {} }
       ctx = null;
-      onStatus("stopped");
+      onStatus("stopped", { code: "stopped" });
     },
     async dispose() {
       for (const language of languages) { try { await modules[language].cleanUp(); } catch {} }

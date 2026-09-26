@@ -213,6 +213,23 @@ def test_build_manifest_counts_and_metadata():
     assert "by_language" in manifest["counts"]["val"]
 
 
+def test_manifest_counts_scams_by_label_not_by_missing_hard_negative_flag():
+    # authored_heldout mixes scams, hard negatives and plain legit calls: a plain legit call
+    # is not a hard negative, but it is not a scam either (it used to be counted as a positive).
+    authored_heldout = [
+        _dialogue("scam", ["a b"], tags=["urgency"], risk=0.9),
+        _dialogue("hard", ["c d"], hard_negative=True, risk=0.02),
+        _dialogue("plain", ["e f"], risk=0.05),
+    ]
+    splits = {"train": [], "val": [], "test": []}
+    counts = build_manifest(splits, authored_heldout, seed=42, train_fraction=0.7, val_fraction=0.15)["counts"]
+
+    assert counts["authored_heldout"]["scam"] == 1
+    assert counts["authored_heldout"]["legit"] == 2
+    assert counts["authored_heldout"]["hard_negatives"] == 1
+    assert counts["authored_heldout"]["positives"] == 1  # kept for older readers; means scam
+
+
 # --- build_corpus (orchestrator) ---------------------------------------------------------
 
 

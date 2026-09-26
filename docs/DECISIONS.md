@@ -823,3 +823,188 @@ positive on the record. A genuine fix needs real calls, or a category the corpus
 lacks. **Rule going forward:** before generating data to fix a named evaluation failure,
 measure whether the category is under-represented in train; if it is not, the failure is
 information, not a task.
+
+### D44 — The citizen reviews, edits and explicitly approves a report before anything is sent (2026-09-25)
+`task.md` §8 requires reporting to be "never automatic … review before submission … editable
+report contents"; the live page sent the whole draft on one click, showing it only *after*
+it was stored. The post-call panel now opens a review (`site/live.js` + the pure
+`site/core/report.js`): an editable transcript, a live preview of exactly what the server
+will store (numbers / cards / IINs / e-mails redacted by `scrubText`, a 1:1 port of
+`scrub_text` pinned by `tests_js/fixtures/scrub.json`, generated from Python and
+drift-checked by `tests/data/test_scrub_fixture.py`), per-tactic checkboxes, the optional
+number, and a consent checkbox — Send stays disabled (and visibly dimmed) until it is
+ticked. **Edits can only remove:** tactics are a subset of the detected ones and flagged
+phrases survive only while still verbatim in the edited, redacted transcript
+(`finalizeReport`), so a report never carries evidence the model did not produce. The
+server contract is unchanged and still re-scrubs (it never trusts the client). Verified in
+Chrome (`tests_js/tools/e2e_report_review.mjs`): 0 content-carrying requests before Send,
+exactly one POST equal to the edited draft, number stored as `+7 700 ***`, delete by
+receipt works. Same pass: `.btn[hidden]` now hides (it also left the mic "End call"
+button visible), and `sw.js` precaches `core/cue-match.js` + `core/report.js` (shell v3;
+`tests_js/sw.test.mjs` keeps the list complete).
+**Not done:** the report offer is still shown for every call, not only above a
+configurable threshold (§8), and the page chrome is English-only.
+
+### D45 — PII glued to Cyrillic is redacted; nothing is published unless it is a scrub fixed point (2026-09-25)
+**Gap 1 — scrubbing.** Card and IIN rules used `\b`, and in Python's Unicode `re` a
+Cyrillic/Kazakh letter is a word character, so `карта4400123456789010` or
+`ЖСН940101300123` (ASR output, hand-edited reports) were stored verbatim. The edges are now
+"not an ASCII letter, underscore or digit": Cyrillic-glued PII is redacted, while ASCII system
+identifiers (digests, receipt ids) stay a fixed point for the audit / feedback / report
+validators that use `scrub_text` as a "no PII" check (tests on both sides). Phones already
+used digit-only lookarounds. Python and JS change together.
+**Gap 2 — publishing.** `ood.jsonl` bypasses `build_corpus` and was never scrubbed: one
+synthetic legit call carried a 12-digit IIN next to a full name, and it is on the public Hub.
+The local split was repaired with `build_corpus.scrub_dialogue` (1 / 118 dialogues; spans
+re-grounded); the stricter rule changes nothing else in 19,137 corpus utterances, so no
+split hash other than `ood`'s moves and no retrain is needed. `qorgan.data.publish_guard`
+now makes the invariant a gate: `scripts/hf_upload.py` refuses to upload unless every
+published split and augment file is a `scrub_text` fixed point (findings name file / id /
+utterance, never the value). **Open:** republishing `ood.jsonl` to `sanzh-ts/govtech_ds`
+needs the maintainers' write token (outward-facing; not done from this workspace).
+
+### D46 — The analyst console authenticates per person, gates whole calls behind a role and a purpose, and its audit log is a keyed hash chain (2026-09-25)
+The council's deal-breaker was that Level 2 is "architecturally indistinguishable from
+surveillance infrastructure". In code `/api/admin` had no authentication at all: the analyst
+was whoever `X-Analyst-Id` / `?analyst=` claimed, and the audit log was plain JSONL anyone with
+file access could edit. This is not new Level-2 scope (the council said to stop investing
+there): it closes a liability the demo already carried.
+**Change.** `QORGAN_ANALYST_KEYS` (`id:secret:role`, parsed fail-fast like D19's partner keys,
+secrets ≥ 16 chars, never shared with a partner, constant-time compare) — identity comes only
+from `X-Analyst-Key` (`src/qorgan/api_admin_auth.py`). The console fails closed: no analyst
+keys or no audit key ⇒ 503; bad key ⇒ 401; wrong role ⇒ 403. `analyst` sees aggregates and
+excerpts; only `investigator` may `open` a whole call, and only with a purpose from a closed
+list (`pattern_review` / `citizen_request` / `partner_request`; no law-enforcement code
+without a legal basis) and within 30 opens per hour. The audit line (who, which incident,
+why) is on disk before the transcript leaves; if it cannot be written, nothing is released.
+Wrong keys (never the secret), refusals and every revealing or state-changing action are
+audited. **The excerpt view is now a real boundary:** it used to return every trigger phrase
+and a reason quoting them — a median 75 % (max 97 %) of each transcript on the 60 seeded
+incidents, with no audit line. Phrases outside the 200-char excerpt are now counted, not
+quoted (median exposure 36 %, the excerpt itself). **Audit log:** each line carries
+`seq` / `prev` / `mac` (HMAC-SHA256, separate `QORGAN_AUDIT_CHAIN_KEY` — a verifier must not
+hold the number key, which would reverse phone digests); legacy unchained lines are allowed
+only as a sealed leading prefix; appends are serialised (thread lock + `flock`);
+`python -m qorgan.audit verify [--anchor SEQ:MAC]` names the first broken entry. The partner
+API writes through the same path and is closed without the key. `site/admin.*`: sign-in
+panel, key in `sessionStorage` only, role chip, purpose picker, CSP `script-src 'self'`.
+Architecture invariant: every admin route carries the analyst dependency, any route returning
+a transcript carries the investigator dependency, and a runtime sweep checks 401/503 on all.
+Same pass: report-derived incident ids (~0.25 %) tripped the audit scrubber and made `open`
+fail — that id shape is exempt, like receipts.
+**Evidence.** 8 threads × 15 appends verify as one chain (without the lock it breaks at entry
+1). On copies of a real run's log an edit, a deletion, a reorder and a legacy-line edit are each
+named at the right entry; tail truncation is caught only with an anchor. Chrome
+(`tests_js/tools/e2e_admin_auth.mjs`, re-run independently on scratch data): no key / claimed
+id / wrong key → 401; analyst `open` → 403 and locked in the UI with the reason; investigator
+opens only after a purpose; revoked key → sign-in; unconfigured → 503. `pytest` 1204 passed.
+**Not done.** SSO/MFA, key expiry/rotation, a key id for the audit key; shipping lines to WORM
+storage (the key holder can still rewrite history); an auditor role / audit view; limits are
+in-process; the Streamlit harness reads files directly (no auth — it is a dev tool, D4); the
+purpose list and open budget need the legal owner (`docs/LEGAL_ASSESSMENT.md` §5).
+
+### D47 — One language control drives the whole citizen page; a mid-call switch re-renders in place (2026-09-25)
+`site/live.html` served Kazakh- and Russian-speaking citizens English chrome; its ru/kk radio
+switched only the advice language, and a mid-call switch left advice, evidence and the summary
+in the old language (known wart) because strings were written once and the session locale was
+fixed at start. **Change.** All chrome lives in one pure module, `site/i18n.js` (kk / ru / en,
+keyed placeholders); markup carries `data-i18n*` keys. Model content (tactic names, advice,
+reason templates, human note) is **not** copied there: it is re-rendered from saved call state
+through the same pure `recommend` / `summarize` / `renderReason`, and the running session's
+locale switches too (scoring never reads it). English chrome shows the reviewed Russian
+content and says so rather than showing unreviewed English advice. The review form is never
+rebuilt, so edits and consent survive a switch. Initial language: stored choice, else kk/ru
+from the browser, else ru; `<html lang>` follows. Citizen copy: "Не спешите. Проверьте
+звонок." plus three promises — the call stays on your device, a human decides and the AI can
+be wrong (Law 230-VIII disclosure), it shows why — with the pipeline behind "how it works". A
+one-time download notice (~300 MB; ~106 MB more for the microphone) appears before anything
+is fetched. Accessibility: `role="meter"` with a spoken value, labelled controls, visible
+focus, PT Serif for Cyrillic (Fraunces has none). Fixed on the way: white-on-white
+`.btn-ghost` buttons, an unretryable failed model load, a summary sentence that quoted every
+flagged phrase (now three).
+**Evidence.** `tests_js/i18n.test.mjs` (same keys, no empties, placeholder parity, Kazakh not
+copied from Russian, every key the page uses exists); `sw.test.mjs` now requires page imports
+to be precached (shell v4); `npm test` 60/60. Chrome (`e2e_live_i18n.mjs`, re-run
+independently): RU scam scene switched to kk at turn 3/6 → the same tactic's advice in Kazakh,
+call runs to 6/6, edits kept across kk → ru → en; fresh kk-KZ phone profile at 360 px all
+Kazakh, no overflow; no Latin words on ru/kk pages; no `/models/` request before Start and no
+request carrying call content before Send. `e2e_report_review.mjs` still passes.
+**Not done.** Native review of the new Kazakh strings (listed in `docs/STATUS.md`); legal
+wording of both consent sentences; the landing page and `try.js` are English; Cache Storage
+refused the 279 MB model in a throwaway profile, so "stays on your device" is unverified on real
+profiles and phones; the ONNX runtime still loads from jsdelivr; the report is still offered
+for every call (D44).
+
+### D48 — The runtime installs only what the shipped product imports (2026-09-25)
+`pip install -e .` and the Docker image pulled CPU torch, transformers, captum,
+sentence-transformers, hdbscan, faster-whisper, Streamlit and google-genai, although the
+served path is the int8 ONNX embedder + sklearn heads + FastAPI. **Change.** `pyproject.toml`
+dependencies are that runtime (13 packages); the rest are extras — `cloud` (Gemini: the
+consented second opinion and data generation), `harness` (Streamlit dev harness, D4), `live`,
+`research` (xlmr, fp32 embeddings, HDBSCAN overlay), `quant`, `dev`, `all`. The Dockerfile no
+longer installs torch; `requirements.txt` points at `pyproject.toml`.
+`tests/test_runtime_deps.py` blocks every extra's top-level module *and records each attempt*
+(`/api/analyze` degrades to `mock` on any exception, so a swallowed import would otherwise
+pass), then imports the server, the deploy bootstrap and the retrain path and scores a call.
+**Evidence.** The probe records 0 attempts and scores with `linear`; blocking `networkx` makes
+it fail (mutation check). `pip install -e ".[dev]" --dry-run` resolves on the lean venv with
+nothing but dev tools to add; that runtime is 588 MB of site-packages on macOS arm64.
+**Not measured.** The Docker image size before/after (Docker was not running here).
+
+### D49 — Close the data paths the product story says do not exist (2026-09-26)
+`docs/LEGAL_ASSESSMENT.md` (§1, gap list M1/M3/M4) found, and the code confirmed, four paths
+that contradicted "call content leaves the device only on an explicit, reviewed, consented
+report; `/api/analyze` persists nothing; one citizen ingress; reports expire":
+1. **Caller-selectable cloud tier.** Any caller could pass `backend=llm` to `/api/analyze`, the
+   live-session API or the admin analysis routes — text to Gemini, outside Kazakhstan, with no
+   notice — and the classifier cached the verbatim trigger phrases on disk. Now
+   (`qorgan.cloud_tier`): `QORGAN_CLOUD_TIER=off` by default → 403, nothing sent (a configured
+   `llm` default cannot bypass it); on → `/api/analyze` also needs the requester's explicit
+   `cloud_consent` (422 without); request-time scoring never writes the cache
+   (`predict.score(use_cache=False)`; batch eval still caches); analyst routes refuse `llm`
+   outright (422) — the cloud is a citizen's choice, not an analyst's.
+2. **A second, consent-free citizen ingress.** `/api/live/session/*` held every utterance in
+   server memory (LRU, no TTL) and its `/report` stored a report with no review or consent. No
+   product page used it (the citizen page scores on the device; the Streamlit harness drives
+   `qorgan.live` in-process), and PLAN B6 had scheduled its deletion. Retired with its
+   in-memory store; `GET /api/live/{capabilities,scenarios}` remain. **New invariant:** every
+   write route is named in `tests/test_architecture.py`, and exactly two create reports
+   (`POST /api/reports`, `POST /api/v1/reports`) — a new one has to be argued there.
+3. **Retention on the client's clock.** `purge` aged reports by the client-supplied
+   `timestamp` (unbounded — a future date never expired) and nothing scheduled it. Now
+   `reports.retention`: age runs on the server's `received_at`; a client `timestamp` outside
+   [now − retention, now + 5 min] is refused (422); the server purges at startup and every
+   `QORGAN_REPORT_PURGE_INTERVAL_HOURS` (default 24; 0 = cron); report writes and the purge
+   share one lock. Deleting or purging a report also removes its incident id — and, unless
+   another incident or report still carries it, its number digest — from `org_feedback.jsonl`.
+4. **No proof of what was agreed to.** `POST /api/reports` now requires a registered
+   `consent_version`; `reports.model.CITIZEN_CONSENT_VERSIONS` maps each version to the SHA-256
+   of the exact consent wording in every page language (`site/i18n.js`), and a test fails if the
+   wording changes without a new version. Stored with the report, echoed with `expires_at` in
+   the receipt; the page sends it.
+Also: config secrets (number HMAC key, Gemini key) are `Secret*` fields — no secret appears in
+`repr`/`str`/JSON dumps of the config (tested per field).
+**Review fixes to D46 (independent review of the D44–D48 snapshot: 0 critical/high, 2 medium,
+3 low).** *Medium:* the partner API stored/deleted **before** auditing, and an audit failure was
+an unhandled 500 with the data already written — it now audits first and maps audit failures
+to 503 with nothing changed (tests). *Medium:* a routine append silently sealed any unchained
+lines at the head of the log, so someone without the key could plant invented "history" naming
+a real analyst and have the next request vouch for it — appends now refuse unsealed legacy
+lines; sealing is an explicit, logged `system` step (`python -m qorgan.audit seal`), and
+`verify` notes that no key protects legacy content. *Low:* `load_audit` split on U+2028 inside
+JSON strings (now bytes on `\n`); a failed analysis no longer spends the investigator's open
+budget. Not changed (documented): the failed-auth limiter keys on the client address (behind a
+proxy it is shared) and secrets are length-checked, not entropy-checked.
+**Evidence.** `pytest` 1214 passed / 10 skipped (the retired session-route and store tests went
+with the code; their meter/session logic is covered in `tests/live/`); `npm test` 60/60; new
+tests `tests/test_cloud_tier.py`, `tests/test_purge_schedule.py`, `tests/reports/test_retention.py`,
+`tests/reports/test_consent_versions.py`, the write-route invariant, partner audit-first,
+explicit seal. Chrome on a scratch copy of `data/`: report review (payload carries
+`consent_version`), live i18n and admin auth e2e all pass; `POST /api/live/session` → 405;
+`/api/analyze` with `backend=llm` → 403 while the tier is off.
+**Not done.** Spoken-number redaction (the on-device recogniser writes numbers as words:
+`scrub_text('мой номер восемь семьсот один два три…')` is unchanged, so a microphone-mode report
+can carry a number) — the top open privacy item; it needs Python + JS parity and a corpus-impact
+measurement before it can change what the model trained on. The audit/access-log retention
+period is a legal decision (LEGAL_ASSESSMENT §6). The Streamlit harness still stores reports
+without a consent version (dev tool, D4).

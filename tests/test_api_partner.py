@@ -298,3 +298,33 @@ def test_export_is_aggregates_only(client, tmp_path):
 def test_export_degrades_when_no_analysis(client):
     body = client.get("/api/v1/organizations", headers=_auth()).json()
     assert body == {"available": False, "generated_at": body["generated_at"], "organizations": []}
+
+
+# --- an action that cannot be audited does not happen (review finding, 2026-09-26) ------------
+
+
+def test_a_submission_that_cannot_be_audited_is_refused_and_stores_nothing(client, tmp_path, monkeypatch):
+    from qorgan import api_partner
+    from qorgan.audit import AuditIntegrityError
+
+    def broken_audit(*args, **kwargs):
+        raise AuditIntegrityError("torn last line")
+
+    monkeypatch.setattr(api_partner, "append_audit", broken_audit)
+    res = client.post("/api/v1/reports", json=_signals(), headers=_auth())
+    assert res.status_code == 503
+    assert not _reports_file(tmp_path).exists() or load_reports(_reports_file(tmp_path)) == []
+
+
+def test_a_deletion_that_cannot_be_audited_is_refused_and_keeps_the_report(client, tmp_path, monkeypatch):
+    from qorgan import api_partner
+    from qorgan.audit import AuditIntegrityError
+
+    receipt = client.post("/api/v1/reports", json=_signals(), headers=_auth()).json()["receipt_id"]
+
+    def broken_audit(*args, **kwargs):
+        raise AuditIntegrityError("torn last line")
+
+    monkeypatch.setattr(api_partner, "append_audit", broken_audit)
+    assert client.delete(f"/api/v1/reports/{receipt}", headers=_auth()).status_code == 503
+    assert [r.receipt_id for r in load_reports(_reports_file(tmp_path))] == [receipt]

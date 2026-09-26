@@ -2,7 +2,9 @@
 
 import json
 
-import torch
+import pytest
+
+torch = pytest.importorskip("torch")
 
 from qorgan.classifier.model import ScamClassifierModel
 from qorgan.classifier.train import build_targets, train_and_export

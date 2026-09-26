@@ -115,17 +115,21 @@ def content_hash(dialogues: Sequence[Dialogue]) -> str:
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
 
-def _split_counts(dialogues: Sequence[Dialogue]) -> dict:
+def split_counts(dialogues: Sequence[Dialogue]) -> dict:
+    """Manifest counts for one split. `scam` / `legit` follow the labeled risk (the cut the
+    evaluation uses); `hard_negatives` is the subset of legit calls built to look like scams.
+    `positives` duplicates `scam` for readers of manifests written before 2026-09-25, when it
+    meant "not a hard negative" and so counted plain legit calls as scams."""
     by_language: dict[str, int] = {}
-    hard_negatives = 0
     for dialogue in dialogues:
         by_language[dialogue.language] = by_language.get(dialogue.language, 0) + 1
-        if dialogue.label.is_hard_negative:
-            hard_negatives += 1
+    scam = sum(1 for d in dialogues if d.label.is_scam)
     return {
         "total": len(dialogues),
-        "hard_negatives": hard_negatives,
-        "positives": len(dialogues) - hard_negatives,
+        "scam": scam,
+        "legit": len(dialogues) - scam,
+        "hard_negatives": sum(1 for d in dialogues if d.label.is_hard_negative),
+        "positives": scam,
         "by_language": by_language,
     }
 
@@ -140,8 +144,8 @@ def build_manifest(
 ) -> dict:
     """Build the reproducibility manifest: per-split counts, grand total, seed, fractions,
     and a content hash over every record (splits + authored_heldout)."""
-    counts = {name: _split_counts(splits.get(name, ())) for name in _SPLIT_NAMES}
-    counts["authored_heldout"] = _split_counts(authored_heldout)
+    counts = {name: split_counts(splits.get(name, ())) for name in _SPLIT_NAMES}
+    counts["authored_heldout"] = split_counts(authored_heldout)
     all_records = [d for name in _SPLIT_NAMES for d in splits.get(name, ())] + list(authored_heldout)
     return {
         "schema": _MANIFEST_SCHEMA_NOTE,

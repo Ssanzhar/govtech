@@ -5,15 +5,15 @@
    - /api/ and anything cross-origin: never cached, never intercepted -- the only network
      traffic with call content is the explicit report submit, and it must stay live. */
 
-const SHELL_CACHE = "qorgan-shell-v2"; // v2: shell responses must carry COOP/COEP for the live page (B9)
+const SHELL_CACHE = "qorgan-shell-v4"; // v4: live page in kk/ru/en (i18n.js); v3: report review (D44); v2: COOP/COEP (B9)
 const MODEL_CACHE = "qorgan-models-v1";
 const SHELL = [
   "/", "/index.html", "/live.html", "/styles.css", "/live.css", "/main.js", "/live.js", "/try.js",
-  "/manifest.webmanifest",
+  "/i18n.js", "/manifest.webmanifest",
   "/core/index.js", "/core/score.js", "/core/head.js", "/core/lexicon.js", "/core/attribution.js",
   "/core/explain.js", "/core/recommend.js", "/core/meter.js", "/core/session.js",
   "/core/embedder.js", "/core/embed-worker.js", "/core/qorgan-config.json", "/core/device.js",
-  "/core/summary.js", "/core/asr.js", "/core/scenarios.json",
+  "/core/summary.js", "/core/asr.js", "/core/scenarios.json", "/core/cue-match.js", "/core/report.js",
 ];
 
 // The on-device speech runtime (pinned, self-hosted by deploy_bootstrap); optional, so a

@@ -26,8 +26,8 @@ mobile / on-device vision lives in [`DOCUMENTATION.md`](DOCUMENTATION.md) and th
 ```bash
 # 1. Environment (Python 3.11+)
 python -m venv .venv && source .venv/bin/activate
-pip install -e .                 # src-layout: puts `qorgan` on the path
-cp .env.example .env             # set QORGAN_NUMBER_HMAC_KEY (see the file); GEMINI_API_KEY only for data-gen
+pip install -e ".[dev]"         # runtime + tests; ".[all]" adds the cloud tier, Streamlit harness, research paths
+cp .env.example .env             # set the number-HMAC, analyst and audit-chain secrets (see the file); GEMINI_API_KEY only for the cloud tier / data-gen
 
 # 2. Models + demo data in one go (idempotent; ~300 MB download on first run):
 #    corpus splits + trained head weights from Hugging Face, the int8 ONNX embedder the
@@ -38,7 +38,7 @@ python -m qorgan.data.build_corpus && python -m qorgan.classifier.linear_train
 
 # 3. Run the site (landing + live call + analyst dashboard) -- analysis runs ON THE DEVICE
 python -m qorgan.api             # http://localhost:8000
-#    or the Streamlit prototype:
+#    or the Streamlit dev harness (needs `pip install -e ".[harness]"`; not the product):
 streamlit run app/streamlit_app.py
 ```
 
@@ -52,7 +52,7 @@ route accepts audio; call content leaves the device only on an explicit report.
 **No model, no key?** The app still runs — it degrades to a deterministic `mock` backend
 so the demo scripts work out of the box.
 
-**Live microphone (optional):** `pip install -e ".[live]"` (vosk, streamlit-webrtc,
+**Harness microphone (optional):** `pip install -e ".[harness,live]"` (vosk, streamlit-webrtc,
 sounddevice). First use downloads two small Vosk models (~100 MB) to `~/.cache/vosk`.
 Put the call on speakerphone near the device. Without the extra, the Live tab's replay
 mode still works and the mic modes show an install hint.
@@ -167,13 +167,16 @@ invariants are enforced by `tests/test_architecture.py` (ADRs D12–D14).
 
 ## Analyst dashboard exposure
 
-`admin.html` shows organization aggregates and excerpts; reading a whole call is an
-explicit **Open full transcript (audited)** action that the server records in
-`data/processed/audit_log.jsonl` (`analyst · case.open · incident:<id>`), naming the analyst
-from `?analyst=<id>` (ADR D20). Analysts can **confirm / dismiss / merge** an organization;
-the verdict is stored as an append-only event keyed by the operation's numbers, so it
-survives re-clustering (a dismissed operation drops to 20 % priority; ADR D24). The admin
-routes carry no authentication in this demo — put SSO in front of them in a deployment.
+`admin.html` asks for an **analyst key** (`QORGAN_ANALYST_KEYS="id:secret:role,..."`; unset =
+the console is closed) and then shows organization aggregates and excerpts; the identity in
+every log line comes from the key. Reading a whole call needs the **investigator** role and a
+stated purpose (`pattern_review` / `citizen_request` / `partner_request`); the server writes
+`analyst · case.open · incident:<id> · purpose` to `data/processed/audit_log.jsonl` before it
+answers (ADR D20). That log is a keyed hash chain (`QORGAN_AUDIT_CHAIN_KEY`):
+`python -m qorgan.audit verify` names the first edited, deleted or reordered entry. Analysts
+can **confirm / dismiss / merge** an organization; the verdict is stored as an append-only
+event keyed by the operation's numbers, so it survives re-clustering (a dismissed operation
+drops to 20 % priority; ADR D24). Per-person keys are a stand-in for SSO in a deployment.
 
 ## Partner API (`/api/v1`) — consented reports in, aggregates out
 

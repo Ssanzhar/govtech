@@ -8,6 +8,10 @@
 4. The partner ingress (`/api/v1`, PLAN C5) is a consented ingress, not a bulk feed: it
    is authenticated, requires a `consent_basis`, refuses unscrubbed transcripts and is
    quota-bound -- and, like the citizen ingress, cannot reach the analytics write paths.
+5. The analyst console (`/api/admin`) is not a browsing tool: every route requires an
+   authenticated analyst (identity from the credential only), it is closed when no analyst
+   credentials or no audit-chain key are configured, and any route whose response carries a
+   full transcript requires the investigator role.
 
 These are AST/route-table checks, so they stay green regardless of which backend or model
 is installed.
@@ -20,7 +24,7 @@ import os
 from pathlib import Path
 
 import pytest
-from fastapi.routing import APIWebSocketRoute
+from fastapi.routing import APIRoute, APIWebSocketRoute
 from fastapi.testclient import TestClient
 
 from qorgan.api import app
@@ -86,6 +90,46 @@ def test_citizen_path_modules_cannot_reach_analytics_write_paths(module_path: Pa
         or (module == "qorgan.analytics" and name in ("store", "pipeline", "cluster"))
     ]
     assert not offending, f"{module_path.name} imports analytics write paths: {offending}"
+
+
+# Every route that accepts a request body or changes state, by name. Adding one is an
+# architecture change: it must be argued here, not slipped in (2026-09-26: the retired
+# `/api/live/session/*` held call content in server memory and its `/report` was a second,
+# consent-free citizen ingress; nothing noticed because no test listed the write routes).
+_WRITE_ROUTES = {
+    ("POST", "/api/analyze"),                                    # stateless (invariant 2)
+    ("POST", "/api/reports"),                                    # THE citizen ingress
+    ("DELETE", "/api/reports/{receipt_id}"),
+    ("POST", "/api/v1/reports"),                                 # the consented partner ingress
+    ("DELETE", "/api/v1/reports/{receipt_id}"),
+    ("POST", "/api/admin/organizations/{org_id}/feedback"),      # analyst, audited
+    ("POST", "/api/admin/incidents/{incident_id}/open"),         # investigator, audited
+    ("POST", "/api/admin/ingest"),                               # analyst, audited
+}
+_REPORT_CREATING_ROUTES = {("POST", "/api/reports"), ("POST", "/api/v1/reports")}
+
+
+def _write_routes() -> set[tuple[str, str]]:
+    return {
+        (method, route.path)
+        for route in _all_routes(app.routes)
+        if isinstance(route, APIRoute)
+        for method in route.methods
+        if method not in ("GET", "HEAD", "OPTIONS")
+    }
+
+
+def test_every_write_route_is_named_in_the_architecture():
+    assert _write_routes() == _WRITE_ROUTES
+
+
+def test_only_the_two_consented_ingresses_create_reports():
+    creators = {
+        (method, path) for method, path in _write_routes()
+        if method == "POST" and path.rstrip("/").endswith("/reports")
+    }
+    assert creators == _REPORT_CREATING_ROUTES
+    assert not any(path.startswith("/api/live") for _, path in _write_routes()), "live call content stays on the device"
 
 
 # --- 2. /api/analyze is stateless -------------------------------------------------------------
@@ -183,3 +227,56 @@ def test_partner_ingress_is_closed_by_default_and_never_a_bulk_feed(tmp_path, mo
     assert client.post("/api/v1/reports", json={**report, "partner_reference": "a"}, headers=headers).status_code == 201
     assert client.post("/api/v1/reports", json={**report, "partner_reference": "b"}, headers=headers).status_code == 429  # quota
     assert "101 20 30" not in (tmp_path / "processed" / "citizen_reports.jsonl").read_text(encoding="utf-8")
+
+
+# --- 5. the analyst console is authenticated; a whole call needs the investigator role -------
+
+from qorgan.api_admin_auth import require_analyst, require_investigator  # noqa: E402
+
+
+def _admin_routes() -> list[APIRoute]:
+    return [r for r in _all_routes(app.routes) if isinstance(r, APIRoute) and r.path.startswith("/api/admin")]
+
+
+def _dependency_calls(dependant) -> set:
+    calls = set()
+    for sub in dependant.dependencies:
+        calls.add(sub.call)
+        calls |= _dependency_calls(sub)
+    return calls
+
+
+def _carries_a_transcript(route: APIRoute) -> bool:
+    fields = getattr(route.response_model, "model_fields", {}) or {}
+    return "transcript" in fields
+
+
+def test_every_admin_route_requires_an_authenticated_analyst():
+    routes = _admin_routes()
+    assert len(routes) >= 8, [r.path for r in routes]  # guard against the check silently seeing nothing
+    unguarded = [f"{sorted(r.methods)} {r.path}" for r in routes if require_analyst not in _dependency_calls(r.dependant)]
+    assert unguarded == [], f"admin routes without the analyst-auth dependency: {unguarded}"
+
+
+def test_a_full_transcript_is_only_served_to_the_investigator_role():
+    revealing = [r for r in _admin_routes() if _carries_a_transcript(r)]
+    assert [r.path for r in revealing] == ["/api/admin/incidents/{incident_id}/open"]
+    for route in revealing:
+        assert require_investigator in _dependency_calls(route.dependant), route.path
+
+
+def test_admin_routes_fail_closed_at_runtime(tmp_path, monkeypatch):
+    """Behavioural twin of the structural check: every admin route, with its path parameters
+    filled in, answers 401 without a key and 503 when the console is not configured."""
+    monkeypatch.setenv("QORGAN_DATA_DIR", str(tmp_path))
+    client = TestClient(app)
+    for route in _admin_routes():
+        path = route.path.replace("{org_id}", "org_0").replace("{incident_id}", "i1")
+        for method in route.methods:
+            assert client.request(method, path).status_code == 401, f"{method} {path}"
+            assert client.request(method, path, headers={"X-Analyst-Id": "someone"}).status_code == 401
+    monkeypatch.setenv("QORGAN_ANALYST_KEYS", "")
+    for route in _admin_routes():
+        path = route.path.replace("{org_id}", "org_0").replace("{incident_id}", "i1")
+        for method in route.methods:
+            assert client.request(method, path).status_code == 503, f"{method} {path}"

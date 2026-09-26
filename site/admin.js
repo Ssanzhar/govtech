@@ -1,8 +1,11 @@
 /* Qorğan admin dashboard — overview, priority queue with sort/search/filter, drill-down
    with a searchable calls table, and per-call on-demand model analysis (the rank graph:
    GET /api/admin/incidents/{id}/analysis — verdict, tags, trigger phrases, an excerpt).
-   The full transcript is shown only after an explicit "open case" (POST .../open), which
-   the server records in its audit log (PLAN C4). All list management is client-side. */
+   The full transcript is shown only after an explicit "open case" (POST .../open) by an
+   investigator with a stated purpose, which the server writes to its tamper-evident audit
+   log before answering (PLAN C4). Every request carries the analyst key (X-Analyst-Key);
+   the key lives in sessionStorage (this tab only) and a 401 returns to the sign-in panel.
+   All list management is client-side. */
 (() => {
   "use strict";
 
@@ -22,7 +25,17 @@
   const modalDot = document.getElementById("admModalDot");
   const modalClose = document.getElementById("admModalClose");
   const modalBackdrop = document.getElementById("admModalBackdrop");
-  if (!kpisEl || !queueWrap || !ddEl || !modal) return;
+  const consoleEl = document.getElementById("admConsole");
+  const toolbarEl = document.getElementById("admToolbar");
+  const sessionEl = document.getElementById("admSession");
+  const whoEl = document.getElementById("admWho");
+  const signOutBtn = document.getElementById("admSignOut");
+  const signinSection = document.getElementById("admSignin");
+  const signinForm = document.getElementById("admSigninForm");
+  const keyInput = document.getElementById("admKey");
+  const signinBtn = document.getElementById("admSigninBtn");
+  const signinNote = document.getElementById("admSigninNote");
+  if (!kpisEl || !queueWrap || !ddEl || !modal || !consoleEl || !signinForm) return;
 
   const SEED_HINT =
     "Run <code>python scripts/demo_seed.py</code> then " +
@@ -60,6 +73,49 @@
   let callQuery = "";
   let expandedCall = null;
   const analysisCache = new Map(); // `${incidentId}|${locale}` → analysis payload
+  const openNotes = new Map(); // incidentId → {tone, text} shown under the open-case control
+
+  // ── session: the analyst key lives in sessionStorage (this tab only), never localStorage ──
+
+  const KEY_STORE = "qorgan.analystKey";
+  const PURPOSE_LABELS = {
+    pattern_review: "pattern review — confirm or dismiss this scheme or verdict",
+    citizen_request: "citizen request — the reporter asked about their report",
+    partner_request: "partner request — a bank or Anti-Fraud Center case query",
+  };
+  const readStoredKey = () => {
+    try { return sessionStorage.getItem(KEY_STORE) || ""; } catch { return ""; }
+  };
+  const storeKey = (k) => {
+    try { sessionStorage.setItem(KEY_STORE, k); } catch { /* storage blocked: memory only */ }
+  };
+  const forgetKey = () => {
+    try { sessionStorage.removeItem(KEY_STORE); } catch { /* nothing was stored */ }
+  };
+  let analystKey = readStoredKey();
+  let me = null; // {id, role, can_open_cases, open_purposes} from GET /api/admin/session
+
+  class AuthError extends Error {}
+
+  // Every console request carries the key; a 401 ends the session (key revoked or rotated).
+  const api = async (path, opts = {}) => {
+    const headers = { ...(opts.headers || {}), "X-Analyst-Key": analystKey };
+    const res = await fetch(path, { ...opts, headers, cache: "no-store" });
+    if (res.status === 401) {
+      endSession("Your key is no longer accepted — sign in again.", "error");
+      throw new AuthError("signed out");
+    }
+    return res;
+  };
+
+  const errorDetail = async (res) => {
+    try {
+      const body = await res.json();
+      return typeof body.detail === "string" ? body.detail : `API returned ${res.status}`;
+    } catch {
+      return `API returned ${res.status}`;
+    }
+  };
 
   const esc = (s) =>
     String(s ?? "").replace(/[&<>"']/g, (ch) =>
@@ -243,7 +299,7 @@
         ? `<label class="dd-fb-merge">merge into <select id="ddMergeTarget">${mergeOptions}</select>` +
           `<button type="button" class="btn dd-fb-btn" data-fb="merge">Merge</button></label>`
         : "") +
-      `<span class="dd-fb-note tw-dim">logged with your analyst id; a dismissed operation drops to 20 % priority</span>` +
+      `<span class="dd-fb-note tw-dim">logged as ${esc(me ? me.id : "")}; a dismissed operation drops to 20 % priority</span>` +
       `</div>`;
 
     modalTitle.textContent = `organization · ${detail.id}`;
@@ -313,16 +369,50 @@
         `&nbsp;&middot;&nbsp;backend ${esc(a.backend)}${a.fallback ? " (fallback)" : ""}</div>` +
         `<div class="dd-rank">${rank}</div>` +
         (a.transcript
-          ? `<div class="dd-section-label mono">full transcript &middot; trigger phrases &middot; <span class="tone-moss">opened, logged</span></div>` +
+          ? `<div class="dd-section-label mono">full transcript &middot; trigger phrases &middot; ` +
+            `<span class="tone-moss">opened by ${esc(a.opened_by || "")} &middot; ${esc(a.opened_for || "")} &middot; logged</span></div>` +
             `<div class="dd-script dd-analysis-script">${highlightSpans(a.transcript, a.spans)}</div>`
           : `<div class="dd-section-label mono">excerpt &middot; trigger phrases</div>` +
             `<div class="dd-script dd-analysis-script">${esc(a.excerpt)}</div>` +
-            `<div class="dd-spans">${a.spans.map((sp) => `<mark>${esc(sp.text)}</mark>`).join(" ") || '<span class="tw-dim">no trigger phrases</span>'}</div>` +
-            `<button type="button" class="btn dd-open-btn" data-open="${esc(a.incident_id)}">Open full transcript (audited)</button>`) +
+            `<div class="dd-spans">${a.spans.map((sp) => `<mark>${esc(sp.text)}</mark>`).join(" ") || '<span class="tw-dim">no trigger phrases in the excerpt</span>'}</div>` +
+            (a.withheld_spans
+              ? `<p class="dd-withheld mono">${a.withheld_spans} more trigger phrase${a.withheld_spans > 1 ? "s" : ""} beyond the excerpt &mdash; counted, not quoted, until the case is opened</p>`
+              : "") +
+            openControls(a.incident_id)) +
         `<p class="dd-analysis-reason">${esc(a.reason)}</p>` +
         `<p class="dd-analysis-caveat mono">${esc(a.caveat)}</p>`;
     }
     return `<tr class="dd-analysis-tr"><td colspan="4"><div class="dd-analysis">${inner}</div></td></tr>`;
+  };
+
+  // Investigator-only, purpose first: the button stays disabled until a purpose is chosen,
+  // and for the analyst role the whole control is visibly locked with the reason.
+  const openControls = (incidentId) => {
+    const allowed = Boolean(me && me.can_open_cases);
+    const who = me ? `<b>${esc(me.id)}</b> (${esc(me.role)})` : "";
+    const purposes = ((me && me.open_purposes) || [])
+      .map((p) => `<option value="${esc(p)}">${esc(PURPOSE_LABELS[p] || p)}</option>`)
+      .join("");
+    const locked = allowed ? "" : " disabled";
+    const fine = allowed
+      ? `Logged as ${who} with this incident and the purpose you choose. The note must not carry numbers or call text.`
+      : `Opening a full transcript needs the <b>investigator</b> role. You are signed in as ${who}; ` +
+        `the excerpt and trigger phrases above are what your role sees.`;
+    const msg = openNotes.get(incidentId);
+    return (
+      `<div class="dd-open${allowed ? "" : " is-locked"}">` +
+      `<div class="dd-section-label mono">open the full transcript &middot; audited</div>` +
+      `<div class="dd-open-row">` +
+      `<select class="dd-open-purpose mono" aria-label="Purpose for opening the full transcript"${locked}>` +
+      `<option value="">choose a purpose…</option>${purposes}</select>` +
+      `<input class="dd-open-note mono" type="text" maxlength="160" aria-label="Note for the audit log (optional)" ` +
+      `placeholder="note (optional) — e.g. a ticket reference"${locked}>` +
+      `<button type="button" class="btn dd-open-btn" data-open="${esc(incidentId)}" disabled>Open full transcript</button>` +
+      `</div>` +
+      `<p class="dd-open-fine mono">${fine}</p>` +
+      (msg ? `<p class="dd-open-msg mono${msg.tone === "error" ? " is-error" : ""}" role="status">${esc(msg.text)}</p>` : "") +
+      `</div>`
+    );
   };
 
   const renderCalls = () => {
@@ -363,30 +453,43 @@
       if (tr.dataset.hasTranscript === "0") return; // nothing to analyse or open
       tr.addEventListener("click", () => expandCall(tr.dataset.incident));
     });
-    callsEl.querySelectorAll("button[data-open]").forEach((btn) => {
+    if (!(me && me.can_open_cases)) return; // locked control: nothing to wire
+    callsEl.querySelectorAll(".dd-open").forEach((box) => {
+      const purpose = box.querySelector(".dd-open-purpose");
+      const note = box.querySelector(".dd-open-note");
+      const btn = box.querySelector("button[data-open]");
+      purpose.addEventListener("change", () => {
+        btn.disabled = !purpose.value;
+      });
       btn.addEventListener("click", (ev) => {
         ev.stopPropagation();
-        openCase(btn.dataset.open);
+        openCase(btn.dataset.open, purpose.value, note.value);
       });
     });
   };
 
-  // The explicit, audited action (PLAN C4): the server returns the full transcript and
-  // writes an audit line naming the analyst (X-Analyst-Id, from the URL ?analyst=…).
-  const analystId = () => new URLSearchParams(location.search).get("analyst") || "";
-  const openCase = async (incidentId) => {
+  // The explicit, audited action (PLAN C4): investigator role + a stated purpose. The server
+  // writes the audit line (who, which incident, why) before it answers with the transcript;
+  // the identity comes from the key, never from anything this page claims.
+  const openCase = async (incidentId, purpose, note) => {
+    if (!purpose) return;
     const key = `${incidentId}|${locale()}`;
+    const body = { purpose };
+    if (note && note.trim()) body.note = note.trim();
     try {
-      const headers = { "Content-Type": "application/json" };
-      if (analystId()) headers["X-Analyst-Id"] = analystId();
-      const res = await fetch(
+      const res = await api(
         `/api/admin/incidents/${encodeURIComponent(incidentId)}/open?locale=${locale()}`,
-        { method: "POST", headers, body: "{}" }
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
       );
-      if (!res.ok) throw new Error(`API returned ${res.status}`);
-      analysisCache.set(key, await res.json());
+      if (!res.ok) {
+        openNotes.set(incidentId, { tone: "error", text: `not opened — ${await errorDetail(res)}` });
+      } else {
+        openNotes.delete(incidentId);
+        analysisCache.set(key, { ...(await res.json()), opened_by: me ? me.id : "", opened_for: purpose });
+      }
     } catch (e) {
-      analysisCache.set(key, { error: String(e.message || e) });
+      if (e instanceof AuthError) return;
+      openNotes.set(incidentId, { tone: "error", text: `not opened — ${e.message || e}` });
     }
     if (expandedCall === incidentId) renderCalls();
   };
@@ -404,12 +507,13 @@
     renderCalls(); // shows the scoring placeholder if not cached yet
     if (analysisCache.has(key)) return;
     try {
-      const res = await fetch(
+      const res = await api(
         `/api/admin/incidents/${encodeURIComponent(incidentId)}/analysis?locale=${locale()}`
       );
-      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      if (!res.ok) throw new Error(await errorDetail(res));
       analysisCache.set(key, await res.json());
     } catch (e) {
+      if (e instanceof AuthError) return;
       analysisCache.set(key, { error: String(e.message || e) });
     }
     if (expandedCall === incidentId) renderCalls();
@@ -427,17 +531,16 @@
       if (!target) return;
       body.target_org_id = target;
     }
-    const headers = { "Content-Type": "application/json" };
-    if (analystId()) headers["X-Analyst-Id"] = analystId();
     try {
-      const res = await fetch(`/api/admin/organizations/${encodeURIComponent(orgId)}/feedback?locale=${locale()}`, {
-        method: "POST", headers, body: JSON.stringify(body),
+      const res = await api(`/api/admin/organizations/${encodeURIComponent(orgId)}/feedback?locale=${locale()}`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      if (!res.ok) throw new Error(await errorDetail(res));
       const shown = await res.json();
       await load(); // the queue, KPIs and stats all change; re-read everything
       selectOrg(shown.id);
     } catch (e) {
+      if (e instanceof AuthError) return;
       ddEl.insertAdjacentHTML("afterbegin", `<div class="dd-loading">feedback failed — ${esc(e.message || e)}</div>`);
     }
   };
@@ -455,15 +558,16 @@
     modalDot.className = "p-dot";
     ddEl.innerHTML = '<div class="dd-loading">loading&hellip;</div>';
     try {
-      const res = await fetch(
+      const res = await api(
         `/api/admin/organizations/${encodeURIComponent(orgId)}?locale=${locale()}`
       );
-      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      if (!res.ok) throw new Error(await errorDetail(res));
       const body = await res.json();
       if (selectedId !== orgId || modal.hidden) return; // stale response — user moved on
       detail = body;
       renderDrilldown();
     } catch (e) {
+      if (e instanceof AuthError) return;
       ddEl.innerHTML =
         `<div class="dd-loading">Could not load this organization — ${esc(e.message || e)}</div>`;
     }
@@ -472,10 +576,11 @@
   const load = async () => {
     kpisEl.setAttribute("aria-busy", "true");
     analysisCache.clear(); // locale-dependent names; cheap to re-score on demand
+    openNotes.clear();
     closeModal();
     try {
-      const res = await fetch(`/api/admin/overview?locale=${locale()}`);
-      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      const res = await api(`/api/admin/overview?locale=${locale()}`);
+      if (!res.ok) throw new Error(await errorDetail(res));
       const body = await res.json();
 
       if (!body.available) {
@@ -493,6 +598,7 @@
       renderQueue();
       await loadStats();
     } catch (e) {
+      if (e instanceof AuthError) return;
       kpisEl.innerHTML = "";
       novelEl.innerHTML = "";
       statsSection.hidden = true;
@@ -509,7 +615,7 @@
   // Statistics are additive — a failure here must never take the dashboard down.
   const loadStats = async () => {
     try {
-      const res = await fetch(`/api/admin/stats?locale=${locale()}`);
+      const res = await api(`/api/admin/stats?locale=${locale()}`);
       if (!res.ok) throw new Error(`API returned ${res.status}`);
       renderStats(await res.json());
     } catch {
@@ -624,8 +730,8 @@
     ingestNote.className = "adm-note";
     ingestNote.textContent = "embedding new reports…";
     try {
-      const res = await fetch(`/api/admin/ingest?locale=${locale()}`, { method: "POST" });
-      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      const res = await api(`/api/admin/ingest?locale=${locale()}`, { method: "POST" });
+      if (!res.ok) throw new Error(await errorDetail(res));
       const body = await res.json();
       ingestNote.className = "adm-note is-success";
       if (!body.ingested) {
@@ -638,6 +744,7 @@
       }
       await load();
     } catch (e) {
+      if (e instanceof AuthError) return;
       ingestNote.className = "adm-note is-error";
       ingestNote.textContent = `ingest failed — ${e.message || e}`;
     } finally {
@@ -646,7 +753,92 @@
     }
   };
 
+  // ── sign-in / sign-out ─────────────────────────────────────────────────────────
+
+  const showSignin = (message = "", tone = "") => {
+    consoleEl.hidden = true;
+    toolbarEl.hidden = true;
+    sessionEl.hidden = true;
+    signinSection.hidden = false;
+    signinNote.className = `adm-note${tone ? ` is-${tone}` : ""}`;
+    signinNote.textContent = message;
+    keyInput.value = "";
+    keyInput.focus();
+  };
+
+  const showConsole = () => {
+    signinSection.hidden = true;
+    consoleEl.hidden = false;
+    toolbarEl.hidden = false;
+    sessionEl.hidden = false;
+    whoEl.innerHTML =
+      `signed in as <b>${esc(me.id)}</b> <span class="adm-role adm-role--${esc(me.role)}">${esc(me.role)}</span>` +
+      (me.can_open_cases ? "" : ' <span class="adm-who-note">aggregates &amp; excerpts; opening a transcript needs an investigator</span>');
+  };
+
+  // Forget the key and everything rendered with it.
+  const endSession = (message, tone) => {
+    analystKey = "";
+    me = null;
+    forgetKey();
+    analysisCache.clear();
+    openNotes.clear();
+    orgs = [];
+    detail = null;
+    closeModal();
+    kpisEl.innerHTML = "";
+    novelEl.innerHTML = "";
+    queueWrap.innerHTML = "";
+    statsEl.innerHTML = "";
+    statsSection.hidden = true;
+    queueCount.textContent = "";
+    ingestNote.textContent = "";
+    showSignin(message, tone);
+  };
+
+  // GET /api/admin/session checks the key and names who is signed in (an audited session start).
+  const startSession = async (key) => {
+    signinBtn.disabled = true;
+    signinNote.className = "adm-note";
+    signinNote.textContent = "checking the key…";
+    try {
+      const res = await fetch("/api/admin/session", { headers: { "X-Analyst-Key": key }, cache: "no-store" });
+      if (!res.ok) {
+        const why =
+          res.status === 401 ? "That key was not accepted."
+          : res.status === 429 ? "Too many failed attempts from this address — wait a minute."
+          : await errorDetail(res);
+        analystKey = "";
+        forgetKey();
+        showSignin(why, "error");
+        return;
+      }
+      me = await res.json();
+      analystKey = key;
+      storeKey(key);
+      showConsole();
+      await load();
+    } catch (e) {
+      analystKey = "";
+      showSignin(`Could not reach the server — ${e.message || e}. Serve the page through the API: python -m qorgan.api`, "error");
+    } finally {
+      signinBtn.disabled = false;
+    }
+  };
+
   // ── wiring ───────────────────────────────────────────────────────────────────
+
+  signinForm.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const key = keyInput.value.trim();
+    if (!key) {
+      showSignin("Paste the analyst key issued to you.", "error");
+      return;
+    }
+    startSession(key);
+  });
+  signOutBtn?.addEventListener("click", () =>
+    endSession("Signed out — the key was removed from this tab.", "success"));
 
   searchInput?.addEventListener("input", (ev) => {
     queueQuery = ev.target.value;
@@ -669,5 +861,6 @@
     if (ev.key === "Escape") closeModal();
   });
 
-  load();
+  if (analystKey) startSession(analystKey);
+  else showSignin();
 })();

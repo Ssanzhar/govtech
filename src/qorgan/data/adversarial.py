@@ -19,7 +19,7 @@ from pydantic import ValidationError
 
 from qorgan.classifier.cue_lexicon import CueLexicon
 from qorgan.data.build_corpus import scrub_dialogue
-from qorgan.data.schema import Dialogue, Label, Utterance
+from qorgan.data.schema import SCAM_RISK_THRESHOLD, Dialogue, Label, Utterance
 
 ADVERSARIAL_ID_PREFIX = "adv-"
 ADVERSARIAL_SPLIT = "adversarial"
@@ -37,7 +37,7 @@ _LEGIT_REGISTER = (
     "framed as the routine procedure itself.\n"
 )
 DEFAULT_MAX_ATTEMPTS = 3
-_TRUTH_THRESHOLD = 0.5
+_TRUTH_THRESHOLD = SCAM_RISK_THRESHOLD
 # Letters that exist in Kazakh Cyrillic but not in Russian: enough to tell the two apart
 # (a paraphrase that switched language would corrupt the per-language rows).
 _KAZAKH_LETTERS = frozenset("әғқңөұүһі")

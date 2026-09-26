@@ -14,6 +14,8 @@ the deterministic `mock` backend and says so in the response — the demo must n
 from __future__ import annotations
 
 import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
 
@@ -30,16 +32,34 @@ from qorgan.api_partner import router as partner_router
 from qorgan.api_partner_export import router as partner_export_router
 from qorgan.api_reports import router as reports_router
 from qorgan.classifier import predict
+from qorgan.cloud_tier import is_cloud, require_cloud_consent
 from qorgan.config import get_config
 from qorgan.explain.explainer import ExplainerError, explain
+from qorgan.reports.purge import PurgeSchedule
 
 _SITE_DIR = Path(os.environ.get("QORGAN_SITE_DIR", Path(__file__).resolve().parents[2] / "site"))
 _MAX_TRANSCRIPT_CHARS = 20_000
+
+@asynccontextmanager
+async def _lifespan(_: FastAPI) -> AsyncIterator[None]:
+    """Retention is the server's own job: purge at startup and every
+    `QORGAN_REPORT_PURGE_INTERVAL_HOURS` (0 = leave it to cron). Single worker (see Dockerfile)."""
+    cfg = get_config()
+    schedule = PurgeSchedule(cfg) if cfg.report_purge_interval_hours > 0 else None
+    if schedule is not None:
+        schedule.start()
+    try:
+        yield
+    finally:
+        if schedule is not None:
+            schedule.stop()
+
 
 app = FastAPI(
     title="qorgan api",
     description="Scam-pattern verdicts with grounded evidence. A human always decides.",
     version="0.1.0",
+    lifespan=_lifespan,
 )
 # Request hygiene for every route: bounded bodies, 422s that never echo the payload.
 app.add_middleware(BodySizeLimitMiddleware)
@@ -55,6 +75,9 @@ class AnalyzeRequest(BaseModel):
     transcript: str = Field(min_length=1, max_length=_MAX_TRANSCRIPT_CHARS)
     locale: Literal["ru", "kk"] = "ru"
     backend: str | None = None
+    # Only for the cloud second opinion (`llm`): the requester's explicit consent to sending the
+    # text to Google, outside Kazakhstan (`qorgan.cloud_tier`). Ignored by local backends.
+    cloud_consent: bool = False
 
 
 class TagOut(BaseModel):
@@ -102,9 +125,11 @@ def analyze(req: AnalyzeRequest) -> AnalyzeResponse:
         raise HTTPException(status_code=422, detail="transcript must not be blank")
 
     cfg = get_config()
+    if is_cloud(req.backend, cfg):
+        require_cloud_consent(cfg, consent=req.cloud_consent)
     fallback = False
-    try:
-        result = predict.score(req.transcript, backend=req.backend)
+    try:  # never cache: this route persists nothing, on any backend
+        result = predict.score(req.transcript, backend=req.backend, use_cache=False)
     except (predict.UnknownBackendError, ValueError):
         raise
     except Exception:  # configured backend unavailable here (weights/keys) — degrade honestly

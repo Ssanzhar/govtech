@@ -1,8 +1,8 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: **2026-09-21**. Current-state doc for anyone picking the project up. Read this,
+_Last updated: **2026-09-25**. Current-state doc for anyone picking the project up. Read this,
 then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECISIONS.md`
-(ADRs D11–D43), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
+(ADRs D11–D49), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
 kept as history._
 
 ## TL;DR (September 2026)
@@ -75,6 +75,79 @@ kept as history._
   receipt, digest + `+7 700 ***` on disk, raw number absent; delete → gone. Only network
   calls with call content: `POST /api/reports`, `DELETE /api/reports/{receipt}`. Model load
   ~3 s from localhost, ~0.6 s first inference (WASM/WebGPU).
+
+## 2026-09-25 — fresh-clone recheck + first improvement loop (branch `dev/loop`, uncommitted)
+- **Fresh clone was not self-deployable:** `deploy_bootstrap.py` probed/retrained the model
+  before downloading the int8 embedder it needs → ONNX `NO_SUCHFILE`, and the Docker build
+  runs the same script. Fixed: `ensure_embedder` runs first, head weights are copied after the
+  bundle (`ensure_web_weights`); `ensure_corpus` tops up missing files (now incl. `shift`)
+  without overwriting local splits. `tests/test_deploy_bootstrap.py`.
+- **Lean test env:** the suite no longer needs torch / transformers / streamlit / hdbscan to
+  collect — xlmr, Streamlit and hdbscan-overlay tests skip without them. Runtime set used:
+  pydantic, dotenv, pyyaml, pandas, numpy, scikit-learn, networkx, fastapi, uvicorn,
+  huggingface_hub, onnxruntime 1.21, tokenizers, num2words (+ pytest, httpx).
+- **Reproduced (server `onnx` proxy, threshold 0.59):** test 0.020 / 0.969 · authored 0.000 /
+  0.944 · ood 0.014 / 0.932 · **shift 0.030 / 0.424** (clean 0.000 / 0.424) — consistent with
+  the device headline within the documented proxy gap (D33).
+- **D44** report review (editable, consent-gated, redaction preview; Chrome e2e
+  `tests_js/tools/e2e_report_review.mjs`, `QORGAN_E2E_CHANNEL=chrome`). **D45** Cyrillic-glued
+  card/IIN redaction + pre-publish PII gate; the Hub's `ood.jsonl` still carries one
+  unscrubbed IIN until a maintainer re-runs `scripts/hf_upload.py`.
+- Tests: `pytest` 1132 passed / 10 skipped (lean env) · `npm test` 49 / 49.
+
+### 2026-09-25 (second pass) — Level-2 access control, a Kazakh/Russian citizen page, a lean runtime
+- **D46 analyst access:** `/api/admin` now needs a per-person key (`QORGAN_ANALYST_KEYS`) and
+  fails closed; a full transcript needs the `investigator` role, a purpose code and fits in 30
+  opens/hour; the excerpt view no longer leaks ~75 % of a call through its trigger phrases; the
+  audit log is an HMAC chain (`QORGAN_AUDIT_CHAIN_KEY`, `python -m qorgan.audit verify`). The
+  partner API is closed without the audit key too.
+- **D47 citizen page:** one ҚАЗ / РУС / ENG control drives all text; switching mid-call
+  re-renders advice, summary and review in place (the known wart is fixed); plain-language
+  copy with the "a human decides, the AI can be wrong" disclosure; a size notice before the
+  ~300 MB first download. **Kazakh strings awaiting native review** (all in `site/i18n.js`):
+  «динамик» for speakerphone (`hero.lede`, `mic.copy`); «Талдаушы кабинеті», «талдаушы
+  кезегінде», `report.intro`; «түбіртек нөмірі»; «құсбелгіні алып тастаңыз»;
+  `report.phone_help`; `report.consent` (also legal wording); «100-ден {score}», «Қоңырау ·
+  фразалар саны: {n}»; `band.*_desc`; the "how it works" steps; «Алғаш іске қосқанда», «Wi-Fi
+  арқылы жүктеген дұрыс»; `mic.reason_*`, the tagline, «Сапаны бағалау».
+- **D48 lean runtime:** torch / transformers / Streamlit / Gemini moved to extras; the Docker
+  image no longer installs torch; a test blocks the extras and scores a call without them.
+- **Manifest fixed:** `counts.*.positives` meant "not a hard negative", so `authored_heldout`
+  claimed 27 positives for 18 scams. Counts now carry `scam` / `legit` / `hard_negatives`
+  (`positives` kept, = `scam`); the 0.5 label cut is one constant (`schema.SCAM_RISK_THRESHOLD`)
+  instead of six copies. Local manifests recomputed from the unchanged split files; the Hub copy
+  updates on the next `scripts/hf_upload.py`.
+- **`docs/LEGAL_ASSESSMENT.md`** (new; not legal advice): data-flow inventory against KZ law
+  (PD Law 94-V as amended in 2025–26, AI Law 230-VIII, the 2026 Constitution, CPC, NBK
+  Resolution 54), with primary sources. It found paths the product story says do not exist —
+  `backend=llm` is caller-selectable on `/api/analyze`, `/api/live/session` and the admin
+  analysis (text to Gemini abroad, and the LLM cache writes verbatim phrases to disk);
+  `/api/live/session/*` holds transcripts in server memory and its `/report` has no consent
+  step; retention runs on the client-supplied timestamp and nothing schedules the purge;
+  spoken-word numbers (the on-device recogniser's output) escape the scrubber. These are the
+  next loop's work.
+- Repo hygiene: the in-repo `CLAUDE.md` (July sprint brief) was rewritten to the current state.
+- Tests: `pytest` 1204 passed / 10 skipped · `npm test` 60 / 60 · Chrome e2e: admin auth,
+  live i18n, report review all pass (re-run independently on a scratch copy of `data/`).
+
+### 2026-09-26 — closing the undeclared data paths (D49) + review fixes
+- **D49:** the cloud tier is off by default and needs per-request consent when on (never
+  cached, never for analysts); the server-side live-session API (a consent-free second ingress
+  holding transcripts in memory) is retired, and every write route is now named in the
+  architecture test; retention runs on the server's `received_at`, the client timestamp is
+  bounded, and the server purges at startup + daily; deleting a report also clears its traces
+  from analyst feedback; each report stores the version of the consent wording it was sent
+  under. New settings: `QORGAN_CLOUD_TIER`, `QORGAN_REPORT_PURGE_INTERVAL_HOURS`.
+- **Independent review** of D44–D48: no critical/high; both mediums fixed (partner API audits
+  before it stores/deletes; unchained audit lines are sealed only by an explicit
+  `python -m qorgan.audit seal`), one low fixed, two documented.
+- **HF cards drafted:** `docs/hf/MODEL_CARD.md`, `docs/hf/DATASET_CARD.md` (licence field
+  "undecided" until the maintainers choose one); not uploaded.
+- **Open, top of the list:** spoken-number redaction for microphone-mode reports (numbers as
+  words escape `scrub_text`); a licence; native Kazakh review of `site/i18n.js`; the legal
+  owner for `docs/LEGAL_ASSESSMENT.md` §6.
+- Tests: `pytest` 1214 passed / 10 skipped · `npm test` 60 / 60 · Chrome e2e: report review,
+  live i18n, admin auth pass on a scratch copy of `data/`.
 
 ## How to run (September)
 ```bash

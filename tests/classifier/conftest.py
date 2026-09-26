@@ -10,7 +10,6 @@ import re
 
 import numpy as np
 import pytest
-import torch
 
 _VOCAB_SIZE = 200
 _BOS, _PAD, _EOS = 0, 1, 2
@@ -62,6 +61,8 @@ class FakeTokenizer:
         if return_offsets_mapping:
             out["offset_mapping"] = offset_rows
         if return_tensors == "pt":
+            import torch
+
             out["input_ids"] = torch.tensor(out["input_ids"], dtype=torch.long)
             out["attention_mask"] = torch.tensor(out["attention_mask"], dtype=torch.long)
         elif isinstance(text, str):
@@ -71,7 +72,11 @@ class FakeTokenizer:
 
 
 def build_tiny_encoder():
-    from transformers import XLMRobertaConfig, XLMRobertaModel
+    # The xlmr backend is abandoned (eval_report); its smoke tests need the optional
+    # torch/transformers stack and skip without it so the lean install stays testable.
+    pytest.importorskip("torch")
+    transformers = pytest.importorskip("transformers")
+    XLMRobertaConfig, XLMRobertaModel = transformers.XLMRobertaConfig, transformers.XLMRobertaModel
 
     config = XLMRobertaConfig(
         vocab_size=_VOCAB_SIZE,

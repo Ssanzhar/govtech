@@ -135,14 +135,22 @@ def test_remove_report_rewrites_without_it_and_returns_it(tmp_path):
 
 
 def test_purge_expired_removes_only_reports_older_than_retention(tmp_path):
+    # Age is counted from when the SERVER received a report, never from the client's timestamp.
     path = tmp_path / "reports.jsonl"
-    old = _prepare(timestamp=NOW - timedelta(days=200))
-    fresh = _prepare(timestamp=NOW - timedelta(days=10))
+    old = _prepare(timestamp=NOW - timedelta(days=200), received_at=NOW - timedelta(days=200))
+    fresh = _prepare(timestamp=NOW - timedelta(days=10), received_at=NOW - timedelta(days=10))
     append_report(old, path)
     append_report(fresh, path)
     purged = purge_expired(path, retention_days=180, now=NOW)
     assert purged == [old]
     assert load_reports(path) == [fresh]
+
+
+def test_a_future_client_timestamp_cannot_make_a_report_immortal(tmp_path):
+    path = tmp_path / "reports.jsonl"
+    stale = _prepare(timestamp=NOW + timedelta(days=3650), received_at=NOW - timedelta(days=200))
+    append_report(stale, path)
+    assert purge_expired(path, retention_days=180, now=NOW) == [stale]
 
 
 def test_purge_rejects_non_positive_retention(tmp_path):

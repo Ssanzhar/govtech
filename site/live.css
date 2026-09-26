@@ -6,7 +6,7 @@
 .lv-stage-section{padding-top:clamp(3.5rem,8vh,6rem)}
 
 /* ── pipeline diagram (hero) — hairline signal chain, no arrows ── */
-.lv-pipeline{display:flex;align-items:flex-start;gap:.9rem;margin-top:1.8rem;max-width:44em}
+.lv-pipeline{display:flex;align-items:flex-start;gap:.9rem;margin-top:1.4rem;max-width:44em}
 .lv-stage{display:flex;flex-direction:column;align-items:center;gap:.55rem;flex:0 0 auto}
 .lv-glyph{
   width:24px;height:24px;stroke:var(--oxide);fill:none;
@@ -38,25 +38,25 @@
 }
 .lv-setup-row{display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;font-size:.8rem}
 .lv-field{
-  display:flex;align-items:center;gap:.6rem;
+  display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;max-width:100%;
   color:color-mix(in srgb,var(--paper) 60%,transparent);
 }
 .lv-field select{
-  font-family:var(--mono);font-size:.8rem;padding:.5rem .7rem;border-radius:8px;
+  font-family:var(--mono);font-size:.84rem;padding:.55rem .7rem;border-radius:8px;max-width:100%;min-width:0;
   border:1px solid var(--night-edge);background:var(--night);color:var(--paper);
 }
 .lv-script{
-  display:block;width:100%;margin-top:1rem;padding:.9rem 1rem;border-radius:8px;
+  display:block;width:100%;margin-top:.5rem;padding:.9rem 1rem;border-radius:8px;
   border:1px solid var(--night-edge);background:transparent;color:var(--paper);
   resize:vertical;min-height:7rem;font-size:.84rem;line-height:1.7;
 }
 .lv-script::placeholder{color:color-mix(in srgb,var(--paper) 34%,transparent)}
 .lv-script:focus-visible{outline:none;box-shadow:inset 0 0 0 1px var(--amber)}
 .lv-setup-actions{display:flex;align-items:center;gap:1rem;margin-top:1.1rem;flex-wrap:wrap}
-.lv-note{font-size:.76rem;color:color-mix(in srgb,var(--paper) 55%,transparent)}
+.lv-note{font-size:.8rem;line-height:1.6;color:color-mix(in srgb,var(--paper) 62%,transparent)}
 .lv-note.is-error{color:#E06A4C}
 .lv-mic-copy{
-  font-size:.78rem;line-height:1.8;
+  font-size:.84rem;line-height:1.8;
   color:color-mix(in srgb,var(--paper) 62%,transparent);max-width:44em;
 }
 
@@ -75,7 +75,7 @@
 }
 .lv-band-row{display:flex;align-items:center;gap:.8rem;margin-top:.9rem;flex-wrap:wrap}
 .lv-band-pill{
-  padding:.3rem .8rem;border-radius:999px;font-size:.72rem;letter-spacing:.06em;
+  padding:.35rem .85rem;border-radius:999px;font-size:.8rem;letter-spacing:.03em;line-height:1.45;
   border:1px solid var(--band-color,#67B98C);color:var(--band-color,#67B98C);
 }
 .band-low{--band-color:#67B98C}
@@ -125,9 +125,9 @@
 }
 .lv-summary-score{font-family:var(--serif);font-size:2.4rem;font-weight:560}
 .lv-summary-band{margin-top:.7rem;display:inline-block}
-.lv-summary-tags{margin-top:1rem}
-.lv-summary-actions{margin-top:1.1rem;padding-left:1.2rem}
-.lv-summary-actions li{margin-top:.4rem;font-size:.92rem;line-height:1.6}
+.lv-summary-tags{margin-top:.5rem}
+.lv-summary-actions{margin-top:.3rem;padding-left:1.2rem}
+.lv-summary-actions li{margin-top:.4rem;font-size:1rem;line-height:1.6}
 .lv-summary-note{
   margin-top:1.1rem;font-size:.82rem;
   color:color-mix(in srgb,var(--paper) 55%,transparent);
@@ -153,6 +153,14 @@
 .lv-report-note.is-success{color:#67B98C}
 .lv-report-note.is-error{color:#E06A4C}
 .lv-report-note a{color:inherit}
+.lv-report-form{margin-top:1rem}
+.lv-report-label{margin-top:1.1rem;color:color-mix(in srgb,var(--paper) 70%,transparent)}
+.lv-report-text{margin-top:.5rem;min-height:8rem}
+.lv-report-tactics{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem}
+.lv-report-tactic{cursor:pointer}
+.lv-report-tactic input{margin-right:.4rem;accent-color:var(--amber)}
+.lv-report-consent{display:flex;gap:.6rem;align-items:flex-start;margin-top:1.1rem;line-height:1.6;cursor:pointer}
+.lv-report-consent input{margin-top:.3rem;accent-color:var(--amber)}
 
 @media (max-width:38rem){
   .lv-setup-row{flex-direction:column;align-items:flex-start}
@@ -160,3 +168,138 @@
 }
 
 .lv-stored { white-space: pre-wrap; max-height: 12rem; overflow: auto; margin: .5rem 0; padding: .5rem .75rem; font-size: .8rem; border: 1px solid currentColor; opacity: .85; }
+
+/* ── language, citizen copy and accessibility (live page in kk / ru / en) ── */
+
+/* Fraunces has no Cyrillic; PT Serif (loaded in live.html) covers Russian and Kazakh letters,
+   so Cyrillic words never fall back glyph-by-glyph into a system serif. */
+:root{--serif:"Fraunces","PT Serif",Georgia,serif}
+
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+/* header language switch — one control for the whole page */
+.lang-switch{
+  display:flex;gap:.15rem;padding:.2rem;border:1px solid var(--hairline);border-radius:999px;
+  background:color-mix(in srgb,var(--paper) 60%,#fff);
+}
+.lang-opt{
+  position:relative;display:inline-flex;align-items:center;justify-content:center;
+  min-width:2.9rem;min-height:2.3rem;padding:0 .7rem;border-radius:999px;cursor:pointer;
+  font-size:.76rem;letter-spacing:.06em;color:var(--ink-soft);transition:color .15s ease,background .15s ease;
+}
+.lang-opt input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.lang-opt:hover{color:var(--ink)}
+.lang-opt:has(input:checked){background:var(--ink);color:var(--paper)}
+.lang-opt:has(input:focus-visible){outline:2px solid var(--oxide);outline-offset:2px}
+
+/* hero promises: the three things a citizen must know before starting */
+.lv-promises{
+  list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:1.6rem 2.2rem;
+  margin-top:2.4rem;padding-top:1.9rem;border-top:1px solid var(--hairline);
+}
+.lv-promise{display:flex;gap:.85rem;align-items:flex-start}
+.lv-promise .lv-glyph{flex:0 0 auto;margin-top:.15rem}
+.lv-promise-title{font-weight:600;font-size:1.06rem;line-height:1.35}
+.lv-promise-body{
+  margin-top:.4rem;font-size:.97rem;line-height:1.62;
+  color:color-mix(in srgb,var(--ink) 80%,var(--paper));
+}
+
+/* "how it works" keeps the technical detail off the main path */
+.lv-how{margin-top:2rem;border:1px solid var(--hairline);border-radius:10px;padding:0 1.2rem}
+.lv-how summary{
+  cursor:pointer;padding:.95rem 0;font-size:.82rem;letter-spacing:.03em;color:var(--ink-soft);
+}
+.lv-how summary:hover{color:var(--ink)}
+.lv-how[open] summary{border-bottom:1px solid var(--hairline)}
+.lv-how-steps{
+  margin:1.4rem 0 1.4rem 1.3rem;font-size:.95rem;line-height:1.65;
+  color:color-mix(in srgb,var(--ink) 80%,var(--paper));
+}
+.lv-how-steps li+li{margin-top:.55rem}
+
+/* setup: script label, mode note, one-time download disclosure */
+.lv-script-label{
+  display:block;margin-top:1.1rem;font-size:.8rem;
+  color:color-mix(in srgb,var(--paper) 66%,transparent);
+}
+.lv-mode-note{margin-top:.8rem}
+.lv-disclosure{
+  display:flex;gap:.6rem;align-items:flex-start;margin-top:1rem;
+  font-size:.82rem;line-height:1.65;color:color-mix(in srgb,var(--paper) 78%,transparent);
+}
+.lv-disclosure[hidden]{display:none}
+.lv-disclosure::before{
+  content:"";flex:0 0 auto;width:1.05rem;height:1.05rem;margin-top:.2rem;background:var(--amber);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3.5v11.5m0 0-4.5-4.5M12 15l4.5-4.5M4.5 20h15' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3.5v11.5m0 0-4.5-4.5M12 15l4.5-4.5M4.5 20h15' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+
+/* live panel: meter label, readable advice, content-language note */
+.lv-meter-label{
+  font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.55rem;
+  color:color-mix(in srgb,var(--paper) 55%,transparent);
+}
+.lv-tags .tw-tag{line-height:1.45;overflow-wrap:anywhere}
+.lv-tags:not(:empty){margin-top:.8rem}
+.lv-advice-title{
+  font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);
+}
+.lv-advice-text{
+  margin-top:.35rem;font-family:var(--serif);font-size:1.1rem;line-height:1.55;color:var(--paper);
+}
+.lv-fallback{margin-top:.8rem;font-size:.74rem;color:color-mix(in srgb,var(--paper) 50%,transparent)}
+.lv-fallback[hidden]{display:none}
+.lv-line-meta{font-size:.72rem;color:color-mix(in srgb,var(--paper) 45%,transparent);white-space:nowrap}
+
+/* summary */
+.lv-summary-label{
+  margin-top:1.3rem;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--paper) 50%,transparent);
+}
+.lv-summary-reason,.lv-summary-tip{
+  margin-top:.4rem;font-size:1rem;line-height:1.6;color:color-mix(in srgb,var(--paper) 88%,transparent);
+}
+
+/* report review */
+.lv-report-fieldset{border:0;margin:0;padding:0;min-width:0}
+.lv-report-fieldset legend{padding:0;float:left;width:100%}
+.lv-report-fieldset legend + .lv-report-tactics{clear:both}
+.lv-report-label{display:block}
+.lv-report-help{
+  margin-top:.5rem;font-size:.76rem;line-height:1.6;color:color-mix(in srgb,var(--paper) 55%,transparent);
+}
+.lv-report-note p + pre, .lv-report-note pre + p{margin-top:.4rem}
+
+/* `.btn-ghost` sets no background, so on a <button> the UA's light `buttonface` showed through
+   and hid the white label ("Review report", "End call"). */
+.lv-stage-panel button.btn-ghost{background:transparent}
+.lv-stage-panel button.btn-ghost:hover{background:color-mix(in srgb,var(--paper) 8%,transparent)}
+
+/* focus rings that read on the dark card */
+.try-panel :focus-visible{outline-color:var(--amber)}
+.tw-radio:has(input:focus-visible),
+.lv-report-tactic:has(input:focus-visible),
+.lv-report-consent:has(input:focus-visible){outline:2px solid var(--amber);outline-offset:2px}
+
+@media (max-width:52rem){
+  .lv-promises{grid-template-columns:1fr;gap:1.3rem}
+}
+.lv-panel .p-right{white-space:nowrap}
+.foot-links{flex-wrap:wrap;gap:.6rem 1.6rem}
+.foot-links a{white-space:nowrap}
+
+@media (max-width:38rem){
+  .lv-nav{gap:1rem}
+  /* wrapped chips read better as soft rectangles than as stretched capsules */
+  .lv-band-pill,.lv-tags .tw-tag,.lv-report-tactic{border-radius:12px}
+  .lv-stage-section{padding-inline:.6rem}
+  .lv-stage-panel{padding:1.8rem 1.1rem}
+  .lv-setup{padding:1rem}
+  .lv-body{padding:1rem}
+  .lv-summary{padding:1.3rem 1.1rem}
+  .lv-how{padding:0 .9rem}
+}

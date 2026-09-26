@@ -28,7 +28,10 @@ def stored_report(
     timestamp: datetime = datetime(2026, 7, 15, 10, 0, tzinfo=UTC),
     risk_score: float = 84.0,
     receipt_id: str | None = None,
+    received_at: datetime | None = None,
+    consent_version: str | None = None,
 ) -> StoredReport:
+    """A minimised report; received (server clock) when it happened unless told otherwise."""
     return prepare_report(
         transcript=transcript,
         phone_number=number,
@@ -38,4 +41,6 @@ def stored_report(
         risk_score=risk_score,
         hmac_key=TEST_HMAC_KEY,
         receipt_id=receipt_id,
+        received_at=received_at or timestamp,
+        consent_version=consent_version,
     )

@@ -1,40 +1,5 @@
-# Qorğan — 1-week web prototype. Loose lower bounds; pin exact versions after first install.
-# Python 3.11+
-
-# --- Core / config ---
-pydantic>=2.7
-python-dotenv>=1.0
-pyyaml>=6.0
-pandas>=2.2
-numpy>=1.26
-
-# --- LLM (synthetic data gen + LLM classifier baseline/fallback) ---
-google-genai>=1.0
-
-# --- Classifier (fine-tuned XLM-R) + attribution ---
-torch>=2.2
-transformers>=4.44
-datasets>=2.20
-scikit-learn>=1.5          # class weighting, calibration, IsolationForest, metrics
-captum>=0.7                # integrated gradients / attribution
-
-# --- Level 2 analytics ---
-sentence-transformers>=3.0 # BGE-M3 / multilingual-e5 embeddings
-hdbscan>=0.8.36            # optional text-cluster overlay (off by default; see docs/eval_report.md)
-networkx>=3.3              # phone-number co-occurrence graph (primary org link)
-# NOTE: faiss-cpu removed -- it bundles its own libomp.dylib and segfaults alongside
-# torch's on macOS; the incident store uses numpy cosine instead (analytics/store.py).
-
-# --- ASR (offline, demo clips only) ---
-faster-whisper>=1.0
-# vosk>=0.3.45             # optional: reuse team's Kazakh Vosk stack
-
-# --- Demo app / API ---
-streamlit>=1.49
-fastapi>=0.111             # optional thin API
-uvicorn>=0.30
-
-# --- Dev / test ---
-pytest>=8.2
-pytest-cov>=5.0
-ruff>=0.5
+# Dependencies live in pyproject.toml only. This file exists for tools that expect it.
+#   runtime (server, bootstrap, retraining):  pip install -e .
+#   + tests:                                  pip install -e ".[dev]"
+#   everything (cloud tier, Streamlit harness, research paths):  pip install -e ".[all]"
+-e .

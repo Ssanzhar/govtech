@@ -6,14 +6,15 @@ already exists, so re-running (container restart, local dev) is a fast no-op.
 1. Corpus splits  ← Hugging Face dataset `sanzh-ts/govtech_ds` (scrubbed, publishable).
 2. Dialogue pool  ← concatenated splits stand in for the raw synthetic corpus (same
    `Dialogue` schema), which is deliberately unpublishable and absent on fresh clones.
-3. Linear model   ← Hugging Face `sanzh-ts/govtech`; if the bundle fails its lexicon
-   hash-validation (drift), retrain from the corpus — seconds on CPU.
-4. Level-2 seeds  ← `demo_seed` + `analytics.pipeline`, deterministic (seed 42). The
-   fabricated demo phone numbers live only in the running instance, never in git.
-5. Embedder      ← `Xenova/multilingual-e5-base` int8 ONNX (+ tokenizer) self-hosted under
+3. Embedder      ← `Xenova/multilingual-e5-base` int8 ONNX (+ tokenizer) self-hosted under
    site/models/ at the dir `QORGAN_EMBED_ONNX_DIR` names — the browser never contacts
-   huggingface.co and the server runs the same file (ADR D17); plus the exported head
-   weights (`site/models/weights.json`).
+   huggingface.co and the server runs the same file (ADR D17). Provisioned before steps
+   4–5 because the model probe, a fallback retrain and the seeding all embed through it.
+4. Linear model   ← Hugging Face `sanzh-ts/govtech`; if the bundle fails its lexicon
+   hash-validation (drift), retrain from the corpus — seconds on CPU.
+5. Level-2 seeds  ← `demo_seed` + `analytics.pipeline`, deterministic (seed 42). The
+   fabricated demo phone numbers live only in the running instance, never in git.
+   Then the bundle's exported head weights are copied to `site/models/weights.json`.
 6. Speech models   ← the small Vosk KK + RU models as USTAR tarballs under site/models/vosk/
    for the on-device microphone mode (PLAN B9, ADR D25); ~106 MB, from ~/.cache/vosk or
    the official alphacephei zips.
@@ -31,7 +32,7 @@ PROCESSED = REPO_ROOT / "data" / "processed"
 MODEL_DIR = REPO_ROOT / "models" / "linear"
 DATASET_REPO = "sanzh-ts/govtech_ds"
 MODEL_REPO = "sanzh-ts/govtech"
-SPLIT_FILES = ("train.jsonl", "val.jsonl", "test.jsonl", "authored_heldout.jsonl", "ood.jsonl", "adversarial.jsonl", "adversarial_legit.jsonl", "manifest.json")
+SPLIT_FILES = ("train.jsonl", "val.jsonl", "test.jsonl", "authored_heldout.jsonl", "ood.jsonl", "adversarial.jsonl", "adversarial_legit.jsonl", "shift.jsonl", "shift.manifest.json", "manifest.json")
 DIALOGUE_POOL_SPLITS = ("train.jsonl", "val.jsonl", "test.jsonl")
 # `real_heldout` was renamed `authored_heldout` (it is hand-written, not real calls --
 # PLAN_2026-09 A2); Hub snapshots published before that still use the old name.
@@ -54,20 +55,25 @@ def _run(args: list[str]) -> None:
 
 
 def ensure_corpus() -> None:
-    if (PROCESSED / "train.jsonl").exists():
+    missing = [name for name in SPLIT_FILES if not (PROCESSED / name).exists()]
+    if not missing:
         _log("corpus: present")
         return
     from huggingface_hub import snapshot_download
 
-    _log(f"corpus: downloading {DATASET_REPO}")
+    _log(f"corpus: downloading {DATASET_REPO} for {len(missing)} missing file(s)")
     snapshot = Path(snapshot_download(DATASET_REPO, repo_type="dataset"))
     PROCESSED.mkdir(parents=True, exist_ok=True)
-    for name in SPLIT_FILES:
+    # Only missing files are copied: a split rebuilt locally (build_corpus) is never
+    # overwritten by the published copy.
+    for name in missing:
         source = snapshot / name
         if not source.exists() and name in LEGACY_SPLIT_NAMES:
             source = snapshot / LEGACY_SPLIT_NAMES[name]  # dataset published before the rename
         if source.exists():
             (PROCESSED / name).write_bytes(source.read_bytes())
+        else:
+            _log(f"corpus: {name} is not in {DATASET_REPO}; skipped")
     _log("corpus: splits in place")
 
 
@@ -153,9 +159,10 @@ def _download_embedder(target: Path) -> None:
         destination.write_bytes(Path(hf_hub_download(EMBED_HUB_REPO, name)).read_bytes())
 
 
-def ensure_web_model() -> None:
+def ensure_embedder() -> None:
     """Self-host the int8 embedder at the dir the config names (server + browser load the
-    same files), and copy the exported head weights next to it."""
+    same files). Runs before anything embeds: the model probe, a fallback retrain and the
+    Level-2 seeding all go through this graph."""
     from qorgan.config import get_config
     from qorgan.web.client_config import web_model_id
 
@@ -168,6 +175,10 @@ def ensure_web_model() -> None:
         _log(f"web model: {model_id} in place")
     else:
         _log(f"web model: WARNING {target} is incomplete and is not the Hub graph -- nothing downloaded")
+
+
+def ensure_web_weights() -> None:
+    """Copy the bundle's exported head weights next to the embedder for the browser."""
     weights = MODEL_DIR / "web" / "weights.json"
     if weights.exists():
         (SITE_MODELS / "weights.json").write_bytes(weights.read_bytes())
@@ -199,9 +210,10 @@ def main() -> None:
     os.environ.setdefault("QORGAN_CLASSIFIER_BACKEND", "linear")
     ensure_corpus()
     ensure_dialogue_pool()
+    ensure_embedder()  # first: everything below embeds through it
     ensure_model()
     ensure_l2_seeds()
-    ensure_web_model()
+    ensure_web_weights()
     ensure_asr_models()
     _log("done — serve with: uvicorn qorgan.api:app --host 0.0.0.0 --port $PORT")
 

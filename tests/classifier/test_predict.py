@@ -71,6 +71,7 @@ def test_score_llm_backend_routes_to_llm_classifier(monkeypatch):
 
 
 def test_score_xlmr_backend_missing_model_raises_clear_error(monkeypatch, tmp_path):
+    pytest.importorskip("torch")  # the abandoned xlmr backend's optional stack
     # Point the bundle loader at an empty dir -> a clear, actionable error (not a crash).
     monkeypatch.setenv("QORGAN_XLMR_MODEL_DIR", str(tmp_path / "no_model"))
     predict._XLMR_BUNDLE_CACHE.clear()
