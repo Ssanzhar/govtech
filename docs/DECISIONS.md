@@ -1581,7 +1581,12 @@ browser, served weights):
 - The reducer and the `stop()` flush pass the handicap through.
 - `createDeviceAsr({optional})` skips an optional language whose model fails to load, so English
   can never take down kk/ru; a required one is still fatal.
-- Config: `QORGAN_VOSK_MODEL_EN` (`""` = off) and `QORGAN_ASR_EN_HANDICAP` (0.15).
+- Config: `QORGAN_VOSK_MODEL_EN` (`""` = off) and `QORGAN_ASR_EN_HANDICAP` (0.15). **Correction,
+  same day:** the page reads the *committed* `site/core/qorgan-config.json`, and nothing regenerates
+  it at build or start, so these variables take effect only after `python -m qorgan.web.client_config`
+  and a commit. A Railway variable alone changes nothing on the page. Setting `""` there only stops
+  the bootstrap from packaging the English tarball; the page then fails to load it and continues
+  with kk/ru (it is optional). To take English off prod: roll back on Railway, or revert.
   `qorgan-config.json` gains `asr.order` (kk, ru, en) because the writer sorts keys and English
   would otherwise be the first language and win ties; `asr.handicap` and `asr.optional` are
   added too.

@@ -101,8 +101,8 @@ Qorğan закрывает именно этот разрыв: он работа
 - **Правовая оценка** — `docs/LEGAL_ASSESSMENT.md`: разбор ЗРК «О персональных данных»
   (ст. 7, 9, 12, 16, 17, 19-1), Закона об ИИ № 230-VIII и Цифрового кодекса применительно
   к нашим потокам данных, со списком разрывов до пилота.
-- **Качество**: 1257 тестов Python + 60 JS (включая пословную сверку браузерного и
-  серверного расчёта на золотых фикстурах), 51 решение, номера D1–D54 (часть номеров пропущена) в `docs/DECISIONS.md`.
+- **Качество**: 1329 тестов Python + 78 JS (включая пословную сверку браузерного и
+  серверного расчёта на золотых фикстурах), 59 решений, номера D1–D62 (D11, D15, D16 пропущены) в `docs/DECISIONS.md`.
 
 ---
 
@@ -192,6 +192,25 @@ proposition, продумал product narrative. Сатжан провёл ау�
   один прогон, и одновременно менялись три вещи** (английские данные, подсказка `TeamViewer`,
   переобучение). Эффект не доказан; мы фиксируем совпадение, а не причину.
 
+### Неделя 5 (29 сентября – 1 октября) — развёртывание, браузеры, английский голос
+
+- **D55**: сервер считает ровно теми весами, что получает браузер; деплой больше не может
+  подменить модель.
+- **D56**: измерено, но не исправлено — собственное предупреждение банка «никому не
+  сообщайте код из СМС» может поднять шкалу; это пробел в данных, план исправления записан.
+- **D57, D60**: образ собирается и стартует на Railway (без кэш-монтирований BuildKit,
+  права тома); сервер начинает отвечать сразу, а демо-данные аналитика готовятся в фоне.
+- **D58–D59**: кабинет аналитика сам обновляется после деплоя; для демо доступ открыт без
+  ключа (переключатель, по умолчанию выключен, всё по-прежнему пишется в аудит).
+- **D61**: микрофон не включался в Safari и на iPhone (браузер блокировал загрузку
+  библиотеки с CDN) и в Firefox (обрыв скачивания модели через 30 с). Среда исполнения
+  модели теперь раздаётся с нашего сервера; проверено в Chromium, Firefox и WebKit.
+- **D62**: английский в голосовом режиме — третья модель распознавания в тестовом режиме.
+  Сначала измерен риск: без «форы» английская модель забирала 4,8 % казахских и русских
+  фраз; с форой 0,15 — 1,0 %, и все они в двух легитимных звонках (одна ложная тревога
+  ушла, новых нет). Английские мошеннические звонки через голос: 15 из 15 (без английской
+  модели — 6 из 15).
+
 ---
 
 ## 5. Что известно о слабых местах
@@ -228,7 +247,7 @@ proposition, продумал product narrative. Сатжан провёл ау�
 | Документ | О чём |
 |---|---|
 | [`docs/STATUS.md`](docs/STATUS.md) | Текущее состояние и передача дел — читать первым |
-| [`docs/DECISIONS.md`](docs/DECISIONS.md) | 51 решение, номера D1–D54 (D11, D15, D16 пропущены), с датами и измерениями |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | 59 решений, номера D1–D62 (D11, D15, D16 пропущены), с датами и измерениями |
 | [`docs/eval_report.md`](docs/eval_report.md) | Все числа с интервалами, источник истины |
 | [`docs/LEGAL_ASSESSMENT.md`](docs/LEGAL_ASSESSMENT.md) | Правовая оценка по законодательству РК |
 | [`docs/PLAN_2026-09.md`](docs/PLAN_2026-09.md) | План после вердикта совета |
@@ -327,7 +346,7 @@ QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.adversarial --split adver
 # punctuation, numerals as words), paired; --drop-latin is the worst case for «SMS»/«CVV»
 QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.asr_realism [--drop-latin]
 
-pytest -q        # 1,257 tests, all offline
+pytest -q        # 1,329 tests, all offline
 npm test         # JS core parity with Python + the DEVICE gate (browser embeddings, seconds)
 npm run gate:browser   # re-capture the browser's embeddings of the gate set (headless Chromium;
                        # `npx playwright install chromium` once) after a model/runtime change
@@ -363,13 +382,15 @@ Three points that belong with the numbers rather than in the table:
 ## Microphone mode (on-device speech recognition)
 
 On desktop browsers the live page can listen to a call directly: Kazakh and Russian Vosk
-models run in the browser (Vosklet/WASM, one instance each), the better hypothesis wins per
-utterance, and the transcript feeds the same on-device classifier and meter as replay —
+models — plus English in test mode, ranked with a 0.15 handicap so it cannot take over kk/ru
+speech (ADR D62) — run in the browser (Vosklet/WASM, one instance each), the best hypothesis
+wins per utterance, and the transcript feeds the same on-device classifier and meter as replay —
 **no audio or text leaves the device** (ADR D26). Requirements the server already meets:
-`/live.html` and `/core/*` are served cross-origin isolated (COOP/COEP) because the
+`/live.html`, `/core/*` and `/vendor/*` are served cross-origin isolated (COOP/COEP) because the
 recogniser needs SharedArrayBuffer; `python scripts/deploy_bootstrap.py` installs the
-hash-pinned Vosklet runtime under `site/vendor/` and packages the two model tarballs
-(~106 MB, downloaded once by the browser) — nothing is loaded live from a CDN. Phones are disabled until the
+hash-pinned Vosklet and transformers.js/onnxruntime-web runtimes under `site/vendor/` (ADR D61)
+and packages the three model tarballs (~147 MB, downloaded once by the browser) — nothing is
+loaded live from a CDN, which Safari would block under COEP. Phones are disabled until the
 Android bench passes (`scripts/spikes/vosklet_bench/`).
 
 ## Real calls (when they arrive)
