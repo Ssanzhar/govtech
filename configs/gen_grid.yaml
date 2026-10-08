@@ -1,0 +1,131 @@
+# Generation grid for Claude-written training data (ADR D63, `python -m qorgan.data.gen`).
+#
+# A run draws `size` cells deterministically (seed) from this grid. Every cell is one dialogue
+# to write: a scheme (scam) or a negative class, the role the caller claims, the register, a
+# victim persona, the outcome, the channel, the stages covered, an explicit length target, and
+# for scams how directly the ask is phrased. Quotas are exact (largest-remainder rounding);
+# every other axis is a seeded draw. Scheme / role / tactic definitions come from
+# data/taxonomy/{schemes,tactics}.yaml and data/lexicon/roles.yaml (names only -- the agent
+# that writes a chunk never sees any lexicon).
+
+version: 1
+seed: 20261008
+
+registers:          # share of the run; kk + ru = 60 %, mixed 25 %, en 15 %
+  kk: 0.30
+  ru: 0.30
+  mixed: 0.25
+  en: 0.15
+
+scam_share: 0.60    # negatives = 1 - scam_share (>= 35 % required by ADR D63)
+
+# Within the scam share: schemes listed here get `weight` x the base allocation (the
+# low-arousal administrative pretexts the cross-generator recall loss points at, D63 §why).
+scheme_weights:
+  parcel_code: 1.4
+  benefits_recalc_and_clinic: 1.4
+  mirror_loan: 1.4
+  egov_eds_renewal: 1.4
+  cash_declaration_courier: 1.4
+  erroneous_transfer: 1.4
+  job_task_advance_fee: 1.4
+  telecom_contract_expiry: 1.4
+  two_stage_escalation: 1.4
+
+# Within the negative share. The six v2 guardrail classes are the priority; the v1 classes keep
+# the old guardrails alive in the new generator's style.
+negative_weights:
+  legit_delivery_code: 1.5
+  legit_refund_request: 1.5
+  legit_employer_request: 1.5
+  legit_clinic_appointment: 1.5
+  legit_telecom_offer: 1.5
+  legit_utility_notice: 1.5
+  legit_bank_call: 1.5
+  legit_gov_service: 1.2
+  family_money_request: 1.2
+  delivery_notification: 0.6
+  general_conversation: 0.8
+
+# The role a legitimate caller of each negative class actually is (null = a private person).
+negative_roles:
+  legit_delivery_code: [courier_post]
+  legit_refund_request: [null]
+  legit_employer_request: [employer]
+  legit_clinic_appointment: [clinic]
+  legit_telecom_offer: [telecom_operator]
+  legit_utility_notice: [utility]
+  legit_bank_call: [bank_security]
+  legit_gov_service: [egov_con, tax_kgd, pension_social]
+  family_money_request: [relative_friend]
+  delivery_notification: [courier_post]
+  general_conversation: [null]
+
+# Share of hard negatives written to CONTAIN a phrase that sounds like a scam request but is
+# legitimate in context (a courier asks for the code shown in the recipient's own app at the
+# door; a bank says "never tell anyone the code"; HR asks to keep a reorganisation quiet).
+confusable_negative_share: 0.6
+
+# Share of scams whose key request is phrased INDIRECTLY (no stock wording; the ask is implied,
+# euphemised or spread over turns). Drives the lexicon-leak gate (>= 30 % cue-free positives).
+indirect_scam_share: 0.5
+
+# Optional tactics drawn per scam cell, on top of the scheme's `core` (uniform in range).
+optional_tactics: {min: 0, max: 2}
+
+length_targets:     # utterances; weights
+  5: 0.15
+  7: 0.25
+  9: 0.25
+  12: 0.20
+  15: 0.15
+
+outcomes:
+  complies: 0.30
+  refuses: 0.30
+  hangs_up: 0.20
+  calls_back: 0.20
+
+channels:
+  cold_call: 0.45
+  call_after_sms: 0.25
+  messenger_then_call: 0.15
+  second_call: 0.15
+
+# Which stages of the scheme the call shows (scams); negatives use `none`.
+stages:
+  hook_only: 0.15
+  hook_escalation: 0.25
+  full: 0.45
+  extraction_handoff: 0.15
+
+persona:
+  age_band: {"18-25": 0.2, "26-40": 0.3, "41-60": 0.3, "61+": 0.2}
+  region:
+    - Almaty
+    - Astana
+    - Shymkent
+    - Karaganda
+    - Aktobe
+    - Atyrau
+    - Pavlodar
+    - Kostanay
+    - Oskemen
+    - Turkestan region (village)
+    - Kyzylorda
+    - Taraz
+  occupation:
+    - student
+    - schoolteacher
+    - pensioner
+    - sole trader (ИП)
+    - office worker
+    - nurse
+    - taxi driver
+    - accountant
+    - stay-at-home parent
+    - IT specialist
+    - bazaar vendor
+    - oil-field shift worker
+    - civil servant
+    - small-business owner
