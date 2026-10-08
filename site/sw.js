@@ -7,7 +7,7 @@
    - /api/ and anything cross-origin: never cached, never intercepted -- the only network
      traffic with call content is the explicit report submit, and it must stay live. */
 
-const SHELL_CACHE = "qorgan-shell-v8"; // v8: large binaries bypass the worker (D61); v7: reload pages a cache-first worker rendered; v6: network-first shell (no mixed versions after a deploy); v5: landing in kk/ru/en (landing.js, i18n-dom.js); v4: live page in kk/ru/en; v3: report review (D44); v2: COOP/COEP (B9)
+const SHELL_CACHE = "qorgan-shell-v9"; // v9: word-level voice mode + GigaAM endpoint pass (D63); v8: large binaries bypass the worker (D61); v7: reload pages a cache-first worker rendered; v6: network-first shell (no mixed versions after a deploy); v5: landing in kk/ru/en (landing.js, i18n-dom.js); v4: live page in kk/ru/en; v3: report review (D44); v2: COOP/COEP (B9)
 // v2: the ONNX model is no longer kept here (transformers.js caches it itself); bumping the name
 // deletes the v1 copy (~278 MB) on activation.
 const MODEL_CACHE = "qorgan-models-v2";
@@ -18,11 +18,18 @@ const SHELL = [
   "/core/explain.js", "/core/recommend.js", "/core/meter.js", "/core/session.js",
   "/core/embedder.js", "/core/embed-worker.js", "/core/qorgan-config.json", "/core/device.js",
   "/core/summary.js", "/core/asr.js", "/core/scenarios.json", "/core/cue-match.js", "/core/report.js",
+  "/core/word-lid.js", "/core/span-vote.js", "/core/asr-wordlevel.json", "/core/endpoint.js",
+  "/core/endpoint-runtime.js", "/core/audio-ring.js", "/core/gigaam.js", "/core/gigaam-worker.js",
 ];
 
-// The on-device speech runtime (pinned, self-hosted by deploy_bootstrap); optional, so a
+// The on-device speech runtimes (pinned, self-hosted by deploy_bootstrap); optional, so a
 // deployment without microphone mode still installs the shell.
-const OPTIONAL_SHELL = ["/vendor/vosklet/Vosklet.js", "/vendor/vosklet/Vosklet.wasm"];
+const OPTIONAL_SHELL = [
+  "/vendor/vosklet/Vosklet.js", "/vendor/vosklet/Vosklet.wasm",
+  "/vendor/sherpa-onnx/1.13.8/sherpa-onnx-wasm-web.js", "/vendor/sherpa-onnx/1.13.8/sherpa-onnx-asr.js",
+];
+// The GigaAM worker keeps its 225 MB model in its own Cache API store (ADR D63): never deleted here.
+const OWN_MODEL_CACHE = /^qorgan-gigaam-/;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -49,7 +56,7 @@ self.addEventListener("activate", (event) => {
 });
 
 async function activate() {
-  const stale = (await caches.keys()).filter((k) => ![SHELL_CACHE, MODEL_CACHE].includes(k));
+  const stale = (await caches.keys()).filter((k) => ![SHELL_CACHE, MODEL_CACHE].includes(k) && !OWN_MODEL_CACHE.test(k));
   await Promise.all(stale.map((k) => caches.delete(k)));
   await self.clients.claim();
   return stale;
@@ -65,6 +72,7 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin || event.request.method !== "GET") return;
   if (url.pathname.startsWith("/api/")) return; // live, never cached
   if (url.pathname.startsWith("/models/vosk/")) return; // the speech recogniser keeps its own model cache
+  if (url.pathname.startsWith("/models/gigaam/")) return; // so does the GigaAM worker (ADR D63)
   // Large binaries go straight to the network (ADR D61). Firefox stops a service worker ~30 s into
   // an event and cuts off whatever it is still streaming: the 278 MB model failed with "Error in
   // input stream", and the 21 MB WASM runtimes can on a slow connection. transformers.js keeps

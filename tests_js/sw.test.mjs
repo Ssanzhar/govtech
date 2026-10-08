@@ -75,6 +75,29 @@ test("replacing a cache-first (v1-v5) shell reloads the open pages", async () =>
   assert.deepEqual(navigated, ["https://host/admin.html", "https://host/live.html"]);
 });
 
+// ADR D63: the GigaAM worker keeps the 225 MB endpoint model in its own Cache API store; a
+// service-worker update must not delete it (the citizen would download it again).
+test("activation keeps the GigaAM model cache", async () => {
+  const { deleted } = await activateWith(["qorgan-shell-v8", "qorgan-gigaam-gigaam-multilingual-220m-ctc-int8-v1"]);
+  assert.deepEqual(deleted, ["qorgan-shell-v8"]);
+});
+
+test("the GigaAM model and runtime binaries bypass the service worker", () => {
+  const handlers = {};
+  const self = { location: { origin: "https://host" }, addEventListener: (t, fn) => { handlers[t] = fn; }, skipWaiting() {}, clients: {} };
+  const source = readFileSync(join(REPO, "site", "sw.js"), "utf8");
+  const cache = { match: async () => undefined, put: async () => {} };
+  new Function("self", "caches", "fetch", "URL", source)(self, { open: async () => cache }, async () => ({ ok: false }), URL);
+  const intercepted = (path) => {
+    let responded = false;
+    handlers.fetch({ request: { url: `https://host${path}`, method: "GET", mode: "cors" }, respondWith: (p) => { responded = true; Promise.resolve(p).catch(() => {}); } });
+    return responded;
+  };
+  assert.equal(intercepted("/models/gigaam/gigaam-multilingual-220m-ctc-int8/model.int8.onnx"), false);
+  assert.equal(intercepted("/models/gigaam/gigaam-multilingual-220m-ctc-int8/tokens.txt"), false);
+  assert.equal(intercepted("/vendor/sherpa-onnx/1.13.8/sherpa-onnx-wasm-web.wasm"), false);
+});
+
 test("a first install or a network-first predecessor reloads nothing", async () => {
   assert.deepEqual((await activateWith([])).navigated, []);
   assert.deepEqual((await activateWith(["qorgan-shell-v6", "qorgan-models-v2"])).navigated, []);
