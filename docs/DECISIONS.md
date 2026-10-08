@@ -1608,3 +1608,146 @@ browser, served weights):
 **Limits, on record.** Synthesised, clean audio, not a speakerphone. About a third of English
 utterances still go to kk/ru (the handicap's price). English classification keeps its D54
 false-alarm rate on sales calls. "Test mode" in the UI says so.
+
+
+### D63 (taxonomy v2) — Three-layer taxonomy and a Claude-written generation grid; phase 1 ships the code, the pilot and the plan, not a retrain (2026-10-08)
+_Number note: written on branch `feat/taxonomy-v2-datagen`. If another D63 lands first, renumber
+this one at merge. Code comments cite "ADR D63"._
+_Proposal status: the choices marked **(approve)** need the maintainers' sign-off before phase 2._
+
+**Why.** On `shift`, recall is 0.455, and the cause is the low-arousal pretexts the 15 tactics cannot
+name: parcel, clinic and utility "codes", eGov EDS renewal, KGD tax, telecom contract expiry, the mirror
+loan, cash couriers, erroneous transfers, task jobs and voice-cloned relatives or bosses
+(`docs/RESEARCH_2026-10.md` §2.3, `docs/research/2026-10/model_taxonomy.md` Part B). Nineteen
+observed caller roles do not fit three `impersonation_*` ids. The team has no LLM API budget, so new
+data is written by Claude. The pilot (below) puts a number on the gap: the shipped model catches
+**0 / 27** low-arousal pilot scams.
+
+**Layer 1 — tactics (what the heads learn).**
+- `data/taxonomy/tactics.yaml` becomes **version 2**. It holds two label spaces in one file:
+  - `v1` is the 15 shipped ids.
+  - `v2` keeps the 12 non-impersonation ids, replaces the three `impersonation_*` with `imp_bank`,
+    `imp_law_enforcement`, `imp_gov_service`, `imp_regulator`, `imp_telecom_delivery_utility` and
+    `imp_personal`, and adds `loan_inducement`, `cash_courier_handoff`, `refund_request`,
+    `task_advance_fee` and `callback_instruction`. That makes **23 heads**.
+- `active_label_space: v1` stays until the phase-2 retrain. `Taxonomy.tactic_ids()`, `hard_signal_ids()`
+  and `active_tactics()` describe the active space, so training, decoding, evaluation, the mock heuristic
+  and the LLM prompt are byte-identical today. A test pins `weights.json::label_space ==
+  tactic_ids()`.
+- Display names, advice and report/partner/intake validation run over `all_tactic_ids()`, so v2 tags
+  already render and validate. The retrain flips one line.
+- **(approve)** No v2 tactic is a hard signal. The cue block stays at 5 columns; promoting, say,
+  `cash_courier_handoff` would be its own ADR with a retrain.
+
+**Negatives.** Six new hard-negative classes, each the legitimate twin of a new scheme:
+`legit_delivery_code`, `legit_refund_request`, `legit_employer_request`, `legit_clinic_appointment`,
+`legit_telecom_offer` and `legit_utility_notice`. Negatives carry `label_spaces` too, so the v1 Gemini
+generator (`generate.py`) still writes only the five v1 classes and a full regeneration of the existing
+corpus stays reproducible (D54).
+
+**Layer 2 — role slot.**
+- `data/lexicon/roles.yaml` lists 19 roles. Each has an `imp_tactic`, reviewed RU (instrumental) / KK
+  (nominative) / EN names and claim-shaped cues.
+- Matching uses the same `find_cue` as the hard-signal cues, in both runtimes. The first cue per role
+  wins, a longer overlapping span beats a shorter one, and the earliest claim wins.
+- `explain()` gains `role_id`, `role_span` (verbatim) and `role_line`, rendered from the reviewed
+  `role_template` («Звонящий представился {role}: «{span}».» / «Қоңырау шалушы өзін {role} деп
+  таныстырды: …» / "The caller claimed to be {role}: …"). The reason string is unchanged.
+- `site/core/role.js` is the 1:1 port. It is pinned by `tests_js/fixtures/roles.json`
+  (`scripts/export_role_fixture.py`, 62 cases) and drift-checked from Python.
+- **This lexicon is display-only. It is not a feature, not in the bundle hash
+  (`weights.json::lexicon` = cue + reassurance only — tested) and editing it does NOT trigger the
+  "lexicon edit forces a retrain" rule.** Its only other consumers are the scheme rules and the
+  one-time label migration, whose output is frozen into the corpus.
+
+**Layer 3 — schemes.**
+- `data/taxonomy/schemes.yaml` defines 21 rule-derived schemes in priority order, in a five-operator
+  rule language (`all` / `any` / `tactic` / `any_tactic` / `role`) evaluated by `qorgan.explain.schemes`.
+  The first match wins.
+- Advice is keyed by scheme (`advice_{ru,kk,en}.yaml::scheme_advice`, 21 × 3 reviewed lines). Eleven
+  new per-tactic lines are added for each locale.
+- The shipped v1 tags are read through the migration below, so the layer works before the retrain.
+- A test proves every scheme's generation spec derives back to itself. It caught three ordering
+  bugs while writing: prize vs benefits, mule vs fake boss, and egov vs clinic.
+- **(approve)** It is not yet in the UI or the JS core. Without v2 heads its input is v1 tags. Phase 2
+  ports it with fixtures once the heads exist.
+
+**Migration of existing labels — (approve).**
+- `qorgan.data.migrate_v2` is deterministic. Each `impersonation_*` maps to the successors whose
+  family matches a role the transcript claims. Otherwise it maps to the first successor (bank →
+  `imp_bank`, gov_police → `imp_law_enforcement`, telecom_delivery → `imp_telecom_delivery_utility`)
+  and the row goes on a review list (ids, reasons and roles only, no text).
+- Dry run on train: 686 rows carry an impersonation tag. Transitions: bank → imp_bank 404,
+  → imp_regulator 44, → both 2; gov_police → law 116, → regulator 6; telecom → telecom 110, → gov 4.
+- **246 rows go to review**: 146 bank and 72 gov_police with no role found, 10 role outside the family,
+  18 telecom with no role.
+- Val: 49 rows with an impersonation tag, 11 to review.
+- The list is `data/taxonomy/migration_v2_review.json`. A human pass over it (or a sampled audit) comes
+  before phase-2 training.
+- Held-out splits are migrated by the same function with **aggregate counts only**; their review rows
+  are never opened.
+- **The five new tactics are not inferred on old rows.** An old row is *unlabelled* for them, not
+  negative. The phase-2 trainer masks v1-sourced rows out of those five heads ("label masking")
+  instead of guessing.
+
+**Thin heads — (approve).** D30 stays as written: a tactic with < 8 tuning positives keeps 0.5. Phase-2
+acceptance additionally requires ≥ 8 out-of-fold positives for **every** v2 id. A head that still
+misses that is dropped from the v2 space (a yaml edit plus a note here) rather than shipped at an
+untuned 0.5. No untuned head reaches users.
+
+**Generation pipeline (`python -m qorgan.data.gen`).**
+- `configs/gen_grid.yaml` defines a seeded, quota-exact grid over:
+  - scheme or negative class, and role;
+  - register: kk 30 %, ru 30 %, mixed 25 %, en 15 %; negatives ≥ 35 %;
+  - persona (age band, region, occupation), outcome, channel, stage and an explicit length target;
+  - direct vs indirect phrasing, and confusable negatives.
+- Scam tactics are the scheme's core plus 0–2 optional, kept only if the rules still derive the cell's
+  scheme.
+- Chunk specs carry instructions, the JSON schema and an English glossary of names and descriptions.
+  They never carry example phrases or cue lists, and no Russian or Kazakh lexicon phrase reaches the
+  writer (tested). English definitions unavoidably share a few words with English cues.
+- Rows are the existing `Dialogue` plus per-utterance `stage` and verbatim `{id, phrase}` tactic spans.
+- QC gates, all automated (`qc.py`):
+  1. schema and cell agreement;
+  2. scrub fixed point;
+  3. e5 near-duplicate, with the threshold calibrated so that no train pair exceeds it;
+  4. ROUGE-L < 0.7, computed with a bit-parallel LCS;
+  5. disjointness from all eight processed splits, by hash only;
+  6. lexicon-leak share per scheme;
+  7. a generator-fingerprint LR (char n-grams and e5), also restricted to v1 topics.
+- No new dependency is needed (numpy and sklearn are already in), so no `tooling` extra was added.
+  semhash is unnecessary at this size.
+
+**Pilot (120 dialogues, 3 sub-agents; full report `docs/gen_pilot_qc_2026-10.md`).**
+- Gates 1–5: 120/120 valid, 0 scrub, 0 near-duplicates (threshold 0.974; the 0.92 starting point is
+  meaningless for e5 because train's own median nearest neighbour is 0.937), 0 ROUGE-L flags (max
+  0.307), 0 eval overlaps.
+- Cue-free scams 64/72 = 0.889. Scheme agreement 72/72. Role-slot recall 0.42.
+- **Fingerprint AUC 0.975 (char) / 0.948 (e5); on shared v1 topics, 0.91 / 0.91.** The style leak is
+  real, so §3.2's held-out redesign is mandatory, not optional.
+- Shipped v1 model on the pilot (diagnostic): recall **0.208 [0.122, 0.320]**, 0/27 on the low-arousal
+  schemes, FPR 1/48.
+
+**Not done, on purpose.** Nothing is added to the corpus and nothing is retrained. `parity.json`,
+`runtime_gate*` and weights are untouched (they regenerate after the retrain). The scheme layer is not
+in the UI. `live.js` and `asr.js` are untouched.
+
+**Phase 2 (after review).**
+1. Fix the three grid issues (persona coherence, role-consistent optional `imp_*`, stage vs core).
+2. Freeze `shift` as `shift_v1` (validation). Build `shift_local` (KazLLM, offline) and `court_authored`
+   as the honest held-outs **before** training on Claude rows.
+3. Generate about 1,600–2,000 rows: about 70 chunks of 25, written by sub-agents in batches of ≤ 16.
+   About 60 % scams over 21 schemes (≥ 40 per new tactic, ≥ 8 OOF positives per head) and about 40 %
+   negatives (≥ 60 per v2 guardrail class, the reassurance counter-signal in ~40 %, D42).
+4. QC every chunk. Human-review the migration list.
+5. Build the corpus with v2 labels and masking, flip `active_label_space`, retrain on device
+   embeddings, export, and regenerate fixtures and the browser gate.
+6. Gates: FPR first on test / authored / ood / styled / browser, plus the new held-outs.
+7. Port the scheme layer to JS with fixtures. Add any v2 cue additions only from train, paired with
+   negatives, in a separate measured step.
+
+**Rejected.**
+- Renaming the ids in place with a flag day. It would break the shipped weights' label space and every
+  stored report.
+- Inferring the 5 new tactics on old rows by keyword. That writes the lexicon into the labels.
+- Making the role a learned head. It would add FPR exposure for a display string.

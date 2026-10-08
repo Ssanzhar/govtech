@@ -5,6 +5,21 @@ then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECI
 (ADRs D11–D54), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
 kept as history._
 
+## October 2026 — taxonomy v2, phase 1 (ADR D63, branch `feat/taxonomy-v2-datagen`)
+- `tactics.yaml` v2 holds two label spaces. **`v1` is still active** (the shipped heads), and `v2`
+  (23 heads) waits for the phase-2 retrain. Six new guardrail negative classes are added.
+- New layers:
+  - Layer 2: a display-only role slot (`data/lexicon/roles.yaml`, 19 roles; Python + `site/core/role.js`).
+    `explain()` now returns `role_id` / `role_span` / `role_line`.
+  - Layer 3: 21 rule-derived schemes with per-scheme advice. Python only so far.
+- `python -m qorgan.data.migrate_v2` dry-runs the label migration. On train, 686 rows are mapped
+  and 246 need review (`data/taxonomy/migration_v2_review.json`).
+- `python -m qorgan.data.gen` provides the grid → chunk spec → QC pipeline. A 120-dialogue
+  Claude-written pilot passes every gate. Its fingerprint AUC is 0.91–0.97, so the held-out must move
+  off Claude. The shipped model catches 0/27 of its low-arousal scams. Details are in
+  `docs/gen_pilot_qc_2026-10.md`.
+- Nothing is in the corpus yet and nothing is retrained.
+
 ## TL;DR (September 2026)
 - **What it is:** scam-pattern decision support for KK/RU phone calls. Level 1 (citizen) runs
   **on the device**: `site/` pages load `multilingual-e5-base` int8 ONNX + exported head
