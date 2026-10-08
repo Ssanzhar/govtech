@@ -16,6 +16,10 @@
    Pure functions (`parseVoskResult`, `voteFinal`, `reduceAsrEvent`, `isSupported`) are
    unit-tested in Node; `createDeviceAsr` is the browser runtime. */
 
+import { createEndpointPass } from "./endpoint-runtime.js";
+import { createSpanVoter } from "./span-vote.js";
+import { createWordLid } from "./word-lid.js";
+
 // Self-hosted and hash-pinned by deploy_bootstrap (asr/web_models.py): this script sees the
 // raw microphone audio, so it is never loaded live from a third party.
 export const VOSKLET_SCRIPT_URL = new URL("../vendor/vosklet/Vosklet.js", import.meta.url).href;
@@ -46,6 +50,22 @@ export function parseVoskResult(detail) {
   const confidences = words.map((w) => (typeof w?.conf === "number" ? w.conf : FULL_CONFIDENCE));
   const mean = confidences.length ? confidences.reduce((a, b) => a + b, 0) / confidences.length : FULL_CONFIDENCE;
   return { text, confidence: Math.min(FULL_CONFIDENCE, Math.max(0, mean)) };
+}
+
+/** Timed words `[[word, start, end, conf]]` of a Vosk result or partial (`setWords` /
+    `setPartialWords`); words without numeric timing are dropped, a missing `conf` is full. */
+export function parseVoskWords(detail) {
+  let payload;
+  try {
+    payload = typeof detail === "string" ? JSON.parse(detail) : detail;
+  } catch {
+    return [];
+  }
+  if (!payload || typeof payload !== "object") return [];
+  const words = Array.isArray(payload.result) ? payload.result : Array.isArray(payload.partial_result) ? payload.partial_result : [];
+  return words
+    .filter((w) => w && typeof w.word === "string" && Number.isFinite(w.start) && Number.isFinite(w.end))
+    .map((w) => [w.word, w.start, w.end, typeof w.conf === "number" ? Math.min(FULL_CONFIDENCE, Math.max(0, w.conf)) : FULL_CONFIDENCE]);
 }
 
 export const TIE_EPSILON = 0.02; // confidences this close are a tie (clean speech ties both models)
@@ -100,22 +120,54 @@ export function initialAsrState(languages) {
     windowOpenedAt: null,
     suppressUntil: {}, // language -> timestamp: drop a late duplicate `result`
     lastPartialText: "",
+    live: initialLive(), // the live pass's word hypotheses for the open utterance (ADR D63)
   };
+}
+
+const initialLive = () => ({ finals: {}, partials: {}, freeze: { spans: [], until: 0 } });
+
+/** Per language: committed final words + the latest partial after them (the spike's
+    `hypothesis_at`), as the span vote reads them. */
+function liveHypotheses(live) {
+  const out = {};
+  for (const l of new Set([...Object.keys(live.finals), ...Object.keys(live.partials)])) out[l] = [...(live.finals[l] || []), ...(live.partials[l] || [])];
+  return out;
+}
+
+/** Rerun the span vote on the live hypotheses -> `{live, emits}` (no voter: nothing). */
+function voteLive(live, voter) {
+  if (!voter) return { live, emits: [] };
+  const labelled = voter.label(liveHypotheses(live), live.freeze);
+  const words = labelled.words.map(([word, start, end, lang]) => ({ word, start, end, lang, frozen: end <= labelled.freeze.until }));
+  return { live: { ...live, freeze: labelled.freeze }, emits: [{ type: "live", words }] };
+}
+
+/** `[start, end]` (audio seconds) covered by the open utterance's words, or null. */
+function liveSpan(live) {
+  let start = Infinity;
+  let end = -Infinity;
+  for (const words of Object.values(liveHypotheses(live))) {
+    for (const w of words) { start = Math.min(start, w[1]); end = Math.max(end, w[2]); }
+  }
+  return end > start ? [start, end] : null;
 }
 
 /** Pure state machine over recognizer events. `event` is `{type: "result"|"partial"|
     "tick", language?, detail?}`, `now` a timestamp (ms). Returns `{state, emits}` where
     emits are `{type: "partial", language, text}` and `{type: "utterance", language,
     text, confidence}`. Inputs are never mutated. */
-export function reduceAsrEvent(state, event, now, { alignWindowMs = ALIGN_WINDOW_MS, suppressMs = DUPLICATE_SUPPRESS_MS, lock = null, handicap = null } = {}) {
+export function reduceAsrEvent(state, event, now, { alignWindowMs = ALIGN_WINDOW_MS, suppressMs = DUPLICATE_SUPPRESS_MS, lock = null, handicap = null, voter = null } = {}) {
+  const options = { alignWindowMs, suppressMs, lock, handicap, voter };
+  const live = state.live ?? initialLive();
   if (event.type === "partial") {
     const hyp = parseVoskResult(event.detail);
-    const next = { ...state, partials: { ...state.partials, [event.language]: hyp } };
+    const voted = voteLive({ ...live, partials: { ...live.partials, [event.language]: parseVoskWords(event.detail) } }, voter);
+    const next = { ...state, partials: { ...state.partials, [event.language]: hyp }, live: voted.live };
     const shown = bestPartial(next);
     if (shown.text && shown.text !== state.lastPartialText && state.windowOpenedAt === null) {
-      return { state: { ...next, lastPartialText: shown.text }, emits: [{ type: "partial", language: shown.language, text: shown.text }] };
+      return { state: { ...next, lastPartialText: shown.text }, emits: [{ type: "partial", language: shown.language, text: shown.text }, ...voted.emits] };
     }
-    return { state: next, emits: [] };
+    return { state: next, emits: voted.emits };
   }
   if (event.type === "result") {
     if ((state.suppressUntil[event.language] ?? 0) > now) {
@@ -127,18 +179,26 @@ export function reduceAsrEvent(state, event, now, { alignWindowMs = ALIGN_WINDOW
       // This language endpointed twice before the other fired: commit the open window first
       // (voting against the other language's partial), then open a new one -- never overwrite.
       const closed = commit(state, now, suppressMs, lock, handicap);
-      const reopened = reduceAsrEvent(closed.state, event, now, { alignWindowMs, suppressMs, lock, handicap });
+      const reopened = reduceAsrEvent(closed.state, event, now, options);
       return { state: reopened.state, emits: [...closed.emits, ...reopened.emits] };
     }
     const hyp = parseVoskResult(event.detail);
+    const voted = voteLive({
+      ...live,
+      finals: { ...live.finals, [event.language]: [...(live.finals[event.language] || []), ...parseVoskWords(event.detail)] },
+      partials: { ...live.partials, [event.language]: [] },
+    }, voter);
     const next = {
       ...state,
       pending: { ...state.pending, [event.language]: hyp },
       partials: { ...state.partials, [event.language]: null },
       windowOpenedAt: state.windowOpenedAt ?? now,
+      live: voted.live,
     };
     const everyLanguageFired = state.languages.every((l) => next.pending[l] !== undefined);
-    return everyLanguageFired ? commit(next, now, suppressMs, lock, handicap) : { state: next, emits: [] };
+    if (!everyLanguageFired) return { state: next, emits: voted.emits };
+    const committed = commit(next, now, suppressMs, lock, handicap);
+    return { state: committed.state, emits: [...voted.emits, ...committed.emits] };
   }
   if (event.type === "tick") {
     const pruned = pruneSuppressions(state, now);
@@ -163,6 +223,8 @@ function commit(state, now, suppressMs, lock = null, handicap = null) {
     }
   }
   const winner = voteFinal(hypotheses, state.preferred, handicap ?? {});
+  // The audio this utterance covers, for the endpoint pass (ADR D63); absent without timed words.
+  const span = liveSpan(state.live ?? initialLive());
   const next = applyLock({
     ...state,
     pending: {},
@@ -173,8 +235,10 @@ function commit(state, now, suppressMs, lock = null, handicap = null) {
     preferred: winner ? winner.language : state.preferred,
     committed: state.committed + (winner ? 1 : 0),
     wins: winner ? { ...state.wins, [winner.language]: (state.wins[winner.language] ?? 0) + 1 } : state.wins,
+    live: initialLive(),
   }, winner, lock);
-  return { state: next, emits: winner ? [{ type: "utterance", ...winner }] : [] };
+  const timing = span ? { start: span[0], end: span[1] } : {};
+  return { state: next, emits: winner ? [{ type: "utterance", ...winner, ...timing }] : [] };
 }
 
 /** Narrow `languages` to the settled winner, or widen it back when the locked recognizer
@@ -261,10 +325,18 @@ export function loadVoskletScript(url = VOSKLET_SCRIPT_URL, doc = globalThis.doc
 
 /** Dual-language on-device ASR. `models` = `{language: {url, id}}` (self-hosted USTAR
     tarballs). Calls `onPartial({language, text})`, `onUtterance({language, text,
-    confidence})`, `onStatus(message, {code, language?})` -- `code` is one of runtime | model |
-    listening | stopped, so a page can localise the status instead of parsing `message`.
-    `start(stream)` takes a microphone MediaStream. */
-export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus = () => {}, onError = () => {}, onRaw = null, lock = null, handicap = null, optional = [] }) {
+    confidence, words, source, fallback?, vosk}, {latencyMs})`, `onStatus(message, {code,
+    language?})` -- `code` is one of runtime | model | listening | stopped, so a page can
+    localise the status instead of parsing `message`. `start(stream)` takes a microphone
+    MediaStream.
+
+    ADR D63, both optional: with `wordLevel` (site/core/asr-wordlevel.json) and `onLive`, the
+    span vote reruns on every recogniser event and `onLive(words)` gets provisional words
+    tagged kk/ru/en; with `endpoint` (qorgan-config.json `asr.endpoint`), GigaAM re-decodes each
+    committed utterance and its text replaces the Vosk text before `onUtterance` -- if GigaAM
+    is loading or unavailable the Vosk vote is passed on, marked `source: "vosk"` with a
+    `fallback` reason. `onEndpointStatus({status, ...})` reports the endpoint pass. */
+export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus = () => {}, onError = () => {}, onRaw = null, lock = null, handicap = null, optional = [], wordLevel = null, onLive = null, endpoint = null, onEndpointStatus = () => {}, createEndpointClient = undefined }) {
   if (!Object.keys(models).length) throw new Error("no ASR models configured");
   const loadVosklet = await loadVoskletScript();
   onStatus("loading the speech-recognition runtime…", { code: "runtime" });
@@ -285,22 +357,38 @@ export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus
   }
   const languages = Object.keys(loaded);
 
+  const lid = wordLevel ? createWordLid(wordLevel.lid) : null;
+  const voter = lid && onLive ? createSpanVoter(wordLevel.span_vote, lid) : null;
+  const pass = createEndpointPass({
+    endpoint,
+    tagText: lid?.tagText,
+    onUtterance: (final, info) => onUtterance(final, info),
+    onStatus: onEndpointStatus,
+    ...(createEndpointClient ? { createClient: createEndpointClient } : {}),
+  });
+
   let ctx = null;
   let recognizers = {};
   let transferer = null;
   let source = null;
   let ticker = null;
   let state = initialAsrState(languages);
+  const reduceOptions = { lock, handicap, voter };
+
+  const route = (emits) => {
+    for (const emit of emits) {
+      if (emit.type === "partial") onPartial(emit);
+      else if (emit.type === "live") onLive?.(emit.words);
+      else if (emit.type === "utterance") pass.utterance(emit);
+    }
+  };
 
   const dispatch = (event) => {
     if (onRaw && event.type !== "tick") onRaw({ ...event, at: performance.now() }); // diagnostics: every recognizer event
     try {
-      const out = reduceAsrEvent(state, event, performance.now(), { lock, handicap });
+      const out = reduceAsrEvent(state, event, performance.now(), reduceOptions);
       state = out.state;
-      for (const emit of out.emits) {
-        if (emit.type === "partial") onPartial(emit);
-        else onUtterance(emit);
-      }
+      route(out.emits);
     } catch (err) {
       onError(err);
     }
@@ -311,6 +399,7 @@ export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus
     async start(stream) {
       ctx = new AudioContext();
       state = initialAsrState(languages);
+      pass.reset(ctx.sampleRate); // Vosk word times and the audio ring both count from here
       for (const language of languages) {
         const rec = await modules[language].createRecognizer(loaded[language], ctx.sampleRate);
         rec.setWords(true);
@@ -325,6 +414,7 @@ export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus
         // recognizer stops being fed, which is the whole compute win (ADR D40). Its instance
         // stays loaded, so this saves decode work, not memory.
         for (const language of state.languages) recognizers[language].acceptWaveform(ev.data.slice()); // a copy each: buffers may be transferred
+        pass.push(ev.data); // the endpoint pass re-decodes committed utterances from here (ADR D63)
       };
       source = ctx.createMediaStreamSource(stream);
       source.connect(transferer);
@@ -345,15 +435,17 @@ export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus
       // Flush: whatever is pending or still a partial is committed now, so every utterance
       // has been handed to `onUtterance` before `stop()` resolves.
       const flushed = reduceAsrEvent(
-        { ...state, windowOpenedAt: performance.now() - ALIGN_WINDOW_MS }, { type: "tick" }, performance.now(), { lock, handicap }
+        { ...state, windowOpenedAt: performance.now() - ALIGN_WINDOW_MS }, { type: "tick" }, performance.now(), reduceOptions
       );
       state = flushed.state;
-      for (const emit of flushed.emits) if (emit.type === "utterance") onUtterance(emit);
+      route(flushed.emits.filter((emit) => emit.type === "utterance"));
+      await pass.drain(); // GigaAM's answers (or their timeouts) for the last utterances
       if (ctx) { try { await ctx.close(); } catch {} }
       ctx = null;
       onStatus("stopped", { code: "stopped" });
     },
     async dispose() {
+      pass.dispose();
       for (const language of languages) { try { await modules[language].cleanUp(); } catch {} }
     },
   };
