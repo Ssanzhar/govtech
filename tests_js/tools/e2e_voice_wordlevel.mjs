@@ -56,15 +56,21 @@ function joinWavs(files, path) {
   return { path, seconds: samples.length / rate, offsets };
 }
 
-function treeRssMb(rootPid) {
-  const rows = execFileSync("ps", ["-A", "-o", "pid=,ppid=,rss="], { encoding: "utf8" }).trim().split("\n").map((l) => l.trim().split(/\s+/).map(Number));
-  const children = new Map();
-  for (const [pid, ppid] of rows) children.set(ppid, [...(children.get(ppid) || []), pid]);
-  const rss = new Map(rows.map(([pid, , kb]) => [pid, kb]));
+/** Resident memory (MB) of every process of this browser, by type, as Chromium lists them. */
+async function browserRssMb(cdp, rootPid) {
+  const { processInfo } = await cdp.send("SystemInfo.getProcessInfo");
+  const pids = new Map(processInfo.map((p) => [p.id, p.type]));
+  pids.set(rootPid, "browser");
+  const rows = execFileSync("ps", ["-A", "-o", "pid=,rss="], { encoding: "utf8" }).trim().split("\n").map((l) => l.trim().split(/\s+/).map(Number));
+  const byType = {};
   let total = 0;
-  const stack = [rootPid];
-  while (stack.length) { const pid = stack.pop(); total += rss.get(pid) || 0; stack.push(...(children.get(pid) || [])); }
-  return Math.round(total / 1024);
+  for (const [pid, kb] of rows) {
+    if (!pids.has(pid)) continue;
+    const type = pids.get(pid);
+    byType[type] = Math.round((byType[type] || 0) + kb / 1024);
+    total += kb / 1024;
+  }
+  return { total: Math.round(total), ...byType };
 }
 
 /** The shipped D62 voice mode: no word-level models, no endpoint pass, handicap 0.15. */
@@ -85,6 +91,7 @@ async function runScene(scene) {
   });
   const rootPid = server.process().pid;
   const browser = await chromium.connect(server.wsEndpoint());
+  const cdp = await browser.newBrowserCDPSession();
   const context = await browser.newContext({ viewport: { width: 1280, height: 1400 } });
   await context.grantPermissions(["microphone"], { origin: BASE });
   const page = await context.newPage();
@@ -98,14 +105,14 @@ async function runScene(scene) {
   await page.click("#lvMicStart");
   await page.waitForFunction(() => document.querySelector("#lvMicNote")?.dataset.i18n === "mic.listening", null, { timeout: 300000 });
   const listeningAfterMs = Date.now() - clicked;
-  const rssListening = treeRssMb(rootPid);
+  const rssListening = await browserRssMb(cdp, rootPid);
   const firstLong = wav.offsets.reduce((a, b) => (b.seconds > a.seconds ? b : a));
   const shotAt = (firstLong.start + firstLong.seconds * 0.7) * 1000;
   await page.waitForTimeout(shotAt);
   await page.locator("#lvCallWrap").screenshot({ path: join(OUT, `${VARIANT}-${scene.name}-live.png`) });
   const liveSnapshot = await page.evaluate(() => [...document.querySelectorAll("#lvLiveWords .lv-run")].map((r) => ({ lang: r.dataset.lang, words: [...r.querySelectorAll(".lv-w")].map((w) => w.textContent) })));
   await page.waitForTimeout(Math.max(0, wav.seconds * 1000 - shotAt) + TAIL_S * 1000);
-  const rssPeak = treeRssMb(rootPid);
+  const rssEnd = await browserRssMb(cdp, rootPid);
   const heap = await page.evaluate(() => (performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : null));
   await page.click("#lvMicStop");
   await page.waitForFunction(() => !document.querySelector("#lvSummaryWrap").hidden || document.querySelector("#lvMicNote")?.dataset.i18n === "mic.no_speech", null, { timeout: 120000 });
@@ -118,7 +125,7 @@ async function runScene(scene) {
   const latencies = (trace?.utterances || []).map((u) => u.latencyMs).filter((x) => x !== null);
   const result = {
     variant: VARIANT, scene: scene.name, audio_s: wav.seconds, files: wav.offsets, listening_after_ms: listeningAfterMs,
-    rss_mb: { listening: rssListening, peak: rssPeak }, js_heap_mb: heap, summary_score: summaryScore,
+    rss_mb: { listening: rssListening, end_of_audio: rssEnd }, js_heap_mb: heap, summary_score: summaryScore,
     final_meter: trace?.utterances?.at(-1)?.meter ?? null, final_band: trace?.utterances?.at(-1)?.band ?? null,
     utterances: trace?.utterances?.map(({ words, ...u }) => ({ ...u, tags: (words || []).map((w) => w.lang).join(" ") })) ?? [],
     latency_ms: latencies.length ? { n: latencies.length, median: [...latencies].sort((a, b) => a - b)[Math.floor(latencies.length / 2)], max: Math.max(...latencies) } : null,

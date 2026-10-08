@@ -124,13 +124,19 @@ export function initialAsrState(languages) {
   };
 }
 
-const initialLive = () => ({ finals: {}, partials: {}, freeze: { spans: [], until: 0 } });
+const initialLive = (after = 0) => ({ finals: {}, partials: {}, freeze: { spans: [], until: 0 }, ...(after > 0 ? { after } : {}) });
 
 /** Per language: committed final words + the latest partial after them (the spike's
-    `hypothesis_at`), as the span vote reads them. */
+    `hypothesis_at`), as the span vote reads them. Words of an already committed stretch
+    (midpoint before `live.after`) are dropped: a recogniser that has not endpointed keeps one
+    partial across the committed utterance and the next (seen in Chromium, ADR D63). */
 function liveHypotheses(live) {
+  const after = live.after ?? 0;
+  const fresh = (w) => (w[1] + w[2]) / 2 >= after;
   const out = {};
-  for (const l of new Set([...Object.keys(live.finals), ...Object.keys(live.partials)])) out[l] = [...(live.finals[l] || []), ...(live.partials[l] || [])];
+  for (const l of new Set([...Object.keys(live.finals), ...Object.keys(live.partials)])) {
+    out[l] = [...(live.finals[l] || []), ...(live.partials[l] || [])].filter(fresh);
+  }
   return out;
 }
 
@@ -235,7 +241,7 @@ function commit(state, now, suppressMs, lock = null, handicap = null) {
     preferred: winner ? winner.language : state.preferred,
     committed: state.committed + (winner ? 1 : 0),
     wins: winner ? { ...state.wins, [winner.language]: (state.wins[winner.language] ?? 0) + 1 } : state.wins,
-    live: initialLive(),
+    live: initialLive(span ? span[1] : state.live?.after ?? 0),
   }, winner, lock);
   const timing = span ? { start: span[0], end: span[1] } : {};
   return { state: next, emits: winner ? [{ type: "utterance", ...winner, ...timing }] : [] };

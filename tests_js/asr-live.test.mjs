@@ -58,7 +58,7 @@ test("the committed utterance carries its audio span; the live hypotheses and th
   assert.equal(utterance.text, "назовите код");
   assert.equal(utterance.start, 1.1);
   assert.equal(utterance.end, 2.3);
-  assert.deepEqual(out.state.live, { finals: {}, partials: {}, freeze: { spans: [], until: 0 } });
+  assert.deepEqual(out.state.live, { finals: {}, partials: {}, freeze: { spans: [], until: 0 }, after: 2.3 });
 });
 
 test("without a voter the reducer behaves exactly as before: no live emits, no timing on untimed words", () => {
@@ -67,6 +67,26 @@ test("without a voter the reducer behaves exactly as before: no live emits, no t
   let s = reduceAsrEvent(initialAsrState(["kk", "ru"]), { type: "result", language: "ru", detail: untimed("код", 0.9) }, 1).state;
   const done = reduceAsrEvent(s, { type: "result", language: "kk", detail: untimed("кот", 0.3) }, 2);
   assert.deepEqual(done.emits, [{ type: "utterance", language: "ru", text: "код", confidence: 0.9 }]);
+});
+
+// Found in the Chromium run: a recogniser that has not endpointed keeps ONE partial across the
+// committed utterance and the next, so the next utterance's span reached back over the previous
+// one and GigaAM transcribed both. Words of an already committed stretch are dropped.
+test("a recogniser that never endpointed cannot drag the previous utterance into the next span", () => {
+  const opts = { voter };
+  let state = initialAsrState(["kk", "ru", "en"]);
+  const step = (event, now) => { const out = reduceAsrEvent(state, event, now, opts); state = out.state; return out.emits; };
+  step({ type: "partial", language: "en", detail: timed("partial", [["sally", 0.1, 0.6, 0.4], ["meets", 0.6, 1.4, 0.4]]) }, 100);
+  step({ type: "result", language: "kk", detail: timed("result", [["сәлем", 0.1, 0.7, 0.9], ["бе", 0.7, 1.4, 0.9]]) }, 200);
+  step({ type: "result", language: "ru", detail: timed("result", [["салем", 0.1, 0.7, 0.5], ["бе", 0.7, 1.4, 0.5]]) }, 250);
+  const first = step({ type: "tick" }, 1500).find((e) => e.type === "utterance");
+  assert.deepEqual([first.start, first.end], [0.1, 1.4]);
+  // en still has not endpointed: its next partial spans both utterances
+  step({ type: "partial", language: "en", detail: timed("partial", [["sally", 0.1, 0.6, 0.4], ["meets", 0.6, 1.4, 0.4], ["code", 3.0, 3.5, 0.5]]) }, 3000);
+  step({ type: "result", language: "kk", detail: timed("result", [["код", 3.0, 3.5, 0.9]]) }, 3100);
+  step({ type: "result", language: "ru", detail: timed("result", [["код", 3.0, 3.5, 0.9]]) }, 3150);
+  const second = step({ type: "tick" }, 4500).find((e) => e.type === "utterance");
+  assert.deepEqual([second.start, second.end], [3.0, 3.5]);
 });
 
 test("a suppressed duplicate result never leaks into the next utterance's live hypotheses", () => {
