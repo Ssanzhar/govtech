@@ -7,7 +7,7 @@
    - /api/ and anything cross-origin: never cached, never intercepted -- the only network
      traffic with call content is the explicit report submit, and it must stay live. */
 
-const SHELL_CACHE = "qorgan-shell-v8"; // v8: large binaries bypass the worker (D61); v7: reload pages a cache-first worker rendered; v6: network-first shell (no mixed versions after a deploy); v5: landing in kk/ru/en (landing.js, i18n-dom.js); v4: live page in kk/ru/en; v3: report review (D44); v2: COOP/COEP (B9)
+const SHELL_CACHE = "qorgan-shell-v9"; // v9: role slot (core/role.js, D63); v8: large binaries bypass the worker (D61); v7: reload pages a cache-first worker rendered; v6: network-first shell (no mixed versions after a deploy); v5: landing in kk/ru/en (landing.js, i18n-dom.js); v4: live page in kk/ru/en; v3: report review (D44); v2: COOP/COEP (B9)
 // v2: the ONNX model is no longer kept here (transformers.js caches it itself); bumping the name
 // deletes the v1 copy (~278 MB) on activation.
 const MODEL_CACHE = "qorgan-models-v2";
@@ -18,6 +18,7 @@ const SHELL = [
   "/core/explain.js", "/core/recommend.js", "/core/meter.js", "/core/session.js",
   "/core/embedder.js", "/core/embed-worker.js", "/core/qorgan-config.json", "/core/device.js",
   "/core/summary.js", "/core/asr.js", "/core/scenarios.json", "/core/cue-match.js", "/core/report.js",
+  "/core/role.js",
 ];
 
 // The on-device speech runtime (pinned, self-hosted by deploy_bootstrap); optional, so a

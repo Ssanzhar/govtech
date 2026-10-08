@@ -142,6 +142,10 @@ class Config(BaseModel):
     corpus_config_path: Path
     cue_lexicon_path: Path
     reassurance_patterns_path: Path
+    # Taxonomy v2 (ADR D63): the display-only role lexicon (Layer 2) and the scheme rules
+    # (Layer 3). Neither is a model input.
+    role_lexicon_path: Path
+    schemes_path: Path
     # Ids of authored_heldout anchors read during feature engineering (PLAN_2026-09 A2).
     inspection_ledger_path: Path
 
@@ -398,6 +402,10 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             reassurance_patterns_path=_read_path(
                 source, "QORGAN_REASSURANCE_PATTERNS_PATH", data_dir / "lexicon" / "reassurance_patterns.yaml"
             ),
+            # Reviewed, committed assets (like the explanation templates): anchored at the repo,
+            # not at QORGAN_DATA_DIR, so a relocated data dir never loses the explanation layer.
+            role_lexicon_path=_read_path(source, "QORGAN_ROLE_LEXICON_PATH", _REPO_ROOT / "data" / "lexicon" / "roles.yaml"),
+            schemes_path=_read_path(source, "QORGAN_SCHEMES_PATH", _REPO_ROOT / "data" / "taxonomy" / "schemes.yaml"),
             inspection_ledger_path=_read_path(
                 source, "QORGAN_INSPECTION_LEDGER_PATH", data_dir / "anchors" / "inspection_ledger.yaml"
             ),

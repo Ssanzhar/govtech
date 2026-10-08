@@ -5,6 +5,9 @@
 reason_template: "Signs of a scam were detected: {tags}. Trigger phrases from the call: {spans}."
 no_signal_reason: "No clear signs of a scam were detected."
 spans_placeholder: "—"
+# Layer 2 role slot (ADR D63): {role} = the role name from data/lexicon/roles.yaml, {span} = the
+# caller's own words. Rendered only when the role lexicon found a claim.
+role_template: "The caller claimed to be {role}: «{span}»."
 caveat: >-
   The model can be wrong, especially on unusual, very short or interrupted calls.
   Weigh this alongside everything else you know.

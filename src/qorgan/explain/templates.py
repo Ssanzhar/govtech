@@ -45,6 +45,8 @@ class ExplanationTemplates:
     uncalibrated_suffix: str
     human_note: str
     confidence: dict[str, str]
+    # Layer 2 role slot (ADR D63); placeholders {role} and {span}.
+    role_template: str = ""
 
 
 def load_templates(locale: str, templates_dir: Path) -> ExplanationTemplates:
@@ -87,6 +89,7 @@ def load_templates(locale: str, templates_dir: Path) -> ExplanationTemplates:
         uncalibrated_suffix=raw["uncalibrated_suffix"],
         human_note=raw["human_note"],
         confidence=dict(confidence),
+        role_template=str(raw.get("role_template") or ""),  # every shipped locale has one (test)
     )
 
 

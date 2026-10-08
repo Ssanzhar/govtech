@@ -5,6 +5,9 @@
 reason_template: "Алаяқтық белгілері анықталды: {tags}. Әңгімедегі триггер фразалар: {spans}."
 no_signal_reason: "Алаяқтық белгілері анық байқалмады."
 spans_placeholder: "—"
+# Layer 2 role slot (ADR D63): {role} = the role name from data/lexicon/roles.yaml (nominative),
+# {span} = the caller's own words. Rendered only when the role lexicon found a claim.
+role_template: "Қоңырау шалушы өзін {role} деп таныстырды: «{span}»."
 caveat: >-
   Модель әсіресе әдеттен тыс, қысқа немесе үзілген қоңырауларда қателесуі мүмкін.
   Тәуекелді басқа белгілермен бірге бағалаңыз.
