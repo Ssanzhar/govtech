@@ -1,0 +1,29 @@
+{
+ "rows": 40,
+ "audio_s": 112.97,
+ "repeats": 2,
+ "cpu_rtf_1thread": {
+  "kk": {
+   "on": 0.3004,
+   "off": 0.2979
+  },
+  "ru": {
+   "on": 0.3137,
+   "off": 0.3186
+  },
+  "en": {
+   "on": 0.5452,
+   "off": 0.5415
+  }
+ },
+ "overhead_pct": {
+  "kk": 0.8,
+  "ru": -1.5,
+  "en": 0.7
+ },
+ "three_models": {
+  "rtf_on": 1.1593,
+  "rtf_off": 1.158,
+  "overhead_pct": 0.1
+ }
+}

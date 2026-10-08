@@ -1,0 +1,120 @@
+{"id": "en_001", "domain": "bank", "label": "scam", "text": "Hello, this is the security department of your bank."}
+{"id": "en_002", "domain": "bank", "label": "scam", "text": "We have noticed a suspicious transfer from your account a few minutes ago."}
+{"id": "en_003", "domain": "bank", "label": "scam", "text": "Please tell me the code that just arrived in your text messages."}
+{"id": "en_004", "domain": "bank", "label": "scam", "text": "To protect your savings we need to move them to a safe account today."}
+{"id": "en_005", "domain": "bank", "label": "scam", "text": "Do not hang up and do not tell anyone about this call, it is a confidential investigation."}
+{"id": "en_006", "domain": "bank", "label": "scam", "text": "Read me the sixteen digits on the front of your card."}
+{"id": "en_007", "domain": "bank", "label": "scam", "text": "Someone is trying to take a loan in your name right now."}
+{"id": "en_008", "domain": "bank", "label": "scam", "text": "You must confirm the cancellation within ten minutes or the money will be lost."}
+{"id": "en_009", "domain": "bank", "label": "scam", "text": "Install the support application I am sending you so our specialist can check your phone."}
+{"id": "en_010", "domain": "bank", "label": "scam", "text": "What is the three digit number on the back of the card?"}
+{"id": "en_011", "domain": "bank", "label": "legit", "text": "Your card will be delivered to the branch next week."}
+{"id": "en_012", "domain": "bank", "label": "legit", "text": "We never ask for your password or the code from a message, please do not share it with anyone."}
+{"id": "en_013", "domain": "bank", "label": "legit", "text": "If you have any questions, call the number printed on the back of your card."}
+{"id": "en_014", "domain": "bank", "label": "legit", "text": "Your monthly statement is now available in the mobile app."}
+{"id": "en_015", "domain": "bank", "label": "legit", "text": "The interest rate on your deposit will change from the first of next month."}
+{"id": "en_016", "domain": "bank", "label": "legit", "text": "I would like to open a savings account for my daughter."}
+{"id": "en_017", "domain": "bank", "label": "legit", "text": "Can you tell me why my salary has not arrived yet?"}
+{"id": "en_018", "domain": "bank", "label": "legit", "text": "The branch on the main street is closed on Sundays."}
+{"id": "en_019", "domain": "bank", "label": "legit", "text": "You can block the card yourself in the app under the settings menu."}
+{"id": "en_020", "domain": "bank", "label": "legit", "text": "Thank you for calling, have a nice day."}
+{"id": "en_021", "domain": "delivery", "label": "scam", "text": "Your parcel is held at customs and you need to pay a small fee to release it."}
+{"id": "en_022", "domain": "delivery", "label": "scam", "text": "Follow the link in the message and enter your card details to confirm the delivery address."}
+{"id": "en_023", "domain": "delivery", "label": "scam", "text": "The courier needs the code from your phone to hand over the package."}
+{"id": "en_024", "domain": "delivery", "label": "scam", "text": "If you do not pay today the parcel will be sent back to the sender."}
+{"id": "en_025", "domain": "delivery", "label": "scam", "text": "Tell me the numbers you received and I will bring the box right away."}
+{"id": "en_026", "domain": "delivery", "label": "legit", "text": "Hi, I am outside your building with your order."}
+{"id": "en_027", "domain": "delivery", "label": "legit", "text": "Could you come down to the entrance, the intercom is not working."}
+{"id": "en_028", "domain": "delivery", "label": "legit", "text": "I will be there in about twenty minutes, there is a lot of traffic."}
+{"id": "en_029", "domain": "delivery", "label": "legit", "text": "Can I leave the package with your neighbour on the second floor?"}
+{"id": "en_030", "domain": "delivery", "label": "legit", "text": "Your pizza is on the way."}
+{"id": "en_031", "domain": "delivery", "label": "legit", "text": "The pickup point closes at eight in the evening, so please collect it before then."}
+{"id": "en_032", "domain": "delivery", "label": "legit", "text": "Sorry, I rang the bell twice but nobody answered."}
+{"id": "en_033", "domain": "delivery", "label": "legit", "text": "Please check that the box is not damaged before you sign."}
+{"id": "en_034", "domain": "delivery", "label": "legit", "text": "We can reschedule the delivery for tomorrow morning if that suits you."}
+{"id": "en_035", "domain": "delivery", "label": "legit", "text": "The driver is waiting near the yellow gate."}
+{"id": "en_036", "domain": "family", "label": "scam", "text": "Mom, it is me, I am in trouble and I cannot talk for long."}
+{"id": "en_037", "domain": "family", "label": "scam", "text": "Your son was in a car accident and needs money for the hospital immediately."}
+{"id": "en_038", "domain": "family", "label": "scam", "text": "I lost my phone, this is a friend's number, please send money to this card."}
+{"id": "en_039", "domain": "family", "label": "scam", "text": "Do not call dad, he will be angry, just transfer it quietly."}
+{"id": "en_040", "domain": "family", "label": "scam", "text": "The police officer says the case can be closed if we pay compensation tonight."}
+{"id": "en_041", "domain": "family", "label": "legit", "text": "Grandma, we will come to visit you on Saturday afternoon."}
+{"id": "en_042", "domain": "family", "label": "legit", "text": "Did you remember to take your medicine this morning?"}
+{"id": "en_043", "domain": "family", "label": "legit", "text": "The kids want to talk to you, I am putting you on speaker."}
+{"id": "en_044", "domain": "family", "label": "legit", "text": "Can you pick up some bread and milk on your way home?"}
+{"id": "en_045", "domain": "family", "label": "legit", "text": "My flight lands at six, so do not wait for me for dinner."}
+{"id": "en_046", "domain": "family", "label": "legit", "text": "Happy birthday, we all miss you very much."}
+{"id": "en_047", "domain": "family", "label": "legit", "text": "The doctor said everything is fine and she can go home tomorrow."}
+{"id": "en_048", "domain": "family", "label": "legit", "text": "I sent you the photos from the wedding, did you get them?"}
+{"id": "en_049", "domain": "family", "label": "legit", "text": "Call me back when you are free, it is nothing urgent."}
+{"id": "en_050", "domain": "family", "label": "legit", "text": "Your brother is moving to a new apartment next month and needs help with the boxes."}
+{"id": "en_051", "domain": "work", "label": "scam", "text": "This is the director, I need you to pay an invoice for a partner company before lunch."}
+{"id": "en_052", "domain": "work", "label": "scam", "text": "Keep this between us, the auditors must not know about the payment."}
+{"id": "en_053", "domain": "work", "label": "scam", "text": "You have been selected for a remote job, just pay the registration fee to start."}
+{"id": "en_054", "domain": "work", "label": "scam", "text": "Our investment platform guarantees thirty percent profit every month with no risk."}
+{"id": "en_055", "domain": "work", "label": "scam", "text": "Buy the gift cards and send me photos of the codes on the back."}
+{"id": "en_056", "domain": "work", "label": "legit", "text": "The meeting has been moved to three o'clock in the small conference room."}
+{"id": "en_057", "domain": "work", "label": "legit", "text": "Could you send me the report by the end of the day?"}
+{"id": "en_058", "domain": "work", "label": "legit", "text": "I am running a little late, please start without me."}
+{"id": "en_059", "domain": "work", "label": "legit", "text": "We are interviewing two more candidates for the position this week."}
+{"id": "en_060", "domain": "work", "label": "legit", "text": "The printer on the third floor is broken again."}
+{"id": "en_061", "domain": "work", "label": "legit", "text": "Please update the spreadsheet with the new prices before the client call."}
+{"id": "en_062", "domain": "work", "label": "legit", "text": "Our team finished the project ahead of schedule."}
+{"id": "en_063", "domain": "work", "label": "legit", "text": "I will be on holiday from Monday, my colleague will answer your emails."}
+{"id": "en_064", "domain": "work", "label": "legit", "text": "The contract needs two signatures and a company stamp."}
+{"id": "en_065", "domain": "work", "label": "legit", "text": "Let us discuss the budget for next year after the quarterly review."}
+{"id": "en_066", "domain": "services", "label": "scam", "text": "This is the tax office, you have an unpaid debt and a warrant will be issued today."}
+{"id": "en_067", "domain": "services", "label": "scam", "text": "Your phone number will be disconnected unless you renew the contract right now."}
+{"id": "en_068", "domain": "services", "label": "scam", "text": "Congratulations, you have won a new car, you only need to pay the insurance first."}
+{"id": "en_069", "domain": "services", "label": "scam", "text": "We are calling from the police, your passport details were used in a fraud case."}
+{"id": "en_070", "domain": "services", "label": "scam", "text": "To receive your pension compensation, please tell me your card number and the expiry date."}
+{"id": "en_071", "domain": "services", "label": "scam", "text": "Your computer has a virus, let me connect remotely to remove it."}
+{"id": "en_072", "domain": "services", "label": "scam", "text": "The government is giving a one time payment to every citizen, register through this link."}
+{"id": "en_073", "domain": "services", "label": "scam", "text": "An officer will contact you on a messenger, do exactly what he says and stay on the line."}
+{"id": "en_074", "domain": "services", "label": "legit", "text": "Your appointment with the dentist is confirmed for Thursday at ten."}
+{"id": "en_075", "domain": "services", "label": "legit", "text": "The water will be turned off in your building tomorrow from nine until noon."}
+{"id": "en_076", "domain": "services", "label": "legit", "text": "We are calling to remind you that your internet bill is due next week."}
+{"id": "en_077", "domain": "services", "label": "legit", "text": "The technician will arrive between two and four."}
+{"id": "en_078", "domain": "services", "label": "legit", "text": "Your new passport is ready and you can collect it at the service centre."}
+{"id": "en_079", "domain": "services", "label": "legit", "text": "Would you like to rate the quality of our service from one to five?"}
+{"id": "en_080", "domain": "services", "label": "legit", "text": "Your table for four is booked for seven thirty."}
+{"id": "en_081", "domain": "short", "label": "legit", "text": "Hello, can you hear me?"}
+{"id": "en_082", "domain": "short", "label": "legit", "text": "Sorry, the connection is bad."}
+{"id": "en_083", "domain": "short", "label": "scam", "text": "Do not hang up, please."}
+{"id": "en_084", "domain": "short", "label": "legit", "text": "Yes, I am listening."}
+{"id": "en_085", "domain": "short", "label": "scam", "text": "Read the code to me."}
+{"id": "en_086", "domain": "short", "label": "legit", "text": "I will call you back later."}
+{"id": "en_087", "domain": "short", "label": "legit", "text": "Who is calling, please?"}
+{"id": "en_088", "domain": "short", "label": "scam", "text": "This is very urgent, act now."}
+{"id": "en_089", "domain": "short", "label": "legit", "text": "Okay, thank you very much, goodbye."}
+{"id": "en_090", "domain": "short", "label": "legit", "text": "I am driving right now."}
+{"id": "en_091", "domain": "long", "label": "scam", "text": "Listen carefully, because of the leak in our database criminals already have access to your account, so I will guide you step by step through blocking it."}
+{"id": "en_092", "domain": "long", "label": "scam", "text": "In a moment you will receive a call from the central bank, they will confirm my words and give you the number of the protected account."}
+{"id": "en_093", "domain": "long", "label": "scam", "text": "If you tell your relatives or go to the branch the investigation will fail and you could be charged as an accomplice."}
+{"id": "en_094", "domain": "long", "label": "scam", "text": "Withdraw all the cash you have, put it in an envelope and give it to the courier who will come to your door this evening."}
+{"id": "en_095", "domain": "long", "label": "scam", "text": "I can see on my screen that a loan application was submitted from another city, and we need your help to cancel it before it is approved."}
+{"id": "en_096", "domain": "long", "label": "legit", "text": "Good afternoon, I am calling from the clinic to let you know that your test results are ready and the doctor would like to see you next week."}
+{"id": "en_097", "domain": "long", "label": "legit", "text": "We received your complaint about the double charge, and the refund should appear in your account within five working days."}
+{"id": "en_098", "domain": "long", "label": "legit", "text": "The school bus will not run tomorrow because of the snow, so the classes will start one hour later than usual."}
+{"id": "en_099", "domain": "long", "label": "legit", "text": "I wanted to ask whether you are still selling the bicycle you advertised, and if so, could I come and look at it on Saturday?"}
+{"id": "en_100", "domain": "long", "label": "legit", "text": "Thank you for your patience, your request has been passed to the technical team and someone will get back to you by the end of the week."}
+{"id": "en_101", "domain": "mixed", "label": "scam", "text": "Your relative asked me to call you because his phone is broken."}
+{"id": "en_102", "domain": "mixed", "label": "scam", "text": "We are updating our records, can you confirm your full name and date of birth?"}
+{"id": "en_103", "domain": "mixed", "label": "scam", "text": "The offer is only valid for the next hour, so you have to decide now."}
+{"id": "en_104", "domain": "mixed", "label": "scam", "text": "Turn on screen sharing so I can see what is happening on your phone."}
+{"id": "en_105", "domain": "mixed", "label": "scam", "text": "You have been chosen for a special bonus from the mobile operator."}
+{"id": "en_106", "domain": "mixed", "label": "scam", "text": "Send the money through the cash machine, I will tell you which buttons to press."}
+{"id": "en_107", "domain": "mixed", "label": "scam", "text": "Your account has been frozen by the financial monitoring agency."}
+{"id": "en_108", "domain": "mixed", "label": "scam", "text": "Nobody from the bank will come to the house, the documents will be sent electronically."}
+{"id": "en_109", "domain": "mixed", "label": "scam", "text": "You do not need to go anywhere, we will solve everything over the phone."}
+{"id": "en_110", "domain": "mixed", "label": "scam", "text": "Please confirm that you are alone in the room and nobody is listening."}
+{"id": "en_111", "domain": "mixed", "label": "legit", "text": "I found your wallet in the park and I would like to return it."}
+{"id": "en_112", "domain": "mixed", "label": "legit", "text": "The football match starts at five, are you coming with us?"}
+{"id": "en_113", "domain": "mixed", "label": "legit", "text": "Our neighbours are having a party, so it might be noisy tonight."}
+{"id": "en_114", "domain": "mixed", "label": "legit", "text": "The library book you ordered has arrived."}
+{"id": "en_115", "domain": "mixed", "label": "legit", "text": "I am sorry, I think you have the wrong number."}
+{"id": "en_116", "domain": "mixed", "label": "legit", "text": "Your car is ready, the mechanic replaced the brakes and the oil filter."}
+{"id": "en_117", "domain": "mixed", "label": "legit", "text": "Remember to bring your student card to the exam."}
+{"id": "en_118", "domain": "mixed", "label": "legit", "text": "The weather forecast says it will rain all weekend."}
+{"id": "en_119", "domain": "mixed", "label": "legit", "text": "We have a vacancy for a nurse at the hospital, would you be interested?"}
+{"id": "en_120", "domain": "mixed", "label": "legit", "text": "Let me check with my wife and I will let you know tonight."}

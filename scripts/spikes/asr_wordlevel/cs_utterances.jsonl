@@ -1,0 +1,120 @@
+{"id": "cs_001", "matrix": "kk", "label": "scam", "segments": [["kk", "Сәлеметсіз бе, мен банктің"], ["ru", "службы безопасности"], ["kk", "қызметкерімін"]]}
+{"id": "cs_002", "matrix": "kk", "label": "scam", "segments": [["kk", "Сіздің картаңыздан"], ["ru", "подозрительная операция"], ["kk", "жасалды, қазір тоқтатамыз"]]}
+{"id": "cs_003", "matrix": "kk", "label": "scam", "segments": [["kk", "Телефоныңызға келген"], ["ru", "код из смс"], ["kk", "айтыңызшы"]]}
+{"id": "cs_004", "matrix": "kk", "label": "scam", "segments": [["kk", "Ақшаңызды"], ["ru", "безопасный счёт"], ["kk", "деген шотқа аударыңыз"]]}
+{"id": "cs_005", "matrix": "kk", "label": "scam", "segments": [["kk", "Бұл туралы ешкімге айтпаңыз,"], ["ru", "это тайна следствия"]]}
+{"id": "cs_006", "matrix": "kk", "label": "scam", "segments": [["kk", "Сіздің атыңызға"], ["ru", "кредит оформили"], ["kk", "бүгін таңертең"]]}
+{"id": "cs_007", "matrix": "kk", "label": "scam", "segments": [["kk", "Қазір сізге"], ["ru", "следователь"], ["kk", "хабарласады, тыңдаңыз"]]}
+{"id": "cs_008", "matrix": "kk", "label": "scam", "segments": [["kk", "Мына қосымшаны жүктеп алыңыз,"], ["ru", "это для защиты"], ["kk", "сіздің телефоныңыз үшін"]]}
+{"id": "cs_009", "matrix": "kk", "label": "scam", "segments": [["kk", "Тез арада шешу керек,"], ["ru", "иначе деньги спишут"]]}
+{"id": "cs_010", "matrix": "kk", "label": "scam", "segments": [["kk", "Сізге сәлемдеме келді,"], ["ru", "назовите код"], ["kk", "курьерге"]]}
+{"id": "cs_011", "matrix": "kk", "label": "scam", "segments": [["kk", "Ұлттық банктен хабарласып тұрмыз,"], ["ru", "ваши данные украли"]]}
+{"id": "cs_012", "matrix": "kk", "label": "scam", "segments": [["kk", "Электрондық цифрлық қолтаңбаңыздың"], ["ru", "срок действия"], ["kk", "бітіп жатыр"]]}
+{"id": "cs_013", "matrix": "kk", "label": "scam", "segments": [["kk", "Сіз ұтыс ойынында"], ["ru", "главный приз"], ["kk", "ұтып алдыңыз"]]}
+{"id": "cs_014", "matrix": "kk", "label": "scam", "segments": [["kk", "Ұлыңыз апатқа түсті,"], ["ru", "нужны деньги срочно"]]}
+{"id": "cs_015", "matrix": "kk", "label": "scam", "segments": [["kk", "Карта нөмірін және"], ["ru", "три цифры на обороте"], ["kk", "айтыңыз"]]}
+{"id": "cs_016", "matrix": "kk", "label": "scam", "segments": [["kk", "Байланыс операторының"], ["ru", "договор истекает"], ["kk", "ертең"]]}
+{"id": "cs_017", "matrix": "kk", "label": "scam", "segments": [["kk", "Экраныңызды көрсетіңіз,"], ["ru", "включите демонстрацию экрана"]]}
+{"id": "cs_018", "matrix": "kk", "label": "scam", "segments": [["kk", "Қателесіп сізге ақша аударып жібердім,"], ["ru", "верните пожалуйста"]]}
+{"id": "cs_019", "matrix": "kk", "label": "scam", "segments": [["kk", "Бұл"], ["ru", "зеркальный кредит"], ["kk", "деп аталады, қорықпаңыз"]]}
+{"id": "cs_020", "matrix": "kk", "label": "scam", "segments": [["kk", "Қолма қол ақшаңызды"], ["ru", "курьер заберёт"], ["kk", "кешке"]]}
+{"id": "cs_021", "matrix": "kk", "label": "scam", "segments": [["kk", "Үйден жұмыс бар, күніне"], ["ru", "от двадцати тысяч"], ["kk", "табасыз"]]}
+{"id": "cs_022", "matrix": "kk", "label": "scam", "segments": [["kk", "Сіз"], ["ru", "соучастник"], ["kk", "болып шығуыңыз мүмкін"]]}
+{"id": "cs_023", "matrix": "kk", "label": "scam", "segments": [["kk", "Жеке куәлік нөміріңізді"], ["ru", "продиктуйте пожалуйста"]]}
+{"id": "cs_024", "matrix": "kk", "label": "scam", "segments": [["kk", "Шотыңыз бұғатталады,"], ["ru", "у вас десять минут"]]}
+{"id": "cs_025", "matrix": "kk", "label": "scam", "segments": [["kk", "Салық комитетінен хабарласып тұрмын,"], ["ru", "подтвердите вид деятельности"]]}
+{"id": "cs_026", "matrix": "kk", "label": "legit", "segments": [["kk", "Сәлем, мен"], ["ru", "в магазине"], ["kk", "тұрмын, не алу керек"]]}
+{"id": "cs_027", "matrix": "kk", "label": "legit", "segments": [["kk", "Апа, ертең"], ["ru", "к врачу"], ["kk", "барамыз ба"]]}
+{"id": "cs_028", "matrix": "kk", "label": "legit", "segments": [["kk", "Жиналыс"], ["ru", "перенесли на пятницу"], ["kk", "екен"]]}
+{"id": "cs_029", "matrix": "kk", "label": "legit", "segments": [["kk", "Банкке бардым,"], ["ru", "очередь большая"], ["kk", "болды"]]}
+{"id": "cs_030", "matrix": "kk", "label": "legit", "segments": [["kk", "Балалар"], ["ru", "уже поели"], ["kk", "ме"]]}
+{"id": "cs_031", "matrix": "kk", "label": "legit", "segments": [["kk", "Сізге"], ["ru", "запись подтверждена"], ["kk", "сағат онға"]]}
+{"id": "cs_032", "matrix": "kk", "label": "legit", "segments": [["kk", "Кешке"], ["ru", "созвонимся"], ["kk", "жарай ма"]]}
+{"id": "cs_033", "matrix": "kk", "label": "legit", "segments": [["kk", "Тапсырысыңыз"], ["ru", "на пункте выдачи"], ["kk", "жатыр"]]}
+{"id": "cs_034", "matrix": "kk", "label": "legit", "segments": [["kk", "Мен"], ["ru", "в пробке стою"], ["kk", "кешігемін"]]}
+{"id": "cs_035", "matrix": "kk", "label": "legit", "segments": [["kk", "Әжем"], ["ru", "передаёт привет"], ["kk", "барлығыңызға"]]}
+{"id": "cs_036", "matrix": "kk", "label": "legit", "segments": [["kk", "Ертең"], ["ru", "свет отключат"], ["kk", "түске дейін"]]}
+{"id": "cs_037", "matrix": "kk", "label": "legit", "segments": [["kk", "Дәрігер айтты,"], ["ru", "анализы хорошие"]]}
+{"id": "cs_038", "matrix": "kk", "label": "legit", "segments": [["kk", "Жалақыны"], ["ru", "в понедельник"], ["kk", "береді екен"]]}
+{"id": "cs_039", "matrix": "kk", "label": "legit", "segments": [["kk", "Бізде"], ["ru", "скидка двадцать процентов"], ["kk", "осы аптада"]]}
+{"id": "cs_040", "matrix": "kk", "label": "legit", "segments": [["kk", "Мектепте"], ["ru", "родительское собрание"], ["kk", "бар"]]}
+{"id": "cs_041", "matrix": "kk", "label": "legit", "segments": [["kk", "Сіздің"], ["ru", "заявка принята"], ["kk", "күте тұрыңыз"]]}
+{"id": "cs_042", "matrix": "kk", "label": "legit", "segments": [["kk", "Мен саған"], ["ru", "попозже перезвоню"]]}
+{"id": "cs_043", "matrix": "kk", "label": "legit", "segments": [["kk", "Нан алуды ұмытпа,"], ["ru", "и молоко тоже"]]}
+{"id": "cs_044", "matrix": "kk", "label": "legit", "segments": [["kk", "Пәтер иесі"], ["ru", "звонил насчёт оплаты"]]}
+{"id": "cs_045", "matrix": "kk", "label": "legit", "segments": [["kk", "Біз"], ["ru", "уже выехали"], ["kk", "жарты сағатта жетеміз"]]}
+{"id": "cs_046", "matrix": "ru", "label": "scam", "segments": [["ru", "Здравствуйте, вас беспокоит"], ["kk", "Қазпошта"], ["ru", "по поводу посылки"]]}
+{"id": "cs_047", "matrix": "ru", "label": "scam", "segments": [["ru", "Апа, не волнуйтесь,"], ["kk", "бәрі жақсы болады"], ["ru", "просто скажите код"]]}
+{"id": "cs_048", "matrix": "ru", "label": "scam", "segments": [["ru", "Ваш сын в полиции,"], ["kk", "тез арада"], ["ru", "переведите деньги"]]}
+{"id": "cs_049", "matrix": "ru", "label": "scam", "segments": [["ru", "Это служба безопасности,"], ["kk", "ешкімге айтпаңыз"]]}
+{"id": "cs_050", "matrix": "ru", "label": "scam", "segments": [["ru", "Назовите номер карты,"], ["kk", "қазір тексереміз"]]}
+{"id": "cs_051", "matrix": "ru", "label": "scam", "segments": [["ru", "Мы из"], ["kk", "Ұлттық банк"], ["ru", "звоним по поводу мошенников"]]}
+{"id": "cs_052", "matrix": "ru", "label": "scam", "segments": [["ru", "Скачайте приложение,"], ["kk", "сосын маған айтыңыз"]]}
+{"id": "cs_053", "matrix": "ru", "label": "scam", "segments": [["ru", "Ваши деньги в опасности,"], ["kk", "уақыт аз қалды"]]}
+{"id": "cs_054", "matrix": "ru", "label": "scam", "segments": [["ru", "Переведите на резервный счёт,"], ["kk", "кейін қайтарамыз"]]}
+{"id": "cs_055", "matrix": "ru", "label": "scam", "segments": [["ru", "Вы выиграли автомобиль,"], ["kk", "салықты төлеу керек"]]}
+{"id": "cs_056", "matrix": "ru", "label": "scam", "segments": [["ru", "Пришёл код, да?"], ["kk", "Айтып жіберіңізші"]]}
+{"id": "cs_057", "matrix": "ru", "label": "scam", "segments": [["ru", "Я ваш начальник,"], ["kk", "бүгін ақша керек"], ["ru", "срочно"]]}
+{"id": "cs_058", "matrix": "ru", "label": "scam", "segments": [["ru", "Возьмите кредит,"], ["kk", "біз оны жабамыз"]]}
+{"id": "cs_059", "matrix": "ru", "label": "scam", "segments": [["ru", "Подтвердите личность через"], ["kk", "ЭЦҚ құпия сөзін"]]}
+{"id": "cs_060", "matrix": "ru", "label": "scam", "segments": [["ru", "Задекларируйте наличные,"], ["kk", "әйтпесе айып салынады"]]}
+{"id": "cs_061", "matrix": "ru", "label": "scam", "segments": [["ru", "Вашу карту заблокируют,"], ["kk", "келісесіз бе"]]}
+{"id": "cs_062", "matrix": "ru", "label": "scam", "segments": [["ru", "Лёгкий заработок на лайках,"], ["kk", "күніне он мың теңге"]]}
+{"id": "cs_063", "matrix": "ru", "label": "scam", "segments": [["ru", "Вы участвуете в схеме,"], ["kk", "сізді тексеріп жатырмыз"]]}
+{"id": "cs_064", "matrix": "ru", "label": "scam", "segments": [["ru", "Не кладите трубку,"], ["kk", "қазір қосамыз"]]}
+{"id": "cs_065", "matrix": "ru", "label": "scam", "segments": [["ru", "Продиктуйте пароль от"], ["kk", "Каспи қосымшасының"]]}
+{"id": "cs_066", "matrix": "ru", "label": "legit", "segments": [["ru", "Мам, я"], ["kk", "үйге келе жатырмын"]]}
+{"id": "cs_067", "matrix": "ru", "label": "legit", "segments": [["ru", "Скажи"], ["kk", "әкеңе"], ["ru", "что машина готова"]]}
+{"id": "cs_068", "matrix": "ru", "label": "legit", "segments": [["ru", "Сегодня"], ["kk", "той"], ["ru", "в семь вечера"]]}
+{"id": "cs_069", "matrix": "ru", "label": "legit", "segments": [["ru", "Ну всё,"], ["kk", "көріскенше"]]}
+{"id": "cs_070", "matrix": "ru", "label": "legit", "segments": [["ru", "Я купил хлеб,"], ["kk", "тағы не керек"]]}
+{"id": "cs_071", "matrix": "ru", "label": "legit", "segments": [["ru", "Это клиника, напоминаем,"], ["kk", "ертең сағат тоғызда"]]}
+{"id": "cs_072", "matrix": "ru", "label": "legit", "segments": [["ru", "Приезжайте к нам,"], ["kk", "әжең сағынып жүр"]]}
+{"id": "cs_073", "matrix": "ru", "label": "legit", "segments": [["ru", "Курьер будет через час,"], ["kk", "үйде боласыз ба"]]}
+{"id": "cs_074", "matrix": "ru", "label": "legit", "segments": [["ru", "Отчёт отправил,"], ["kk", "тексеріп көріңізші"]]}
+{"id": "cs_075", "matrix": "ru", "label": "legit", "segments": [["ru", "У нас"], ["kk", "жиналыс"], ["ru", "в десять"]]}
+{"id": "cs_076", "matrix": "ru", "label": "legit", "segments": [["ru", "Спасибо большое,"], ["kk", "рақмет сізге"]]}
+{"id": "cs_077", "matrix": "ru", "label": "legit", "segments": [["ru", "Ключи у соседей,"], ["kk", "есікті жауып кет"]]}
+{"id": "cs_078", "matrix": "ru", "label": "legit", "segments": [["ru", "Погода плохая,"], ["kk", "жылы киін"]]}
+{"id": "cs_079", "matrix": "ru", "label": "legit", "segments": [["ru", "Ваш заказ оплачен,"], ["kk", "рақмет"]]}
+{"id": "cs_080", "matrix": "ru", "label": "legit", "segments": [["ru", "Я на работе,"], ["kk", "кейін хабарласамын"]]}
+{"id": "cs_081", "matrix": "kk", "label": "scam", "segments": [["kk", "Сіздің"], ["en", "online banking"], ["kk", "есептік жазбаңыз бұғатталды"]]}
+{"id": "cs_082", "matrix": "ru", "label": "scam", "segments": [["ru", "Установите"], ["en", "AnyDesk"], ["ru", "и назовите номер"]]}
+{"id": "cs_083", "matrix": "kk", "label": "scam", "segments": [["kk", "Маған"], ["en", "verification code"], ["kk", "керек"]]}
+{"id": "cs_084", "matrix": "ru", "label": "scam", "segments": [["ru", "Инвестируйте в"], ["en", "crypto trading"], ["ru", "доход гарантирован"]]}
+{"id": "cs_085", "matrix": "en", "label": "scam", "segments": [["en", "This is your bank calling,"], ["ru", "назовите код"]]}
+{"id": "cs_086", "matrix": "en", "label": "scam", "segments": [["en", "Your account is blocked,"], ["kk", "кодты айтыңыз"]]}
+{"id": "cs_087", "matrix": "kk", "label": "scam", "segments": [["kk", "Бұл"], ["en", "security team"], ["kk", "сізге көмектесеміз"]]}
+{"id": "cs_088", "matrix": "ru", "label": "scam", "segments": [["ru", "Зайдите по ссылке и введите"], ["en", "password"]]}
+{"id": "cs_089", "matrix": "en", "label": "scam", "segments": [["en", "We need your card number"], ["ru", "прямо сейчас"]]}
+{"id": "cs_090", "matrix": "kk", "label": "scam", "segments": [["kk", "Сіз"], ["en", "lottery"], ["kk", "ұтып алдыңыз"]]}
+{"id": "cs_091", "matrix": "ru", "label": "legit", "segments": [["ru", "Скинь мне"], ["en", "screenshot"], ["ru", "пожалуйста"]]}
+{"id": "cs_092", "matrix": "kk", "label": "legit", "segments": [["kk", "Ертең"], ["en", "meeting"], ["kk", "болады"]]}
+{"id": "cs_093", "matrix": "en", "label": "legit", "segments": [["en", "See you tomorrow,"], ["kk", "сау бол"]]}
+{"id": "cs_094", "matrix": "ru", "label": "legit", "segments": [["ru", "У меня"], ["en", "deadline"], ["ru", "в пятницу"]]}
+{"id": "cs_095", "matrix": "en", "label": "legit", "segments": [["en", "Thank you so much,"], ["ru", "до свидания"]]}
+{"id": "cs_096", "matrix": "kk", "label": "legit", "segments": [["kk", "Мен"], ["en", "office"], ["kk", "та отырмын"]]}
+{"id": "cs_097", "matrix": "ru", "label": "legit", "segments": [["ru", "Давай"], ["en", "online"], ["ru", "созвонимся вечером"]]}
+{"id": "cs_098", "matrix": "en", "label": "legit", "segments": [["en", "Your delivery arrives today,"], ["kk", "рақмет"]]}
+{"id": "cs_099", "matrix": "kk", "label": "legit", "segments": [["kk", "Ол"], ["en", "project"], ["kk", "туралы айтты"]]}
+{"id": "cs_100", "matrix": "ru", "label": "legit", "segments": [["ru", "Отправь мне"], ["en", "email"], ["ru", "с отчётом"]]}
+{"id": "cs_101", "matrix": "kk", "label": "scam", "segments": [["kk", "Сіздің несиеңіз"], ["ru", "одобрен автоматически"], ["kk", "енді шотқа аударыңыз"]]}
+{"id": "cs_102", "matrix": "ru", "label": "scam", "segments": [["ru", "Сотрудник"], ["kk", "ҰҚК"], ["ru", "сейчас с вами свяжется"]]}
+{"id": "cs_103", "matrix": "kk", "label": "scam", "segments": [["kk", "Ешқандай"], ["ru", "банкомат"], ["kk", "арқылы емес, қосымша арқылы жіберіңіз"]]}
+{"id": "cs_104", "matrix": "ru", "label": "scam", "segments": [["ru", "Это"], ["kk", "Халық банк"], ["ru", "отдел безопасности"]]}
+{"id": "cs_105", "matrix": "kk", "label": "scam", "segments": [["kk", "Сізге"], ["ru", "компенсация положена"], ["kk", "тек кодты айтыңыз"]]}
+{"id": "cs_106", "matrix": "ru", "label": "scam", "segments": [["ru", "Ваш номер"], ["kk", "ертең өшіріледі"]]}
+{"id": "cs_107", "matrix": "kk", "label": "scam", "segments": [["kk", "Полиция қызметкері сөйлеп тұр,"], ["ru", "оставайтесь на линии"]]}
+{"id": "cs_108", "matrix": "ru", "label": "scam", "segments": [["ru", "Переводите частями,"], ["kk", "бір реттен көп емес"]]}
+{"id": "cs_109", "matrix": "kk", "label": "legit", "segments": [["kk", "Анам"], ["ru", "в больнице"], ["kk", "жатыр, бүгін барамын"]]}
+{"id": "cs_110", "matrix": "ru", "label": "legit", "segments": [["ru", "Бабушка спрашивает,"], ["kk", "қашан келесің"]]}
+{"id": "cs_111", "matrix": "kk", "label": "legit", "segments": [["kk", "Көлікті"], ["ru", "на сервис"], ["kk", "апардым"]]}
+{"id": "cs_112", "matrix": "ru", "label": "legit", "segments": [["ru", "Я забыл"], ["kk", "кілтті"], ["ru", "дома"]]}
+{"id": "cs_113", "matrix": "kk", "label": "legit", "segments": [["kk", "Қызым"], ["ru", "сдала экзамен"], ["kk", "жақсы бағаға"]]}
+{"id": "cs_114", "matrix": "ru", "label": "legit", "segments": [["ru", "Позвони"], ["kk", "ағаңа"], ["ru", "он ждёт"]]}
+{"id": "cs_115", "matrix": "kk", "label": "legit", "segments": [["kk", "Банктен"], ["ru", "смс пришло"], ["kk", "жалақы түсті"]]}
+{"id": "cs_116", "matrix": "ru", "label": "legit", "segments": [["ru", "Напоминаем об оплате,"], ["kk", "ай соңына дейін"]]}
+{"id": "cs_117", "matrix": "kk", "label": "legit", "segments": [["kk", "Біз"], ["ru", "на даче"], ["kk", "демалып жатырмыз"]]}
+{"id": "cs_118", "matrix": "ru", "label": "legit", "segments": [["ru", "Поздравляю с днём рождения,"], ["kk", "бақытты бол"]]}
+{"id": "cs_119", "matrix": "kk", "label": "legit", "segments": [["kk", "Ол кісі"], ["ru", "на пенсии"], ["kk", "қазір"]]}
+{"id": "cs_120", "matrix": "ru", "label": "legit", "segments": [["ru", "Ну давай,"], ["kk", "хабарласып тұр"]]}

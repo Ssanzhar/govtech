@@ -1,0 +1,5 @@
+{"engine":"fc_rnnt480","n":60,"audio_s":213.1,"decode_s":82.6,"rtf_wasm_1t":0.3874,"rss_mb":203}
+{"engine":"parakeet110","n":60,"audio_s":213.1,"decode_s":31.9,"rtf_wasm_1t":0.1497,"rss_mb":240}
+{"engine":"moon_tiny","n":60,"audio_s":213.1,"decode_s":15.4,"rtf_wasm_1t":0.0723,"rss_mb":375}
+{"engine":"fc_ctc480","n":60,"audio_s":213.1,"decode_s":89.8,"rtf_wasm_1t":0.4213,"rss_mb":213}
+{"engine":"moon_base","n":60,"audio_s":213.1,"decode_s":34.4,"rtf_wasm_1t":0.1613,"rss_mb":243}

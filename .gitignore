@@ -50,3 +50,10 @@ node_modules
 .playwright-mcp/
 # scratch audio from the ASR capture spike; pairs.jsonl itself IS tracked (ADR D39)
 data/asr_capture/_wav/
+
+# Word-level STT spike: bulky raw decodes, reproducible from scripts/spikes/asr_wordlevel/
+data/asr_capture/english_decodes_*.jsonl
+data/asr_capture/fleurs_decodes_*.jsonl
+data/asr_capture/spanvote_*_decodes.*.jsonl
+data/asr_capture/english_fleurs.jsonl
+data/asr_capture/fleurs_set.jsonl
