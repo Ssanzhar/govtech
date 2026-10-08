@@ -5,6 +5,8 @@ then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECI
 (ADRs D11–D54), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
 kept as history._
 
+- **2026-10-08 — NITEC / eGov pilot pack (RU, draft, nothing sent):** `docs/egov/` (README, ТЗ outline, data-flow/PII map, ГТС security checklist, API spec + proposed hand-off schema, questions for NITEC, architecture diagrams).
+
 ## TL;DR (September 2026)
 - **What it is:** scam-pattern decision support for KK/RU phone calls. Level 1 (citizen) runs
   **on the device**: `site/` pages load `multilingual-e5-base` int8 ONNX + exported head
