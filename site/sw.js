@@ -19,7 +19,7 @@ const SHELL = [
   "/core/embedder.js", "/core/embed-worker.js", "/core/qorgan-config.json", "/core/device.js",
   "/core/summary.js", "/core/asr.js", "/core/scenarios.json", "/core/cue-match.js", "/core/report.js",
   "/core/word-lid.js", "/core/span-vote.js", "/core/asr-wordlevel.json", "/core/endpoint.js",
-  "/core/endpoint-runtime.js", "/core/audio-ring.js", "/core/gigaam.js", "/core/gigaam-worker.js",
+  "/core/endpoint-runtime.js", "/core/audio-ring.js", "/core/gigaam.js", "/core/gigaam-worker.js", "/core/word-runs.js",
 ];
 
 // The on-device speech runtimes (pinned, self-hosted by deploy_bootstrap); optional, so a

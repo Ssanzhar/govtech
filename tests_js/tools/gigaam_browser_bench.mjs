@@ -11,6 +11,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { REPO, serveSite } from "./device_runtime.mjs";
 
 const perLanguage = Number(process.argv[2] || 10);
@@ -135,4 +136,4 @@ async function main() {
   server.close();
 }
 
-main().catch((err) => { console.error(err); process.exit(1); });
+if (import.meta.url === pathToFileURL(process.argv[1]).href) main().catch((err) => { console.error(err); process.exit(1); });

@@ -16,6 +16,7 @@ import { CONSENT_VERSION, DEFAULT_LOCALE, LOCALES, contentLocale, escapeHtml as 
 import { browserLanguages, localize as localizeIn, readStoredLocale, renderEl as renderElIn, storeLocale } from "./i18n-dom.js";
 import { displayName, renderReason } from "./core/explain.js";
 import { recommend } from "./core/recommend.js";
+import { alignTokens, evidenceRanges, overlaps, runsOf } from "./core/word-runs.js";
 
 const $ = (id) => document.getElementById(id);
 const scenarioSel = $("lvScenario");
@@ -32,6 +33,10 @@ const micNote = $("lvMicNote");
 const dlReplay = $("lvDlReplay");
 const dlMicSpeech = $("lvDlMicSpeech");
 const dlMicModel = $("lvDlMicModel");
+const dlMicEndpoint = $("lvDlMicEndpoint");
+const endpointNote = $("lvEndpointNote");
+const liveEl = $("lvLive");
+const liveWordsEl = $("lvLiveWords");
 const callWrap = $("lvCallWrap");
 const dot = $("lvDot");
 const headEl = $("lvHead");
@@ -54,6 +59,10 @@ const TURN_DELAY_MS = 1200;
 // tokenizer 17 MB; the two Vosk tarballs 60 MB (kk) + 46 MB (ru).
 const MODEL_MB = 300;
 const SPEECH_MB = 147; // kk 60 + ru 46 + en 41 MB tarballs (ADR D62)
+const ENDPOINT_MB = 239; // GigaAM 225 MB + its sherpa-onnx runtime 14 MB (ADR D63), downloaded once
+// `live.html?debug=asr` keeps a per-utterance trace on window.__qorganVoice (evidence runs, D63).
+const VOICE_TRACE = new URLSearchParams(location.search).get("debug") === "asr";
+const ENDPOINT_STATUS = { loading: "mic.endpoint_loading", ready: "mic.endpoint_ready", unavailable: "mic.endpoint_unavailable" };
 // The summary's "why" sentence quotes the first few flagged phrases; all of them are already
 // highlighted in the transcript above, and quoting every one turns the reason into a wall.
 const MAX_REASON_PHRASES = 3;
@@ -151,6 +160,7 @@ const detectModelCache = async () => {
   try {
     if (!("caches" in globalThis)) return false;
     for (const name of await caches.keys()) {
+      if (name.startsWith("qorgan-gigaam-")) continue; // the speech model's own store (ADR D63), not the analysis model
       const requests = await (await caches.open(name)).keys();
       if (requests.some((req) => /\/models\/.+\.onnx$/.test(new URL(req.url).pathname))) return true;
     }
@@ -163,6 +173,8 @@ const renderDownloadNotes = () => {
   bind(dlMicSpeech, "download.speech_first", { mb: SPEECH_MB });
   bind(dlMicModel, "download.model_first", { mb: MODEL_MB });
   dlMicModel.hidden = modelCached;
+  bind(dlMicEndpoint, "download.endpoint_first", { mb: ENDPOINT_MB });
+  dlMicEndpoint.hidden = false;
 };
 
 // ── device runtime ───────────────────────────────────────────────────────────
@@ -257,23 +269,61 @@ const highlightLine = (line, evidence) => {
   return html;
 };
 
+/** Words grouped into same-language runs, each run led by a language chip (ADR D63).
+    `token(item)` renders one word's inner HTML; `cls(item)` adds per-word classes. */
+const runsHtml = (items, token, cls = () => "") =>
+  runsOf(items)
+    .map((run) =>
+      `<span class="lv-run" data-lang="${esc(run.lang)}" lang="${esc(run.lang)}">` +
+      `<span class="lv-run-tag" data-i18n="lang_short.${esc(run.lang)}"></span>` +
+      run.items.map((item) => `<span class="lv-w${cls(item)}">${token(item)}</span>`).join(" ") +
+      `</span>`)
+    .join(" ");
+
+/** The transcript line: per-word language runs when the words line up with the text, the
+    evidence phrases highlighted either way. */
+const lineHtml = (line, evidence, words) => {
+  const tokens = words?.length ? alignTokens(line, words) : null;
+  if (!tokens) return highlightLine(line, evidence);
+  const ranges = evidenceRanges(line, evidence);
+  return runsHtml(tokens, (t) => (overlaps(t, ranges) ? `<mark>${esc(t.text)}</mark>` : esc(t.text)));
+};
+
 const appendLine = (line, evidence, meta = null) => {
   const div = document.createElement("div");
   div.className = "lv-line";
-  div.innerHTML = highlightLine(line, evidence);
+  div.innerHTML = lineHtml(line, evidence, meta?.words);
   if (meta) {
     div.lang = meta.language;
+    div.dataset.source = meta.source || "vosk";
     const tag = document.createElement("span");
     tag.className = "lv-line-meta";
     div.append(" ", tag);
-    bind(tag, "call.line_meta", { language: { $: `lang_short.${meta.language}` }, pct: (meta.confidence * 100).toFixed(0) });
+    if (meta.source === "gigaam") {
+      bind(tag, "call.line_meta_src", { language: { $: `lang_short.${meta.language}` }, source: { $: "call.source_gigaam" } });
+    } else {
+      bind(tag, "call.line_meta", { language: { $: `lang_short.${meta.language}` }, pct: (meta.confidence * 100).toFixed(0) });
+    }
   }
+  localize(div); // the run chips
   transcriptEl.appendChild(div);
 };
 
 const showPartial = (text) => {
   partialEl.hidden = !text;
   partialEl.textContent = text || "";
+};
+
+/** Provisional words while the person speaks (the span vote, ADR D63). English stays marked
+    provisional (live English recall is 0.29); the endpoint pass replaces the whole line. */
+const showLiveWords = (words) => {
+  liveEl.hidden = !words?.length;
+  if (!words?.length) {
+    liveWordsEl.innerHTML = "";
+    return;
+  }
+  liveWordsEl.innerHTML = runsHtml(words, (w) => esc(w.word), (w) => (w.frozen && w.lang !== "en" ? "" : " is-provisional"));
+  localize(liveWordsEl);
 };
 
 /** One committed utterance -> meter, band, tags, advice, transcript line. */
@@ -296,6 +346,7 @@ const resetCallUi = () => {
   reportEl.innerHTML = "";
   transcriptEl.innerHTML = "";
   showPartial("");
+  showLiveWords([]);
   lastState = null;
   reportDraft = null;
   call = { turn: 0, score: 0, band: "low", tags: [], advice: null };
@@ -584,17 +635,48 @@ const modelSpecs = (cfg) => {
   );
 };
 
-const onMicUtterance = ({ text, confidence, language }) => {
+/** A final utterance: GigaAM's text (or the Vosk vote, marked as the fallback) -- the only text
+    the session and the meter ever see (ADR D63). */
+const onMicUtterance = (utterance, info = {}) => {
+  const { text, confidence, language } = utterance;
+  showLiveWords([]);
+  showPartial("");
   micQueue = micQueue
     .then(async () => {
       if (!micState) return;
       const rt = await deviceRuntime();
       const out = await rt.advance(micState, text, confidence);
       micState = { ...out.state, locale: cl() };
-      showPartial("");
-      applyUpdate(out.update, micState, text, { language, confidence });
+      applyUpdate(out.update, micState, text, { language, confidence, words: utterance.words, source: utterance.source });
+      if (VOICE_TRACE) {
+        window.__qorganVoice.utterances.push({
+          text, language, confidence, source: utterance.source, fallback: utterance.fallback ?? null, vosk: utterance.vosk,
+          words: utterance.words, decodeMs: utterance.decodeMs ?? null, latencyMs: info.latencyMs ?? null,
+          meter: out.update.meter.score, band: out.update.band, at: performance.now(),
+        });
+      }
     })
     .catch((e) => setNote(micNote, "mic.analysis_failed", { error: errText(e) }, true));
+};
+
+const onEndpointStatus = (status) => {
+  if (VOICE_TRACE && !status.total) window.__qorganVoice.endpoint.push({ ...status, at: performance.now() });
+  const key = status.status === "loading" && status.total ? "mic.endpoint_progress" : ENDPOINT_STATUS[status.status];
+  if (!key) return;
+  endpointNote.hidden = false;
+  setNote(endpointNote, key, key === "mic.endpoint_progress" ? { pct: Math.round((100 * status.loaded) / status.total) } : null, status.status === "unavailable");
+};
+
+/** The word-level models (span vote + word LID, 212 kB); without them the page shows plain
+    partials and the endpoint pass is off. */
+const loadWordLevel = async () => {
+  try {
+    const res = await fetch("core/asr-wordlevel.json");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch {
+    return null;
+  }
 };
 
 const stopTracks = () => {
@@ -611,12 +693,24 @@ const startMic = async () => {
     const rt = await deviceRuntime(micNote);
     const { createDeviceAsr } = await import("./core/asr.js");
     if (!asr) {
+      const wordLevel = await loadWordLevel();
+      if (VOICE_TRACE) window.__qorganVoice = { utterances: [], live: [], endpoint: [], wordLevel: Boolean(wordLevel) };
       asr = await createDeviceAsr({
         models: modelSpecs(rt.config),
         lock: rt.config.asr?.lock ?? null,
         handicap: rt.config.asr?.handicap ?? null,
         optional: rt.config.asr?.optional ?? [],
-        onPartial: ({ text }) => showPartial(text),
+        wordLevel,
+        endpoint: wordLevel ? rt.config.asr?.endpoint ?? null : null,
+        onEndpointStatus,
+        // With the word-level models the live line is the span vote's tagged words; without them, plain partials.
+        onPartial: ({ text }) => { if (!wordLevel) showPartial(text); },
+        onLive: wordLevel
+          ? (words) => {
+            showLiveWords(words);
+            if (VOICE_TRACE) window.__qorganVoice.live.push({ at: performance.now(), words });
+          }
+          : null,
         onUtterance: onMicUtterance,
         onStatus: (_message, info = {}) => {
           const key = ASR_STATUS[info.code];

@@ -126,7 +126,7 @@
         </span>
       </div>
       <ol class="lv-how-steps">
-        <li data-i18n="how.step1">Речь распознаётся в браузере: две небольшие модели Vosk (казахская и русская) работают параллельно, для каждой фразы берётся более уверенный вариант.</li>
+        <li data-i18n="how.step1">Речь распознаётся в браузере: пока вы говорите, три быстрые модели Vosk (казахская, русская, английская) показывают слова с пометкой языка; когда фраза закончена, модель GigaAM расшифровывает её заново, точнее, и анализ получает уже эту расшифровку.</li>
         <li data-i18n="how.step2">Каждая новая фраза добавляется к «окну» разговора (его начало и последние фразы); нейросеть e5 прямо на устройстве превращает его в набор чисел.</li>
         <li data-i18n="how.step3">Классификатор оценивает риск и находит признаки — 15 приёмов мошенников, например просьбу назвать код из SMS.</li>
         <li data-i18n="how.step4">Шкала 0–100 меняется плавно, чтобы одна фраза не вызывала ложную тревогу; сильные признаки (код из SMS, «безопасный счёт») поднимают её сразу.</li>
@@ -168,12 +168,14 @@
       <div class="lv-setup" id="lvSetupMic" hidden>
         <p class="lv-mic-copy mono" data-i18n="mic.copy">Включите на телефоне громкую связь и положите его рядом с компьютером. Qorğan слушает через микрофон компьютера и распознаёт казахскую и русскую речь прямо здесь — звук никуда не отправляется и не записывается. Пока это работает только в браузере на компьютере.</p>
         <p class="lv-disclosure mono" id="lvDlMicSpeech">При первом включении микрофона загрузятся модели распознавания речи — около 106 МБ, один раз; потом они хранятся на этом устройстве.</p>
+        <p class="lv-disclosure mono" id="lvDlMicEndpoint" hidden></p>
         <p class="lv-disclosure mono" id="lvDlMicModel">При первом запуске загрузится модель анализа — около 300 МБ. Это один раз: потом она хранится на этом устройстве. Лучше через Wi-Fi.</p>
         <div class="lv-setup-actions">
           <button type="button" id="lvMicStart" class="btn btn-paper" data-i18n="mic.start">Включить микрофон</button>
           <button type="button" id="lvMicStop" class="btn btn-ghost" hidden data-i18n="mic.stop">Завершить звонок</button>
           <span id="lvMicNote" class="lv-note mono" role="status"></span>
         </div>
+        <p id="lvEndpointNote" class="lv-note mono lv-endpoint-note" role="status" hidden></p>
       </div>
 
       <div class="panel lv-panel" id="lvCallWrap" hidden>
@@ -198,6 +200,7 @@
           <p class="sr-only" data-i18n="call.transcript_label">Текст разговора</p>
           <div class="lv-transcript mono" id="lvTranscript" aria-live="polite"></div>
           <div class="lv-partial mono" id="lvPartial" hidden></div>
+          <div class="lv-live mono" id="lvLive" hidden><span class="lv-live-label" data-i18n="call.live_label">Сейчас звучит (предварительно)</span><div class="lv-live-words" id="lvLiveWords"></div></div>
         </div>
       </div>
 
