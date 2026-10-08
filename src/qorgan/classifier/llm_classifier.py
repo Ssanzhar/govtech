@@ -66,7 +66,7 @@ def _taxonomy_block() -> str:
     (the explainer and the eval only understand those) instead of inventing its own."""
     from qorgan.taxonomy import get_taxonomy
 
-    return "\n".join(f"- {t.id} -- {t.description}" for t in get_taxonomy().tactics)
+    return "\n".join(f"- {t.id} -- {t.description}" for t in get_taxonomy().active_tactics())
 
 
 def system_instruction() -> str:

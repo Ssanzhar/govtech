@@ -136,7 +136,7 @@ class PartnerReportIn(BaseModel):
     @field_validator("tactic_ids")
     @classmethod
     def _known_tactics(cls, value: tuple[str, ...]) -> tuple[str, ...]:
-        known = set(get_taxonomy().tactic_ids())
+        known = set(get_taxonomy().all_tactic_ids())  # v1 and v2 ids (ADR D63)
         unknown = [position for position, tactic_id in enumerate(value) if tactic_id not in known]
         if unknown:  # positions, never the values
             raise ValueError(f"unknown tactic ids at positions {unknown}")
