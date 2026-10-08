@@ -178,3 +178,7 @@ def test_endpoint_pass_names_the_self_hosted_gigaam_model_and_runtime(monkeypatc
     monkeypatch.setenv("QORGAN_ASR_ENDPOINT_MODEL", "")
     assert export_client_config()["asr"]["endpoint"] is None
 
+
+def test_english_handicap_is_the_measured_real_speech_value():
+    # ADR D63: 0.05 gives English 0.910 of real English utterances and 0 false wins on real kk/ru.
+    assert export_client_config()["asr"]["handicap"] == {"en": 0.05}
