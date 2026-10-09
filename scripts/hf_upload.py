@@ -7,7 +7,8 @@ Model repo  sanzh-ts/govtech     <- models/linear (heads + metadata + web/weight
 Dataset repo sanzh-ts/govtech_ds <- the processed splits by explicit name + data/augment.
 Never published: data/processed/{incidents,organizations,citizen_reports,audit_log}.jsonl,
 real_heldout_v2.jsonl / real_train.jsonl (real partner calls, docs/DATA_INTAKE.md),
-data/synthetic/, data/real/ -- the allow list below is the guard, keep it explicit.
+data/synthetic/, data/real/, data/raw/, and the independent held-out `shift_local` (ADR D65)
+-- the allow list (publish_guard.DATASET_ALLOW_PATTERNS) is the guard, keep it explicit.
 """
 
 import sys
@@ -15,7 +16,11 @@ from pathlib import Path
 
 from huggingface_hub import HfApi
 
-from qorgan.data.publish_guard import PUBLISHED_SPLITS, find_unscrubbed
+from qorgan.data.publish_guard import DATASET_ALLOW_PATTERNS, PUBLISHED_SPLITS, assert_publishable, find_unscrubbed
+
+# Independent held-outs never leave this machine (ADR D65): `shift_local` must not match.
+assert_publishable(DATASET_ALLOW_PATTERNS)
+assert_publishable([p.name for p in Path("data/augment").glob("*")])  # the augment folder goes up whole
 
 # PII gate (ADR D45): every utterance headed for the public dataset must already be a
 # scrub_text fixed point -- nothing is uploaded otherwise.
@@ -41,11 +46,8 @@ api.upload_folder(repo_id=MODEL_REPO, repo_type="model", folder_path="data/lexic
 DATASET_REPO = "sanzh-ts/govtech_ds"
 api.upload_folder(
     repo_id=DATASET_REPO, repo_type="dataset", folder_path="data/processed",
-    allow_patterns=[
-        "train.jsonl", "val.jsonl", "test.jsonl", "authored_heldout.jsonl", "ood.jsonl",
-        "adversarial.jsonl", "adversarial_legit.jsonl", "manifest.json",
-        "shift.jsonl", "shift.manifest.json",  # the second-generator eval split (ADR D35)
-    ],
+    # train/val/test/authored_heldout/ood/adversarial*/manifest + shift (ADR D35); never shift_local (D65)
+    allow_patterns=list(DATASET_ALLOW_PATTERNS),
     # The pre-A2 name of the hand-written set; it was never real calls, but the name misleads.
     delete_patterns=["real_heldout.jsonl"],
 )
