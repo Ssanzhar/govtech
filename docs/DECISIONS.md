@@ -1662,3 +1662,102 @@ evidence in `docs/research/2026-10/voice_d64/`.
   (`docs/RECORDING_SCRIPT.md`). Cue survival on real speech is unmeasured.
 - Not done: a GigaAM + VAD mode for Android WebView, where Vosklet cannot run (no cross-origin
   isolation).
+
+### D66 — The scrubber masks spoken numbers and self-introduced names; 3-year audit retention; SBOM and scans (2026-10-09)
+The eGov/NITEC review (`docs/egov/SECURITY_CHECKLIST.md`, `DATA_FLOW_PII.md`) and the legal gap list
+(`docs/LEGAL_ASSESSMENT.md` §6, M7 / M4) left code-side gaps. The worst: voice mode writes numbers as
+words («восемь семьсот ноль один…»), so a report could carry a full phone, card, IIN or account
+number past the digit-only scrubber.
+
+**Scrubber (`data/scrub.py` + `scrub_numbers.py`, `scrub_names.py`, `scrub_tokens.py`; 1:1 JS port
+`site/core/scrub-*.js`).**
+- *Number runs.* Number words in ru / kk / en, ASR spellings («семсот», «пятдесят») and Kazakh
+  without its special letters («сегиз жуз»), optionally mixed with digit groups, separated only
+  by spaces, commas or hyphens (up to 3 characters, line breaks included). Each run is composed
+  as a listener writes dictation down («семьсот ноль один» = 701, «сегіз жүз жетпіс» = 870,
+  «он бір» = 11). A run with a word is masked from **7 digit-equivalents**. 7 is the shortest
+  phone number (city); a dictated 6-digit code stays, like the digit rule's OTP. Placeholder by
+  shape: 16 `[CARD]`, 12 `[IIN]`, 10/11 starting 7/8 `[PHONE]`, else `[NUMBER]`. A run split by
+  the endpointer across two utterances is judged as one and masked line by line.
+- *Left alone:* short quantities («два раза», «код из шести цифр», «назовите шесть цифр»),
+  amounts (multiplier words such as тысяча / мың / thousand break a run; a following currency
+  word or sign keeps it), em-dash prose, dates, times.
+- *Digits:* KZ IBAN (`KZ` + 2 digits + 16 alphanumerics, optional spaces) → `[IBAN]`. Digit
+  groups split by single spaces or hyphens in a card / IIN / phone shape («940101 300123»,
+  «707 123 45 67») are masked; ASCII-glued ids stay fixed points.
+- *Names, conservatively.* Strong triggers («меня зовут», «моё имя», «моя фамилия», «атым»,
+  «есімім», "my name is") take the next word in any case (ASR is lower case), plus up to two
+  capitalised or surname-ending words. Weak triggers («это», "this is", "I'm") need a
+  capitalised name and a following «из / с / от» / "from / calling / with"; two words only if
+  the second has a surname ending. A stop list keeps organisations and brands out; a rank stays
+  visible («это майор [NAME] из полиции»). Only the name is replaced.
+- *Addresses are out of scope.* Scammers rarely need the victim's address, and address patterns
+  in kk/ru free text collide with branch and organisation names, which are the evidence. On the
+  corpus the only address is one synthetic delivery row. The citizen reviews and edits the text
+  before sending, and only an audited investigator opens a full transcript. Also not masked:
+  addressing someone by name («Здравствуйте, Аида Кайратовна»), IBANs said as words.
+
+**Evidence survives.** Measured by `scripts/scrub_impact.py` over every published split plus
+`data/augment/`: **0** rows change their hard-signal cue tactics, **0** cue spans change text, **0**
+reassurance flags flip, and **0** gold trigger spans are lost. 38 gold spans (train 26, val 3,
+test 8, ood 1) survive in masked form. That needed two changes after the first measurement on
+train: "this is Kazakhstan Post calling" and "this is Major Ivanov from…" were read as names.
+Flagged phrases and gold spans are now grounded in this order (`data/span_grounding.py`, mirrored
+in `report.js`): as-is, then scrubbed alone, then scrubbed in their original context. Before, a
+phrase that held PII was dropped. «Назовите код из СМС: [NUMBER]» keeps the request. Parity:
+fixture 102 cases, plus a corpus-wide check of 21,714 texts with 0 Python/JS mismatches.
+
+**Impact analysis.** The scrubber runs on: the report path (`prepare_report`; the browser preview
+and `finalizeReport`), partner ingress (unscrubbed text → 422, so partners must apply the same
+rules), the content-free checks of the audit log, feedback, analyst ids and stored reports,
+`build_corpus` / `incident_seed` / `real_intake`, and the publish guard (D45). **It does not run
+on scoring.** `/api/analyze` and the browser score raw text, so the served model sees no change
+at runtime.
+- *Corpus rows the new scrubber changes* (not rebuilt, on purpose): train **286 / 1,880** (125
+  scam, 161 legit; 276 `[NAME]`, 11 `[PHONE]`, 7 `[NUMBER]`), val 24 / 135, test 29 / 143,
+  authored 0 / 42, ood 18 / 118, shift 14 / 66, adversarial 13 / 109, adversarial_legit 17 / 109.
+  Augment: 52 rows in 4 of 5 files. Almost all are names.
+- *Score effect on the served weights* (`weights.json`, server ONNX proxy, `qorgan.eval.run` on
+  re-scrubbed copies vs the current splits; measured, nothing tuned). FPR: test 0.017 → 0.017,
+  val 0.013 → 0.013, ood 0.014 → **0.000**, shift 0.030 → 0.030, adversarial_legit 0 → 0.
+  Recall: test 0.988 = , ood 0.909 → 0.932, shift 0.394 → 0.455, adversarial 0.936 = ,
+  adversarial_legit 0.908 = . No split or language gets a higher FPR. The ood false positive
+  that goes away is a ledger-inspected row.
+- *What the scheduled retrain (after taxonomy-v2) must do:* (1) re-scrub `data/augment/*.jsonl`
+  and the separately built splits (`ood`, `shift`, `adversarial*`) with
+  `python -m qorgan.data.publish_guard --fix`; (2) `python -m qorgan.data.build_corpus`, whose
+  manifest now records `scrubber_version: 2`; (3) retrain, export, regenerate fixtures and
+  re-gate as usual. No lexicon change is needed: cue matching is unaffected. Until then
+  `test_local_published_splits_are_scrubbed` and `test_every_augment_file_is_already_scrubbed`
+  **xfail** as "rebuild pending" (the manifest says v1), and `scripts/hf_upload.py` refuses to
+  publish (the guard finds the rows).
+
+**Stored records under a stricter scrubber.** A record on disk was checked by the scrubber of its
+day. Re-checking it on read would break `qorgan.audit verify` with no tampering, and make the
+reports file unreadable (console, deletion by receipt, purge). Loaders now validate with
+`STORED_RECORD_CONTEXT`, which skips only the content check; every write is still checked
+(`tests/test_scrub_evolution.py`). Stored reports are **not** re-scrubbed: their incident ids
+derive from the transcript, so a rewrite would orphan incidents. Reports stored before D66 keep
+their old scrubbing until they expire (≤ 180 days). A pilot starts with an empty store.
+
+**Audit retention.** `QORGAN_AUDIT_RETENTION_DAYS`, default and floor 1096 (3 years with a leap
+day; lower is refused at startup). The purge and every deletion path are pinned never to touch
+`audit_log.jsonl`. A purge leaves it byte-identical and `verify` passing
+(`tests/test_audit_retention.py`). Archiving older entries is an operator procedure (WORM plus the
+last `head`), never deleting lines (`docs/DEPLOY.md` §4).
+
+**Supply chain** (`docs/egov/security/`).
+- *SBOMs:* CycloneDX for the image pins, the npm toolchain and the self-hosted browser runtime
+  (`scripts/generate_sbom.py`).
+- *pip-audit:* image pins **0 findings**. The dev venv has 61 advisories in 9 packages that are
+  not in the image.
+- *npm audit:* 2 high, 4 moderate, all in transformers.js 3.8.1's dev tree. Parity-pinned, so
+  documented and not bumped; none of it runs in production.
+- *bandit:* 2 HIGH fixed (SHA-1 id marked non-cryptographic, same digest; a path-checked zip
+  extract annotated). 10 MEDIUM triaged.
+- Not touched: the `onnxruntime` / `onnxruntime-node` / transformers.js pins.
+
+**Stays organisational.** KZ hosting and platform access-log retention (M5), whether the audit
+log must be kept longer than 3 years, and whether addresses or forms of address must be masked
+(lawyer, M1 / M4). Also: MFA/SSO, the ТД ИБ, the incident procedure, the responsible person, the
+SOC contract, and CI integration of the scans plus Trivy.

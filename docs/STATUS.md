@@ -5,6 +5,7 @@ then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECI
 (ADRs D11–D54), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
 kept as history._
 
+- **2026-10-09 — eGov code gaps closed (ADR D66):** the scrubber now masks numbers said as words or as mixed digits and words (ru/kk/en, from 7 digits), KZ IBANs, digit groups split by spaces, and self-introduced names. The JS port matches on 21,714 corpus texts. Measured on the corpus: no hard-signal cue, cue span, reassurance flag or gold span is lost; on the served weights no FPR rises. The corpus is NOT rebuilt: 286/1,880 train rows change, mostly names. The scheduled retrain after taxonomy-v2 must run `publish_guard --fix` on augment/ood/shift/adversarial, then `build_corpus` (which records `scrubber_version: 2`). Until then two on-disk checks xfail and `hf_upload` refuses. The audit log is kept ≥ 3 years and never purged. SBOMs, pip-audit, npm audit and bandit reports are in `docs/egov/security/`.
 - **2026-10-08 — NITEC / eGov pilot pack (RU, draft, nothing sent):** `docs/egov/` (README, ТЗ outline, data-flow/PII map, ГТС security checklist, API spec + proposed hand-off schema, questions for NITEC, architecture diagrams).
 
 ## TL;DR (September 2026)
