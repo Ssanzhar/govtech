@@ -13,7 +13,7 @@ No file here contains secrets or local paths. Regenerate the SBOMs with
 | `pip-audit-dev-env.json` | pip-audit over the local development venv (dev, research, harness extras) | 61 advisories in 9 packages, none in the image (below) |
 | `npm-audit.json` | `npm audit` | 2 high, 4 moderate, all dev-only (below) |
 | `bandit-src.{json,txt}` | bandit 1.9.4 over `src/` | 0 high (2 fixed), 10 medium (below), 2 low |
-| `semgrep-site.json` | semgrep over `site/` (own JS/HTML, `vendor/` and models excluded), if present | see the ADR D66 entry |
+| — | semgrep over `site/` (own JS) | **not run**: the semgrep install did not complete in this environment; the JS SAST stays open (CI item) |
 
 ## Triage
 

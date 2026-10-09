@@ -1754,7 +1754,7 @@ last `head`), never deleting lines (`docs/DEPLOY.md` §4).
 - *npm audit:* 2 high, 4 moderate, all in transformers.js 3.8.1's dev tree. Parity-pinned, so
   documented and not bumped; none of it runs in production.
 - *bandit:* 2 HIGH fixed (SHA-1 id marked non-cryptographic, same digest; a path-checked zip
-  extract annotated). 10 MEDIUM triaged.
+  extract annotated). 10 MEDIUM triaged. semgrep over the own JS in `site/` was not run (install did not complete here): open.
 - Not touched: the `onnxruntime` / `onnxruntime-node` / transformers.js pins.
 
 **Stays organisational.** KZ hosting and platform access-log retention (M5), whether the audit
