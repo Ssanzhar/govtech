@@ -1,0 +1,556 @@
+{
+ "channel": "clean",
+ "isolation": {
+  "crossOriginIsolated": false,
+  "sab": false
+ },
+ "ready": {
+  "type": "ready",
+  "loadMs": 997.9000000357628,
+  "fromCache": false,
+  "heapMb": 275.375
+ },
+ "cached_reload": {
+  "type": "ready",
+  "loadMs": 430.19999998807907,
+  "fromCache": true,
+  "heapMb": 275.375
+ },
+ "n": 60,
+ "errors": 0,
+ "identical_to_native": 49,
+ "rtf_median": 0.25179180887372016,
+ "rtf_total": 0.26005464977434833,
+ "by_language": {
+  "kk": {
+   "n": 20,
+   "identical_to_native": 20,
+   "median_rtf": 0.257647058821467
+  },
+  "ru": {
+   "n": 20,
+   "identical_to_native": 15,
+   "median_rtf": 0.23376736111111113
+  },
+  "en": {
+   "n": 20,
+   "identical_to_native": 14,
+   "median_rtf": 0.3134601449296958
+  }
+ },
+ "rss_mb": {
+  "before_model": 361.140625,
+  "after_load": 1362.828125,
+  "after_decodes": 915.3125
+ },
+ "differing": [
+  {
+   "id": "fleurs_ru_004",
+   "browser": "причиной дебатов стали разногласия относительно затрат на оказание материальной поддержки и восстановления зданий после урагана катрина который некоторые фискальные консерваторы в шутку назвали новоарлианской сделкой буша",
+   "native": "причиной дебатов стали разногласия относительно затрат на оказание материальной поддержки и восстановления зданий после урагана катрина который некоторые фискальные консерваторы в шутку назвали новорлианской сделкой буша"
+  },
+  {
+   "id": "fleurs_ru_005",
+   "browser": "в тысяча девятьсот девяностом году он был добавлен в список всемирного наследия находящегося под угрозой из за опасности со стороны песко в пустыни",
+   "native": "в тысяча девятьсот девяностом году он был добавлен в список всемирного наследия находящегося под угрозой из з опасности со стороны песко в пустыни"
+  },
+  {
+   "id": "fleurs_ru_009",
+   "browser": "не оскверняйте это место нанося или выцарапывая граффити на объекты вокруг",
+   "native": "не оскверняйте это место нанося или выцерапывая граффити на объекты вокруг"
+  },
+  {
+   "id": "fleurs_ru_016",
+   "browser": "султан марокко перестроил город под названием эддар эльбейда а испанские торговцы создавшие тут торговые базы назвали его касабланка",
+   "native": "султан марокко перестроил город под названием эддар эль бейда а испанские торговцы создавшие тут торговые базы назвали его касабланка"
+  },
+  {
+   "id": "fleurs_ru_017",
+   "browser": "так же как луна притягивает землю при этом вызывая приливы так и млечный путь воздействует на галактику стрельце",
+   "native": "также как луна притягивает землю при этом вызывая приливы так и млечный путь воздействует на галактику стрельце"
+  }
+ ],
+ "results": [
+  {
+   "id": "fleurs_kk_000",
+   "lang": "kk",
+   "audioS": 14.88,
+   "decodeMs": 3539.100000023842,
+   "browser": "ақш тың гимнастика федерациясы ақш олимпиада комитетінің хатын қолдайды және біздің барлық спортсмендер үшін қоршаған ортаның қауіпсіздігін арттырудың абсолютті қажеттілігін мойындайды",
+   "native": "ақш тың гимнастика федерациясы ақш олимпиада комитетінің хатын қолдайды және біздің барлық спортсмендер үшін қоршаған ортаның қауіпсіздігін арттырудың абсолютті қажеттілігін мойындайды"
+  },
+  {
+   "id": "fleurs_kk_001",
+   "lang": "kk",
+   "audioS": 24.36,
+   "decodeMs": 6027.5,
+   "browser": "оны вичи француздар билеген бұл бір мың тоғыз жүз қырықыншы жылы немістермен бейбіт келісім жасасқан және соғысудың орнына жаулаушылармен бірге жұмыс істеген француздар болды",
+   "native": "оны вичи француздар билеген бұл бір мың тоғыз жүз қырықыншы жылы немістермен бейбіт келісім жасасқан және соғысудың орнына жаулаушылармен бірге жұмыс істеген француздар болды"
+  },
+  {
+   "id": "fleurs_kk_002",
+   "lang": "kk",
+   "audioS": 16.44,
+   "decodeMs": 3944.300000011921,
+   "browser": "ешкілер алғаш рет қол үйретілген уақыт иранның загроз тауларында шамамен он мың жыл бұрын деп саналады",
+   "native": "ешкілер алғаш рет қол үйретілген уақыт иранның загроз тауларында шамамен он мың жыл бұрын деп саналады"
+  },
+  {
+   "id": "fleurs_kk_003",
+   "lang": "kk",
+   "audioS": 11.82,
+   "decodeMs": 2927.199999988079,
+   "browser": "сондықтан бұл пішімнің арақатынасы ең қарапайым бүтін санның қатынасын алу үшін он екіге бөлу үште екі деп аталады",
+   "native": "сондықтан бұл пішімнің арақатынасы ең қарапайым бүтін санның қатынасын алу үшін он екіге бөлу үште екі деп аталады"
+  },
+  {
+   "id": "fleurs_kk_004",
+   "lang": "kk",
+   "audioS": 17.34,
+   "decodeMs": 4467.599999964237,
+   "browser": "ватикан қаласы халқының саны шамамен сегіз жүз бұл дүние жүзіндегі ең шағын тәуелсіз ел және халық саны ең аз ел",
+   "native": "ватикан қаласы халқының саны шамамен сегіз жүз бұл дүние жүзіндегі ең шағын тәуелсіз ел және халық саны ең аз ел"
+  },
+  {
+   "id": "fleurs_kk_005",
+   "lang": "kk",
+   "audioS": 17.58,
+   "decodeMs": 4426.5,
+   "browser": "хьюн қызметтен кетуді сұранды және оны кабинетте эдэвиэмпи ауыстырады норман лэмп эмпи дэви босатып жатқан бизнес министрі жұмысын алады деп күтілуде",
+   "native": "хьюн қызметтен кетуді сұранды және оны кабинетте эдэвиэмпи ауыстырады норман лэмп эмпи дэви босатып жатқан бизнес министрі жұмысын алады деп күтілуде"
+  },
+  {
+   "id": "fleurs_kk_006",
+   "lang": "kk",
+   "audioS": 16.08,
+   "decodeMs": 4162.699999988079,
+   "browser": "егер сіз романдық тілді білсеңіз сізге португал тілін үйрену оңайырақ болатынын айтпай ақ қойса да болады",
+   "native": "егер сіз романдық тілді білсеңіз сізге португал тілін үйрену оңайырақ болатынын айтпай ақ қойса да болады"
+  },
+  {
+   "id": "fleurs_kk_007",
+   "lang": "kk",
+   "audioS": 13.56,
+   "decodeMs": 3669.699999988079,
+   "browser": "тауарларды тасымалдау үшін кемелерді пайдалану әзірше адамдардың және тауарлардың үлкен мөлшерлерін мұхиттарда жылжытудың ең тиімді жолы болып табылады",
+   "native": "тауарларды тасымалдау үшін кемелерді пайдалану әзірше адамдардың және тауарлардың үлкен мөлшерлерін мұхиттарда жылжытудың ең тиімді жолы болып табылады"
+  },
+  {
+   "id": "fleurs_kk_008",
+   "lang": "kk",
+   "audioS": 18.12,
+   "decodeMs": 5010.399999976158,
+   "browser": "егер сіз романдық тілді білсеңіз сізге португал тілін үйрену оңайырақ болатынын айтпай ақ қойса да болады",
+   "native": "егер сіз романдық тілді білсеңіз сізге португал тілін үйрену оңайырақ болатынын айтпай ақ қойса да болады"
+  },
+  {
+   "id": "fleurs_kk_009",
+   "lang": "kk",
+   "audioS": 19.44,
+   "decodeMs": 5124.800000011921,
+   "browser": "олар қауіпсіз жүзуге арналған құмды жағажайлардың барлығына дерлік және олардың көпшілігінде похутукава ағаштарымен қамтамасыз етілген",
+   "native": "олар қауіпсіз жүзуге арналған құмды жағажайлардың барлығына дерлік және олардың көпшілігінде похутукава ағаштарымен қамтамасыз етілген"
+  },
+  {
+   "id": "fleurs_kk_010",
+   "lang": "kk",
+   "audioS": 23.88,
+   "decodeMs": 5757.800000011921,
+   "browser": "дәстүрлірек шіркеулер пасха демалыс күндері сенбі түні пасхалық таңғы ғибадатты өткізеді жиналыстар жиі түн ортасында мәсіхтің қайта тірілуін мерекелеуге айналады",
+   "native": "дәстүрлірек шіркеулер пасха демалыс күндері сенбі түні пасхалық таңғы ғибадатты өткізеді жиналыстар жиі түн ортасында мәсіхтің қайта тірілуін мерекелеуге айналады"
+  },
+  {
+   "id": "fleurs_kk_011",
+   "lang": "kk",
+   "audioS": 10.44,
+   "decodeMs": 2345.100000023842,
+   "browser": "ежелгі мәдениеттер мен тайпалар сүтке жүнге етке және терілерге оңай қол жеткізу үшін оларды өсіре бастады",
+   "native": "ежелгі мәдениеттер мен тайпалар сүтке жүнге етке және терілерге оңай қол жеткізу үшін оларды өсіре бастады"
+  },
+  {
+   "id": "fleurs_kk_012",
+   "lang": "kk",
+   "audioS": 19.2,
+   "decodeMs": 4470.100000023842,
+   "browser": "орта ғасырлардың соңына қарай батыс еуропа өз стилін дамыта бастады бұл уақыттағы крескерлердің нәтижесіндегі ең үлкен дамуларының бірі болып адамдарды киімін жабу үшін түймелерді пайдалануы табылады",
+   "native": "орта ғасырлардың соңына қарай батыс еуропа өз стилін дамыта бастады бұл уақыттағы крескерлердің нәтижесіндегі ең үлкен дамуларының бірі болып адамдарды киімін жабу үшін түймелерді пайдалануы табылады"
+  },
+  {
+   "id": "fleurs_kk_013",
+   "lang": "kk",
+   "audioS": 25.56,
+   "decodeMs": 6279.800000011921,
+   "browser": "ақш президенті дональд трамп жексенбі күні кешкі баспасөз хатшысы арқылы жасаған мәлімдемесінде ақш қарушы күштерін сириядан алып шығуы туралы мәлімдеді",
+   "native": "ақш президенті дональд трамп жексенбі күні кешкі баспасөз хатшысы арқылы жасаған мәлімдемесінде ақш қарушы күштерін сириядан алып шығуы туралы мәлімдеді"
+  },
+  {
+   "id": "fleurs_kk_014",
+   "lang": "kk",
+   "audioS": 12.66,
+   "decodeMs": 3145.699999988079,
+   "browser": "кейбір маршруттарда үлкенірек компаниялардың өз ұшақтары бар бірақ басқа маршруттарда және кішірек фирмаларда мәселе болған",
+   "native": "кейбір маршруттарда үлкенірек компаниялардың өз ұшақтары бар бірақ басқа маршруттарда және кішірек фирмаларда мәселе болған"
+  },
+  {
+   "id": "fleurs_kk_015",
+   "lang": "kk",
+   "audioS": 10.62,
+   "decodeMs": 2863.800000011921,
+   "browser": "екі құрғақ ұнтақты араластырыңыз содан кейін таза ылғалды қолдармен оларды қысып шарик жасаңыз",
+   "native": "екі құрғақ ұнтақты араластырыңыз содан кейін таза ылғалды қолдармен оларды қысып шарик жасаңыз"
+  },
+  {
+   "id": "fleurs_kk_016",
+   "lang": "kk",
+   "audioS": 21,
+   "decodeMs": 6215.699999988079,
+   "browser": "мұхаммед өзінің күнделікті өмірінен тыс мәселелерге қатты қызығатын ол ойлану үшін нұр жарық тауындағы хира ретінде белгілі болған үңгірге жиі баратын",
+   "native": "мұхаммед өзінің күнделікті өмірінен тыс мәселелерге қатты қызығатын ол ойлану үшін нұр жарық тауындағы хира ретінде белгілі болған үңгірге жиі баратын"
+  },
+  {
+   "id": "fleurs_kk_017",
+   "lang": "kk",
+   "audioS": 9.6,
+   "decodeMs": 2786.5,
+   "browser": "жапонияның ядролық агенттігінің хабарлауынша зауытта радиоактивті цезий мен йод анықталған",
+   "native": "жапонияның ядролық агенттігінің хабарлауынша зауытта радиоактивті цезий мен йод анықталған"
+  },
+  {
+   "id": "fleurs_kk_018",
+   "lang": "kk",
+   "audioS": 16.38,
+   "decodeMs": 4857.5,
+   "browser": "өсімдіктер күн сәулесінен фотосинтез арқылы қуат алады олар сонымен қатар көлеңе береді",
+   "native": "өсімдіктер күн сәулесінен фотосинтез арқылы қуат алады олар сонымен қатар көлеңе береді"
+  },
+  {
+   "id": "fleurs_kk_019",
+   "lang": "kk",
+   "audioS": 24.6,
+   "decodeMs": 7380.699999988079,
+   "browser": "хьюн қызметтен кетуді сұранды және оны кабинетте эд дэви эмпи ауыстырады норман лэмп эмпи дэви босатып жатқан бизнес министрі жұмысын алады деп күтілуде",
+   "native": "хьюн қызметтен кетуді сұранды және оны кабинетте эд дэви эмпи ауыстырады норман лэмп эмпи дэви босатып жатқан бизнес министрі жұмысын алады деп күтілуде"
+  },
+  {
+   "id": "fleurs_ru_000",
+   "lang": "ru",
+   "audioS": 16.92,
+   "decodeMs": 4123.800000011921,
+   "browser": "в древнем китае использовали уникальный способ обозначения периодов времени каждый этап китая или каждая семья находившаяся у власти были особой династией",
+   "native": "в древнем китае использовали уникальный способ обозначения периодов времени каждый этап китая или каждая семья находившаяся у власти были особой династией"
+  },
+  {
+   "id": "fleurs_ru_001",
+   "lang": "ru",
+   "audioS": 11.52,
+   "decodeMs": 2693,
+   "browser": "мадагаскар намного больше других и является самобытным континентом в том что касается дикой природы",
+   "native": "мадагаскар намного больше других и является самобытным континентом в том что касается дикой природы"
+  },
+  {
+   "id": "fleurs_ru_002",
+   "lang": "ru",
+   "audioS": 8.64,
+   "decodeMs": 1931.9000000357628,
+   "browser": "во всех научных вопросах включая психологию были приняты взгляды аристотеля",
+   "native": "во всех научных вопросах включая психологию были приняты взгляды аристотеля"
+  },
+  {
+   "id": "fleurs_ru_003",
+   "lang": "ru",
+   "audioS": 7.92,
+   "decodeMs": 1750.699999988079,
+   "browser": "в различных местах рима были установлены большие телевизионные экраны с помощью которых люди могли наблюдать за церемонией",
+   "native": "в различных местах рима были установлены большие телевизионные экраны с помощью которых люди могли наблюдать за церемонией"
+  },
+  {
+   "id": "fleurs_ru_004",
+   "lang": "ru",
+   "audioS": 19.44,
+   "decodeMs": 4525.800000011921,
+   "browser": "причиной дебатов стали разногласия относительно затрат на оказание материальной поддержки и восстановления зданий после урагана катрина который некоторые фискальные консерваторы в шутку назвали новоарлианской сделкой буша",
+   "native": "причиной дебатов стали разногласия относительно затрат на оказание материальной поддержки и восстановления зданий после урагана катрина который некоторые фискальные консерваторы в шутку назвали новорлианской сделкой буша"
+  },
+  {
+   "id": "fleurs_ru_005",
+   "lang": "ru",
+   "audioS": 10.44,
+   "decodeMs": 2358.800000011921,
+   "browser": "в тысяча девятьсот девяностом году он был добавлен в список всемирного наследия находящегося под угрозой из за опасности со стороны песко в пустыни",
+   "native": "в тысяча девятьсот девяностом году он был добавлен в список всемирного наследия находящегося под угрозой из з опасности со стороны песко в пустыни"
+  },
+  {
+   "id": "fleurs_ru_006",
+   "lang": "ru",
+   "audioS": 7.2,
+   "decodeMs": 1599,
+   "browser": "согласно ядерному управлению япониий на заводе были обнаружены радиоактивные цезий и йод",
+   "native": "согласно ядерному управлению япониий на заводе были обнаружены радиоактивные цезий и йод"
+  },
+  {
+   "id": "fleurs_ru_007",
+   "lang": "ru",
+   "audioS": 27,
+   "decodeMs": 6413,
+   "browser": "надлежащее использование блогов может дать учащимся возможность стать более аналитичными и критичными путем активного отклика на интернет материалы учащиеся могут определять свою позицию в контексте чужих работ а также излагать свои собственные взгляды на конкретные вопросы аравек две тысячи два",
+   "native": "надлежащее использование блогов может дать учащимся возможность стать более аналитичными и критичными путем активного отклика на интернет материалы учащиеся могут определять свою позицию в контексте чужих работ а также излагать свои собственные взгляды на конкретные вопросы аравек две тысячи два"
+  },
+  {
+   "id": "fleurs_ru_008",
+   "lang": "ru",
+   "audioS": 11.52,
+   "decodeMs": 2834.300000011921,
+   "browser": "только мутации в клетках зародышевой линии могут передаваться далее детям в то время как мутация где то еще могут привести к гибели клеток или раку",
+   "native": "только мутации в клетках зародышевой линии могут передаваться далее детям в то время как мутация где то еще могут привести к гибели клеток или раку"
+  },
+  {
+   "id": "fleurs_ru_009",
+   "lang": "ru",
+   "audioS": 5.94,
+   "decodeMs": 1497.1000000238419,
+   "browser": "не оскверняйте это место нанося или выцарапывая граффити на объекты вокруг",
+   "native": "не оскверняйте это место нанося или выцерапывая граффити на объекты вокруг"
+  },
+  {
+   "id": "fleurs_ru_010",
+   "lang": "ru",
+   "audioS": 15.12,
+   "decodeMs": 3901,
+   "browser": "когда все доступные ресурсы эффективно используются во всех функциональных подразделениях организации то могут появиться креативность и изобретательность",
+   "native": "когда все доступные ресурсы эффективно используются во всех функциональных подразделениях организации то могут появиться креативность и изобретательность"
+  },
+  {
+   "id": "fleurs_ru_011",
+   "lang": "ru",
+   "audioS": 16.32,
+   "decodeMs": 4218.600000023842,
+   "browser": "серия асус иписи ранее представленная во всем мире с ориентацией на такие факторы как экономия средств и функциональность стала горячей темой во время месяца информационных технологий в тайбэе в две тысячи седьмом году",
+   "native": "серия асус иписи ранее представленная во всем мире с ориентацией на такие факторы как экономия средств и функциональность стала горячей темой во время месяца информационных технологий в тайбэе в две тысячи седьмом году"
+  },
+  {
+   "id": "fleurs_ru_012",
+   "lang": "ru",
+   "audioS": 7.92,
+   "decodeMs": 2255.300000011921,
+   "browser": "переносчиками являются свиньи от которых через комыров болезнь затем передается человеку",
+   "native": "переносчиками являются свиньи от которых через комыров болезнь затем передается человеку"
+  },
+  {
+   "id": "fleurs_ru_013",
+   "lang": "ru",
+   "audioS": 9.18,
+   "decodeMs": 2213.899999976158,
+   "browser": "также может быть выгодно купить вилдкард которая позволяет посещать национальные парки юар либо выброчно либо все",
+   "native": "также может быть выгодно купить вилдкард которая позволяет посещать национальные парки юар либо выброчно либо все"
+  },
+  {
+   "id": "fleurs_ru_014",
+   "lang": "ru",
+   "audioS": 11.28,
+   "decodeMs": 2521.800000011921,
+   "browser": "только мутации в клетках зародышевой линии могут передаваться далее детям в то время как мутации где то еще могут привести к гибели клеток или раку",
+   "native": "только мутации в клетках зародышевой линии могут передаваться далее детям в то время как мутации где то еще могут привести к гибели клеток или раку"
+  },
+  {
+   "id": "fleurs_ru_015",
+   "lang": "ru",
+   "audioS": 11.82,
+   "decodeMs": 2651.099999964237,
+   "browser": "энергия кундалини энергия просветления в кундалине йоги пробуждается через позы йоги дыхательные упражнения мантры и визуализации",
+   "native": "энергия кундалини энергия просветления в кундалине йоги пробуждается через позы йоги дыхательные упражнения мантры и визуализации"
+  },
+  {
+   "id": "fleurs_ru_016",
+   "lang": "ru",
+   "audioS": 11.76,
+   "decodeMs": 2647.699999988079,
+   "browser": "султан марокко перестроил город под названием эддар эльбейда а испанские торговцы создавшие тут торговые базы назвали его касабланка",
+   "native": "султан марокко перестроил город под названием эддар эль бейда а испанские торговцы создавшие тут торговые базы назвали его касабланка"
+  },
+  {
+   "id": "fleurs_ru_017",
+   "lang": "ru",
+   "audioS": 8.28,
+   "decodeMs": 1822.5999999642372,
+   "browser": "так же как луна притягивает землю при этом вызывая приливы так и млечный путь воздействует на галактику стрельце",
+   "native": "также как луна притягивает землю при этом вызывая приливы так и млечный путь воздействует на галактику стрельце"
+  },
+  {
+   "id": "fleurs_ru_018",
+   "lang": "ru",
+   "audioS": 8.34,
+   "decodeMs": 1946.9000000357628,
+   "browser": "в частности утверждается что можно определить лжет ли человек при помощи правильной интерпретации его микровыражений",
+   "native": "в частности утверждается что можно определить лжет ли человек при помощи правильной интерпретации его микровыражений"
+  },
+  {
+   "id": "fleurs_ru_019",
+   "lang": "ru",
+   "audioS": 11.64,
+   "decodeMs": 3291.199999988079,
+   "browser": "пятидесяти трехлетний куома начал свою деятельность на посту губернатора в начале этого года и подписал законопроект о легализации однополых браков в прошлом месяце",
+   "native": "пятидесяти трехлетний куома начал свою деятельность на посту губернатора в начале этого года и подписал законопроект о легализации однополых браков в прошлом месяце"
+  },
+  {
+   "id": "fleurs_en_000",
+   "lang": "en",
+   "audioS": 10.56,
+   "decodeMs": 3282,
+   "browser": "however due to the slow communication channels styles in the west could lag behind by twenty five to thirty years",
+   "native": "however due to the slow communication channels styles in the west could lag behind by twenty five to thirty years"
+  },
+  {
+   "id": "fleurs_en_001",
+   "lang": "en",
+   "audioS": 8.76,
+   "decodeMs": 2822.399999976158,
+   "browser": "all nouns alongside the world saye for you always begin with a capital letter even in the middle of a sentence",
+   "native": "all nouns alongside the world saye for you always begin with a capital letter even in the middle of a sentence"
+  },
+  {
+   "id": "fleurs_en_002",
+   "lang": "en",
+   "audioS": 11.46,
+   "decodeMs": 3601.199999988079,
+   "browser": "to the north and within easy reach is ae romantic and fascinating town of centra and which was made famous to foreigners after a glowing account of its splenderous recorded by lord byron",
+   "native": "to the north and within easy reach is a romantic and fascinating town of centra and which was made famous to foreigners after a glowing account of its splenderous recorded by lord byron"
+  },
+  {
+   "id": "fleurs_en_003",
+   "lang": "en",
+   "audioS": 5.76,
+   "decodeMs": 1821.4000000357628,
+   "browser": "the cabis use changes color depending on how asthetic basic alcoline the chemical is",
+   "native": "the cabis uce changes color depending on how asthetic basic alcoline the chemical is"
+  },
+  {
+   "id": "fleurs_en_004",
+   "lang": "en",
+   "audioS": 4.32,
+   "decodeMs": 1355.0999999642372,
+   "browser": "many people don't think about them as din a source because they have feathers and can fly",
+   "native": "many people don't think about them as din a source because they have feathers and can fly"
+  },
+  {
+   "id": "fleurs_en_005",
+   "lang": "en",
+   "audioS": 11.42,
+   "decodeMs": 3616.600000023842,
+   "browser": "the hospital has followed protocol for infection control including separating the patient from others to prevent possible infection of others",
+   "native": "the hospital has followed protocol for infection control including separating the patient from others to prevent possible infection of others"
+  },
+  {
+   "id": "fleurs_en_006",
+   "lang": "en",
+   "audioS": 10.8,
+   "decodeMs": 3353,
+   "browser": "the northern mariana s emergency management office said that there were no damages reported in the nation",
+   "native": "the northern mariana s emergency management office said that there were no damages reported in the nation"
+  },
+  {
+   "id": "fleurs_en_007",
+   "lang": "en",
+   "audioS": 6.96,
+   "decodeMs": 2189.800000011921,
+   "browser": "twentieth century research has shown that there are two pools of genetic variation hidden and expressed",
+   "native": "twentieth century research has shown that there are two pools of genetic variation hidden and expressed"
+  },
+  {
+   "id": "fleurs_en_008",
+   "lang": "en",
+   "audioS": 11.04,
+   "decodeMs": 3460.600000023842,
+   "browser": "the aspect ratio of this format dividing by twelve to obtain the simplest whole number ratio is therefore said to be free to two",
+   "native": "the aspect ratio of this format dividing by twelve to obtain the simplest whole number ratio is therefore said to be free to two"
+  },
+  {
+   "id": "fleurs_en_009",
+   "lang": "en",
+   "audioS": 9.9,
+   "decodeMs": 3089.800000011921,
+   "browser": "as light pollution in their haday was not the kind of problem it is today they are usually located in cities or at campuses easier to reach than those built in modern times",
+   "native": "as light pollution in their haday was not the kind of problem it is today they are usually located in cities or at campuses easier to reach than those built in modern times"
+  },
+  {
+   "id": "fleurs_en_010",
+   "lang": "en",
+   "audioS": 4.8,
+   "decodeMs": 1541.800000011921,
+   "browser": "the night between one fifty and two hundred copies were made now known as dunlap broadsites",
+   "native": "the night between one fifty and two hundred copies were made now known as dunlap broadsites"
+  },
+  {
+   "id": "fleurs_en_011",
+   "lang": "en",
+   "audioS": 11.28,
+   "decodeMs": 3648.900000035763,
+   "browser": "for example each year students from mbennet school in north carolina design a website about their trips to the state capital each year the website gets remodeled but old versions are kept online to service a scrapbook",
+   "native": "for example each year students from mbennett school in north carolina design a website about their trips to the state capital each year the website gets remodeled but old versions are kept online to servace a scrapbook"
+  },
+  {
+   "id": "fleurs_en_012",
+   "lang": "en",
+   "audioS": 10.92,
+   "decodeMs": 3580.900000035763,
+   "browser": "lion prize acts much like packs of wolves or dogs animals surprisingly similar to lions but not other big cats in behavior and also very deadly to their pray",
+   "native": "lion prize acts much like packs of wolves or dogs animals surprisingly similar to lions but not other big cats in behavior and also very deadly to their pray"
+  },
+  {
+   "id": "fleurs_en_013",
+   "lang": "en",
+   "audioS": 11.28,
+   "decodeMs": 2910.300000011921,
+   "browser": "the city is also the base to climb the niragango volckeno along with some of the cheapest mountain garrilla trafficking in africa",
+   "native": "the city is also the base to climb the niragango valckeno along with some of the cheapest mountain garrilla trafficking in africa"
+  },
+  {
+   "id": "fleurs_en_014",
+   "lang": "en",
+   "audioS": 5.72,
+   "decodeMs": 1258.5,
+   "browser": "the internet combines elements of both mass and interpersonal communication",
+   "native": "the internet combines elements of both mass and interpersonal communication"
+  },
+  {
+   "id": "fleurs_en_015",
+   "lang": "en",
+   "audioS": 15.56,
+   "decodeMs": 3664,
+   "browser": "theokatwhait is about certain people that make them want the things that they do and what things in their environment will make them do or not do certain things",
+   "native": "thelokatwhatit is about certain people that make them want the things that they do and what things in their environment will make them do or not do certain things"
+  },
+  {
+   "id": "fleurs_en_016",
+   "lang": "en",
+   "audioS": 13.92,
+   "decodeMs": 3178.2999999523163,
+   "browser": "for example the most common still image photography format in the world is thirty five millimeter which was the dominant film size at the close of the analog film era",
+   "native": "for example the most common still image photography format in the world is thirty five millimeter which was the dominant film size at the close of the analog film era"
+  },
+  {
+   "id": "fleurs_en_017",
+   "lang": "en",
+   "audioS": 8.64,
+   "decodeMs": 1907.9000000357628,
+   "browser": "the term sufari and popular loose refers to overland travel to view the stunning african wildlife particularly on savana",
+   "native": "the term sufari and popular loose refers to overland travel to view the stunning african wildlife particularly on savana"
+  },
+  {
+   "id": "fleurs_en_018",
+   "lang": "en",
+   "audioS": 5.36,
+   "decodeMs": 1191.5,
+   "browser": "but there are a lot of things about whe thas till look like a diin sourt",
+   "native": "but there are a lot of things about whe thas till look like a diin sort"
+  },
+  {
+   "id": "fleurs_en_019",
+   "lang": "en",
+   "audioS": 10.14,
+   "decodeMs": 2261.699999988079,
+   "browser": "women is recommended that any women travellers se that they are married regardless of actual marital status",
+   "native": "women is recommended that any women travellers se that they are married regardless of actual marital status"
+  }
+ ],
+ "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+}

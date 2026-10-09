@@ -1,0 +1,234 @@
+{
+ "variant": "before",
+ "scene": "cs_mix",
+ "audio_s": 37.04025,
+ "files": [
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/cs/cs_081_spliced_clean.wav",
+   "start": 5,
+   "seconds": 3.593125
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/cs/cs_085_spliced_clean.wav",
+   "start": 9.793125,
+   "seconds": 2.353875
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/cs/cs_086_spliced_clean.wav",
+   "start": 13.347,
+   "seconds": 2.15275
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/cs/cs_087_spliced_clean.wav",
+   "start": 16.69975,
+   "seconds": 2.958375
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/cs/cs_001_single_clean.wav",
+   "start": 20.858125,
+   "seconds": 4.2068125
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/cs/cs_002_single_clean.wav",
+   "start": 26.2649375,
+   "seconds": 5.059625
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/cs/cs_003_single_clean.wav",
+   "start": 32.5245625,
+   "seconds": 3.3156875
+  }
+ ],
+ "listening_after_ms": 9074,
+ "rss_mb": {
+  "listening": {
+   "total": 1539,
+   "browser": 124,
+   "GPU": 54,
+   "network.mojom.NetworkService": 43,
+   "renderer": 1263,
+   "audio.mojom.AudioService": 55
+  },
+  "end_of_audio": {
+   "total": 1779,
+   "browser": 123,
+   "GPU": 90,
+   "network.mojom.NetworkService": 43,
+   "renderer": 1472,
+   "audio.mojom.AudioService": 51
+  }
+ },
+ "js_heap_mb": 11,
+ "summary_score": "93 / 100",
+ "final_meter": 93.27679234884421,
+ "final_band": "critical",
+ "utterances": [
+  {
+   "text": "сіздің онлайн банкинг есептік жазбаңыз бұғатталды",
+   "language": "kk",
+   "confidence": 1,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "сіздің онлайн банкинг есептік жазбаңыз бұғатталды",
+    "confidence": 1
+   },
+   "decodeMs": null,
+   "latencyMs": 0.15999996662139893,
+   "meter": 47.781895283805284,
+   "band": "medium",
+   "at": 20093.5,
+   "tags": ""
+  },
+  {
+   "text": "тіс радиодан калай назовите год",
+   "language": "kk",
+   "confidence": 0.8009268,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "тіс радиодан калай назовите год",
+    "confidence": 0.8009268
+   },
+   "decodeMs": null,
+   "latencyMs": 0.06499999761581421,
+   "meter": 63.287533143462944,
+   "band": "high",
+   "at": 24837.719999969006,
+   "tags": ""
+  },
+  {
+   "text": "юра грант есболат кодты айтыңыз",
+   "language": "kk",
+   "confidence": 0.9546268000000001,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "юра грант есболат кодты айтыңыз",
+    "confidence": 0.9546268000000001
+   },
+   "decodeMs": null,
+   "latencyMs": 0.02499997615814209,
+   "meter": 75.20029300485295,
+   "band": "high",
+   "at": 27144.740000009537,
+   "tags": ""
+  },
+  {
+   "text": "был закивали тем с изгой комик ты семьи с",
+   "language": "ru",
+   "confidence": 0.7721932222222222,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "ru",
+    "text": "был закивали тем с изгой комик ты семьи с",
+    "confidence": 0.7721932222222222
+   },
+   "decodeMs": null,
+   "latencyMs": 0.06000000238418579,
+   "meter": 80.35214537034071,
+   "band": "critical",
+   "at": 32334.27999997139,
+   "tags": ""
+  },
+  {
+   "text": "сәлеметсіз бе мен банктің су жұбы безопасности қызметкерімін",
+   "language": "kk",
+   "confidence": 1,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "сәлеметсіз бе мен банктің су жұбы безопасности қызметкерімін",
+    "confidence": 1
+   },
+   "decodeMs": null,
+   "latencyMs": 0.0350000262260437,
+   "meter": 85.95206512728905,
+   "band": "critical",
+   "at": 36806.74000000954,
+   "tags": ""
+  },
+  {
+   "text": "сіздің картаңыздың фотосуреттер ноян операция жасалды қазір тоқтатамыз",
+   "language": "kk",
+   "confidence": 0.866038375,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "сіздің картаңыздың фотосуреттер ноян операция жасалды қазір тоқтатамыз",
+    "confidence": 0.866038375
+   },
+   "decodeMs": null,
+   "latencyMs": 0.06000000238418579,
+   "meter": 90.8953314221683,
+   "band": "critical",
+   "at": 44238.25499999523,
+   "tags": ""
+  },
+  {
+   "text": "телефоныңызға келген кук иіс смс айтыңызшы",
+   "language": "kk",
+   "confidence": 0.8058614999999999,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "телефоныңызға келген кук иіс смс айтыңызшы",
+    "confidence": 0.8058614999999999
+   },
+   "decodeMs": null,
+   "latencyMs": 0.02499997615814209,
+   "meter": 93.27679234884421,
+   "band": "critical",
+   "at": 47838.814999997616,
+   "tags": ""
+  }
+ ],
+ "latency_ms": {
+  "n": 7,
+  "median": 0.06000000238418579,
+  "max": 0.15999996662139893
+ },
+ "live_events": 0,
+ "live_snapshot": [],
+ "endpoint": [],
+ "lines": [
+  {
+   "source": "vosk",
+   "text": "сіздің онлайн банкинг есептік жазбаңыз бұғатталды каз · уверенность 100%"
+  },
+  {
+   "source": "vosk",
+   "text": "тіс радиодан калай назовите год каз · уверенность 80%"
+  },
+  {
+   "source": "vosk",
+   "text": "юра грант есболат кодты айтыңыз каз · уверенность 95%"
+  },
+  {
+   "source": "vosk",
+   "text": "был закивали тем с изгой комик ты семьи с рус · уверенность 77%"
+  },
+  {
+   "source": "vosk",
+   "text": "сәлеметсіз бе мен банктің су жұбы безопасности қызметкерімін каз · уверенность 100%"
+  },
+  {
+   "source": "vosk",
+   "text": "сіздің картаңыздың фотосуреттер ноян операция жасалды қазір тоқтатамыз каз · уверенность 87%"
+  },
+  {
+   "source": "vosk",
+   "text": "телефоныңызға келген кук иіс смс айтыңызшы каз · уверенность 81%"
+  }
+ ],
+ "errors": [
+  "Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ]
+}

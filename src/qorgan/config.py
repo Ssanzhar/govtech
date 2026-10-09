@@ -37,7 +37,12 @@ _DEFAULT_VOSK_MODEL_RU = "vosk-model-small-ru-0.22"
 # It ranks in the vote with (confidence - handicap): on kk/ru speech the English model returns
 # confident-looking garbage, and a plain vote handed it 12.9 % of kk/ru utterances.
 _DEFAULT_VOSK_MODEL_EN = "vosk-model-small-en-us-0.15"
-_DEFAULT_ASR_EN_HANDICAP = 0.15
+# 0.15 (D62) gave English only 0.545 of real (FLEURS) English utterances; 0.05 gives 0.910 with
+# 0 false wins on real kk/ru speech (ADR D64). The per-utterance vote is now the fallback.
+_DEFAULT_ASR_EN_HANDICAP = 0.05
+# The endpoint pass (ADR D64): GigaAM-Multilingual 220M CTC int8 decodes each utterance once in
+# the browser (sherpa-onnx WASM) and replaces the Vosk text; "" = off (Vosk vote only).
+_DEFAULT_ASR_ENDPOINT_MODEL = "gigaam-multilingual-220m-ctc-int8"
 _DEFAULT_ASR_SAMPLE_RATE = 16000
 _DEFAULT_EMBED_MODEL_NAME = "intfloat/multilingual-e5-base"
 # "sentence-transformers" (fp32 PyTorch) or "onnx" (the int8 graph the browser ships;
@@ -157,6 +162,11 @@ class Config(BaseModel):
     vosk_model_en: str = ""
     asr_en_handicap: float = Field(default=_DEFAULT_ASR_EN_HANDICAP, ge=0.0, le=1.0)
     asr_sample_rate: int = Field(gt=0)
+    # The GigaAM endpoint pass (ADR D64); "" = off. Its sherpa-onnx browser runtime comes from a
+    # local build (scripts/sherpa_wasm/build.sh) or a mirror of it, hash-checked either way.
+    asr_endpoint_model: str = _DEFAULT_ASR_ENDPOINT_MODEL
+    sherpa_wasm_build_dir: str = ""
+    sherpa_wasm_url: str = ""
     # Language locking (ADR D40): after this many voted utterances only the winning recogniser
     # is fed; 0 = off (the shipped default -- the code-switch cost needs real bilingual audio).
     asr_lock_after: int = Field(ge=0)
@@ -417,6 +427,9 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             vosk_model_en=source.get("QORGAN_VOSK_MODEL_EN", _DEFAULT_VOSK_MODEL_EN).strip(),
             asr_en_handicap=_read_float(source, "QORGAN_ASR_EN_HANDICAP", _DEFAULT_ASR_EN_HANDICAP),
             asr_sample_rate=_read_int(source, "QORGAN_ASR_SAMPLE_RATE", _DEFAULT_ASR_SAMPLE_RATE),
+            asr_endpoint_model=source.get("QORGAN_ASR_ENDPOINT_MODEL", _DEFAULT_ASR_ENDPOINT_MODEL).strip(),
+            sherpa_wasm_build_dir=source.get("QORGAN_SHERPA_WASM_BUILD_DIR", "").strip(),
+            sherpa_wasm_url=source.get("QORGAN_SHERPA_WASM_URL", "").strip(),
             asr_lock_after=_read_int(source, "QORGAN_ASR_LOCK_AFTER", 0),
             asr_lock_conf_floor=_read_float(source, "QORGAN_ASR_LOCK_CONF_FLOOR", 0.80),
             xlmr_model_dir=_read_path(

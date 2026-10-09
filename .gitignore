@@ -21,6 +21,8 @@ site/models/Xenova/
 site/models/qorgan/
 # ...nor the Vosk speech models (~106 MB, packaged by deploy_bootstrap for on-device ASR)
 site/models/vosk/
+# ...nor the GigaAM endpoint model (225 MB, packaged by deploy_bootstrap, ADR D64)
+site/models/gigaam/
 # ...nor the pinned Vosklet runtime (2.5 MB wasm, hash-verified by deploy_bootstrap)
 site/vendor/
 data/raw/

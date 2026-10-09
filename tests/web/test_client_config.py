@@ -157,3 +157,31 @@ def test_english_is_a_third_handicapped_recogniser_and_can_be_switched_off(monke
     off = export_client_config()
     assert off["asr"]["order"] == ["kk", "ru"] and set(off["asr"]["models"]) == {"kk", "ru"}
     assert off["asr"]["handicap"] == {}
+
+
+def test_endpoint_pass_names_the_self_hosted_gigaam_model_and_runtime(monkeypatch):
+    # ADR D64: GigaAM decodes each utterance once in the browser and replaces the Vosk text; the
+    # page must find the model under site/models/ and the runtime under site/vendor/, both
+    # same-origin, and may start without them (the Vosk vote is the fallback).
+    from qorgan.asr.gigaam_web import GIGAAM_MODEL_ID, SHERPA_WASM_VERSION
+
+    endpoint = export_client_config()["asr"]["endpoint"]
+    assert endpoint["id"] == GIGAAM_MODEL_ID
+    assert endpoint["model"] == {
+        "url": f"gigaam/{GIGAAM_MODEL_ID}/model.int8.onnx",
+        "tokens": f"gigaam/{GIGAAM_MODEL_ID}/tokens.txt",
+        "mb": 225,
+    }
+    assert endpoint["runtime"] == f"vendor/sherpa-onnx/{SHERPA_WASM_VERSION}/"
+    assert endpoint["cache"].startswith("qorgan-gigaam-")
+    assert endpoint["optional"] is True
+    for value in (endpoint["runtime"], endpoint["model"]["url"], endpoint["model"]["tokens"]):
+        assert not value.startswith(("http:", "https:", "//")), value
+
+    monkeypatch.setenv("QORGAN_ASR_ENDPOINT_MODEL", "")
+    assert export_client_config()["asr"]["endpoint"] is None
+
+
+def test_english_handicap_is_the_measured_real_speech_value():
+    # ADR D64: 0.05 gives English 0.910 of real English utterances and 0 false wins on real kk/ru.
+    assert export_client_config()["asr"]["handicap"] == {"en": 0.05}

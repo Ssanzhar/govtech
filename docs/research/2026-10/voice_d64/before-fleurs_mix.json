@@ -1,0 +1,339 @@
+{
+ "variant": "before",
+ "scene": "fleurs_mix",
+ "audio_s": 99.2,
+ "files": [
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/fleurs/fleurs/fleurs_kk_000_clean.wav",
+   "start": 5,
+   "seconds": 14.88
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/fleurs/fleurs/fleurs_kk_001_clean.wav",
+   "start": 21.08,
+   "seconds": 24.36
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/fleurs/fleurs/fleurs_ru_000_clean.wav",
+   "start": 46.64,
+   "seconds": 16.92
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/fleurs/fleurs/fleurs_ru_001_clean.wav",
+   "start": 64.76,
+   "seconds": 11.52
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/fleurs/fleurs/fleurs_en_000_clean.wav",
+   "start": 77.48,
+   "seconds": 10.56
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/fleurs/fleurs/fleurs_en_001_clean.wav",
+   "start": 89.24,
+   "seconds": 8.76
+  }
+ ],
+ "listening_after_ms": 8912,
+ "rss_mb": {
+  "listening": {
+   "total": 1530,
+   "browser": 98,
+   "GPU": 61,
+   "network.mojom.NetworkService": 43,
+   "renderer": 1273,
+   "audio.mojom.AudioService": 55
+  },
+  "end_of_audio": {
+   "total": 1294,
+   "browser": 84,
+   "GPU": 80,
+   "network.mojom.NetworkService": 42,
+   "renderer": 1034,
+   "audio.mojom.AudioService": 54
+  }
+ },
+ "js_heap_mb": 10,
+ "summary_score": "43 / 100",
+ "final_meter": 42.651093772814676,
+ "final_band": "medium",
+ "utterances": [
+  {
+   "text": "ақш тың гимнастика федерациясы ақш олимпиада комитетінің ханның қолдайды және біздің барлық спортсмендер үшін қоршаған ортаның қауіпсіздігін арттырудың абсолютті қажеттілігін мойындайды",
+   "language": "kk",
+   "confidence": 0.9503405714285714,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "ақш тың гимнастика федерациясы ақш олимпиада комитетінің ханның қолдайды және біздің барлық спортсмендер үшін қоршаған ортаның қауіпсіздігін арттырудың абсолютті қажеттілігін мойындайды",
+    "confidence": 0.9503405714285714
+   },
+   "decodeMs": null,
+   "latencyMs": 0.1850000023841858,
+   "meter": 45.92199772761208,
+   "band": "medium",
+   "at": 31059.689999997616,
+   "tags": ""
+  },
+  {
+   "text": "оның вичи француздар билеген бұл бір мың тоғыз жүз қырық үшінші жылы немістермен бейбіт келісім жасасқан және",
+   "language": "kk",
+   "confidence": 0.9300125294117647,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "оның вичи француздар билеген бұл бір мың тоғыз жүз қырық үшінші жылы немістермен бейбіт келісім жасасқан және",
+    "confidence": 0.9300125294117647
+   },
+   "decodeMs": null,
+   "latencyMs": 0.05500000715255737,
+   "meter": 45.133156849563704,
+   "band": "medium",
+   "at": 46645.62999999523,
+   "tags": ""
+  },
+  {
+   "text": "оның вичи француздар билеген бұл бір мың тоғыз жүз қырық үшінші жылы немістермен бейбіт келісім жасасқан және суық судың орнына жолаушылармен бірге жұмыс",
+   "language": "kk",
+   "confidence": 0.9062196956521739,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "оның вичи француздар билеген бұл бір мың тоғыз жүз қырық үшінші жылы немістермен бейбіт келісім жасасқан және суық судың орнына жолаушылармен бірге жұмыс",
+    "confidence": 0.9062196956521739
+   },
+   "decodeMs": null,
+   "latencyMs": 0.04499995708465576,
+   "meter": 42.843070466613725,
+   "band": "medium",
+   "at": 52010.089999973774,
+   "tags": ""
+  },
+  {
+   "text": "істеген француздар болды",
+   "language": "kk",
+   "confidence": 0.7976203333333333,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "істеген француздар болды",
+    "confidence": 0.7976203333333333
+   },
+   "decodeMs": null,
+   "latencyMs": 0.04500001668930054,
+   "meter": 40.90101559186531,
+   "band": "medium",
+   "at": 54732.544999957085,
+   "tags": ""
+  },
+  {
+   "text": "в древнем китае использовали уникальный способ обозначения периодов времени",
+   "language": "ru",
+   "confidence": 0.9629939999999999,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "ru",
+    "text": "в древнем китае использовали уникальный способ обозначения периодов времени",
+    "confidence": 0.9629939999999999
+   },
+   "decodeMs": null,
+   "latencyMs": 0.020000040531158447,
+   "meter": 37.44097320931137,
+   "band": "medium",
+   "at": 65194.63499999046,
+   "tags": ""
+  },
+  {
+   "text": "каждая этап китая или каждая семья находившаяся у власти были особое династии",
+   "language": "ru",
+   "confidence": 0.9000238333333331,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "ru",
+    "text": "каждая этап китая или каждая семья находившаяся у власти были особое династии",
+    "confidence": 0.9000238333333331
+   },
+   "decodeMs": null,
+   "latencyMs": 0.02499997615814209,
+   "meter": 43.24968654489679,
+   "band": "medium",
+   "at": 73144.25999999046,
+   "tags": ""
+  },
+  {
+   "text": "мадагаскар намного больше других является самобытным континентам в то что касается дикой природы",
+   "language": "ru",
+   "confidence": 0.9522116923076923,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "ru",
+    "text": "мадагаскар намного больше других является самобытным континентам в то что касается дикой природы",
+    "confidence": 0.9522116923076923
+   },
+   "decodeMs": null,
+   "latencyMs": 0.04499995708465576,
+   "meter": 42.645328577205056,
+   "band": "medium",
+   "at": 86456.62000000477,
+   "tags": ""
+  },
+  {
+   "text": "however",
+   "language": "en",
+   "confidence": 1,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "en",
+    "text": "however",
+    "confidence": 1
+   },
+   "decodeMs": null,
+   "latencyMs": 0.025000035762786865,
+   "meter": 41.60834748850643,
+   "band": "medium",
+   "at": 92293.89499998093,
+   "tags": ""
+  },
+  {
+   "text": "however due to the for communication channels",
+   "language": "en",
+   "confidence": 0.9595140000000001,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "en",
+    "text": "however due to the for communication channels",
+    "confidence": 0.9595140000000001
+   },
+   "decodeMs": null,
+   "latencyMs": 0.029999971389770508,
+   "meter": 41.46411665272179,
+   "band": "medium",
+   "at": 94555.594999969,
+   "tags": ""
+  },
+  {
+   "text": "енді ояз",
+   "language": "kk",
+   "confidence": 0.8395410000000001,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "енді ояз",
+    "confidence": 0.8395410000000001
+   },
+   "decodeMs": null,
+   "latencyMs": 0.050000011920928955,
+   "meter": 39.926667252193276,
+   "band": "medium",
+   "at": 96919.22999995947,
+   "tags": ""
+  },
+  {
+   "text": "however due to the for communicate and channels styles in the west could lag behind by twenty five to thirty year",
+   "language": "en",
+   "confidence": 0.9327222857142858,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "en",
+    "text": "however due to the for communicate and channels styles in the west could lag behind by twenty five to thirty year",
+    "confidence": 0.9327222857142858
+   },
+   "decodeMs": null,
+   "latencyMs": 0.02499997615814209,
+   "meter": 43.962991511474414,
+   "band": "medium",
+   "at": 99119.57999998331,
+   "tags": ""
+  },
+  {
+   "text": "oh now so more side the world safe for you always begin with a capital letter even the middle of a sentence",
+   "language": "en",
+   "confidence": 0.9503085454545454,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "en",
+    "text": "oh now so more side the world safe for you always begin with a capital letter even the middle of a sentence",
+    "confidence": 0.9503085454545454
+   },
+   "decodeMs": null,
+   "latencyMs": 0.029999971389770508,
+   "meter": 42.651093772814676,
+   "band": "medium",
+   "at": 109383.71499997377,
+   "tags": ""
+  }
+ ],
+ "latency_ms": {
+  "n": 12,
+  "median": 0.04499995708465576,
+  "max": 0.1850000023841858
+ },
+ "live_events": 0,
+ "live_snapshot": [],
+ "endpoint": [],
+ "lines": [
+  {
+   "source": "vosk",
+   "text": "ақш тың гимнастика федерациясы ақш олимпиада комитетінің ханның қолдайды және біздің барлық спортсмендер үшін қоршаған ортаның қауіпсіздігін арттырудың абсолютті қажеттілігін мойындайды каз · уверенность 95%"
+  },
+  {
+   "source": "vosk",
+   "text": "оның вичи француздар билеген бұл бір мың тоғыз жүз қырық үшінші жылы немістермен бейбіт келісім жасасқан және каз · уверенность 93%"
+  },
+  {
+   "source": "vosk",
+   "text": "оның вичи француздар билеген бұл бір мың тоғыз жүз қырық үшінші жылы немістермен бейбіт келісім жасасқан және суық судың орнына жолаушылармен бірге жұмыс каз · уверенность 91%"
+  },
+  {
+   "source": "vosk",
+   "text": "істеген француздар болды каз · уверенность 80%"
+  },
+  {
+   "source": "vosk",
+   "text": "в древнем китае использовали уникальный способ обозначения периодов времени рус · уверенность 96%"
+  },
+  {
+   "source": "vosk",
+   "text": "каждая этап китая или каждая семья находившаяся у власти были особое династии рус · уверенность 90%"
+  },
+  {
+   "source": "vosk",
+   "text": "мадагаскар намного больше других является самобытным континентам в то что касается дикой природы рус · уверенность 95%"
+  },
+  {
+   "source": "vosk",
+   "text": "however англ · уверенность 100%"
+  },
+  {
+   "source": "vosk",
+   "text": "however due to the for communication channels англ · уверенность 96%"
+  },
+  {
+   "source": "vosk",
+   "text": "енді ояз каз · уверенность 84%"
+  },
+  {
+   "source": "vosk",
+   "text": "however due to the for communicate and channels styles in the west could lag behind by twenty five to thirty year англ · уверенность 93%"
+  },
+  {
+   "source": "vosk",
+   "text": "oh now so more side the world safe for you always begin with a capital letter even the middle of a sentence англ · уверенность 95%"
+  }
+ ],
+ "errors": [
+  "Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ]
+}

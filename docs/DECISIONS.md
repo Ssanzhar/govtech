@@ -1751,3 +1751,56 @@ in the UI. `live.js` and `asr.js` are untouched.
   stored report.
 - Inferring the 5 new tactics on old rows by keyword. That writes the lexicon into the labels.
 - Making the role a learned head. It would add FPR exposure for a display string.
+### D64 — Word-level voice mode: live per-word language chips + a GigaAM pass per phrase (2026-10-08)
+The voice mode tagged a whole utterance with one language (the per-utterance Vosk vote, D62), so a
+code-switched sentence was transcribed by one monolingual model, and English was the weakest leg.
+Requested: three recognisers in parallel, a language decision **per word**, better English. The
+literature has no support for per-word ROVER across monolingual models; what works is one joint
+model for the final text plus a calibrated tagger for the live view. Measurements in
+`docs/research/2026-10/stt_wordlevel.md` and `scripts/spikes/asr_wordlevel/*/REPORT.md`; browser
+evidence in `docs/research/2026-10/voice_d64/`.
+
+**Change.**
+- **Endpoint pass:** at each Vosk endpoint, GigaAM-Multilingual 220M CTC int8 (Sber, MIT, 225 MB)
+  decodes the utterance's audio once more, in a dedicated worker running a single-threaded
+  sherpa-onnx WASM build (`scripts/sherpa_wasm/build.sh`, pinned v1.13.8 + emsdk 4.0.23,
+  reproducible byte for byte, hashes in `asr/gigaam_web.py`). Its text **replaces** the Vosk text,
+  and only that text reaches the session and the meter. Per-word kk/ru/en tags come from the word
+  LID (`site/core/word-lid.js`: letters first, then a char-trigram LM + lexicon + Viterbi).
+- **Live pass:** while the person speaks, the calibrated span vote over the three Vosk recognisers
+  (`site/core/span-vote.js`: 13 features, per-model logistic calibrators, 3-state Viterbi, 1.0 s
+  freeze) shows provisional words in same-language runs with a chip. English is shown dashed.
+- **Fallback:** while GigaAM loads, when it is unavailable, times out or returns nothing, the
+  per-utterance vote passes through, marked as the quick transcript. Its English handicap goes
+  **0.15 → 0.05**.
+- Both ports are 1:1 with the spike code, pinned by golden fixtures (`scripts/export_asr_wordlevel.py`).
+  `tests/test_architecture.py` asserts that no module audio passes through has a network primitive,
+  and that the GigaAM worker's only fetch is a same-origin GET. Service worker v9 never streams or
+  deletes the model's own cache.
+
+**Evidence.**
+- Real read speech (FLEURS) WER: GigaAM **kk 0.074 / ru 0.070 / en 0.130** vs the vote's 0.217 /
+  0.203 / 0.592. The 600M variant was rejected (collapsed on 5/31 phone code-switch clips, 2.4×
+  slower, 866 MB).
+- Headless Chromium, no cross-origin isolation: load 1.0 s (0.43 s cached), RTF 0.25 clean / 0.23
+  phone-channel, 49/60 browser outputs identical to native (the rest differ by a word),
+  endpoint → replaced text median ~2.3 s (max 3.2 s).
+- Code-switch TEST (authored, synthesised, tuning on DEV only), word-language accuracy: span vote
+  **0.873** vs per-utterance 0.570. Live English recall is only 0.29, hence the dashed display.
+- Handicap 0.05 on FLEURS: English wins 0.910 of English utterances (0.545 at 0.15), 0 false wins on
+  real kk/ru (0.020 on synthetic Aru code-switch rows).
+- Demo scenes, meter before → after: RU scam 98 → 98, KK scam 96 → 96, real bank call 18 → 18.
+  Transcripts get better («код из самая с» → «код из смс»). A bug found in the run (an
+  un-endpointed recogniser dragged the previous phrase into the next) is fixed, with a test.
+- `pytest` 1341 passed / 2 skipped, `npm test` 115/115.
+
+**Costs and limits, on record.**
+- Download +239 MB (model + runtime), disclosed on the page before it starts. Renderer RSS peaks
+  ~1.15 GB during a call on desktop Chromium, which is a phone risk: no phone measured (B9).
+- The sherpa-onnx browser build has no hosted mirror yet. Until one is approved, deployments run
+  the fallback (the page says so).
+- All audio is synthesised or read speech. TTS English comes out of GigaAM in Cyrillic (a TTS
+  artefact, ~100 % Latin on real speech); real Kazakh-accented English needs the team's recordings
+  (`docs/RECORDING_SCRIPT.md`). Cue survival on real speech is unmeasured.
+- Not done: a GigaAM + VAD mode for Android WebView, where Vosklet cannot run (no cross-origin
+  isolation).

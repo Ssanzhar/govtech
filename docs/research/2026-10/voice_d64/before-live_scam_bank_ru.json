@@ -1,0 +1,207 @@
+{
+ "variant": "before",
+ "scene": "live_scam_bank_ru",
+ "audio_s": 35.8154375,
+ "files": [
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_scam_bank_ru_0.wav",
+   "start": 5,
+   "seconds": 4.0255625
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_scam_bank_ru_1.wav",
+   "start": 10.2255625,
+   "seconds": 4.0386875
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_scam_bank_ru_2.wav",
+   "start": 15.46425,
+   "seconds": 3.752375
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_scam_bank_ru_3.wav",
+   "start": 20.416625,
+   "seconds": 4.280625
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_scam_bank_ru_4.wav",
+   "start": 25.89725,
+   "seconds": 3.52775
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_scam_bank_ru_5.wav",
+   "start": 30.625,
+   "seconds": 3.9904375
+  }
+ ],
+ "listening_after_ms": 9192,
+ "rss_mb": {
+  "listening": {
+   "total": 1310,
+   "browser": 119,
+   "GPU": 51,
+   "network.mojom.NetworkService": 41,
+   "renderer": 1043,
+   "audio.mojom.AudioService": 55
+  },
+  "end_of_audio": {
+   "total": 1058,
+   "browser": 83,
+   "GPU": 80,
+   "network.mojom.NetworkService": 40,
+   "renderer": 805,
+   "audio.mojom.AudioService": 49
+  }
+ },
+ "js_heap_mb": 11,
+ "summary_score": "98 / 100",
+ "final_meter": 97.57949894155362,
+ "final_band": "critical",
+ "utterances": [
+  {
+   "text": "алло здравствуйте этой службы безопасности вашего банкі",
+   "language": "kk",
+   "confidence": 0.9762535714285715,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "алло здравствуйте этой службы безопасности вашего банкі",
+    "confidence": 0.9762535714285715
+   },
+   "decodeMs": null,
+   "latencyMs": 0.2749999761581421,
+   "meter": 48.06189944150262,
+   "band": "medium",
+   "at": 21456.07999998331,
+   "tags": ""
+  },
+  {
+   "text": "алло здравствуйте этой службы безопасности вашего банка по вашей кортизол субсидирования пайда зрителей операцияны бір одну сумму",
+   "language": "kk",
+   "confidence": 0.9611082941176472,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "алло здравствуйте этой службы безопасности вашего банка по вашей кортизол субсидирования пайда зрителей операцияны бір одну сумму",
+    "confidence": 0.9611082941176472
+   },
+   "decodeMs": null,
+   "latencyMs": 0.025000035762786865,
+   "meter": 71.26341691316964,
+   "band": "high",
+   "at": 25868.84000003338,
+   "tags": ""
+  },
+  {
+   "text": "действовать нужно прямо сейчас у вас есть только пять минут",
+   "language": "ru",
+   "confidence": 1,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "ru",
+    "text": "действовать нужно прямо сейчас у вас есть только пять минут",
+    "confidence": 1
+   },
+   "decodeMs": null,
+   "latencyMs": 0.05500000715255737,
+   "meter": 82.91088834419165,
+   "band": "critical",
+   "at": 31996.12000000477,
+   "tags": ""
+  },
+  {
+   "text": "никому не говорите это секретная операция под контролем регулятора",
+   "language": "ru",
+   "confidence": 0.9999838888888889,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "ru",
+    "text": "никому не говорите это секретная операция под контролем регулятора",
+    "confidence": 0.9999838888888889
+   },
+   "decodeMs": null,
+   "latencyMs": 0.04500001668930054,
+   "meter": 91.4413397708614,
+   "band": "critical",
+   "at": 37236.10500001907,
+   "tags": ""
+  },
+  {
+   "text": "никому не говорите это секретная операция под контролем регулятора продиктуйте код и за самая с чтобы мы отменили операцию",
+   "language": "ru",
+   "confidence": 0.9077088947368421,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "ru",
+    "text": "никому не говорите это секретная операция под контролем регулятора продиктуйте код и за самая с чтобы мы отменили операцию",
+    "confidence": 0.9077088947368421
+   },
+   "decodeMs": null,
+   "latencyMs": 0.06000000238418579,
+   "meter": 95.32199777295645,
+   "band": "critical",
+   "at": 42200.360000014305,
+   "tags": ""
+  },
+  {
+   "text": "теперь переведите деньги на безопасной счёт я продиктую реквизиты",
+   "language": "ru",
+   "confidence": 0.9651723333333333,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "ru",
+    "text": "теперь переведите деньги на безопасной счёт я продиктую реквизиты",
+    "confidence": 0.9651723333333333
+   },
+   "decodeMs": null,
+   "latencyMs": 0.019999980926513672,
+   "meter": 97.57949894155362,
+   "band": "critical",
+   "at": 46768.560000002384,
+   "tags": ""
+  }
+ ],
+ "latency_ms": {
+  "n": 6,
+  "median": 0.05500000715255737,
+  "max": 0.2749999761581421
+ },
+ "live_events": 0,
+ "live_snapshot": [],
+ "endpoint": [],
+ "lines": [
+  {
+   "source": "vosk",
+   "text": "алло здравствуйте этой службы безопасности вашего банкі каз · уверенность 98%"
+  },
+  {
+   "source": "vosk",
+   "text": "алло здравствуйте этой службы безопасности вашего банка по вашей кортизол субсидирования пайда зрителей операцияны бір одну сумму каз · уверенность 96%"
+  },
+  {
+   "source": "vosk",
+   "text": "действовать нужно прямо сейчас у вас есть только пять минут рус · уверенность 100%"
+  },
+  {
+   "source": "vosk",
+   "text": "никому не говорите это секретная операция под контролем регулятора рус · уверенность 100%"
+  },
+  {
+   "source": "vosk",
+   "text": "никому не говорите это секретная операция под контролем регулятора продиктуйте код и за самая с чтобы мы отменили операцию рус · уверенность 91%"
+  },
+  {
+   "source": "vosk",
+   "text": "теперь переведите деньги на безопасной счёт я продиктую реквизиты рус · уверенность 97%"
+  }
+ ],
+ "errors": [
+  "Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ]
+}
