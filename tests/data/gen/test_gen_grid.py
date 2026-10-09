@@ -100,3 +100,89 @@ def test_chunk_spec_never_carries_a_russian_or_kazakh_lexicon_phrase(pilot):
     assert leaked == []
     assert set(spec["glossary"]["tactics"]) == set(get_taxonomy().label_space("v2"))
     assert "examples_ru" not in blob and "cues" not in blob
+
+
+# ---------------------------------------------------------------- phase 2 grid fixes (ADR D63)
+
+
+@pytest.fixture(scope="module")
+def big():
+    return build_manifest(load_grid_config(GRID), run="t2", size=1800, schemes=get_schemes(), taxonomy=get_taxonomy())
+
+
+def test_persona_age_and_occupation_are_coherent(big):
+    cfg = load_grid_config(GRID)
+    for cell in big:
+        allowed = cfg.occupation_age_bands.get(cell.persona.occupation)
+        assert allowed is None or cell.persona.age_band in allowed, (cell.cell_id, cell.persona)
+    pensioners = [c for c in big if c.persona.occupation == "pensioner"]
+    assert pensioners and all(c.persona.age_band == "61+" for c in pensioners)
+
+
+def test_optional_impersonation_tactics_agree_with_the_role(big):
+    lexicon = get_role_lexicon()
+    schemes = get_schemes()
+    for cell in big:
+        if cell.kind != "scam":
+            continue
+        core = set(schemes.get(cell.scheme).generation.core)
+        own = lexicon.get(cell.role).imp_tactic if cell.role else None
+        for tactic in set(cell.tactics) - core:
+            if tactic.startswith("imp_"):
+                assert tactic == own, (cell.cell_id, cell.role, tactic)
+
+
+def test_hook_only_cells_never_require_an_extraction_tactic(big):
+    cfg = load_grid_config(GRID)
+    hook_only = [c for c in big if c.stage == "hook_only"]
+    assert hook_only
+    for cell in hook_only:
+        assert set(cell.tactics) <= set(cfg.hook_compatible_tactics), (cell.cell_id, cell.tactics)
+
+
+def test_scam_share_is_the_corpus_base_rate(big):
+    stats = manifest_stats(big)
+    assert 0.45 <= stats["kind"]["scam"] / 1800 <= 0.50
+
+
+def test_every_scheme_gets_twin_lookalike_negatives_in_proportion(big):
+    schemes = get_schemes()
+    cfg = load_grid_config(GRID)
+    scams = {s: sum(1 for c in big if c.scheme == s) for s in schemes.ids()}
+    looks = {s: [c for c in big if c.lookalike_of == s] for s in schemes.ids()}
+    n_neg = sum(1 for c in big if c.kind == "legit")
+    n_twin = sum(len(v) for v in looks.values())
+    assert n_twin == round(n_neg * cfg.twin_share)
+    for scheme_id, cells in looks.items():
+        assert cells, scheme_id
+        assert all(c.kind == "legit" and c.negative_class == schemes.get(scheme_id).generation.twin for c in cells)
+        expected = n_twin * scams[scheme_id] / sum(scams.values())
+        assert abs(len(cells) - expected) <= 1, (scheme_id, len(cells), expected)
+    assert all(c.lookalike_of is None for c in big if c.kind == "scam")
+
+
+def test_lookalike_negatives_keep_a_legitimate_role(big):
+    cfg = load_grid_config(GRID)
+    for cell in big:
+        if cell.kind == "legit":
+            assert cell.role in cfg.negative_roles[cell.negative_class], cell.cell_id
+            assert cell.role not in {"regulator", "antifraud_service"}  # these never call legitimately
+
+
+def test_pilot_manifest_still_reads():
+    """The pilot manifest was written by grid v1 (no `lookalike_of`); it must stay readable."""
+    pilot_path = Path("data/synthetic/gen/pilot/manifest.jsonl")
+    if not pilot_path.exists():
+        pytest.skip("pilot is gitignored and only exists on the machine that wrote it")
+    cells = read_manifest(pilot_path)
+    assert len(cells) == 120 and all(c.lookalike_of is None for c in cells)
+
+
+def test_lookalike_prefers_the_impersonated_role_when_it_is_legitimate(big):
+    schemes = get_schemes()
+    cfg = load_grid_config(GRID)
+    for cell in big:
+        if cell.lookalike_of:
+            shared = [r for r in cfg.negative_roles[cell.negative_class] if r in schemes.get(cell.lookalike_of).generation.roles]
+            if shared:
+                assert cell.role in shared, cell.cell_id

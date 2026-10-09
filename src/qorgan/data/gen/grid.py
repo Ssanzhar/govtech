@@ -6,6 +6,11 @@ evenly inside every class by a smooth weighted round-robin, so a 4-dialogue sche
 four Kazakh calls by chance. A scam cell's tactics are its scheme's `core` plus 0-2 seeded
 `optional` ones, kept only if the scheme rule still derives the same scheme (so the label the
 generator is asked for is the label the rules would give).
+
+Phase 2 (ADR D63) adds four constraints the pilot's writers tripped over or the style confound
+requires: occupation x age coherence, optional `imp_*` tactics only when they agree with the
+cell's role, `hook_only` only for cells whose tactics a hook can show, and twin-matched
+look-alike negatives (`lookalike_of`) allocated in proportion to each scheme's scam count.
 """
 
 from __future__ import annotations
@@ -57,6 +62,8 @@ class GridCell(BaseModel):
     length_target: int = Field(ge=3)
     phrasing: Literal["direct", "indirect"] | None = None
     confusable: bool | None = None
+    # Negatives only: the scheme whose pretext this legitimate call shares (none of its asks).
+    lookalike_of: str | None = None
 
     @model_validator(mode="after")
     def _kind_consistent(self) -> "GridCell":
@@ -64,6 +71,8 @@ class GridCell(BaseModel):
             raise ValueError(f"{self.cell_id}: a scam cell needs a scheme and tactics, no negative class")
         if self.kind == "legit" and (self.scheme or not self.negative_class or self.tactics):
             raise ValueError(f"{self.cell_id}: a negative cell needs a negative class and no tactics")
+        if self.kind == "scam" and self.lookalike_of:
+            raise ValueError(f"{self.cell_id}: only a negative can be a look-alike")
         return self
 
 
@@ -98,6 +107,9 @@ class GridConfig(BaseModel):
     channels: dict[str, float]
     stages: dict[str, float]
     persona: PersonaSpec
+    twin_share: float = Field(default=0.0, ge=0.0, le=1.0)
+    hook_compatible_tactics: tuple[str, ...] = ()
+    occupation_age_bands: dict[str, tuple[str, ...]] = {}
 
     @model_validator(mode="after")
     def _registers_known(self) -> "GridConfig":
@@ -107,6 +119,13 @@ class GridConfig(BaseModel):
         missing_roles = set(self.negative_weights) - set(self.negative_roles)
         if missing_roles:
             raise ValueError(f"negative classes without a caller role: {sorted(missing_roles)}")
+        unknown_occupations = set(self.occupation_age_bands) - set(self.persona.occupation)
+        unknown_bands = {b for bands in self.occupation_age_bands.values() for b in bands} - set(self.persona.age_band)
+        if unknown_occupations or unknown_bands:
+            raise ValueError(f"occupation_age_bands names unknown occupations {sorted(unknown_occupations)} or bands {sorted(unknown_bands)}")
+        for band in self.persona.age_band:
+            if not any(band in self.occupation_age_bands.get(o, (band,)) for o in self.persona.occupation):
+                raise ValueError(f"no occupation fits age band {band!r}")
         return self
 
 
@@ -153,11 +172,43 @@ def _draw(rng: random.Random, weights: Mapping, ) -> object:
     return rng.choices(keys, weights=[weights[k] for k in keys], k=1)[0]
 
 
-def _scam_tactics(rng: random.Random, scheme, role: str | None, cfg: GridConfig, schemes) -> tuple[str, ...]:
+def _persona(rng: random.Random, cfg: GridConfig) -> Persona:
+    """Age band first, then an occupation that fits it (phase-2 coherence fix)."""
+    band = str(_draw(rng, cfg.persona.age_band))
+    fitting = [o for o in cfg.persona.occupation if band in cfg.occupation_age_bands.get(o, (band,))]
+    return Persona(age_band=band, region=rng.choice(cfg.persona.region), occupation=rng.choice(fitting))
+
+
+def _stage(rng: random.Random, scheme, cfg: GridConfig) -> str:
+    """A stage the scheme's core can show: `hook_only` needs every core tactic hook-compatible."""
+    hookable = set(cfg.hook_compatible_tactics)
+    allowed = {k: w for k, w in cfg.stages.items() if k != "hook_only" or set(scheme.generation.core) <= hookable}
+    return str(_draw(rng, allowed))
+
+
+def _optional_pool(scheme, role: str | None, stage: str, cfg: GridConfig, roles) -> list[str]:
+    """Optional tactics that fit the cell: an `imp_*` only if it is the role's own impersonation
+    tactic (phase-2 fix: no `imp_regulator` for a bank caller), and only hook-compatible tactics
+    for a `hook_only` cell."""
+    core = tuple(scheme.generation.core)
+    own_imp = roles.get(role).imp_tactic if (role and roles is not None) else None
+    pool = []
+    for tactic in scheme.generation.optional:
+        if tactic in core:
+            continue
+        if tactic.startswith("imp_") and tactic != own_imp:
+            continue
+        if stage == "hook_only" and tactic not in cfg.hook_compatible_tactics:
+            continue
+        pool.append(tactic)
+    return pool
+
+
+def _scam_tactics(rng: random.Random, scheme, role: str | None, cfg: GridConfig, schemes, pool: Sequence[str] | None = None) -> tuple[str, ...]:
     from qorgan.explain.schemes import derive_scheme
 
     core = tuple(scheme.generation.core)
-    pool = [t for t in scheme.generation.optional if t not in core]
+    pool = list(pool) if pool is not None else [t for t in scheme.generation.optional if t not in core]
     for _ in range(_OPTIONAL_RETRIES):
         k = rng.randint(cfg.optional_tactics.min, min(cfg.optional_tactics.max, len(pool)))
         candidate = core + tuple(rng.sample(pool, k))
@@ -166,9 +217,30 @@ def _scam_tactics(rng: random.Random, scheme, role: str | None, cfg: GridConfig,
     return core
 
 
-def build_manifest(cfg: GridConfig, *, run: str, size: int, schemes, taxonomy) -> tuple[GridCell, ...]:
+def _negative_slots(n_neg: int, scheme_counts: Mapping[str, int], cfg: GridConfig, schemes) -> list[tuple[str, str | None]]:
+    """`(negative class, lookalike_of)` per negative: `twin_share` of them allocated over the
+    schemes by scam count (each the scheme's twin class), the rest by `negative_weights`."""
+    n_twin = round(n_neg * cfg.twin_share)
+    twin_counts = allocate(n_twin, {k: v for k, v in scheme_counts.items() if v}) if n_twin else {}
+    slots: list[tuple[str, str | None]] = []
+    for scheme_id, n in twin_counts.items():
+        twin = schemes.get(scheme_id).generation.twin
+        if twin not in cfg.negative_roles:
+            raise GridError(f"scheme {scheme_id}'s twin {twin!r} has no caller role in the grid")
+        slots += [(twin, scheme_id)] * n
+    rest = allocate(n_neg - n_twin, cfg.negative_weights) if n_neg - n_twin else {}
+    slots += [(cls, None) for cls, n in rest.items() for _ in range(n)]
+    return sorted(slots, key=lambda s: (list(cfg.negative_roles).index(s[0]), s[1] or ""))
+
+
+def build_manifest(cfg: GridConfig, *, run: str, size: int, schemes, taxonomy, roles=None) -> tuple[GridCell, ...]:
     """The run's cells, deterministic in (cfg, run, size). Scams first, then negatives,
-    each block ordered by class; registers interleaved evenly across the whole sequence."""
+    each block ordered by class; registers interleaved evenly across the whole sequence.
+    `roles` (the role lexicon) enables the role-consistent optional-tactic filter."""
+    if roles is None:
+        from qorgan.explain.roles import get_role_lexicon
+
+        roles = get_role_lexicon()
     if size <= 0:
         raise GridError("size must be positive")
     rng = random.Random(f"{cfg.seed}:{run}:{size}")
@@ -177,36 +249,36 @@ def build_manifest(cfg: GridConfig, *, run: str, size: int, schemes, taxonomy) -
     unknown = set(cfg.negative_weights) - set(taxonomy.negative_ids())
     if unknown:
         raise GridError(f"unknown negative classes in grid: {sorted(unknown)}")
-    negative_counts = allocate(size - n_scam, cfg.negative_weights)
-    slots: list[tuple[Kind, str]] = [("scam", k) for k, n in scheme_counts.items() for _ in range(n)]
-    slots += [("legit", k) for k, n in negative_counts.items() for _ in range(n)]
+    slots: list[tuple[Kind, str, str | None]] = [("scam", k, None) for k, n in scheme_counts.items() for _ in range(n)]
+    slots += [("legit", cls, look) for cls, look in _negative_slots(size - n_scam, scheme_counts, cfg, schemes)]
     registers = smooth_round_robin(allocate(size, cfg.registers))
     hard = set(taxonomy.hard_negative_ids())
     cells: list[GridCell] = []
-    for index, ((kind, cls), register) in enumerate(zip(slots, registers)):
-        persona = Persona(
-            age_band=str(_draw(rng, cfg.persona.age_band)),
-            region=rng.choice(cfg.persona.region),
-            occupation=rng.choice(cfg.persona.occupation),
-        )
+    for index, ((kind, cls, lookalike), register) in enumerate(zip(slots, registers)):
         common = dict(
-            cell_id=f"{run}_{index:04d}", run=run, kind=kind, language=register, persona=persona,
+            cell_id=f"{run}_{index:04d}", run=run, kind=kind, language=register, persona=_persona(rng, cfg),
             outcome=str(_draw(rng, cfg.outcomes)), channel=str(_draw(rng, cfg.channels)),
             length_target=int(_draw(rng, cfg.length_targets)),
         )
         if kind == "scam":
             scheme = schemes.get(cls)
             role = rng.choice(scheme.generation.roles) if scheme.generation.roles else None
+            stage = _stage(rng, scheme, cfg)
+            pool = _optional_pool(scheme, role, stage, cfg, roles)
             cells.append(GridCell(
-                **common, scheme=cls, role=role, stage=str(_draw(rng, cfg.stages)),
-                tactics=_scam_tactics(rng, scheme, role, cfg, schemes),
+                **common, scheme=cls, role=role, stage=stage,
+                tactics=_scam_tactics(rng, scheme, role, cfg, schemes, pool),
                 phrasing="indirect" if rng.random() < cfg.indirect_scam_share else "direct",
             ))
         else:
             is_hard = cls in hard
+            legit_roles = list(cfg.negative_roles[cls])
+            if lookalike:  # prefer the role the scheme impersonates, when it can call legitimately
+                legit_roles = [r for r in legit_roles if r in schemes.get(lookalike).generation.roles] or legit_roles
             cells.append(GridCell(
-                **common, negative_class=cls, hard_negative=is_hard, role=rng.choice(cfg.negative_roles[cls]),
+                **common, negative_class=cls, hard_negative=is_hard, role=rng.choice(legit_roles),
                 stage="none", confusable=is_hard and rng.random() < cfg.confusable_negative_share,
+                lookalike_of=lookalike,
             ))
     return tuple(cells)
 
@@ -242,6 +314,7 @@ def manifest_stats(cells: Sequence[GridCell]) -> dict:
         "length_target": count(c.length_target for c in cells),
         "phrasing": count(c.phrasing for c in cells if c.phrasing),
         "confusable_negatives": sum(1 for c in cells if c.confusable),
+        "lookalike_of": count(c.lookalike_of for c in cells if c.lookalike_of),
     }
 
 

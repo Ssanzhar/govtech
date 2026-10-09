@@ -8,7 +8,8 @@
 # data/taxonomy/{schemes,tactics}.yaml and data/lexicon/roles.yaml (names only -- the agent
 # that writes a chunk never sees any lexicon).
 
-version: 1
+version: 2          # v2 (phase 2, 2026-10-09): persona coherence, role-consistent optional imp_*,
+                    # stage vs core, base-rate scam share, twin-matched look-alike negatives
 seed: 20261008
 
 registers:          # share of the run; kk + ru = 60 %, mixed 25 %, en 15 %
@@ -17,7 +18,16 @@ registers:          # share of the run; kk + ru = 60 %, mixed 25 %, en 15 %
   mixed: 0.25
   en: 0.15
 
-scam_share: 0.60    # negatives = 1 - scam_share (>= 35 % required by ADR D63)
+# Scam share of the run. Phase 2 sets it to the corpus base rate (train: 896 / 1880 = 0.477 scam,
+# ADR D63 phase 2 "style confound"): the Claude block must carry the same scam/legit balance as
+# the Gemini rows, or a head can learn "Claude style => scam". The pilot used 0.60.
+scam_share: 0.48    # negatives = 1 - scam_share (>= 35 % required by ADR D63)
+
+# Look-alike negatives (phase 2). `twin_share` of the negatives are allocated over the schemes in
+# proportion to each scheme's scam count; each such cell is the scheme's `twin` class from
+# schemes.yaml and carries `lookalike_of: <scheme>` -- a legitimate call with the SAME pretext
+# and none of the asks. The rest are allocated by `negative_weights` without a pretext.
+twin_share: 0.80
 
 # Within the scam share: schemes listed here get `weight` x the base allocation (the
 # low-arousal administrative pretexts the cross-generator recall loss points at, D63 §why).
@@ -56,7 +66,7 @@ negative_roles:
   legit_telecom_offer: [telecom_operator]
   legit_utility_notice: [utility]
   legit_bank_call: [bank_security]
-  legit_gov_service: [egov_con, tax_kgd, pension_social]
+  legit_gov_service: [egov_con, tax_kgd, pension_social, police]  # police: a district officer inviting a witness, no asks
   family_money_request: [relative_friend]
   delivery_notification: [courier_post]
   general_conversation: [null]
@@ -69,6 +79,24 @@ confusable_negative_share: 0.6
 # Share of scams whose key request is phrased INDIRECTLY (no stock wording; the ask is implied,
 # euphemised or spread over turns). Drives the lexicon-leak gate (>= 30 % cue-free positives).
 indirect_scam_share: 0.5
+
+# Stages a scam cell may show depend on its tactics: `hook_only` is allowed only when every
+# tactic of the cell is one a hook can show (no extraction ask). Optional tactics of a hook_only
+# cell are drawn from this set too.
+hook_compatible_tactics:
+  - imp_bank
+  - imp_law_enforcement
+  - imp_gov_service
+  - imp_regulator
+  - imp_telecom_delivery_utility
+  - imp_personal
+  - urgency
+  - fear_threat
+  - secrecy
+  - prize_lottery
+  - investment_scam
+  - mule_recruitment
+  - callback_instruction
 
 # Optional tactics drawn per scam cell, on top of the scheme's `core` (uniform in range).
 optional_tactics: {min: 0, max: 2}
@@ -129,3 +157,19 @@ persona:
     - oil-field shift worker
     - civil servant
     - small-business owner
+
+# Which occupations fit which age band (phase 2; the pilot drew them independently and wrote a
+# "pensioner 18-25"). An occupation missing here fits every band.
+occupation_age_bands:
+  student: ["18-25", "26-40"]
+  pensioner: ["61+"]
+  stay-at-home parent: ["18-25", "26-40", "41-60"]
+  IT specialist: ["18-25", "26-40", "41-60"]
+  oil-field shift worker: ["18-25", "26-40", "41-60"]
+  nurse: ["18-25", "26-40", "41-60"]
+  taxi driver: ["26-40", "41-60", "61+"]
+  schoolteacher: ["26-40", "41-60", "61+"]
+  civil servant: ["26-40", "41-60"]
+  accountant: ["26-40", "41-60", "61+"]
+  small-business owner: ["26-40", "41-60", "61+"]
+  sole trader (ИП): ["26-40", "41-60", "61+"]

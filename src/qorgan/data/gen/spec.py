@@ -16,7 +16,7 @@ from pathlib import Path
 
 from qorgan.data.gen.grid import GridCell
 
-SPEC_VERSION = 1
+SPEC_VERSION = 2  # 2: look-alike negatives (`lookalike_of`), phase 2 of ADR D63
 
 INSTRUCTIONS = (
     "You write realistic phone-call transcripts for a scam-detection training corpus for Kazakhstan. "
@@ -39,6 +39,12 @@ INSTRUCTIONS = (
     "caller says at least one thing that would sound like a scam request out of context but is clearly "
     "legitimate in context (e.g. a courier at the door asks for the code shown in the recipient's own app; "
     "a bank warns never to tell anyone a code; HR asks to keep a reorganisation quiet until Monday).",
+    "Look-alike negatives (kind=legit with `lookalike_of` set): the legitimate call is about the SAME subject "
+    "as that scheme's pretext (see the scheme glossary) -- the same kind of organisation, the same topic, the "
+    "same ordinary vocabulary (a parcel, a clinic appointment, an EDS certificate, a loan application, a "
+    "contract, a refund, a job) -- but it makes none of the scheme's asks: no code read out over the phone, "
+    "no transfer, no app install, no secrecy, no threat. A reader should need the asks, not the topic, to "
+    "tell the two apart. Vary how it ends; the callee may be suspicious at first and then reassured.",
     "Annotation: every utterance has `stage` (hook, escalation, extraction, handoff; `none` for negatives and "
     "small talk) and `tactics`: a list of {id, phrase} where `phrase` is copied CHARACTER-FOR-CHARACTER from "
     "that utterance's text -- the shortest span that carries the tactic (a few words, not the whole turn).",

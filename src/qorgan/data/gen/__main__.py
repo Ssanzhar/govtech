@@ -27,8 +27,8 @@ def _context():
 def cmd_manifest(args) -> None:
     from qorgan.data.gen.grid import build_manifest, load_grid_config, manifest_stats, write_manifest
 
-    taxonomy, schemes, _ = _context()
-    cells = build_manifest(load_grid_config(args.grid), run=args.run, size=args.size, schemes=schemes, taxonomy=taxonomy)
+    taxonomy, schemes, roles = _context()
+    cells = build_manifest(load_grid_config(args.grid), run=args.run, size=args.size, schemes=schemes, taxonomy=taxonomy, roles=roles)
     path = write_manifest(cells, run_dir(args.run) / "manifest.jsonl")
     print(json.dumps(manifest_stats(cells), ensure_ascii=False, indent=1))
     print(f"manifest -> {path}")
