@@ -124,3 +124,62 @@ def test_role_lexicon_is_not_part_of_the_trained_bundle():
 
 def test_get_role_lexicon_reads_the_configured_path():
     assert get_role_lexicon().roles == load_role_lexicon(REAL).roles
+
+
+# ---------------------------------------------------------------- self-introduction by organisation (D63 phase 2)
+
+
+@pytest.mark.parametrize(
+    ("transcript", "role", "span"),
+    [
+        ("Алло, это Асель из Kaspi, удобно говорить?", "bank_security", "это Асель из Kaspi"),
+        ("Сәлеметсіз бе, Halyk банктен Ерлан.", "bank_security", "Halyk банктен"),
+        ("Hello, this is John from Beeline, quick question.", "telecom_operator", "this is John from Beeline"),
+        ("Алло, Tele2-ден звоним снова.", "telecom_operator", "Tele2-ден"),
+        ("Добрый день, курьер Kaspi доставки, Нурлан.", "courier_post", "курьер Kaspi доставки"),
+        ("Қарағандының №3 емханасынан, мейірбике Ақмарал.", "clinic", "емханасынан"),
+        ("Hello, Beeline customer care here.", "telecom_operator", "Beeline customer care"),
+    ],
+)
+def test_self_introduction_by_organisation(transcript, role, span):
+    claim = detect_role(transcript, load_role_lexicon(REAL))
+    assert claim is not None and claim.role_id == role, claim
+    assert claim.span.text == span
+    assert transcript[claim.span.start : claim.span.end] == span
+
+
+def test_an_organisation_without_an_introduction_is_not_a_claim():
+    lexicon = load_role_lexicon(REAL)
+    assert detect_role("Я вчера оплатила свет через Kaspi, всё нормально.", lexicon) is None
+    assert detect_role("Мен Каспий теңізіне барып келдім.", lexicon) is None  # «Каспий» is not «Каспи»
+
+
+def test_the_introduction_cannot_cross_an_utterance_boundary():
+    lexicon = load_role_lexicon(REAL)
+    assert detect_role("Да, это я.\nKaspi мне вчера писал.", lexicon) is None
+
+
+def test_the_window_is_bounded():
+    lexicon = load_role_lexicon(REAL)
+    far = "Это, ну как сказать, одна очень длинная история про Kaspi"
+    assert detect_role(far, lexicon) is None
+
+
+def test_longest_organisation_wins_between_roles():
+    lexicon = load_role_lexicon(REAL)
+    assert detect_role("Здравствуйте, это Kaspi доставка, ваш заказ приехал.", lexicon).role_id == "courier_post"
+
+
+def test_lexicon_without_intro_section_still_loads(tmp_path):
+    path = tmp_path / "roles.yaml"
+    path.write_text(
+        "version: 1\nroles:\n  - id: x\n    imp_tactic: null\n    names: {ru: a, kk: b, en: c}\n    cues: [abc]\n",
+        encoding="utf-8",
+    )
+    lexicon = load_role_lexicon(path)
+    assert lexicon.intro.markers == () and detect_role("abc", lexicon).role_id == "x"
+
+
+def test_an_ablative_mid_sentence_is_a_transfer_not_an_introduction():
+    lexicon = load_role_lexicon(REAL)
+    assert detect_role("Ертең кешке дейін сол ақшаны бір досыңның атынан Jusan-нан аударасың.", lexicon) is None

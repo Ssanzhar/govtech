@@ -24,6 +24,69 @@
 # tactic -- an online buyer or a broker is a pretext, not an impersonated body).
 
 version: 1
+
+# Self-introduction by organisation (ADR D63 phase 2; matcher in `qorgan.explain.roles`).
+# A role's `orgs` are organisation names; one becomes a claim when it carries a Kazakh ablative
+# affix («Kaspi-ден», «емханасынан») or an introduction marker below sits within
+# `ROLE_INTRO_WINDOW` (config.py) tokens of it on the same line. Tokens: a trailing `*` makes
+# that word a prefix; otherwise it matches exactly or with one affix glued on. Personal names
+# are never matched. Sources: the 59 role misses of the phase-1 pilot (future TRAIN data, never
+# a held-out split) and general knowledge of KZ brands; measured again on the phase-2 batch,
+# which this list was NOT widened from.
+intro:
+  markers:
+    # ru
+    - это
+    - меня зовут
+    - беспоко*
+    - звоню
+    - звоним
+    - звонит
+    - звонят
+    - говорит
+    - на связи
+    - компани*
+    - служб*
+    - отдел*
+    - филиал*
+    - департамент*
+    - менеджер*
+    - оператор*
+    - специалист*
+    - сотрудни*
+    - представител*
+    - курьер*
+    - мониторинг*
+    # kk
+    - хабарлас*
+    - қоңырау
+    - бөлім*
+    - қызмет*
+    - маман*
+    - орталығ*
+    - атым
+    - есімім
+    - банктен
+    - банкінен
+    - банктің
+    # en
+    - this is
+    - it s
+    - it is
+    - my name is
+    - calling
+    - here
+    - team
+    - department
+    - customer care
+    - customer service
+    - support
+    - courier
+    - delivery
+    - speaking
+    - on behalf of
+  affixes: [дан, ден, тан, тен, нан, нен]
+
 roles:
   - id: bank_security
     imp_tactic: imp_bank
@@ -59,6 +122,33 @@ roles:
       - calling from kaspi
       - calling from halyk
       - bank's fraud department
+    orgs:
+      - kaspi
+      - каспи
+      - halyk
+      - халык банк*
+      - халық банк*
+      - jusan
+      - жусан
+      - freedom bank
+      - фридом банк*
+      - forte*
+      - форте*
+      - bereke bank
+      - береке банк*
+      - centercredit
+      - центркредит
+      - bcc
+      - home credit
+      - хоум кредит
+      - eurasian bank
+      - евразийск* банк*
+      - otbasy
+      - отбасы банк*
+      - altyn bank
+      - алтын банк*
+      - rbk
+      - homebank
 
   - id: police
     imp_tactic: imp_law_enforcement
@@ -146,6 +236,15 @@ roles:
       - anti-fraud centre
       - financial regulator
       - financial monitoring agency
+    orgs:
+      - аррфр
+      - arrfr
+      - агентств* по регулированию
+      - financial regulation agency
+      - нацбанк*
+      - национальн* банк*
+      - ұлттық банк*
+      - national bank
 
   - id: antifraud_service
     imp_tactic: imp_regulator
@@ -167,6 +266,10 @@ roles:
       - anti-fraud service
       - fraud prevention service
       - cyber security service
+    orgs:
+      - антифрод*
+      - antifraud
+      - anti fraud
 
   - id: antikor
     imp_tactic: imp_law_enforcement
@@ -209,6 +312,20 @@ roles:
       - calling from tele2
       - kazakhtelecom
       - your network provider
+    orgs:
+      - beeline
+      - билайн
+      - kcell
+      - кселл
+      - tele2
+      - теле2
+      - altel
+      - алтел
+      - activ
+      - izi
+      - kazakhtelecom
+      - казахтелеком
+      - қазақтелеком
 
   - id: courier_post
     imp_tactic: imp_telecom_delivery_utility
@@ -234,6 +351,22 @@ roles:
       - courier service
       - this is the courier
       - kazpost
+    orgs:
+      - kazpost
+      - казпочт*
+      - қазпошт*
+      - ozon
+      - озон
+      - wildberries
+      - вайлдберриз
+      - cdek
+      - сдэк
+      - dhl
+      - kaspi доставк*
+      - kaspi delivery
+      - каспи доставк*
+      - glovo
+      - яндекс доставк*
 
   - id: marketplace_buyer
     imp_tactic: null
@@ -251,6 +384,11 @@ roles:
       - your listing
       - your ad on olx
       - about your ad
+    orgs:
+      - olx
+      - олх
+      - krisha
+      - крыша kz
 
   - id: egov_con
     imp_tactic: imp_gov_service
@@ -274,6 +412,16 @@ roles:
       - e-government
       - egov support
       - certification centre
+    orgs:
+      - цон*
+      - хқко
+      - egov
+      - е гов
+      - электронного правительства
+      - электрондық үкімет*
+      - халыққа қызмет*
+      - public service centre
+      - public service center
 
   - id: tax_kgd
     imp_tactic: imp_gov_service
@@ -294,6 +442,13 @@ roles:
       - state revenue committee
       - tax committee
       - calling from the tax
+    orgs:
+      - кгд
+      - мкб
+      - налогов* комитет*
+      - мемлекеттік кірістер*
+      - state revenue committee
+      - tax committee
 
   - id: pension_social
     imp_tactic: imp_gov_service
@@ -315,6 +470,20 @@ roles:
       - pension fund
       - enpf
       - social payments office
+    orgs:
+      - енпф
+      - бжзқ
+      - гцвп
+      - enpf
+      - госкорпорац*
+      - государственной корпорац*
+      - государственная корпорац*
+      - үкімет корпорац*
+      - government for citizens
+      - enbek
+      - енбек
+      - жұмыспен қамту*
+      - pension fund
 
   - id: clinic
     imp_tactic: imp_gov_service
@@ -337,6 +506,12 @@ roles:
       - calling from the clinic
       - calling from your clinic
       - ministry of health
+    orgs:
+      - поликлиник*
+      - polyclinic*
+      - clinic
+      - емхан*
+      - damumed
 
   - id: utility
     imp_tactic: imp_telecom_delivery_utility
@@ -362,6 +537,20 @@ roles:
       - water utility
       - gas service
       - housing association
+    orgs:
+      - кск
+      - кооператив*
+      - водоканал*
+      - энергосбыт*
+      - энергосбыт
+      - теплосет*
+      - тепловой энерги*
+      - qazaqgaz
+      - алсеко
+      - alseco
+      - су құбыр*
+      - жылу желі*
+      - домофон сервис*
 
   - id: employer
     imp_tactic: imp_personal

@@ -50,9 +50,16 @@ def export_client_config() -> dict[str, Any]:
         },
         # Layer 2 role slot (ADR D63): display-only lexicon, matched by core/role.js.
         "roles": [
-            {"id": role.id, "cues": list(role.cues), "names": {locale: role.names[locale] for locale in locales}}
+            {"id": role.id, "cues": list(role.cues), "orgs": [list(org) for org in role.orgs],
+             "names": {locale: role.names[locale] for locale in locales}}
             for role in get_role_lexicon().roles
         ],
+        # Self-introduction by organisation (ADR D63 phase 2): markers, ablative affixes, window.
+        "role_intro": {
+            "markers": [list(m) for m in get_role_lexicon().intro.markers],
+            "affixes": list(get_role_lexicon().intro.affixes),
+            "window": get_role_lexicon().intro.window,
+        },
         "templates": {locale: _templates(locale) for locale in locales},
         "advice": {locale: _advice(locale) for locale in locales},
         "scoring": {

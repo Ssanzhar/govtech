@@ -18,7 +18,7 @@ test("fixture is non-trivial", () => {
 
 test("every claim (id + span offsets) matches Python", () => {
   for (const c of fixture.cases) {
-    assert.deepEqual(detectRoles(c.transcript, config.roles), c.claims, c.transcript.slice(0, 60));
+    assert.deepEqual(detectRoles(c.transcript, config.roles, config.role_intro), c.claims, c.transcript.slice(0, 60));
   }
 });
 
@@ -38,4 +38,11 @@ test("explain() carries the role slot without touching the reason", () => {
   assert.equal(transcript.slice(e.role_span.start, e.role_span.end), e.role_span.text);
   assert.equal(e.reason, config.templates.ru.no_signal_reason);
   assert.equal(explain(result, "Привет, как дела?", "ru", config).role_line, null);
+});
+
+test("self-introduction by organisation is exported and matched (D63 phase 2)", () => {
+  assert.ok(config.role_intro && config.role_intro.markers.length > 10 && config.role_intro.window > 0);
+  const intro = fixture.cases.filter((c) => c.transcript.includes("Асель из Kaspi"));
+  assert.equal(intro.length, 1);
+  assert.equal(intro[0].claims[0].role_id, "bank_security");
 });
