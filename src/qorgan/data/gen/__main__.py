@@ -50,11 +50,41 @@ def cmd_chunks(args) -> None:
 def cmd_qc(args) -> None:
     from qorgan.data.gen.qc import run_qc
 
-    report = run_qc(run_dir(args.run), embed=not args.no_embed, probe_seed=get_config().default_seed)
-    out = run_dir(args.run) / "qc_report.json"
+    base = run_dir(args.run)
+    report = run_qc(base, embed=not args.no_embed, probe_seed=get_config().default_seed, chunk=args.chunk)
+    out = base / "qc" / f"{args.chunk}.json" if args.chunk else base / "qc_report.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(json.dumps(report["summary"], ensure_ascii=False, indent=1))
+    if report["rejected"]:
+        print(json.dumps(report["rejected"], ensure_ascii=False, indent=1))
     print(f"qc report -> {out}")
+
+
+def cmd_check(args) -> None:
+    """Schema + cell-agreement check of ONE chunk, for the writer to self-correct. Prints only
+    its own rows' errors and warnings: no lexicon, corpus or evaluation content."""
+    from qorgan.data.gen.qc import _schema_gate, load_run_rows
+
+    cells, rows = load_run_rows(run_dir(args.run), args.chunk)
+    _, schema = _schema_gate(cells, rows)
+    out = {"chunk": args.chunk, "cells": len(cells), "rows": schema["rows"], "valid": schema["valid"],
+           "missing_cells": schema["missing_cells"], "errors": schema["errors"], "warnings": schema["warnings"]}
+    print(json.dumps(out, ensure_ascii=False, indent=1))
+    raise SystemExit(0 if schema["valid"] == len(cells) and not schema["missing_cells"] else 1)
+
+
+def cmd_status(args) -> None:
+    """Progress of a run, derived from disk only (resumable after any interruption): per chunk,
+    whether its output exists and is complete, and its QC verdict. Writes `progress.json`."""
+    from qorgan.data.gen.progress import run_status
+
+    status = run_status(run_dir(args.run))
+    (run_dir(args.run) / "progress.json").write_text(json.dumps(status, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print(json.dumps(status["summary"], ensure_ascii=False, indent=1))
+    for state in ("missing", "incomplete", "written", "qc_fail"):
+        if status["by_state"].get(state):
+            print(f"{state}: {' '.join(status['by_state'][state])}")
 
 
 def main(argv: list[str] | None = None) -> None:  # pragma: no cover - CLI
@@ -71,8 +101,16 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover - CLI
     p.set_defaults(func=cmd_chunks)
     p = sub.add_parser("qc")
     p.add_argument("--run", required=True)
+    p.add_argument("--chunk", default=None, help="QC one chunk (report -> <run>/qc/<chunk>.json)")
     p.add_argument("--no-embed", action="store_true", help="skip the embedding gates (offline smoke run)")
     p.set_defaults(func=cmd_qc)
+    p = sub.add_parser("check")
+    p.add_argument("--run", required=True)
+    p.add_argument("--chunk", required=True)
+    p.set_defaults(func=cmd_check)
+    p = sub.add_parser("status")
+    p.add_argument("--run", required=True)
+    p.set_defaults(func=cmd_status)
     args = parser.parse_args(argv)
     args.func(args)
 

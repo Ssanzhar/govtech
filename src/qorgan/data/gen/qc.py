@@ -22,7 +22,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
 import numpy as np
@@ -43,15 +43,30 @@ _AUGMENTED_SUFFIX = "-asr"  # ASR-styled copies of train rows (ADR D31): near-du
 _TOKEN = re.compile(r"\w+")
 _PROBE_FOLDS = 5
 _BOOTSTRAP = 1000
+_MIN_PROBE_ROWS = 60  # the 5-fold fingerprint probe needs enough rows per stratum (chunk QC skips it)
 
 
 # ---------------------------------------------------------------- loading
 
 
-def load_run_rows(run_dir: Path) -> tuple[tuple[GridCell, ...], list[tuple[str, dict]]]:
+def chunk_cell_ids(run_dir: Path, chunk: str) -> frozenset[str]:
+    """The cell ids a chunk spec asks for (the spec is the contract the writer received)."""
+    spec_path = run_dir / "chunks" / f"{chunk}.spec.json"
+    if not spec_path.exists():
+        raise FileNotFoundError(f"no chunk spec {spec_path}")
+    return frozenset(c["cell_id"] for c in json.loads(spec_path.read_text(encoding="utf-8"))["cells"])
+
+
+def load_run_rows(run_dir: Path, chunk: str | None = None) -> tuple[tuple[GridCell, ...], list[tuple[str, dict]]]:
+    """Manifest cells + raw rows; with `chunk`, only that chunk's cells and output file."""
     cells = read_manifest(run_dir / "manifest.jsonl")
+    if chunk is not None:
+        wanted = chunk_cell_ids(run_dir, chunk)
+        cells = tuple(c for c in cells if c.cell_id in wanted)
     rows: list[tuple[str, dict]] = []
     for path in sorted((run_dir / "out").glob("*.jsonl")):
+        if chunk is not None and path.stem != chunk:
+            continue
         for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             if not line.strip():
                 continue
@@ -397,11 +412,38 @@ def _fingerprint_gate(valid, pool, seed: int, store: EmbeddingStore | None, cell
     }
 
 
-def run_qc(run_dir: Path, *, embed: bool = True, probe_seed: int = 42, processed: Path | None = None) -> dict:
-    from qorgan.config import get_config
+def row_verdicts(report: dict, valid_ids: Sequence[str]) -> dict[str, list[str]]:
+    """Row-level rejections: {row id: reasons}. A row is accepted when it is schema-valid, a
+    scrub fixed point, not a near-duplicate (vs train or the run) and below the ROUGE-L cap.
+    Pure over the report; schema-invalid rows carry their schema errors."""
+    reasons: dict[str, list[str]] = {rid: ["schema: " + "; ".join(errs)] for rid, errs in report["schema"]["errors"].items()}
+    for rid in report["scrub"]["rows_not_fixed_point"]:
+        reasons.setdefault(rid, []).append("scrub: not a fixed point")
+    near = report.get("near_dup", {})
+    for rid in near.get("flagged_vs_train", []):
+        reasons.setdefault(rid, []).append("near-duplicate of a train row")
+    for rid in near.get("flagged_within_run", []):
+        reasons.setdefault(rid, []).append("near-duplicate within the run")
+    for rid in report["novelty_rouge_l"]["flagged"]:
+        reasons.setdefault(rid, []).append("ROUGE-L >= 0.7")
+    for name, ids in report["disjoint"]["overlaps"].items():
+        for rid in ids:
+            reasons.setdefault(rid, []).append(f"collides with a {name} row (hash)")
+    return {rid: reasons[rid] for rid in sorted(reasons)}
+
+
+def chunk_verdict(n_cells: int, rejected: Mapping[str, list[str]], valid_ids: Sequence[str], min_share: float) -> dict:
+    accepted = sorted(set(valid_ids) - set(rejected))
+    share = len(accepted) / n_cells if n_cells else 0.0
+    return {"cells": n_cells, "accepted": len(accepted), "share": round(share, 4), "min_share": min_share,
+            "verdict": "pass" if share >= min_share else "fail", "accepted_ids": accepted}
+
+
+def run_qc(run_dir: Path, *, embed: bool = True, probe_seed: int = 42, processed: Path | None = None, chunk: str | None = None) -> dict:
+    from qorgan.config import GEN_CHUNK_MIN_VALID_SHARE, get_config
 
     processed = processed or get_config().data_dir / "processed"
-    cells, rows = load_run_rows(run_dir)
+    cells, rows = load_run_rows(run_dir, chunk)
     by_cell = {c.cell_id: c for c in cells}
     checks, schema = _schema_gate(cells, rows)
     valid = [c.dialogue for c in checks if c.dialogue is not None]
@@ -422,7 +464,10 @@ def run_qc(run_dir: Path, *, embed: bool = True, probe_seed: int = 42, processed
     store = EmbeddingStore(run_dir.parent / "_cache" / "onnx_embeddings.npz") if embed else None
     if store is not None:
         report["near_dup"] = _near_dup_gate(valid, pool, store)[0]
-    report["fingerprint"] = _fingerprint_gate(valid, pool, probe_seed, store, by_cell)
+    report["fingerprint"] = _fingerprint_gate(valid, pool, probe_seed, store, by_cell) if len(valid) >= _MIN_PROBE_ROWS else {"skipped": f"< {_MIN_PROBE_ROWS} rows"}
+    report["chunk"] = chunk
+    report["rejected"] = row_verdicts(report, [d.id for d in valid])
+    report["acceptance"] = chunk_verdict(len(cells), report["rejected"], [d.id for d in valid], GEN_CHUNK_MIN_VALID_SHARE)
     report["summary"] = _summary(report, len(cells))
     return report
 
@@ -443,6 +488,9 @@ def _summary(report: dict, n_cells: int) -> dict:
         "negatives_with_a_cue": leak["negatives_with_a_cue"],
         "role_slot_recall": report["layers"]["role_slot"]["recall"],
         "scheme_rule_agreement": f"{report['layers']['scheme_rules']['derived_equals_cell']}/{report['layers']['scheme_rules']['scam_rows']}",
-        "fingerprint_auc_char": report["fingerprint"]["char_ngram"]["auc"],
+        "fingerprint_auc_char": report["fingerprint"].get("char_ngram", {}).get("auc"),
         "fingerprint_auc_embedding": report["fingerprint"].get("embedding", {}).get("auc"),
+        "accepted": report["acceptance"]["accepted"],
+        "rejected": len(report["rejected"]),
+        "verdict": report["acceptance"]["verdict"],
     }

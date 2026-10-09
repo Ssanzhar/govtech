@@ -112,6 +112,26 @@ _DEFAULT_SPLIT_TRAIN_FRACTION = 0.7
 _DEFAULT_ASR_STYLE_TRAIN_FRACTION = 1.0
 _DEFAULT_SPLIT_VAL_FRACTION = 0.15
 
+# --- Taxonomy v2, phase 2 (ADR D63) ---------------------------------------------------------
+# A generated chunk is accepted when at least this share of its rows pass every row-level QC
+# gate (schema, scrub fixed point, near-duplicate, ROUGE-L); otherwise it is rewritten.
+GEN_CHUNK_MIN_VALID_SHARE = 0.8
+# A v2 tactic ships only with at least this many out-of-fold positives (train OOF + val); a
+# head below it is dropped from the v2 space rather than shipped at an untuned 0.5 (D63
+# "thin heads", approved 2026-10-09). Same number as D30's tuning floor.
+V2_MIN_OOF_POSITIVES = 8
+# The five v2 tactics that did not exist in v1. Rows written for the v1 label space are
+# UNLABELLED for these (not negative): the trainer masks them out of these heads (approved).
+V2_NEW_TACTICS: tuple[str, ...] = (
+    "loan_inducement", "cash_courier_handoff", "refund_request", "task_advance_fee", "callback_instruction",
+)
+# Share of generated (Claude) rows that go to `val` instead of `train`, by seeded id hash. They
+# never go to `test`: the held-out for Claude-era models is built separately (ADR D63 §3.2).
+GEN_VAL_FRACTION = 0.15
+# Layer-2 role slot: tokens allowed between a self-introduction marker and an organisation name
+# («это Асель из Kaspi», "this is John from Beeline"). Display-only; exported to site/core/role.js.
+ROLE_INTRO_WINDOW = 4
+
 ClassifierBackend = Literal["linear", "llm", "xlmr", "mock"]
 
 
