@@ -1662,3 +1662,118 @@ evidence in `docs/research/2026-10/voice_d64/`.
   (`docs/RECORDING_SCRIPT.md`). Cue survival on real speech is unmeasured.
 - Not done: a GigaAM + VAD mode for Android WebView, where Vosklet cannot run (no cross-origin
   isolation).
+
+### D67 — A WebView-safe voice mode (GigaAM + an energy VAD) and an Android build path (2026-10-09)
+Android WebView, including the one inside eGov Mobile, never grants cross-origin isolation. So
+Vosklet (WASM threads + SharedArrayBuffer) cannot start there, and the D64 voice mode dies. Paste
+and replay worked. GigaAM's single-threaded sherpa-onnx build does not need isolation (D64), so
+the only missing piece was what Vosk's endpointer did: cutting the audio into phrases.
+
+**Change.**
+- `voiceMode()` (`site/core/asr.js`) picks one of three modes:
+  - **full** (the D64 word-level mode): needs isolation + SharedArrayBuffer and a non-phone.
+  - **light**: GigaAM only. It runs whenever the full mode is blocked by isolation,
+    SharedArrayBuffer or the phone gate.
+  - **off**: no secure context, AudioWorklet, microphone, WebAssembly or Worker.
+
+  The D25 phone gate still holds for the full mode: a phone gets the light mode, even an
+  isolated one such as a TWA. `live.html?voice=full|light` forces a mode for evidence runs;
+  `full` lifts only the phone gate and cannot make a page isolated.
+- Light mode pipeline: `capture-worklet.js` (AudioWorklet, ~43 ms chunks) → audio ring +
+  `vad.js` → each segment goes through the **unchanged D64 endpoint pass**
+  (`createEndpointPass`: padded span, GigaAM worker, word LID) → the session and meter, the
+  same path as D64. `voice-light.js` wires it (`createLightPass` is the testable core,
+  `createLightAsr` the browser runtime).
+- **VAD:** deterministic energy + zero-crossing, with no model. 30 ms frames. A frame is active
+  when its RMS clears an adaptive floor by 12 dB to open a phrase (6 dB to stay in one) and clears
+  −50 dBFS. The floor is the minimum level over 2.5 s, capped at −35 dBFS. Frames crossing zero
+  fewer than 150 times/s are excluded, which removes mains hum. Inside a phrase, a quiet "hissy"
+  frame still counts (fricatives).
+  - Onset 150 ms, hangover 600 ms (250 ms past 8 s), hard cut at 15 s, minimum phrase 300 ms,
+    pre-roll 150 ms.
+  - Parameters were set from first principles and checked only on synthetic signals and the
+    demo scenes. Nothing was tuned on held-out data. Silero-VAD was not needed (below).
+- **No fallback in light mode:** there is no Vosk text to fall back on. A phrase whose decode
+  fails, times out or comes back empty is dropped and reported ("one phrase could not be
+  transcribed"); it is never scored as empty text.
+- The meter's step uses confidence 1, the same as a pasted transcript, because GigaAM's CTC
+  decode exposes none.
+- If GigaAM itself cannot load, the voice mode turns off with the reason. Paste and replay stay.
+- UI (kk/ru/en in `site/i18n.js`): a light-mode note saying phrases are transcribed after a
+  pause and no live words appear, "hearing speech… / transcribing…" while it works,
+  light-specific loading notes, and a 239 MB disclosure (no Vosk tarballs) instead of 147 + 239.
+- `tests/test_architecture.py`: `capture-worklet.js`, `vad.js` and `voice-light.js` join the
+  no-network audio modules. A new test fails if any `site/core` file that touches an audio API,
+  the ring or the VAD is missing from that list. The worklet's only outlet is its own port.
+- Service worker **v10** precaches the three modules. The taxonomy branch also moves to v10; the
+  merge will reconcile.
+- **Android:**
+  - `android/twa/twa-manifest.json`: Bubblewrap, `fallbackType: customtabs`, never a WebView,
+    because WebView would lose isolation.
+  - `android/webview-shell/`: a minimal WebView harness shaped like eGov Mobile's mini-service.
+  - `site/.well-known/assetlinks.json`: a template with a placeholder fingerprint.
+  - `android/README.md`: steps.
+  - No signing key was generated. `*.keystore`/`*.jks` are gitignored, and
+    `tests/web/test_android_twa.py` checks that none is tracked.
+
+**Evidence.**
+- Tests first: `vad.test.mjs` (14), `voice-light.test.mjs` (5) and `voiceMode` cases in
+  `asr.test.mjs`. `npm test` 139/139, `pytest` 1346 passed / 2 skipped.
+- Browser runs (`docs/research/2026-10/voice_d67/`): real page, desktop Chromium, fake
+  microphone, served by `tests_js/tools/static_site.mjs` with isolation **off** (light) or **on**
+  (full, the production header set). Second visit, models cached (`--warm`), one sweep, both modes
+  under the same machine load. Audio is synthesised (`say`: Milena/Aru, one WAV per line) plus the
+  D64 code-switch clips (`cs_mix`).
+
+  | Scene | full, isolated: meter · utterances/lines · speech end → line on screen, median / max | light, not isolated: meter · utterances/lines · segments found | light latency |
+  |---|---|---|---|
+  | RU scam | 98 · 6/6 · 3.24 / 3.82 s | 98 · 6/6 · 6/6 | 3.03 / 3.39 s |
+  | KK scam | 97 · 5/5 · 3.60 / 4.45 s | 97 · 5/5 · 5/5 | 2.91 / 3.62 s |
+  | real bank call (legit) | 19 · 4/4 · 3.71 / 4.64 s | 19 · 4/4 · 4/4 | 2.79 / 3.54 s |
+  | code-switch `cs_mix` | 92 · 7/7 · 3.52 / 4.86 s | 97 · 7/7 · 7/7 | 2.49 / 3.91 s |
+
+  D64 reported 98 / 96 / 18 / 97 for the same scenes. Every light transcript is GigaAM's
+  ("точная расшифровка"); no phrase was dropped.
+- **Segmentation:** 22/22 reference lines found, 0 split, 0 merged, 0 spurious segments.
+  - Start error median 150–166 ms. That is the 150 ms pre-roll, by design.
+  - End error median 10–14 ms. The KK run reads 0.57 / 0.40 s for both, a constant offset that
+    comes from the run's timing zero (getUserMedia → first sample), not the VAD.
+- **Latency (light):**
+  - The VAD closes a phrase 0.62–0.72 s after the speech ends (the 0.6 s hangover).
+  - GigaAM decodes in median 1.4–1.8 s in this sweep (1.0–1.1 s in an earlier, quieter sweep);
+    scoring takes the rest.
+  - The full mode is slower because three Vosk recognisers share the CPU with the decode.
+  - From the click to "listening": 2.1–2.3 s (light) vs 3.7–4.1 s (full). GigaAM loads from cache
+    in 0.86–0.92 s.
+- **Memory:** renderer RSS, read with `ps` over the browser's process tree (dedicated workers live
+  in the renderer). This is a different accounting from D64's CDP reading, so compare within this
+  table, not with D64's 1.15 GB.
+  - Warm: light peak **2.11–2.23 GB**, in-call median 2.09–2.21 GB; full peak **3.13–3.20 GB**,
+    in-call median 1.58–3.14 GB (bimodal, depending on GC).
+  - Cold RU: light peak 2.50 GB vs full 2.94 GB. A first visit holds download buffers.
+  - Two earlier sweeps, not committed, showed the same picture (light peaks 2.06–2.21 GB, one
+    1.15 GB; full 1.77–3.25 GB).
+  - The light mode saves about 1 GB at peak. It is still ~2.1 GB on desktop: the e5 embedder plus
+    GigaAM. That is a real phone risk, and it is unmeasured on a phone.
+- **WebView proxy:** the light mode with an Android-WebView user agent (`; wv`) and a 412 px phone
+  viewport, `cs_mix`: meter 97, 7/7 lines, latency 1.98 / 2.87 s.
+- **No-GigaAM path** (`e2e_voice_unavailable.mjs`, model answered 404): the voice mode turns off
+  with "…модель распознавания речи не загрузилась (HTTP 404 …)", the mic radio is disabled, and
+  replay still scores 98/100.
+
+**Not done, on record.**
+- No emulator run. Installing the needed tooling took too long: the download link measured
+  17–46 KB/s. A JDK alone was ~180 MB, plus an Android SDK and a ~1.5 GB arm64 system image, so
+  hours. A Homebrew `openjdk@17` install was stopped after 10 min at 4 MB, and `npm i
+  @bubblewrap/cli` failed on the network.
+- The TWA and WebView shells are configuration and source only, never built. Steps are in
+  `android/README.md`.
+- Still needs a person:
+  - a real Android phone (B9: memory, latency, speakerphone audio);
+  - an upload/signing key and its SHA-256 for `assetlinks.json`;
+  - the production HTTPS host in `twa-manifest.json`;
+  - a decision on whether the D25 phone gate should also cover the light mode once phone numbers
+    exist.
+- Synthesised, clean audio only. Real speech through a speakerphone, with room noise and
+  overlapping talkers, may need silero-vad. The energy VAD gave 0 errors here, so it was not
+  justified yet.

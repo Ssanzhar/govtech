@@ -5,6 +5,7 @@ then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECI
 (ADRs D11–D54), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
 kept as history._
 
+- **2026-10-09 — WebView-safe voice mode (ADR D67):** without cross-origin isolation (an Android WebView such as eGov Mobile's), or on a phone, the citizen page now uses a light GigaAM-only voice mode. An energy/ZCR VAD (`site/core/vad.js`) cuts the phrases, and each one goes through the unchanged D64 endpoint pass. There are no live words in this mode, and the kk/ru/en UI says so. If GigaAM is missing, voice turns off and paste/replay stay. Desktop Chromium with isolation off, demo scenes: meter 98 / 97 / 19 / 97, the same as the isolated mode. 22/22 lines segmented, 0 split/merged/spurious. Latency 2.5–3.0 s median vs 3.2–3.7 s for the full mode, peak renderer ~2.2 GB vs ~3.2 GB. Android: `android/` holds a TWA config (Bubblewrap), a WebView harness and an `assetlinks.json` template. None of it was built or run on an emulator (the download link was too slow for the SDK). Still needed: a real phone, a signing key, the production host.
 - **2026-10-08 — NITEC / eGov pilot pack (RU, draft, nothing sent):** `docs/egov/` (README, ТЗ outline, data-flow/PII map, ГТС security checklist, API spec + proposed hand-off schema, questions for NITEC, architecture diagrams).
 
 ## TL;DR (September 2026)

@@ -132,6 +132,7 @@
 .lv-live-words::after{content:"▌";margin-left:.15em;color:var(--amber);animation:lv-caret 1s steps(1) infinite}
 .lv-line[data-source="vosk"] .lv-line-meta{font-style:italic}
 .lv-endpoint-note{margin-top:.4rem}
+.lv-voice-mode-note{display:block;margin:.2rem 0 .6rem}
 
 /* ── post-call summary + report (dark) ── */
 .lv-summary-wrap{margin-top:1.4rem}

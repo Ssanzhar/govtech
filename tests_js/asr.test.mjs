@@ -3,7 +3,7 @@
    endpoint-alignment state machine over Vosklet events. */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SUPPORT_REASONS, initialAsrState, isSupported, parseVoskResult, reduceAsrEvent, supportIssues, voteFinal } from "../site/core/asr.js";
+import { SUPPORT_REASONS, initialAsrState, isSupported, parseVoskResult, reduceAsrEvent, supportIssues, voiceMode, voteFinal } from "../site/core/asr.js";
 
 const result = (text, ...confs) =>
   JSON.stringify({ text, result: text.split(" ").map((word, i) => (confs[i] === undefined ? { word } : { word, conf: confs[i] })) });
@@ -248,4 +248,37 @@ test("createDeviceAsr: an optional language that fails to load is skipped; a req
   } finally {
     globalThis.loadVosklet = previous;
   }
+});
+
+// ── ADR D67: which voice mode this browser gets ──────────────────────────────
+const desktop = { crossOriginIsolated: true, SharedArrayBuffer: function () {}, isSecureContext: true, AudioWorkletNode: function () {}, WebAssembly: {}, Worker: function () {}, navigator: { mediaDevices: { getUserMedia() {} }, userAgent: "Chrome desktop" } };
+const webview = { ...desktop, crossOriginIsolated: false, SharedArrayBuffer: undefined, navigator: { ...desktop.navigator, userAgent: "Mozilla/5.0 (Linux; Android 14; wv) AppleWebKit/537.36 Chrome/129.0 Mobile Safari/537.36" } };
+
+test("voiceMode: an isolated desktop browser gets the full word-level mode", () => {
+  assert.deepEqual(voiceMode(desktop), { mode: "full", issues: [], downgradedBy: [] });
+});
+
+test("voiceMode: without cross-origin isolation (an Android WebView) the light GigaAM-only mode, with the reasons", () => {
+  assert.deepEqual(voiceMode(webview), { mode: "light", issues: [], downgradedBy: ["isolation", "shared_memory", "phone"] });
+  assert.deepEqual(voiceMode({ ...desktop, crossOriginIsolated: false }), { mode: "light", issues: [], downgradedBy: ["isolation"] });
+});
+
+test("voiceMode: a phone keeps the light mode even when isolated (D25: the full mode is unmeasured on phones)", () => {
+  const twa = { ...desktop, navigator: { ...desktop.navigator, userAgent: "Mozilla/5.0 (Linux; Android 14) Chrome/129.0 Mobile Safari/537.36" } };
+  assert.deepEqual(voiceMode(twa), { mode: "light", issues: [], downgradedBy: ["phone"] });
+  // `?voice=full` lifts only the phone gate (evidence runs); it cannot conjure isolation.
+  assert.equal(voiceMode(twa, "full").mode, "full");
+  assert.equal(voiceMode(webview, "full").mode, "light");
+  assert.equal(voiceMode(desktop, "light").mode, "light");
+});
+
+test("voiceMode: no microphone, no AudioWorklet, no WASM or not https -> off, with codes the page localises", () => {
+  assert.deepEqual(voiceMode({ ...webview, isSecureContext: false }), { mode: "off", issues: ["secure_context"], downgradedBy: [] });
+  assert.deepEqual(voiceMode({ navigator: {} }).issues, ["secure_context", "audio_worklet", "capture", "wasm"]);
+  for (const code of voiceMode({ navigator: {} }).issues) assert.ok(SUPPORT_REASONS[code], code);
+  assert.equal(voiceMode({ ...desktop, Worker: undefined }).mode, "off");
+});
+
+test("voiceMode: an unknown override is ignored", () => {
+  assert.equal(voiceMode(desktop, "bogus").mode, "full");
 });

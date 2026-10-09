@@ -59,3 +59,12 @@ data/asr_capture/fleurs_decodes_*.jsonl
 data/asr_capture/spanvote_*_decodes.*.jsonl
 data/asr_capture/english_fleurs.jsonl
 data/asr_capture/fleurs_set.jsonl
+
+# Android (ADR D67): signing keys never enter git; Gradle/Bubblewrap build outputs neither
+*.keystore
+*.jks
+android/**/build/
+android/**/.gradle/
+android/**/local.properties
+android/**/*.apk
+android/**/*.aab

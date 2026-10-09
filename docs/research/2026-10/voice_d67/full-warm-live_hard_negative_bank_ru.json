@@ -1,0 +1,217 @@
+{
+ "label": "full-warm",
+ "scene": "live_hard_negative_bank_ru",
+ "base": "http://127.0.0.1:8411",
+ "warm_cache": true,
+ "capture_at": 4046.4900000002235,
+ "listening_at": 4317.0800000000745,
+ "cross_origin_isolated": true,
+ "mode": "full",
+ "mode_note": null,
+ "audio_s": 27.1815,
+ "lines": [
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/fa6c5f1d-cc54-4214-889f-e82c633e58cf/scratchpad/audio/live_hard_negative_bank_ru_0.wav",
+   "start": 5,
+   "seconds": 4.0866875,
+   "speechStart": 5.002375,
+   "speechEnd": 9.054
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/fa6c5f1d-cc54-4214-889f-e82c633e58cf/scratchpad/audio/live_hard_negative_bank_ru_1.wav",
+   "start": 10.2866875,
+   "seconds": 4.62875,
+   "speechStart": 10.290875,
+   "speechEnd": 14.889375
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/fa6c5f1d-cc54-4214-889f-e82c633e58cf/scratchpad/audio/live_hard_negative_bank_ru_2.wav",
+   "start": 16.1154375,
+   "seconds": 2.771375,
+   "speechStart": 16.1198125,
+   "speechEnd": 18.862499999999997
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/fa6c5f1d-cc54-4214-889f-e82c633e58cf/scratchpad/audio/live_hard_negative_bank_ru_3.wav",
+   "start": 20.0868125,
+   "seconds": 5.8946875,
+   "speechStart": 20.089625,
+   "speechEnd": 25.9558125
+  }
+ ],
+ "listening_after_ms": 4094,
+ "gigaam": {
+  "status": "ready",
+  "loadMs": 826.3799999998882,
+  "fromCache": true,
+  "at": 4676.160000000149
+ },
+ "rss_mb": {
+  "idle_page": {
+   "total": 368,
+   "browser": 82,
+   "gpu-process": 103,
+   "network.mojom.NetworkService": 41,
+   "renderer": 143
+  },
+  "listening": {
+   "total": 3420,
+   "browser": 92,
+   "gpu-process": 105,
+   "network.mojom.NetworkService": 41,
+   "renderer": 3126,
+   "audio.mojom.AudioService": 55
+  },
+  "end_of_audio": {
+   "total": 3050,
+   "browser": 94,
+   "gpu-process": 101,
+   "network.mojom.NetworkService": 41,
+   "renderer": 2759,
+   "audio.mojom.AudioService": 55
+  },
+  "peak_renderer": 3125,
+  "peak_total": 3419,
+  "median_renderer_in_call": 3078,
+  "median_total_in_call": 3359,
+  "renderer_per_second": [
+   3125,
+   3122,
+   3125,
+   3125,
+   3122,
+   3120,
+   3061,
+   3063,
+   3064,
+   3068,
+   3074,
+   3076,
+   3078,
+   3078,
+   3078,
+   3079,
+   3082,
+   3086,
+   3099,
+   3089,
+   3089,
+   3091,
+   3092,
+   3094,
+   3099,
+   3098,
+   2764,
+   2767,
+   2767,
+   2765,
+   2768,
+   2766,
+   2766,
+   2766,
+   2766
+  ]
+ },
+ "summary_score": "19 / 100",
+ "final_meter": 18.623663687293647,
+ "final_band": "low",
+ "utterances": [
+  {
+   "seq": 0,
+   "text": "здравствуйте это оператор банка звоню по вашей заявке",
+   "language": "ru",
+   "confidence": 0.97209625,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "ru",
+    "text": "здравствуйте это оператор банка звоню по вашей заявке",
+    "confidence": 0.97209625
+   },
+   "decodeMs": 1814.9400000004098,
+   "latencyMs": 1815.9950000001118,
+   "meter": 26.255607508381303,
+   "band": "low",
+   "at": 16317.759999999776,
+   "tags": "ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 1,
+   "text": "мы подтверждаем что перевод на пятнадцать тысяч тенге успешно проведен",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "ru",
+    "text": "мы подтверждаем что перевод на пятнадцать тысяч тенге успешно проведён",
+    "confidence": 1
+   },
+   "decodeMs": 2005.320000000298,
+   "latencyMs": 2005.8150000004098,
+   "meter": 23.179082610209623,
+   "band": "low",
+   "at": 22640.75499999989,
+   "tags": "ru ru ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 2,
+   "text": "никакие коды и данные карты называть не нужно",
+   "language": "ru",
+   "confidence": 0.8569501428571428,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "ru",
+    "text": "никакие года и данные карты называть ненужно",
+    "confidence": 0.8569501428571428
+   },
+   "decodeMs": 1275.1800000006333,
+   "latencyMs": 1275.6150000002235,
+   "meter": 20.83009702983321,
+   "band": "low",
+   "at": 25889.144999999553,
+   "tags": "ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 3,
+   "text": "если вы не совершали эту операцию позвоните на официальный номер банка на обратной стороне карты",
+   "language": "ru",
+   "confidence": 0.9649008666666667,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "ru",
+    "text": "если вы не совершали эту операцию позвоните на официальный номер банка на обратной стороне карты",
+    "confidence": 0.9649008666666667
+   },
+   "decodeMs": 2518.015000000596,
+   "latencyMs": 2518.8499999996275,
+   "meter": 18.623663687293647,
+   "band": "low",
+   "at": 34644.22499999963,
+   "tags": "ru ru ru ru ru ru ru ru ru ru ru ru ru ru ru"
+  }
+ ],
+ "line_latency_ms": [
+  3217.269999999553,
+  3704.8899999996647,
+  2980.154999999333,
+  4641.922499999404
+ ],
+ "latency_ms": {
+  "n": 4,
+  "median": 3705,
+  "max": 4642
+ },
+ "decode_ms": {
+  "n": 4,
+  "median": 2005,
+  "max": 2518
+ },
+ "segmentation": null,
+ "vad_close_after_speech_ms": null,
+ "segments": [],
+ "dropped": [],
+ "errors": []
+}
