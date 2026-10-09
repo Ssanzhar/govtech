@@ -1,0 +1,100 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:9a359baa-d9dd-4709-92a5-55006efeb95a",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-10-09T04:57:45+00:00",
+    "component": {
+      "type": "application",
+      "name": "qorgan-site (self-hosted third-party runtime)"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "@huggingface/transformers/ort-wasm-simd-threaded.jsep.mjs",
+      "version": "3.8.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "08fb86ec433c78bfb032c5d84a68b8e8e5a8d81268fa39e24314179a5767a5b9"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/dist/ort-wasm-simd-threaded.jsep.mjs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@huggingface/transformers/ort-wasm-simd-threaded.jsep.wasm",
+      "version": "3.8.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "c46655e8a94afc45338d4cb2b840475f88e5012d524509916e505079c00bfa39"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/dist/ort-wasm-simd-threaded.jsep.wasm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@huggingface/transformers/transformers.min.js",
+      "version": "3.8.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "aa5002b70e789798da263f5f99c62bd3e8fcd0c119258a493c40c180648365fa"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/dist/transformers.min.js"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "vosklet/Vosklet.js",
+      "version": "1.2.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "c60c88e97923573860eea3958f9dbdc4e309567d6f1bc911828ecb4bb4f35cbd"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.2.1/Examples/Vosklet.js"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "vosklet/Vosklet.wasm",
+      "version": "1.2.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "35b6c484c7cf35e09fd76c3460a5c5816706f97fc2503364eb241ad97ecbe73b"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.2.1/Examples/Vosklet.wasm"
+        }
+      ]
+    }
+  ]
+}

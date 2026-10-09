@@ -86,6 +86,11 @@ _CLOUD_TIER_VALUES = {"off": False, "on": True}
 _DEFAULT_PARTNER_QUOTA_WINDOW_HOURS = 24
 # Audit-chain HMAC key (tamper-evident audit log): a guessable key protects nothing.
 MIN_AUDIT_CHAIN_KEY_CHARS = 32
+# The audit log is kept at least three years (ADR D66, legal gap M4; LEGAL_ASSESSMENT §5.2(5)) and
+# is never purged with the reports: no deletion path touches it (tests/test_audit_retention.py).
+# Older entries may only be archived by the operator, outside the server (docs/DEPLOY.md §4).
+MIN_AUDIT_RETENTION_DAYS = 3 * 365 + 1  # three years, one of them a leap year
+_DEFAULT_AUDIT_RETENTION_DAYS = MIN_AUDIT_RETENTION_DAYS
 _DEFAULT_RISK_THRESHOLD_ENTER = 0.59
 _DEFAULT_RISK_THRESHOLD_EXIT = 0.49
 # Live suspicion-meter smoothing (design spec §08): the displayed 0-100 score follows an
@@ -244,6 +249,8 @@ class Config(BaseModel):
     analyst_credentials: tuple[AnalystCredential, ...]
     # HMAC key chaining the audit log (`audit.py`); None means every audited API is closed.
     audit_chain_key: SecretBytes | None
+    # Minimum time audit entries are kept (days); the server never deletes them (ADR D66).
+    audit_retention_days: int = Field(ge=MIN_AUDIT_RETENTION_DAYS)
     # `QORGAN_ADMIN_OPEN_ACCESS`: None (default) = a key is required; otherwise the role a
     # keyless request gets as `public-demo` (ADR D59). Still audited; still needs the audit key.
     admin_open_access: Literal["analyst", "investigator"] | None = None
@@ -516,6 +523,9 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             ),
             analyst_credentials=parse_analyst_credentials(source.get("QORGAN_ANALYST_KEYS", "")),
             audit_chain_key=_read_secret_bytes(source, "QORGAN_AUDIT_CHAIN_KEY"),
+            audit_retention_days=_read_int(
+                source, "QORGAN_AUDIT_RETENTION_DAYS", _DEFAULT_AUDIT_RETENTION_DAYS
+            ),
             admin_open_access=_read_open_access(source),
             supported_locales=_read_csv_tuple(
                 source, "QORGAN_SUPPORTED_LOCALES", _DEFAULT_SUPPORTED_LOCALES

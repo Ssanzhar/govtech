@@ -290,6 +290,7 @@ export const SUPPORT_REASONS = Object.freeze({
   audio_worklet: "AudioWorklet is unavailable",
   capture: "microphone capture is unavailable",
   phone: "phones are not enabled yet (the on-device model has not been measured there)",
+  wasm: "WebAssembly or Web Workers are unavailable",
 });
 
 /** What stops on-device recognition here, as stable codes (keys of SUPPORT_REASONS), in a
@@ -303,6 +304,25 @@ export function supportIssues(env = globalThis) {
   if (!env.navigator?.mediaDevices?.getUserMedia) codes.push("capture");
   if (/Android|iPhone|iPad|Mobile/i.test(env.navigator?.userAgent || "")) codes.push("phone");
   return codes;
+}
+
+/** Which voice mode this browser gets (ADR D67) -> `{mode, issues, downgradedBy}`:
+    - "full": the word-level mode (three Vosklet recognisers + GigaAM, D64). Needs everything
+      `supportIssues` checks, including cross-origin isolation, and is still off on phones (D25);
+    - "light": GigaAM only, phrases cut by an energy VAD (site/core/vad.js). Needs no isolation
+      and no SharedArrayBuffer, so it is what an Android WebView (eGov Mobile) and, for now, a
+      phone get; `downgradedBy` lists why the full mode was not chosen;
+    - "off": `issues` lists what even the light mode lacks (codes of SUPPORT_REASONS).
+    `override` ("full" | "light", from `live.html?voice=`) is for evidence runs: "full" lifts
+    only the phone gate, it cannot make a page isolated. */
+export function voiceMode(env = globalThis, override = null) {
+  const issues = supportIssues(env).filter((code) => code === "secure_context" || code === "audio_worklet" || code === "capture");
+  if (typeof env.WebAssembly === "undefined" || typeof env.Worker === "undefined") issues.push("wasm");
+  if (issues.length) return { mode: "off", issues, downgradedBy: [] };
+  const downgradedBy = supportIssues(env).filter((code) => code === "isolation" || code === "shared_memory" || code === "phone");
+  const blocking = override === "full" ? downgradedBy.filter((code) => code !== "phone") : downgradedBy;
+  if (override === "light" || blocking.length) return { mode: "light", issues: [], downgradedBy: override === "light" && !downgradedBy.length ? ["override"] : downgradedBy };
+  return { mode: "full", issues: [], downgradedBy: [] };
 }
 
 /** Can this browser run on-device recognition? `{ok, reasons}` (English, per issue). */

@@ -3,6 +3,9 @@
 # reports them as a separate "(inspected)" subset. Append, never delete. See
 # src/qorgan/data/ledger.py and docs/PLAN_2026-09.md (A2).
 version: 1
+# `court_quotes` (ADR D68, local-only, real verdict phrasing) is NOT listed row by row: the ledger
+# only takes ids of committed evaluation splits. Every one of its rows was read at curation, so the
+# whole split is inspected by construction; its numbers are never an unbiased tuning signal.
 entries:
   - id: real_neg_bank_fraud_alert_ru
     inspected_on: 2026-07-13

@@ -7,6 +7,10 @@ recomputed. The server runs this itself at startup and every
 `QORGAN_REPORT_PURGE_INTERVAL_HOURS` (`PurgeSchedule`, started by `qorgan.api`); with the
 interval at 0, schedule `python -m qorgan.reports.purge [--retention-days N] [--dry-run]` with
 cron instead. Idempotent.
+
+The audit log is NOT purged here or anywhere else: it is kept at least
+`QORGAN_AUDIT_RETENTION_DAYS` (>= 3 years, ADR D66), and its HMAC chain would not verify
+after a deletion. `tests/test_audit_retention.py` pins that no deletion path touches it.
 """
 
 from __future__ import annotations

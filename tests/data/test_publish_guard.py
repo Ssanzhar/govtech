@@ -6,8 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from qorgan.data.publish_guard import PUBLISHED_SPLITS, find_unscrubbed, scrub_file
+from qorgan.data.publish_guard import PUBLISHED_SPLITS, corpus_scrubber_version, find_unscrubbed, scrub_file
 from qorgan.data.schema import SCAM_RISK_THRESHOLD, Dialogue, Label, Utterance, spans_from_phrases
+from qorgan.data.scrub import SCRUBBER_VERSION
 
 _REPO = Path(__file__).resolve().parents[2]
 
@@ -56,7 +57,21 @@ def test_local_published_splits_are_scrubbed():
     paths = [processed / name for name in PUBLISHED_SPLITS] + sorted((_REPO / "data" / "augment").glob("*.jsonl"))
     if not any(p.exists() for p in paths[: len(PUBLISHED_SPLITS)]):
         pytest.skip("no local corpus (run scripts/deploy_bootstrap.py)")
+    built_with = corpus_scrubber_version(processed / "manifest.json")
+    if built_with < SCRUBBER_VERSION:
+        # ADR D66: the stricter scrubber changes corpus text; the scheduled rebuild absorbs it.
+        # Until then the guard must block publishing -- which is exactly what it does here.
+        assert find_unscrubbed(paths), "a stale corpus that is still a fixed point needs no rebuild"
+        pytest.xfail(f"corpus scrubbed with v{built_with} < v{SCRUBBER_VERSION}: rebuild pending (ADR D66)")
     assert find_unscrubbed(paths) == []
+
+
+def test_corpus_scrubber_version_defaults_to_one(tmp_path):
+    assert corpus_scrubber_version(tmp_path / "absent.json") == 1
+    (tmp_path / "m.json").write_text('{"seed": 1}', encoding="utf-8")
+    assert corpus_scrubber_version(tmp_path / "m.json") == 1
+    (tmp_path / "m.json").write_text('{"scrubber_version": 2}', encoding="utf-8")
+    assert corpus_scrubber_version(tmp_path / "m.json") == 2
 
 
 # --- scrub_file: the repair that establishes the gate's invariant (ADR D45 / legal gap M11) ---

@@ -14,8 +14,9 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
-from qorgan.data.scrub import scrub_text
+from qorgan.data.scrub import STORED_RECORD_CONTEXT, scrub_text
 from qorgan.privacy.numbers import display_prefix, hash_phone_number
+from qorgan.data.span_grounding import ground_flagged_phrases
 from qorgan.reports.model import CITIZEN_CONSENT_BASIS, ReportSource, StoredReport
 from qorgan.reports.retention import is_expired
 from qorgan.atomic import write_text_atomic
@@ -54,7 +55,8 @@ def prepare_report(
     """Reduce a reviewed draft to its storable form.
 
     - transcript -> `scrub_text` (emails, cards, IINs, phone numbers redacted);
-    - flagged phrases -> only those still verbatim in the scrubbed transcript;
+    - flagged phrases -> `ground_flagged_phrases`: verbatim in the scrubbed transcript, as-is
+      or in their own scrubbed form (ADR D66), never a bare placeholder;
     - phone number -> HMAC digest + display prefix (raises `MissingHmacKeyError` without a
       key, `ValueError` for an unparseable number). A report without a number needs no key.
 
@@ -62,7 +64,7 @@ def prepare_report(
     anchor on it, never on the client's `timestamp`.
     """
     scrubbed = scrub_text(transcript)
-    kept_phrases = tuple(p for p in flagged_phrases if p and p in scrubbed)
+    kept_phrases = ground_flagged_phrases(flagged_phrases, scrubbed, transcript)
     number = (phone_number or "").strip() or None
     return StoredReport(
         receipt_id=receipt_id or new_receipt_id(),
@@ -95,7 +97,7 @@ def load_reports(path: Path) -> list[StoredReport]:
     if not path.exists():
         return []
     return [
-        StoredReport.model_validate_json(line)
+        StoredReport.model_validate_json(line, context=STORED_RECORD_CONTEXT)
         for line in path.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]

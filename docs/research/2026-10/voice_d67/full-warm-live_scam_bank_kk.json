@@ -1,0 +1,247 @@
+{
+ "label": "full-warm",
+ "scene": "live_scam_bank_kk",
+ "base": "http://127.0.0.1:8411",
+ "warm_cache": true,
+ "capture_at": 3623.4950000001118,
+ "listening_at": 3887.7450000001118,
+ "cross_origin_isolated": true,
+ "mode": "full",
+ "mode_note": null,
+ "audio_s": 29.922375,
+ "lines": [
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/fa6c5f1d-cc54-4214-889f-e82c633e58cf/scratchpad/audio/live_scam_bank_kk_0.wav",
+   "start": 5,
+   "seconds": 3.086375,
+   "speechStart": 5.0199375,
+   "speechEnd": 8.057
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/fa6c5f1d-cc54-4214-889f-e82c633e58cf/scratchpad/audio/live_scam_bank_kk_1.wav",
+   "start": 9.286375,
+   "seconds": 4.264,
+   "speechStart": 9.303312499999999,
+   "speechEnd": 13.517187499999999
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/fa6c5f1d-cc54-4214-889f-e82c633e58cf/scratchpad/audio/live_scam_bank_kk_2.wav",
+   "start": 14.750375,
+   "seconds": 2.9025,
+   "speechStart": 14.753375,
+   "speechEnd": 17.6275
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/fa6c5f1d-cc54-4214-889f-e82c633e58cf/scratchpad/audio/live_scam_bank_kk_3.wav",
+   "start": 18.852875,
+   "seconds": 3.966375,
+   "speechStart": 18.865437500000002,
+   "speechEnd": 22.766000000000002
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/fa6c5f1d-cc54-4214-889f-e82c633e58cf/scratchpad/audio/live_scam_bank_kk_4.wav",
+   "start": 24.01925,
+   "seconds": 4.703125,
+   "speechStart": 24.0285,
+   "speechEnd": 28.698124999999997
+  }
+ ],
+ "listening_after_ms": 3729,
+ "gigaam": {
+  "status": "ready",
+  "loadMs": 883.5849999999627,
+  "fromCache": true,
+  "at": 4284.075000000186
+ },
+ "rss_mb": {
+  "idle_page": {
+   "total": 359,
+   "browser": 82,
+   "gpu-process": 89,
+   "network.mojom.NetworkService": 41,
+   "renderer": 147
+  },
+  "listening": {
+   "total": 3444,
+   "browser": 92,
+   "gpu-process": 111,
+   "network.mojom.NetworkService": 41,
+   "renderer": 3145,
+   "audio.mojom.AudioService": 55
+  },
+  "end_of_audio": {
+   "total": 1739,
+   "browser": 84,
+   "gpu-process": 96,
+   "network.mojom.NetworkService": 36,
+   "renderer": 1471,
+   "audio.mojom.AudioService": 52
+  },
+  "peak_renderer": 3152,
+  "peak_total": 3451,
+  "median_renderer_in_call": 1583,
+  "median_total_in_call": 1870,
+  "renderer_per_second": [
+   3152,
+   3134,
+   3136,
+   3137,
+   3133,
+   3131,
+   3140,
+   3141,
+   3142,
+   3150,
+   3086,
+   3086,
+   2605,
+   2606,
+   2606,
+   2604,
+   2495,
+   2262,
+   1715,
+   1712,
+   1595,
+   1502,
+   1507,
+   1509,
+   1510,
+   1521,
+   1570,
+   1583,
+   1568,
+   1570,
+   1564,
+   1565,
+   1489,
+   1489,
+   1486,
+   1484,
+   1485,
+   1471
+  ]
+ },
+ "summary_score": "97 / 100",
+ "final_meter": 96.54130081586902,
+ "final_band": "critical",
+ "utterances": [
+  {
+   "seq": 0,
+   "text": "сәлеметсіз бе бұл банктің қауіпсіздік қызметі",
+   "language": "kk",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "kk",
+    "text": "сәлеметсіз бе бұл банктің қауіпсіздік қызметі",
+    "confidence": 1
+   },
+   "decodeMs": 1274.1350000007078,
+   "latencyMs": 1274.964999999851,
+   "meter": 49.81960979241273,
+   "band": "medium",
+   "at": 14457.865000000224,
+   "tags": "kk kk kk kk kk kk"
+  },
+  {
+   "seq": 1,
+   "text": "сіздің картаңыздан күдікті операция тіркелді жағдай шұғыл",
+   "language": "kk",
+   "confidence": 0.9541138571428572,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "kk",
+    "text": "сіздің картаңыздың күдікті операция тіркелді жағдай шұғыл",
+    "confidence": 0.9541138571428572
+   },
+   "decodeMs": 1898.0449999999255,
+   "latencyMs": 1898.5349999992177,
+   "meter": 73.63779708842054,
+   "band": "high",
+   "at": 21588.715000000782,
+   "tags": "kk kk kk kk kk kk kk"
+  },
+  {
+   "seq": 2,
+   "text": "ешкімге айтпаңыз бұл құпия операция",
+   "language": "kk",
+   "confidence": 0.9744443333333335,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "kk",
+    "text": "сіздің картаңыздың күдікті операция тіркелді жағдай шұғыл ешкімге айтпаңыз бұл құпия операция",
+    "confidence": 0.9744443333333335
+   },
+   "decodeMs": 1410.9000000003725,
+   "latencyMs": 1411.3799999998882,
+   "meter": 86.47891946325186,
+   "band": "critical",
+   "at": 24247.590000000782,
+   "tags": "kk kk kk kk kk"
+  },
+  {
+   "seq": 3,
+   "text": "смстегі кодты айтыңыз біз операцияны тоқтатамыз",
+   "language": "kk",
+   "confidence": 0.976809,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "kk",
+    "text": "сыз тегі кодты айтыңыз біз операцияны тоқтатамыз",
+    "confidence": 0.976809
+   },
+   "decodeMs": 1843.1699999999255,
+   "latencyMs": 1843.6450000004843,
+   "meter": 93.0826615891762,
+   "band": "critical",
+   "at": 29985.195000000298,
+   "tags": "kk kk kk kk kk kk"
+  },
+  {
+   "seq": 4,
+   "text": "содан кейін ақшаны қаусыз шотқа аударамыз реквизиттерін айтамын",
+   "language": "kk",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "kk",
+    "text": "содан кейін ақшаны қаулысы шотқа аударамыз реквизиттерін айтамын",
+    "confidence": 1
+   },
+   "decodeMs": 2114.2200000006706,
+   "latencyMs": 2114.785000000149,
+   "meter": 96.54130081586902,
+   "band": "critical",
+   "at": 36476.28000000026,
+   "tags": "kk kk kk kk kk kk kk kk"
+  }
+ ],
+ "line_latency_ms": [
+  2777.3700000001118,
+  4448.032500000671,
+  2996.5950000006706,
+  3595.7000000001863,
+  4154.660000000153
+ ],
+ "latency_ms": {
+  "n": 5,
+  "median": 3596,
+  "max": 4448
+ },
+ "decode_ms": {
+  "n": 5,
+  "median": 1843,
+  "max": 2114
+ },
+ "segmentation": null,
+ "vad_close_after_speech_ms": null,
+ "segments": [],
+ "dropped": [],
+ "errors": []
+}

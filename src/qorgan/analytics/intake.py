@@ -85,7 +85,8 @@ def report_incident_id(report: StoredReport) -> str:
     A signals-only report (no transcript) is addressed by its tactic set + number digest.
     """
     content = report.transcript or f"{','.join(report.tactic_ids)}|{report.number_hash or ''}"
-    digest = hashlib.sha1(f"{content}|{report.timestamp.isoformat()}".encode()).hexdigest()
+    # An id, not a security function (bandit B324): same digest, flagged as non-cryptographic.
+    digest = hashlib.sha1(f"{content}|{report.timestamp.isoformat()}".encode(), usedforsecurity=False).hexdigest()
     return f"report-{digest[:_ID_HASH_CHARS]}"
 
 

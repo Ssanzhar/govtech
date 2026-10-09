@@ -1804,3 +1804,318 @@ evidence in `docs/research/2026-10/voice_d64/`.
   (`docs/RECORDING_SCRIPT.md`). Cue survival on real speech is unmeasured.
 - Not done: a GigaAM + VAD mode for Android WebView, where Vosklet cannot run (no cross-origin
   isolation).
+
+### D66 — The scrubber masks spoken numbers and self-introduced names; 3-year audit retention; SBOM and scans (2026-10-09)
+The eGov/NITEC review (`docs/egov/SECURITY_CHECKLIST.md`, `DATA_FLOW_PII.md`) and the legal gap list
+(`docs/LEGAL_ASSESSMENT.md` §6, M7 / M4) left code-side gaps. The worst: voice mode writes numbers as
+words («восемь семьсот ноль один…»), so a report could carry a full phone, card, IIN or account
+number past the digit-only scrubber.
+
+**Scrubber (`data/scrub.py` + `scrub_numbers.py`, `scrub_names.py`, `scrub_tokens.py`; 1:1 JS port
+`site/core/scrub-*.js`).**
+- *Number runs.* Number words in ru / kk / en, ASR spellings («семсот», «пятдесят») and Kazakh
+  without its special letters («сегиз жуз»), optionally mixed with digit groups, separated only
+  by spaces, commas or hyphens (up to 3 characters, line breaks included). Each run is composed
+  as a listener writes dictation down («семьсот ноль один» = 701, «сегіз жүз жетпіс» = 870,
+  «он бір» = 11). A run with a word is masked from **7 digit-equivalents**. 7 is the shortest
+  phone number (city); a dictated 6-digit code stays, like the digit rule's OTP. Placeholder by
+  shape: 16 `[CARD]`, 12 `[IIN]`, 10/11 starting 7/8 `[PHONE]`, else `[NUMBER]`. A run split by
+  the endpointer across two utterances is judged as one and masked line by line.
+- *Left alone:* short quantities («два раза», «код из шести цифр», «назовите шесть цифр»),
+  amounts (multiplier words such as тысяча / мың / thousand break a run; a following currency
+  word or sign keeps it), em-dash prose, dates, times.
+- *Digits:* KZ IBAN (`KZ` + 2 digits + 16 alphanumerics, optional spaces) → `[IBAN]`. Digit
+  groups split by single spaces or hyphens in a card / IIN / phone shape («940101 300123»,
+  «707 123 45 67») are masked; ASCII-glued ids stay fixed points.
+- *Names, conservatively.* Strong triggers («меня зовут», «моё имя», «моя фамилия», «атым»,
+  «есімім», "my name is") take the next word in any case (ASR is lower case), plus up to two
+  capitalised or surname-ending words. Weak triggers («это», "this is", "I'm") need a
+  capitalised name and a following «из / с / от» / "from / calling / with"; two words only if
+  the second has a surname ending. A stop list keeps organisations and brands out; a rank stays
+  visible («это майор [NAME] из полиции»). Only the name is replaced.
+- *Addresses are out of scope.* Scammers rarely need the victim's address, and address patterns
+  in kk/ru free text collide with branch and organisation names, which are the evidence. On the
+  corpus the only address is one synthetic delivery row. The citizen reviews and edits the text
+  before sending, and only an audited investigator opens a full transcript. Also not masked:
+  addressing someone by name («Здравствуйте, Аида Кайратовна»), IBANs said as words.
+
+**Evidence survives.** Measured by `scripts/scrub_impact.py` over every published split plus
+`data/augment/`: **0** rows change their hard-signal cue tactics, **0** cue spans change text, **0**
+reassurance flags flip, and **0** gold trigger spans are lost. 38 gold spans (train 26, val 3,
+test 8, ood 1) survive in masked form. That needed two changes after the first measurement on
+train: "this is Kazakhstan Post calling" and "this is Major Ivanov from…" were read as names.
+Flagged phrases and gold spans are now grounded in this order (`data/span_grounding.py`, mirrored
+in `report.js`): as-is, then scrubbed alone, then scrubbed in their original context. Before, a
+phrase that held PII was dropped. «Назовите код из СМС: [NUMBER]» keeps the request. Parity:
+fixture 102 cases, plus a corpus-wide check of 21,714 texts with 0 Python/JS mismatches.
+
+**Impact analysis.** The scrubber runs on: the report path (`prepare_report`; the browser preview
+and `finalizeReport`), partner ingress (unscrubbed text → 422, so partners must apply the same
+rules), the content-free checks of the audit log, feedback, analyst ids and stored reports,
+`build_corpus` / `incident_seed` / `real_intake`, and the publish guard (D45). **It does not run
+on scoring.** `/api/analyze` and the browser score raw text, so the served model sees no change
+at runtime.
+- *Corpus rows the new scrubber changes* (not rebuilt, on purpose): train **286 / 1,880** (125
+  scam, 161 legit; 276 `[NAME]`, 11 `[PHONE]`, 7 `[NUMBER]`), val 24 / 135, test 29 / 143,
+  authored 0 / 42, ood 18 / 118, shift 14 / 66, adversarial 13 / 109, adversarial_legit 17 / 109.
+  Augment: 52 rows in 4 of 5 files. Almost all are names.
+- *Score effect on the served weights* (`weights.json`, server ONNX proxy, `qorgan.eval.run` on
+  re-scrubbed copies vs the current splits; measured, nothing tuned). FPR: test 0.017 → 0.017,
+  val 0.013 → 0.013, ood 0.014 → **0.000**, shift 0.030 → 0.030, adversarial_legit 0 → 0.
+  Recall: test 0.988 = , ood 0.909 → 0.932, shift 0.394 → 0.455, adversarial 0.936 = ,
+  adversarial_legit 0.908 = . No split or language gets a higher FPR. The ood false positive
+  that goes away is a ledger-inspected row.
+- *What the scheduled retrain (after taxonomy-v2) must do:* (1) re-scrub `data/augment/*.jsonl`
+  and the separately built splits (`ood`, `shift`, `adversarial*`) with
+  `python -m qorgan.data.publish_guard --fix`; (2) `python -m qorgan.data.build_corpus`, whose
+  manifest now records `scrubber_version: 2`; (3) retrain, export, regenerate fixtures and
+  re-gate as usual. No lexicon change is needed: cue matching is unaffected. Until then
+  `test_local_published_splits_are_scrubbed` and `test_every_augment_file_is_already_scrubbed`
+  **xfail** as "rebuild pending" (the manifest says v1), and `scripts/hf_upload.py` refuses to
+  publish (the guard finds the rows).
+
+**Stored records under a stricter scrubber.** A record on disk was checked by the scrubber of its
+day. Re-checking it on read would break `qorgan.audit verify` with no tampering, and make the
+reports file unreadable (console, deletion by receipt, purge). Loaders now validate with
+`STORED_RECORD_CONTEXT`, which skips only the content check; every write is still checked
+(`tests/test_scrub_evolution.py`). Stored reports are **not** re-scrubbed: their incident ids
+derive from the transcript, so a rewrite would orphan incidents. Reports stored before D66 keep
+their old scrubbing until they expire (≤ 180 days). A pilot starts with an empty store.
+
+**Audit retention.** `QORGAN_AUDIT_RETENTION_DAYS`, default and floor 1096 (3 years with a leap
+day; lower is refused at startup). The purge and every deletion path are pinned never to touch
+`audit_log.jsonl`. A purge leaves it byte-identical and `verify` passing
+(`tests/test_audit_retention.py`). Archiving older entries is an operator procedure (WORM plus the
+last `head`), never deleting lines (`docs/DEPLOY.md` §4).
+
+**Supply chain** (`docs/egov/security/`).
+- *SBOMs:* CycloneDX for the image pins, the npm toolchain and the self-hosted browser runtime
+  (`scripts/generate_sbom.py`).
+- *pip-audit:* image pins **0 findings**. The dev venv has 61 advisories in 9 packages that are
+  not in the image.
+- *npm audit:* 2 high, 4 moderate, all in transformers.js 3.8.1's dev tree. Parity-pinned, so
+  documented and not bumped; none of it runs in production.
+- *bandit:* 2 HIGH fixed (SHA-1 id marked non-cryptographic, same digest; a path-checked zip
+  extract annotated). 10 MEDIUM triaged. semgrep over the own JS in `site/` was not run (install did not complete here): open.
+- Not touched: the `onnxruntime` / `onnxruntime-node` / transformers.js pins.
+
+**Stays organisational.** KZ hosting and platform access-log retention (M5), whether the audit
+log must be kept longer than 3 years, and whether addresses or forms of address must be masked
+(lawyer, M1 / M4). Also: MFA/SSO, the ТД ИБ, the incident procedure, the responsible person, the
+SOC contract, and CI integration of the scans plus Trivy.
+
+### D67 — A WebView-safe voice mode (GigaAM + an energy VAD) and an Android build path (2026-10-09)
+Android WebView, including the one inside eGov Mobile, never grants cross-origin isolation. So
+Vosklet (WASM threads + SharedArrayBuffer) cannot start there, and the D64 voice mode dies. Paste
+and replay worked. GigaAM's single-threaded sherpa-onnx build does not need isolation (D64), so
+the only missing piece was what Vosk's endpointer did: cutting the audio into phrases.
+
+**Change.**
+- `voiceMode()` (`site/core/asr.js`) picks one of three modes:
+  - **full** (the D64 word-level mode): needs isolation + SharedArrayBuffer and a non-phone.
+  - **light**: GigaAM only. It runs whenever the full mode is blocked by isolation,
+    SharedArrayBuffer or the phone gate.
+  - **off**: no secure context, AudioWorklet, microphone, WebAssembly or Worker.
+
+  The D25 phone gate still holds for the full mode: a phone gets the light mode, even an
+  isolated one such as a TWA. `live.html?voice=full|light` forces a mode for evidence runs;
+  `full` lifts only the phone gate and cannot make a page isolated.
+- Light mode pipeline: `capture-worklet.js` (AudioWorklet, ~43 ms chunks) → audio ring +
+  `vad.js` → each segment goes through the **unchanged D64 endpoint pass**
+  (`createEndpointPass`: padded span, GigaAM worker, word LID) → the session and meter, the
+  same path as D64. `voice-light.js` wires it (`createLightPass` is the testable core,
+  `createLightAsr` the browser runtime).
+- **VAD:** deterministic energy + zero-crossing, with no model. 30 ms frames. A frame is active
+  when its RMS clears an adaptive floor by 12 dB to open a phrase (6 dB to stay in one) and clears
+  −50 dBFS. The floor is the minimum level over 2.5 s, capped at −35 dBFS. Frames crossing zero
+  fewer than 150 times/s are excluded, which removes mains hum. Inside a phrase, a quiet "hissy"
+  frame still counts (fricatives).
+  - Onset 150 ms, hangover 600 ms (250 ms past 8 s), hard cut at 15 s, minimum phrase 300 ms,
+    pre-roll 150 ms.
+  - Parameters were set from first principles and checked only on synthetic signals and the
+    demo scenes. Nothing was tuned on held-out data. Silero-VAD was not needed (below).
+- **No fallback in light mode:** there is no Vosk text to fall back on. A phrase whose decode
+  fails, times out or comes back empty is dropped and reported ("one phrase could not be
+  transcribed"); it is never scored as empty text.
+- The meter's step uses confidence 1, the same as a pasted transcript, because GigaAM's CTC
+  decode exposes none.
+- If GigaAM itself cannot load, the voice mode turns off with the reason. Paste and replay stay.
+- UI (kk/ru/en in `site/i18n.js`): a light-mode note saying phrases are transcribed after a
+  pause and no live words appear, "hearing speech… / transcribing…" while it works,
+  light-specific loading notes, and a 239 MB disclosure (no Vosk tarballs) instead of 147 + 239.
+- `tests/test_architecture.py`: `capture-worklet.js`, `vad.js` and `voice-light.js` join the
+  no-network audio modules. A new test fails if any `site/core` file that touches an audio API,
+  the ring or the VAD is missing from that list. The worklet's only outlet is its own port.
+- Service worker **v10** precaches the three modules. The taxonomy branch also moves to v10; the
+  merge will reconcile.
+- **Android:**
+  - `android/twa/twa-manifest.json`: Bubblewrap, `fallbackType: customtabs`, never a WebView,
+    because WebView would lose isolation.
+  - `android/webview-shell/`: a minimal WebView harness shaped like eGov Mobile's mini-service.
+  - `site/.well-known/assetlinks.json`: a template with a placeholder fingerprint.
+  - `android/README.md`: steps.
+  - No signing key was generated. `*.keystore`/`*.jks` are gitignored, and
+    `tests/web/test_android_twa.py` checks that none is tracked.
+
+**Evidence.**
+- Tests first: `vad.test.mjs` (14), `voice-light.test.mjs` (5) and `voiceMode` cases in
+  `asr.test.mjs`. `npm test` 139/139, `pytest` 1346 passed / 2 skipped.
+- Browser runs (`docs/research/2026-10/voice_d67/`): real page, desktop Chromium, fake
+  microphone, served by `tests_js/tools/static_site.mjs` with isolation **off** (light) or **on**
+  (full, the production header set). Second visit, models cached (`--warm`), one sweep, both modes
+  under the same machine load. Audio is synthesised (`say`: Milena/Aru, one WAV per line) plus the
+  D64 code-switch clips (`cs_mix`).
+
+  | Scene | full, isolated: meter · utterances/lines · speech end → line on screen, median / max | light, not isolated: meter · utterances/lines · segments found | light latency |
+  |---|---|---|---|
+  | RU scam | 98 · 6/6 · 3.24 / 3.82 s | 98 · 6/6 · 6/6 | 3.03 / 3.39 s |
+  | KK scam | 97 · 5/5 · 3.60 / 4.45 s | 97 · 5/5 · 5/5 | 2.91 / 3.62 s |
+  | real bank call (legit) | 19 · 4/4 · 3.71 / 4.64 s | 19 · 4/4 · 4/4 | 2.79 / 3.54 s |
+  | code-switch `cs_mix` | 92 · 7/7 · 3.52 / 4.86 s | 97 · 7/7 · 7/7 | 2.49 / 3.91 s |
+
+  D64 reported 98 / 96 / 18 / 97 for the same scenes. Every light transcript is GigaAM's
+  ("точная расшифровка"); no phrase was dropped.
+- **Segmentation:** 22/22 reference lines found, 0 split, 0 merged, 0 spurious segments.
+  - Start error median 150–166 ms. That is the 150 ms pre-roll, by design.
+  - End error median 10–14 ms. The KK run reads 0.57 / 0.40 s for both, a constant offset that
+    comes from the run's timing zero (getUserMedia → first sample), not the VAD.
+- **Latency (light):**
+  - The VAD closes a phrase 0.62–0.72 s after the speech ends (the 0.6 s hangover).
+  - GigaAM decodes in median 1.4–1.8 s in this sweep (1.0–1.1 s in an earlier, quieter sweep);
+    scoring takes the rest.
+  - The full mode is slower because three Vosk recognisers share the CPU with the decode.
+  - From the click to "listening": 2.1–2.3 s (light) vs 3.7–4.1 s (full). GigaAM loads from cache
+    in 0.86–0.92 s.
+- **Memory:** renderer RSS, read with `ps` over the browser's process tree (dedicated workers live
+  in the renderer). This is a different accounting from D64's CDP reading, so compare within this
+  table, not with D64's 1.15 GB.
+  - Warm: light peak **2.11–2.23 GB**, in-call median 2.09–2.21 GB; full peak **3.13–3.20 GB**,
+    in-call median 1.58–3.14 GB (bimodal, depending on GC).
+  - Cold RU: light peak 2.50 GB vs full 2.94 GB. A first visit holds download buffers.
+  - Two earlier sweeps, not committed, showed the same picture (light peaks 2.06–2.21 GB, one
+    1.15 GB; full 1.77–3.25 GB).
+  - The light mode saves about 1 GB at peak. It is still ~2.1 GB on desktop: the e5 embedder plus
+    GigaAM. That is a real phone risk, and it is unmeasured on a phone.
+- **WebView proxy:** the light mode with an Android-WebView user agent (`; wv`) and a 412 px phone
+  viewport, `cs_mix`: meter 97, 7/7 lines, latency 1.98 / 2.87 s.
+- **No-GigaAM path** (`e2e_voice_unavailable.mjs`, model answered 404): the voice mode turns off
+  with "…модель распознавания речи не загрузилась (HTTP 404 …)", the mic radio is disabled, and
+  replay still scores 98/100.
+
+**Not done, on record.**
+- No emulator run. Installing the needed tooling took too long: the download link measured
+  17–46 KB/s. A JDK alone was ~180 MB, plus an Android SDK and a ~1.5 GB arm64 system image, so
+  hours. A Homebrew `openjdk@17` install was stopped after 10 min at 4 MB, and `npm i
+  @bubblewrap/cli` failed on the network.
+- The TWA and WebView shells are configuration and source only, never built. Steps are in
+  `android/README.md`.
+- Still needs a person:
+  - a real Android phone (B9: memory, latency, speakerphone audio);
+  - an upload/signing key and its SHA-256 for `assetlinks.json`;
+  - the production HTTPS host in `twa-manifest.json`;
+  - a decision on whether the D25 phone gate should also cover the light mode once phone numbers
+    exist.
+- Synthesised, clean audio only. Real speech through a speakerphone, with room noise and
+  overlapping talkers, may need silero-vad. The energy VAD gave 0 errors here, so it was not
+  justified yet.
+
+### D68 — `court_quotes`: real scammer phrasing from published court verdicts, held out and local-only (2026-10-09)
+Every number the project had was synthetic. Court verdicts on telephone fraud report what the
+caller said, so they are the one public source of **real** scam phrasing. This ADR records what
+could be collected lawfully, how it is stored, and what the shipped model does on it.
+
+**Reachability (checked 2026-10-09 from a Kazakhtelecom IP, identified user agent).**
+- **office.sud.kz (KZ judicial acts bank, the only Kazakh-language source):** reachable, no
+  robots.txt, but **every search is gated by a reCAPTCHA v2 checkbox**. Automating it would be
+  CAPTCHA circumvention, so nothing was harvested. A person can search it by hand.
+- **sudrf.ru court sites (RU, official):** reachable, but their robots.txt disallows
+  `name=sud_delo` and `name=bsr`, i.e. the case and judgment pages. Not used.
+- **sud.gov.kz (KZ Supreme Court press releases):** robots.txt allows news pages (Crawl-delay 10);
+  its copyright notice allows re-use with a hyperlink. Plain curl gets an empty reply, a browser
+  works. Phone-fraud releases are rare and narrative: 2 passages read, 1 row kept.
+- **sudact.ru (RU aggregator of sudrf texts):** robots.txt allows `/regular/doc/<id>/`; its own
+  search endpoint (`doc_ajax`) is disallowed, so verdicts were **discovered through a web search
+  engine** and only the document pages were fetched, ≥ 12 s apart, 137 pages, no CAPTCHA, no
+  login. Its About and personal-data-policy pages contain no terms that forbid this. The earlier
+  note in `docs/research/2026-10/datasets.md` (B1) that scraping sudact "violates its ToS" is not
+  supported by anything we could find, but it was not contradicted by a written licence either.
+
+**What was built.**
+- `src/qorgan/data/court_quotes.py`: from a *criminal* act (title gate) about an impersonation call
+  (call + "представился сотрудником/следователем/сыном…" gate), take caller speech: direct quotes
+  after a speech verb, and the reported content after «сообщил, что» / «о том, что» / «попросил».
+  Spans are verbatim; nothing is rewritten or translated. The rules were written without reading
+  `data/lexicon/`.
+- PII: every row goes through `scrub_text`; a row that still carries a name with initials, an
+  address, a long digit run, an e-mail or a plate-like id is **dropped**, never edited (2 dropped).
+  The courts had already masked names (`фио`, `ФИО17 №5`, `«...»`).
+- Review: the rules over-collect (victim, relative, courier and witness speech; a construction-fraud
+  and a drugs case passed the gate). All 224 candidates were read by the agent and 177 excluded as
+  not the caller's words to the victim. `data/manifests/court_quotes.exclusions.json` lists them by
+  sha256 prefix only. **A human should spot-check the 47 kept rows.**
+- `scripts/court_quotes_build.py` builds `data/raw/court_quotes/quotes.jsonl` (gitignored) and the
+  committed `data/manifests/court_quotes.manifest.json` (counts, dates, citations, no text).
+- `src/qorgan/eval/court_quotes.py` replays each quote as a fresh one-turn live session
+  (`live.session.advance`, exactly the citizen page's first utterance) and reports per-utterance
+  risk ≥ threshold, hard-signal cue firing and the meter, with Clopper–Pearson intervals.
+- `hf_upload.py` refuses anything that names `court_quotes` (`publish_guard.assert_not_publishing_court_quotes`);
+  `.gitignore` names `data/raw/court_quotes/`; both pinned by `tests/data/test_court_quotes.py`.
+
+**Data.** 47 rows (46 sudact.ru, 1 sud.gov.kz) from 7 of 137 sources read, all **Russian**, 0
+Kazakh; 42 reported speech, 5 direct quotes; verdict dates 2018-06-17 … 2025-11-27. Clustered: one
+grandparent-scam verdict gives 19 rows, so the intervals below (which assume independent rows)
+are optimistic. No victim-side legit context was collected: verdicts do not contain legitimate
+calls.
+
+**The shipped model on it** (`QORGAN_LINEAR_WEIGHTS=web`, the committed `site/models/weights.json`,
+threshold 0.59; `python -m qorgan.eval.court_quotes`):
+
+| Group | N | risk ≥ thr [95% CI] | cue fired [95% CI] | latched after 1 turn | median risk |
+|---|---|---|---|---|---|
+| all | 47 | 0.617 [0.464, 0.755] (29/47) | 0.021 [0.001, 0.113] (1/47) | 0.021 [0.001, 0.113] (1/47) | 0.690 |
+| reported speech | 42 | 0.690 [0.529, 0.824] (29/42) | 0.024 [0.001, 0.126] (1/42) | 0.024 [0.001, 0.126] | 0.778 |
+| direct quotes | 5 | 0.000 [0.000, 0.522] (0/5) | 0.000 [0.000, 0.522] (0/5) | 0.000 [0.000, 0.522] | 0.309 |
+
+Pseudo-calls (all kept quotes of one verdict streamed in verdict order — composed, not a real
+call): latched 4/7, 0.571 [0.184, 0.901]. The only cue that fired: `otp_request` (1).
+
+**How to read it.**
+- **Hard-signal cues almost never fire on real phrasing (1/47).** That is the robust finding.
+  Part of it is form (reported speech is third person: «необходимо сообщить код» rather than
+  «продиктуйте код»), but most kept rows describe pretexts with no OTP/safe-account wording at
+  all (accident, relative, investigator, «декларирование»), the low-arousal gaps
+  `RESEARCH_2026-10.md` §1 item 5 predicted.
+- **The 0.617 is not a recall comparable to `shift`.** The set has no negatives, so it says nothing
+  about FPR, and reported speech carries court-narrative words («якобы», «ДТП», «деньги»,
+  «сотрудник полиции») that may lift the embedding risk for reasons a real call would not share.
+  The 5 direct quotes, the closest thing to real utterances, all scored below threshold (median
+  0.309), but n = 5.
+- A single utterance cannot latch the meter unless a cue fires (A6 arms from the 3rd utterance),
+  so "latched after 1 turn" equals the cue rate by construction.
+
+**Rules.** Held out: never tune on it, never extend the lexicon from it (D35/D43). It is not in
+`data/anchors/inspection_ledger.yaml`, because the ledger only takes ids of committed evaluation
+splits (its test enforces that); instead, the whole split is **inspected by construction** (every
+row was read at curation), which the manifest's `excluded_by_review` records.
+
+**Legal footing (under `docs/LEGAL_ASSESSMENT.md`; not legal advice).**
+- Storage is on the developer's machine in Kazakhstan (PD Law Art. 12(2)). Russian verdicts are
+  published by law (ФЗ-262) with names already removed; after scrubbing and the drop rule the rows
+  are arguably no longer personal data at all **[I]**. Where they still are, PD Law Art. 7(5)
+  allows re-use of lawfully published personal data with a source citation **[S, per
+  `DATA_SOURCES.md` §4.4]**: the manifest cites every verdict URL. Court decisions are official
+  documents, not copyright objects under ГК РФ ст. 1259(6) **[I, not checked against the KZ
+  Copyright Law]**.
+- **Unclear, so local-only:** whether redistributing quotes (the Hub is public and cross-border,
+  PD Law Arts. 7(3), 7(6), 16) or processing Russian court data in Kazakhstan raises any Russian
+  152-ФЗ point **[U]**. The rows never leave `data/raw/`, never reach Gemini (cloud tier off, D49)
+  and never the Hub.
+- AI Law 230-VIII: evaluation only; no training use, no change to the system's classification.
+
+**Needs the user.**
+1. Kazakh: a person searching office.sud.kz by hand (ст. 190 УК РК, «телефон», «қоңырау»), saving
+   verdict texts into `data/raw/court_quotes/` for `scripts/court_quotes_build.py` (add a reader for
+   their format), so the CAPTCHA is solved by a human, as intended.
+2. Volume: sudact's own search would give far more than web-search discovery (6 of 135 fetched pages
+   gave a kept row); ask the operator for permission, or for an export.
+3. A human spot-check of the 47 rows and a KZ advocate's line on the "local-only" boundary.
