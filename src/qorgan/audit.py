@@ -43,9 +43,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import IO, Literal, get_args
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, ValidationInfo, field_validator
 
-from qorgan.data.scrub import scrub_text
+from qorgan.data.scrub import STORED_RECORD_CONTEXT, is_stored_record, scrub_text
 
 try:  # POSIX: also exclude other processes (a second worker, an ops script) during an append
     import fcntl
@@ -91,7 +91,9 @@ class AuditEntry(BaseModel):
 
     @field_validator("actor_id", "action", "subject", "outcome")
     @classmethod
-    def _content_free(cls, value: str | None) -> str | None:
+    def _content_free(cls, value: str | None, info: ValidationInfo) -> str | None:
+        if is_stored_record(info):  # checked when written; see STORED_RECORD_CONTEXT
+            return value
         if value is not None and not _is_system_id(value) and scrub_text(value) != value:
             raise ValueError("audit fields must not carry numbers, cards, IINs or other call content")
         return value
@@ -238,7 +240,7 @@ def load_audit(path: Path) -> list[AuditEntry]:
     if not path.exists():
         return []
     return [  # split on b"\n" only: str.splitlines() would also break at U+2028 inside a JSON string
-        AuditEntry.model_validate_json(line)
+        AuditEntry.model_validate_json(line, context=STORED_RECORD_CONTEXT)
         for line in path.read_bytes().split(b"\n")
         if line.strip()
     ]
@@ -351,7 +353,9 @@ def _check_line(raw: bytes, walk: _Walk, key: bytes) -> str | None:
 
 def _valid_entry(record: dict) -> bool:
     try:
-        AuditEntry.model_validate({k: v for k, v in record.items() if k not in _CHAIN_FIELDS})
+        AuditEntry.model_validate(
+            {k: v for k, v in record.items() if k not in _CHAIN_FIELDS}, context=STORED_RECORD_CONTEXT
+        )
     except ValidationError:
         return False
     return True

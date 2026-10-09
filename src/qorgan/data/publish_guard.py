@@ -56,6 +56,13 @@ class Finding:
     utterance_index: int
 
 
+def corpus_scrubber_version(manifest_path: Path) -> int:
+    """The scrubber version the corpus at `manifest_path` was built with (absent = 1, ADR D66)."""
+    if not manifest_path.exists():
+        return 1
+    return int(json.loads(manifest_path.read_text(encoding="utf-8")).get("scrubber_version", 1))
+
+
 def find_unscrubbed(paths: Iterable[Path]) -> list[Finding]:
     findings: list[Finding] = []
     for path in paths:

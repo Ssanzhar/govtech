@@ -1,0 +1,141 @@
+Run started:2026-10-09 04:58:04.231317+00:00
+
+Test results:
+>> Issue: [B310:blacklist] Audit url open for permitted schemes. Allowing use of file:/ or custom schemes is often unexpected.
+   Severity: Medium   Confidence: High
+   CWE: CWE-22 (https://cwe.mitre.org/data/definitions/22.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_calls.html#b310-urllib-urlopen
+   Location: src/qorgan/asr/gigaam_web.py:134:9
+133	def _download(url: str) -> bytes:  # pragma: no cover - network
+134	    with urlopen(url, timeout=600) as response:
+135	        return response.read()
+
+--------------------------------------------------
+>> Issue: [B310:blacklist] Audit url open for permitted schemes. Allowing use of file:/ or custom schemes is often unexpected.
+   Severity: Medium   Confidence: High
+   CWE: CWE-22 (https://cwe.mitre.org/data/definitions/22.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_calls.html#b310-urllib-urlopen
+   Location: src/qorgan/asr/web_models.py:108:9
+107	def _download(url: str) -> bytes:  # pragma: no cover - network
+108	    with urlopen(url, timeout=120) as response:
+109	        return response.read()
+
+--------------------------------------------------
+>> Issue: [B310:blacklist] Audit url open for permitted schemes. Allowing use of file:/ or custom schemes is often unexpected.
+   Severity: Medium   Confidence: High
+   CWE: CWE-22 (https://cwe.mitre.org/data/definitions/22.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_calls.html#b310-urllib-urlopen
+   Location: src/qorgan/classifier/device_embed.py:114:17
+113	        try:
+114	            with urllib.request.urlopen(f"{self._url}/info", timeout=_INFO_TIMEOUT_S) as response:
+115	                return json.loads(response.read().decode("utf-8"))
+
+--------------------------------------------------
+>> Issue: [B310:blacklist] Audit url open for permitted schemes. Allowing use of file:/ or custom schemes is often unexpected.
+   Severity: Medium   Confidence: High
+   CWE: CWE-22 (https://cwe.mitre.org/data/definitions/22.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_calls.html#b310-urllib-urlopen
+   Location: src/qorgan/classifier/device_embed.py:123:17
+122	        try:
+123	            with urllib.request.urlopen(request, timeout=_REQUEST_TIMEOUT_S) as response:
+124	                rows = json.loads(response.read().decode("utf-8"))["rows"]
+
+--------------------------------------------------
+>> Issue: [B106:hardcoded_password_funcarg] Possible hardcoded password: '<pad>'
+   Severity: Low   Confidence: Medium
+   CWE: CWE-259 (https://cwe.mitre.org/data/definitions/259.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html
+   Location: src/qorgan/classifier/embed.py:53:8
+52	        tokenizer.enable_truncation(ONNX_MAX_LENGTH)
+53	        tokenizer.enable_padding(pad_id=_PAD_TOKEN_ID, pad_token="<pad>")
+54	
+
+--------------------------------------------------
+>> Issue: [B615:huggingface_unsafe_download] Unsafe Hugging Face Hub download without revision pinning in from_pretrained()
+   Severity: Medium   Confidence: High
+   CWE: CWE-494 (https://cwe.mitre.org/data/definitions/494.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b615_huggingface_unsafe_download.html
+   Location: src/qorgan/classifier/model.py:78:14
+77	
+78	    encoder = AutoModel.from_pretrained(base_model_name)
+79	    return ScamClassifierModel(encoder, num_tactics)
+
+--------------------------------------------------
+>> Issue: [B615:huggingface_unsafe_download] Unsafe Hugging Face Hub download without revision pinning in from_pretrained()
+   Severity: Medium   Confidence: High
+   CWE: CWE-494 (https://cwe.mitre.org/data/definitions/494.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b615_huggingface_unsafe_download.html
+   Location: src/qorgan/classifier/model.py:88:13
+87	
+88	    config = AutoConfig.from_pretrained(base_model_name)
+89	    return AutoModel.from_config(config)
+
+--------------------------------------------------
+>> Issue: [B614:pytorch_load] Use of unsafe PyTorch load
+   Severity: Medium   Confidence: High
+   CWE: CWE-502 (https://cwe.mitre.org/data/definitions/502.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b614_pytorch_load.html
+   Location: src/qorgan/classifier/predict.py:178:26
+177	    model = ScamClassifierModel(encoder, metadata["num_tactics"])
+178	    model.load_state_dict(torch.load(weights_path, map_location=device))
+179	    model.eval()
+
+--------------------------------------------------
+>> Issue: [B615:huggingface_unsafe_download] Unsafe Hugging Face Hub download without revision pinning in from_pretrained()
+   Severity: Medium   Confidence: High
+   CWE: CWE-494 (https://cwe.mitre.org/data/definitions/494.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b615_huggingface_unsafe_download.html
+   Location: src/qorgan/classifier/predict.py:180:16
+179	    model.eval()
+180	    tokenizer = AutoTokenizer.from_pretrained(metadata["base_model"])
+181	    return XlmrBundle(
+
+--------------------------------------------------
+>> Issue: [B615:huggingface_unsafe_download] Unsafe Hugging Face Hub download without revision pinning in from_pretrained()
+   Severity: Medium   Confidence: High
+   CWE: CWE-494 (https://cwe.mitre.org/data/definitions/494.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b615_huggingface_unsafe_download.html
+   Location: src/qorgan/classifier/train.py:259:16
+258	    model = build_model(args.base_model, len(label_space))
+259	    tokenizer = AutoTokenizer.from_pretrained(args.base_model)
+260	    metadata = train_and_export(
+
+--------------------------------------------------
+>> Issue: [B311:blacklist] Standard pseudo-random generators are not suitable for security/cryptographic purposes.
+   Severity: Low   Confidence: High
+   CWE: CWE-330 (https://cwe.mitre.org/data/definitions/330.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_calls.html#b311-random
+   Location: src/qorgan/data/incidents.py:77:10
+76	
+77	    rng = random.Random(seed)
+78	    family_list = list(families)
+
+--------------------------------------------------
+>> Issue: [B310:blacklist] Audit url open for permitted schemes. Allowing use of file:/ or custom schemes is often unexpected.
+   Severity: Medium   Confidence: High
+   CWE: CWE-22 (https://cwe.mitre.org/data/definitions/22.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_calls.html#b310-urllib-urlopen
+   Location: src/qorgan/web/embed_runtime.py:56:9
+55	def _download(url: str) -> bytes:  # pragma: no cover - network
+56	    with urlopen(url, timeout=_DOWNLOAD_TIMEOUT_SECONDS) as response:  # noqa: S310 - pinned https URL
+57	        return response.read()
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 12779
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 1
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 2
+		Medium: 10
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 0
+		Medium: 1
+		High: 11
+Files skipped (0):

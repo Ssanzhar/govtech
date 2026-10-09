@@ -100,7 +100,8 @@ def _safe_extract(zipped: zipfile.ZipFile, destination: Path) -> None:
         resolved = (root / member.filename).resolve()
         if root not in resolved.parents and resolved != root:
             raise RuntimeError(f"refusing to extract {member.filename!r} outside {root}")
-    zipped.extractall(root)
+    # bandit B202 false positive: every member was checked against `root` just above.
+    zipped.extractall(root)  # nosec B202
 
 
 def _download(url: str) -> bytes:  # pragma: no cover - network
