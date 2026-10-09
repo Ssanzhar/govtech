@@ -37,7 +37,7 @@ from qorgan.data.scrub_tokens import (
 SPOKEN_NUMBER_MIN_DIGITS = 7
 _MAX_GAP_CHARS = 3
 # Dictation gaps only: an em/en dash is prose punctuation («12345678901 — одиннадцать цифр»).
-_GAP_CHARS = frozenset(" \t\r\n ,-")
+_GAP_CHARS = frozenset(" \t\r\n\u00a0,-")
 _DIGIT_GROUP_GAPS = frozenset({" ", "-"})
 _ASCII_WORD = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
 _CURRENCY_WORDS = frozenset(
@@ -231,10 +231,10 @@ def _placeholder_for(digits: str) -> str:
 
 
 def _followed_by_currency(text: str, end: int, next_token: Token | None) -> bool:
-    rest = text[end:].lstrip("  ")
+    rest = text[end:].lstrip(" \u00a0")
     if rest[:1] in _CURRENCY_SIGNS:
         return True
-    if next_token is None or text[end : next_token.start].strip("  "):
+    if next_token is None or text[end : next_token.start].strip(" \u00a0"):
         return False
     return next_token.folded in _CURRENCY_WORDS
 

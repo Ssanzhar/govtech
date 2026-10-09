@@ -7,9 +7,12 @@ Only the name is replaced; the introduction and the claimed organisation stay, b
   «атым», «есімім», "my name is"). The next word is taken in any case -- the recogniser writes
   lower case -- plus up to two more words that are capitalised or carry a surname ending
   («Алексей Петрович Иванов», "elena petrova").
-- **Weak** triggers («это», "this is", "I'm", "I am") only count with a capitalised name of one
-  or two words that is followed by «из / с / со / от» or "from / calling / with".
-- A stop list keeps pronouns, particles and organisation words out of every name slot.
+- **Weak** triggers («это», "this is", "I'm", "I am") only count with a capitalised name that is
+  followed by «из / с / со / от» or "from / calling / with": one word, or two when the second
+  carries a surname ending («Канат Сапаров») -- two capitalised words are usually an
+  organisation ("Kazakhstan Post calling"). A rank or title before the name stays («майор»,
+  "Major"): it is the impersonation evidence.
+- A stop list keeps pronouns, particles, organisation words and brands out of every name slot.
 
 Addresses are out of scope (ADR D66). `site/core/scrub-names.js` is a 1:1 port.
 """
@@ -43,7 +46,19 @@ _STOP_WORDS = frozenset(
         "қызметкері", "қызметі",
         # en
         "the", "a", "an", "from", "calling", "with", "and", "i", "not", "your", "bank", "service",
-        "security", "officer", "agent", "here", "just", "is",
+        "security", "officer", "agent", "here", "just", "is", "post", "kazakhstan", "казахстан",
+        # brands callers impersonate: evidence, never a personal name
+        "kaspi", "каспи", "halyk", "халык", "халық", "homebank", "kazpost", "казпост", "kcell",
+        "кселл", "beeline", "билайн", "tele", "теле", "egov", "егов", "jusan", "жусан", "forte",
+        "форте", "bereke", "береке", "freedom", "фридом", "kazakhtelecom", "казахтелеком",
+    }
+)
+# Kept in front of a weak-trigger name: «это майор [NAME] из …», "this is Major [NAME] from …".
+_TITLES = frozenset(
+    {
+        "майор", "капитан", "лейтенант", "старший", "полковник", "подполковник", "сержант",
+        "следователь", "инспектор", "господин", "госпожа", "major", "captain", "lieutenant",
+        "colonel", "sergeant", "inspector", "detective", "mr", "mrs", "ms", "dr",
     }
 )
 _SURNAME_ENDINGS = (
@@ -53,10 +68,10 @@ _SURNAME_ENDINGS = (
 _MAX_EXTRA_NAME_WORDS = 2
 _MIN_NAME_CHARS = 2
 _MIN_SURNAME_CHARS = 4
-_TRIGGER_GAP_CHARS = frozenset(" \t '’")
-_INTRO_GAP_CHARS = frozenset(" \t :—–-")
+_TRIGGER_GAP_CHARS = frozenset(" \t\u00a0'\u2019")
+_INTRO_GAP_CHARS = frozenset(" \t\u00a0:\u2014\u2013-")
 _MAX_INTRO_GAP = 4
-_NAME_GAP_CHARS = frozenset(" \t ")
+_NAME_GAP_CHARS = frozenset(" \t\u00a0")
 _MAX_NAME_GAP = 2
 
 
@@ -109,6 +124,8 @@ def _weak_name(text: str, tokens: Sequence[Token], start: int) -> int:
         names = tokens[start:end]
         if not all(_name_word(t) and is_capitalised(t.text) for t in names):
             continue
+        if count == 2 and not _looks_like_surname(names[1]):
+            continue
         gaps = [_gap(text, a, b) for a, b in zip(tokens[start - 1 : end], tokens[start : end + 1])]
         if not all(_gap_ok(gap, _NAME_GAP_CHARS, _MAX_NAME_GAP) for gap in gaps):
             continue
@@ -130,6 +147,8 @@ def _name_at(text: str, tokens: Sequence[Token], index: int) -> tuple[int, int]:
     for trigger in _WEAK_TRIGGERS:
         if _matches_trigger(text, tokens, index, trigger):
             start = index + len(trigger)
+            if start + 1 < len(tokens) and tokens[start].folded in _TITLES:
+                start += 1  # the title stays visible; the gap check below covers it
             count = _weak_name(text, tokens, start) if start < len(tokens) else 0
             if count:
                 return start, count

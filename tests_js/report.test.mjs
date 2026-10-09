@@ -94,6 +94,15 @@ test("a flagged phrase that carried PII is sent in its scrubbed form (ADR D66)",
   ]);
 });
 
+test("a phrase whose name needs the words before it is sent masked (ADR D66)", () => {
+  const transcript = "Hello, this is Major Ivanov from the Financial Crimes Unit. Do not tell anyone.";
+  const payload = finalizeReport(
+    { ...draft, transcript, flagged_phrases: ["Major Ivanov from the Financial Crimes Unit", "Do not tell anyone"] },
+    { transcript, phoneNumber: "", includedTacticIds: draft.tactic_ids, consent: true },
+  );
+  assert.deepEqual(payload.flagged_phrases, ["Major [NAME] from the Financial Crimes Unit", "Do not tell anyone"]);
+});
+
 test("the caller number is trimmed and optional", () => {
   assert.equal(approve({ phoneNumber: "  +7 700 101 20 30 " }).phone_number, "+7 700 101 20 30");
   assert.equal(approve({ phoneNumber: "  " }).phone_number, null);

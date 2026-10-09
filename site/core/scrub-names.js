@@ -19,7 +19,17 @@ const STOP_WORDS = new Set([
   "қызметкері", "қызметі",
   // en
   "the", "a", "an", "from", "calling", "with", "and", "i", "not", "your", "bank", "service",
-  "security", "officer", "agent", "here", "just", "is",
+  "security", "officer", "agent", "here", "just", "is", "post", "kazakhstan", "казахстан",
+  // brands callers impersonate: evidence, never a personal name
+  "kaspi", "каспи", "halyk", "халык", "халық", "homebank", "kazpost", "казпост", "kcell",
+  "кселл", "beeline", "билайн", "tele", "теле", "egov", "егов", "jusan", "жусан", "forte",
+  "форте", "bereke", "береке", "freedom", "фридом", "kazakhtelecom", "казахтелеком",
+]);
+// Kept in front of a weak-trigger name: «это майор [NAME] из …», "this is Major [NAME] from …".
+const TITLES = new Set([
+  "майор", "капитан", "лейтенант", "старший", "полковник", "подполковник", "сержант",
+  "следователь", "инспектор", "господин", "госпожа", "major", "captain", "lieutenant",
+  "colonel", "sergeant", "inspector", "detective", "mr", "mrs", "ms", "dr",
 ]);
 const SURNAME_ENDINGS = [
   "ов", "ова", "ев", "ева", "ина", "ын", "ына", "ский", "ская", "цкий", "цкая", "енко", "ұлы",
@@ -28,10 +38,10 @@ const SURNAME_ENDINGS = [
 const MAX_EXTRA_NAME_WORDS = 2;
 const MIN_NAME_CHARS = 2;
 const MIN_SURNAME_CHARS = 4;
-const TRIGGER_GAP_CHARS = new Set([" ", "\t", " ", "'", "’"]);
-const INTRO_GAP_CHARS = new Set([" ", "\t", " ", ":", "—", "–", "-"]);
+const TRIGGER_GAP_CHARS = new Set([" ", "\t", "\u00a0", "'", "\u2019"]);
+const INTRO_GAP_CHARS = new Set([" ", "\t", "\u00a0", ":", "\u2014", "\u2013", "-"]);
 const MAX_INTRO_GAP = 4;
-const NAME_GAP_CHARS = new Set([" ", "\t", " "]);
+const NAME_GAP_CHARS = new Set([" ", "\t", "\u00a0"]);
 const MAX_NAME_GAP = 2;
 
 const charCount = (text) => Array.from(text).length;
@@ -73,6 +83,7 @@ function weakName(chars, tokens, start) {
     if (end >= tokens.length) continue;
     const names = tokens.slice(start, end);
     if (!names.every((t) => nameWord(t) && isCapitalised(t.text))) continue;
+    if (count === 2 && !looksLikeSurname(names[1])) continue;
     let gapsOk = true;
     for (let i = start; i <= end; i += 1) {
       if (!gapOk(slice(chars, tokens[i - 1].end, tokens[i].start), NAME_GAP_CHARS, MAX_NAME_GAP)) gapsOk = false;
@@ -93,7 +104,8 @@ function nameAt(chars, tokens, index) {
   }
   for (const trigger of WEAK_TRIGGERS) {
     if (matchesTrigger(chars, tokens, index, trigger)) {
-      const start = index + trigger.length;
+      let start = index + trigger.length;
+      if (start + 1 < tokens.length && TITLES.has(tokens[start].folded)) start += 1; // the title stays
       const count = start < tokens.length ? weakName(chars, tokens, start) : 0;
       if (count) return [start, count];
     }

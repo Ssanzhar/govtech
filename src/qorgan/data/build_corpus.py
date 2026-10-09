@@ -25,6 +25,7 @@ from qorgan.data.clean import clean_dialogue
 from qorgan.data.generate import load_corpus_config
 from qorgan.data.schema import Dialogue, Label, Utterance, spans_from_phrases
 from qorgan.data.scrub import SCRUBBER_VERSION, scrub_text
+from qorgan.data.span_grounding import ground_flagged_phrases
 
 _SPLIT_NAMES = ("train", "val", "test")
 # Resolution of the deterministic hash-to-fraction mapping used by `assign_split`.
@@ -55,17 +56,19 @@ def scrub_dialogue(dialogue: Dialogue) -> Dialogue:
     """Return a new `Dialogue` with PII scrubbed from every utterance and trigger spans
     re-grounded against the scrubbed transcript.
 
-    A trigger span whose text was itself altered by scrubbing (e.g. it *was* a card number)
-    is dropped rather than left dangling -- we never ship a highlighted span that no longer
-    matches the text (the schema's verbatim invariant, CLAUDE.md SS6).
+    A trigger span that carried PII is kept with the PII masked when that form is verbatim in
+    the scrubbed text and still says something besides placeholders (ADR D66); a span that *was*
+    the PII (e.g. a card number) is dropped rather than left dangling -- we never ship a
+    highlighted span that no longer matches the text (the schema's verbatim invariant).
     """
     scrubbed_utterances = tuple(
         Utterance(speaker=u.speaker, text=scrub_text(u.text)) for u in dialogue.utterances
     )
     new_transcript = "\n".join(u.text for u in scrubbed_utterances)
-    regrounded_spans = spans_from_phrases(
-        [span.text for span in dialogue.label.trigger_spans], new_transcript
+    phrases = ground_flagged_phrases(
+        [span.text for span in dialogue.label.trigger_spans], new_transcript, dialogue.transcript()
     )
+    regrounded_spans = spans_from_phrases(phrases, new_transcript)
     new_label = Label(
         risk=dialogue.label.risk,
         tactic_tags=dialogue.label.tactic_tags,

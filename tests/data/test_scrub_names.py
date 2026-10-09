@@ -55,10 +55,31 @@ def test_self_introduced_names_are_masked(text, expected):
         "Меня зовут не так",
         "служба безопасности банка, назовите код из SMS",
         "My name is [NAME] from the bank",
+        # organisations are impersonation evidence, not names (found on train, ADR D66)
+        "Hello, this is Kazakhstan Post calling about a package for you",
+        "this is Kaspi calling",
+        "Это Каспи из приложения",
+        "this is Halyk Bank calling",
     ],
 )
 def test_ambiguous_or_name_free_text_is_untouched(text):
     assert scrub_text(text) == text
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        # a rank or title is impersonation evidence: it stays, only the name goes
+        (
+            "this is Major Ivanov from the Financial Crimes Unit",
+            "this is Major [NAME] from the Financial Crimes Unit",
+        ),
+        ("Это майор Сапаров из полиции", "Это майор [NAME] из полиции"),
+        ("Это Канат Сапаров из банка", "Это [NAME] из банка"),
+    ],
+)
+def test_a_title_stays_and_only_the_name_is_masked(text, expected):
+    assert scrub_text(text) == expected
 
 
 def test_names_and_numbers_together():

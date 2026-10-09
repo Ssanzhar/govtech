@@ -103,6 +103,17 @@ def test_scrub_dialogue_drops_span_whose_text_had_pii():
     assert scrubbed.label.trigger_spans == ()  # dropped, not left dangling
 
 
+def test_scrub_dialogue_keeps_a_span_that_carried_a_name_in_masked_form():
+    # ADR D66: the impersonation evidence survives; only the self-introduced name goes.
+    d = _dialogue(
+        "a",
+        ["Меня зовут Асет, я из службы безопасности банка"],
+        phrases=["Меня зовут Асет, я из службы безопасности банка"],
+    )
+    scrubbed = scrub_dialogue(d)
+    assert [s.text for s in scrubbed.label.trigger_spans] == ["Меня зовут [NAME], я из службы безопасности банка"]
+
+
 def test_scrub_dialogue_preserves_id_language_and_flags():
     d = _dialogue("xyz", ["Обычный текст"], hard_negative=True, risk=0.02, language="kk")
     scrubbed = scrub_dialogue(d)

@@ -370,6 +370,38 @@
       "expected": "My name is [NAME] from the bank"
     },
     {
+      "input": "Hello, this is Kazakhstan Post calling about a package for you",
+      "expected": "Hello, this is Kazakhstan Post calling about a package for you"
+    },
+    {
+      "input": "this is Kaspi calling",
+      "expected": "this is Kaspi calling"
+    },
+    {
+      "input": "Это Каспи из приложения",
+      "expected": "Это Каспи из приложения"
+    },
+    {
+      "input": "this is Halyk Bank calling",
+      "expected": "this is Halyk Bank calling"
+    },
+    {
+      "input": "this is Major Ivanov from the Financial Crimes Unit",
+      "expected": "this is Major [NAME] from the Financial Crimes Unit"
+    },
+    {
+      "input": "Это майор Сапаров из полиции",
+      "expected": "Это майор [NAME] из полиции"
+    },
+    {
+      "input": "Это Канат Сапаров из банка",
+      "expected": "Это [NAME] из банка"
+    },
+    {
+      "input": "this is Alex Kim from the bank",
+      "expected": "this is Alex Kim from the bank"
+    },
+    {
       "input": "Меня зовут Асет, мой номер восемь семь ноль семь один два три четыре пять шесть семь",
       "expected": "Меня зовут [NAME], мой номер [PHONE]"
     },

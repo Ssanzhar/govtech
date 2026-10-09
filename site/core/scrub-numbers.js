@@ -5,7 +5,7 @@ import { PLACEHOLDERS, applyReplacements, slice, tokenize } from "./scrub-tokens
 
 export const SPOKEN_NUMBER_MIN_DIGITS = 7;
 const MAX_GAP_CHARS = 3;
-const GAP_CHARS = new Set([" ", "\t", "\r", "\n", " ", ",", "-"]);
+const GAP_CHARS = new Set([" ", "\t", "\r", "\n", "\u00a0", ",", "-"]);
 const DIGIT_GROUP_GAPS = new Set([" ", "-"]);
 const ASCII_WORD = /^[A-Za-z0-9_]$/;
 const CURRENCY_WORDS = new Set([
@@ -158,7 +158,7 @@ function placeholderFor(digits) {
   return PLACEHOLDERS.number;
 }
 
-const SPACES = new Set([" ", " "]);
+const SPACES = new Set([" ", "\u00a0"]);
 
 function followedByCurrency(chars, end, nextToken) {
   let cursor = end;

@@ -77,6 +77,15 @@ def test_prepare_keeps_evidence_phrases_in_their_scrubbed_form():
     assert all(p in report.transcript for p in report.flagged_phrases)
 
 
+def test_a_phrase_whose_name_needs_the_words_before_it_is_kept_masked():
+    transcript = "Hello, this is Major Ivanov from the Financial Crimes Unit. Do not tell anyone."
+    report = _prepare(
+        transcript=transcript,
+        flagged_phrases=("Major Ivanov from the Financial Crimes Unit", "Do not tell anyone"),
+    )
+    assert report.flagged_phrases == ("Major [NAME] from the Financial Crimes Unit", "Do not tell anyone")
+
+
 def test_prepare_without_number_leaves_hash_and_prefix_none():
     report = _prepare(phone_number=None)
     assert report.number_hash is None and report.number_prefix is None

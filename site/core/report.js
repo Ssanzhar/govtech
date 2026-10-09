@@ -46,15 +46,33 @@ function hasEvidence(phrase) {
   return LETTER.test(rest);
 }
 
-/** Port of `reports/store.py::ground_flagged_phrases` (ADR D66): a flagged phrase is kept
- *  verbatim, or in its own scrubbed form, while it is verbatim in the redacted transcript and
- *  says something besides placeholders. */
-export function groundFlaggedPhrases(flaggedPhrases, redacted) {
+const CONTEXT_CHARS = 40;
+
+function scrubbedInContext(phrase, original) {
+  const at = original.indexOf(phrase);
+  if (at < 0) return null;
+  const context = Array.from(original.slice(0, at)).slice(-CONTEXT_CHARS).join("");
+  const withPhrase = scrubText(context + phrase);
+  const alone = scrubText(context);
+  return withPhrase.startsWith(alone) ? withPhrase.slice(alone.length) : null;
+}
+
+function groundedForm(phrase, redacted, original) {
+  if (redacted.includes(phrase)) return phrase;
+  for (const candidate of [scrubText(phrase), scrubbedInContext(phrase, original)]) {
+    if (candidate && redacted.includes(candidate) && hasEvidence(candidate)) return candidate;
+  }
+  return null;
+}
+
+/** Port of `data/span_grounding.py::ground_flagged_phrases` (ADR D66): a flagged phrase is kept
+ *  verbatim, or with its PII masked (alone, then in its original context), while that form is
+ *  verbatim in the redacted transcript and says something besides placeholders. */
+export function groundFlaggedPhrases(flaggedPhrases, redacted, original = "") {
   const kept = [];
   for (const phrase of flaggedPhrases) {
-    if (!phrase) continue;
-    const candidate = redacted.includes(phrase) ? phrase : scrubText(phrase);
-    if (redacted.includes(candidate) && hasEvidence(candidate) && !kept.includes(candidate)) kept.push(candidate);
+    const candidate = phrase ? groundedForm(phrase, redacted, original) : null;
+    if (candidate !== null && !kept.includes(candidate)) kept.push(candidate);
   }
   return kept;
 }
@@ -87,7 +105,7 @@ export function finalizeReport(draft, { transcript, phoneNumber, includedTacticI
   return {
     transcript: text,
     phone_number: phone || null,
-    flagged_phrases: groundFlaggedPhrases(draft.flagged_phrases, redacted),
+    flagged_phrases: groundFlaggedPhrases(draft.flagged_phrases, redacted, text),
     tactic_ids: draft.tactic_ids.filter((id) => included.has(id)),
     timestamp: draft.timestamp,
     risk_score: draft.risk_score,
