@@ -14,7 +14,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
-from qorgan.data.scrub import scrub_text
+from qorgan.data.scrub import PLACEHOLDERS, STORED_RECORD_CONTEXT, scrub_text
 from qorgan.privacy.numbers import display_prefix, hash_phone_number
 from qorgan.reports.model import CITIZEN_CONSENT_BASIS, ReportSource, StoredReport
 from qorgan.reports.retention import is_expired
@@ -54,7 +54,8 @@ def prepare_report(
     """Reduce a reviewed draft to its storable form.
 
     - transcript -> `scrub_text` (emails, cards, IINs, phone numbers redacted);
-    - flagged phrases -> only those still verbatim in the scrubbed transcript;
+    - flagged phrases -> `ground_flagged_phrases`: verbatim in the scrubbed transcript, as-is
+      or in their own scrubbed form (ADR D66), never a bare placeholder;
     - phone number -> HMAC digest + display prefix (raises `MissingHmacKeyError` without a
       key, `ValueError` for an unparseable number). A report without a number needs no key.
 
@@ -62,7 +63,7 @@ def prepare_report(
     anchor on it, never on the client's `timestamp`.
     """
     scrubbed = scrub_text(transcript)
-    kept_phrases = tuple(p for p in flagged_phrases if p and p in scrubbed)
+    kept_phrases = ground_flagged_phrases(flagged_phrases, scrubbed)
     number = (phone_number or "").strip() or None
     return StoredReport(
         receipt_id=receipt_id or new_receipt_id(),
@@ -82,6 +83,31 @@ def prepare_report(
     )
 
 
+def _has_evidence(phrase: str) -> bool:
+    """False for a phrase that is nothing but placeholders and punctuation."""
+    for placeholder in PLACEHOLDERS:
+        phrase = phrase.replace(placeholder, "")
+    return any(character.isalpha() for character in phrase)
+
+
+def ground_flagged_phrases(flagged_phrases: Sequence[str], scrubbed_transcript: str) -> tuple[str, ...]:
+    """The flagged phrases that may be stored next to `scrubbed_transcript`.
+
+    A phrase still verbatim in the scrubbed text is kept as-is. One that carried PII (a name, a
+    spoken number) is kept in its own scrubbed form when that form is verbatim in the stored text
+    and still says something besides placeholders -- the scam request survives, the PII does not
+    (ADR D66). Anything else is dropped; duplicates collapse. `site/core/report.js` mirrors this.
+    """
+    kept: list[str] = []
+    for phrase in flagged_phrases:
+        if not phrase:
+            continue
+        candidate = phrase if phrase in scrubbed_transcript else scrub_text(phrase)
+        if candidate in scrubbed_transcript and _has_evidence(candidate) and candidate not in kept:
+            kept.append(candidate)
+    return tuple(kept)
+
+
 def append_report(report: StoredReport, path: Path) -> Path:
     with REPORTS_LOCK:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -95,7 +121,7 @@ def load_reports(path: Path) -> list[StoredReport]:
     if not path.exists():
         return []
     return [
-        StoredReport.model_validate_json(line)
+        StoredReport.model_validate_json(line, context=STORED_RECORD_CONTEXT)
         for line in path.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]

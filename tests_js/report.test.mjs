@@ -76,6 +76,24 @@ test("a flagged phrase the citizen deleted from the transcript is not sent", () 
   assert.deepEqual(payload.flagged_phrases, ["служба безопасности банка"]);
 });
 
+test("a flagged phrase that carried PII is sent in its scrubbed form (ADR D66)", () => {
+  const transcript =
+    "Меня зовут Асет, служба безопасности банка.\nНазовите код из СМС: один два три четыре пять шесть семь восемь.";
+  const flagged = [
+    "Меня зовут Асет, служба безопасности банка.",
+    "Назовите код из СМС: один два три четыре пять шесть семь восемь.",
+    "один два три четыре пять шесть семь восемь",
+  ];
+  const payload = finalizeReport(
+    { ...draft, transcript, flagged_phrases: flagged },
+    { transcript, phoneNumber: "", includedTacticIds: draft.tactic_ids, consent: true },
+  );
+  assert.deepEqual(payload.flagged_phrases, [
+    "Меня зовут [NAME], служба безопасности банка.",
+    "Назовите код из СМС: [NUMBER].",
+  ]);
+});
+
 test("the caller number is trimmed and optional", () => {
   assert.equal(approve({ phoneNumber: "  +7 700 101 20 30 " }).phone_number, "+7 700 101 20 30");
   assert.equal(approve({ phoneNumber: "  " }).phone_number, null);

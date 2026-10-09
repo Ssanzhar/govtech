@@ -55,6 +55,28 @@ def test_prepare_drops_flagged_phrases_that_no_longer_occur_after_scrubbing():
     assert report.flagged_phrases == ("Продиктуйте код из SMS",)
 
 
+def test_prepare_keeps_evidence_phrases_in_their_scrubbed_form():
+    # ADR D66: a flagged phrase that carried a name or a spoken number survives with only the
+    # PII masked, still verbatim in the stored transcript -- evidence is not thrown away.
+    transcript = (
+        "Меня зовут Асет, служба безопасности банка.\n"
+        "Назовите код из СМС: один два три четыре пять шесть семь восемь."
+    )
+    report = _prepare(
+        transcript=transcript,
+        flagged_phrases=(
+            "Меня зовут Асет, служба безопасности банка.",
+            "Назовите код из СМС: один два три четыре пять шесть семь восемь.",
+            "один два три четыре пять шесть семь восемь",
+        ),
+    )
+    assert report.flagged_phrases == (
+        "Меня зовут [NAME], служба безопасности банка.",
+        "Назовите код из СМС: [NUMBER].",
+    )
+    assert all(p in report.transcript for p in report.flagged_phrases)
+
+
 def test_prepare_without_number_leaves_hash_and_prefix_none():
     report = _prepare(phone_number=None)
     assert report.number_hash is None and report.number_prefix is None

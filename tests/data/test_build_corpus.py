@@ -17,6 +17,7 @@ from qorgan.data.build_corpus import (
     split_dialogues,
 )
 from qorgan.data.schema import Dialogue, Label, TacticTag, Utterance, spans_from_phrases
+from qorgan.data.scrub import SCRUBBER_VERSION
 
 
 def _dialogue(did, texts, *, tags=(), phrases=(), risk=0.9, hard_negative=False, language="ru"):
@@ -209,6 +210,8 @@ def test_build_manifest_counts_and_metadata():
     assert manifest["total"] == 5
     assert manifest["fractions"] == {"train": 0.7, "val": 0.15, "test": pytest.approx(0.15)}
     assert len(manifest["content_hash"]) == 64
+    # ADR D66: which scrubber made the text, so a stricter one is detectable as "rebuild pending"
+    assert manifest["scrubber_version"] == SCRUBBER_VERSION
     # per-language breakdown present
     assert "by_language" in manifest["counts"]["val"]
 

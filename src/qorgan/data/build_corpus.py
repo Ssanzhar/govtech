@@ -24,7 +24,7 @@ from qorgan.data.asr_style import asr_style_augment
 from qorgan.data.clean import clean_dialogue
 from qorgan.data.generate import load_corpus_config
 from qorgan.data.schema import Dialogue, Label, Utterance, spans_from_phrases
-from qorgan.data.scrub import scrub_text
+from qorgan.data.scrub import SCRUBBER_VERSION, scrub_text
 
 _SPLIT_NAMES = ("train", "val", "test")
 # Resolution of the deterministic hash-to-fraction mapping used by `assign_split`.
@@ -158,6 +158,8 @@ def build_manifest(
         "counts": counts,
         "total": len(all_records),
         "content_hash": content_hash(all_records),
+        # ADR D66: the scrubber that produced this text; an older one means "rebuild pending".
+        "scrubber_version": SCRUBBER_VERSION,
     }
 
 

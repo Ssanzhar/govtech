@@ -20,6 +20,7 @@ const SHELL = [
   "/core/summary.js", "/core/asr.js", "/core/scenarios.json", "/core/cue-match.js", "/core/report.js",
   "/core/word-lid.js", "/core/span-vote.js", "/core/asr-wordlevel.json", "/core/endpoint.js",
   "/core/endpoint-runtime.js", "/core/audio-ring.js", "/core/gigaam.js", "/core/gigaam-worker.js", "/core/word-runs.js",
+  "/core/scrub-tokens.js", "/core/scrub-numbers.js", "/core/scrub-names.js",
 ];
 
 // The on-device speech runtimes (pinned, self-hosted by deploy_bootstrap); optional, so a
