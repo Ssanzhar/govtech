@@ -1,0 +1,15 @@
+{
+ "base": "http://127.0.0.1:8410",
+ "before": {
+  "isolated": false,
+  "micNote": "mic.ready_light",
+  "modeNote": "mic.light_mode",
+  "speechDownload": "download.light_first"
+ },
+ "after": {
+  "micNote": "mic.light_unavailable",
+  "micNoteText": "Голосовой режим здесь недоступен: модель распознавания речи не загрузилась (HTTP 404 for /models/gigaam/gigaam-multilingual-220m-ctc-int8/model.int8.onnx). Вставка и воспроизведение расшифровки работают.",
+  "micRadioDisabled": true
+ },
+ "replay_summary_score": "98 / 100"
+}

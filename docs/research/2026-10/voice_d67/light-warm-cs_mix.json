@@ -1,0 +1,389 @@
+{
+ "label": "light-warm",
+ "scene": "cs_mix",
+ "base": "http://127.0.0.1:8410",
+ "warm_cache": true,
+ "capture_at": 2212.100000000559,
+ "listening_at": 2216.600000000559,
+ "cross_origin_isolated": false,
+ "mode": "light",
+ "mode_note": "mic.light_mode",
+ "audio_s": 37.04025,
+ "lines": [
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/data/asr_capture/_wav/cs/cs_081_spliced_clean.wav",
+   "start": 5,
+   "seconds": 3.593125,
+   "speechStart": 5.016625,
+   "speechEnd": 8.5680625
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/data/asr_capture/_wav/cs/cs_085_spliced_clean.wav",
+   "start": 9.793125,
+   "seconds": 2.353875,
+   "speechStart": 9.8025625,
+   "speechEnd": 12.103875
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/data/asr_capture/_wav/cs/cs_086_spliced_clean.wav",
+   "start": 13.347,
+   "seconds": 2.15275,
+   "speechStart": 13.3519375,
+   "speechEnd": 15.471124999999999
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/data/asr_capture/_wav/cs/cs_087_spliced_clean.wav",
+   "start": 16.69975,
+   "seconds": 2.958375,
+   "speechStart": 16.704875,
+   "speechEnd": 19.635
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/data/asr_capture/_wav/cs/cs_001_single_clean.wav",
+   "start": 20.858125,
+   "seconds": 4.2068125,
+   "speechStart": 20.878875,
+   "speechEnd": 25.039625
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/data/asr_capture/_wav/cs/cs_002_single_clean.wav",
+   "start": 26.2649375,
+   "seconds": 5.059625,
+   "speechStart": 26.2836875,
+   "speechEnd": 31.2884375
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/data/asr_capture/_wav/cs/cs_003_single_clean.wav",
+   "start": 32.5245625,
+   "seconds": 3.3156875,
+   "speechStart": 32.533437500000005,
+   "speechEnd": 35.8128125
+  }
+ ],
+ "listening_after_ms": 2111,
+ "gigaam": {
+  "status": "ready",
+  "loadMs": 860.3999999994412,
+  "fromCache": true,
+  "at": 2051.2999999998137
+ },
+ "rss_mb": {
+  "idle_page": {
+   "total": 299,
+   "browser": 80,
+   "gpu-process": 64,
+   "network.mojom.NetworkService": 40,
+   "renderer": 114
+  },
+  "listening": {
+   "total": 2371,
+   "browser": 90,
+   "gpu-process": 96,
+   "network.mojom.NetworkService": 41,
+   "renderer": 2090,
+   "audio.mojom.AudioService": 54
+  },
+  "end_of_audio": {
+   "total": 2060,
+   "browser": 92,
+   "gpu-process": 102,
+   "network.mojom.NetworkService": 41,
+   "renderer": 1769,
+   "audio.mojom.AudioService": 55
+  },
+  "peak_renderer": 2112,
+  "peak_total": 2390,
+  "median_renderer_in_call": 2087,
+  "median_total_in_call": 2365,
+  "renderer_per_second": [
+   2091,
+   2091,
+   2086,
+   2082,
+   2082,
+   2086,
+   2086,
+   2087,
+   2087,
+   2097,
+   2099,
+   2099,
+   2100,
+   2109,
+   2104,
+   2104,
+   2105,
+   2106,
+   2106,
+   2107,
+   2108,
+   2108,
+   2109,
+   2109,
+   2110,
+   2112,
+   2112,
+   2108,
+   1767,
+   1764,
+   1772,
+   1774,
+   1774,
+   1774,
+   1775,
+   1776,
+   1774,
+   1774,
+   1774,
+   1776,
+   1776,
+   1777,
+   1777,
+   1777,
+   1769
+  ]
+ },
+ "summary_score": "97 / 100",
+ "final_meter": 97.42740698167387,
+ "final_band": "critical",
+ "utterances": [
+  {
+   "seq": 0,
+   "text": "сіздің онлайн банкин есептік жазбаңыз бұғатталды",
+   "language": "kk",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 1426.7999999998137,
+   "latencyMs": 1428.2999999998137,
+   "meter": 44.26648175146609,
+   "band": "medium",
+   "at": 13110.900000000373,
+   "tags": "kk ru ru kk kk kk"
+  },
+  {
+   "seq": 1,
+   "text": "зис из е бэнк каллинг назовите куд",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 982.7999999998137,
+   "latencyMs": 983.0999999996275,
+   "meter": 59.961414638524055,
+   "band": "medium",
+   "at": 16329.700000000186,
+   "tags": "ru ru kk kk kk ru ru"
+  },
+  {
+   "seq": 2,
+   "text": "ер аккаунт ис блокед қопты айтыңыз",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 968.7000000001863,
+   "latencyMs": 969.0999999996275,
+   "meter": 76.10765565067224,
+   "band": "high",
+   "at": 19786.5,
+   "tags": "ru ru ru ru kk kk"
+  },
+  {
+   "seq": 3,
+   "text": "бұл секюрити тим сізге көмектесеміз",
+   "language": "kk",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 1219.5,
+   "latencyMs": 1220,
+   "meter": 86.07709515972604,
+   "band": "critical",
+   "at": 24336.200000000186,
+   "tags": "kk ru ru kk kk"
+  },
+  {
+   "seq": 4,
+   "text": "сәлеметсіз бе мен банктің службы бес опасности қызметкермін",
+   "language": "kk",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 1613.6000000005588,
+   "latencyMs": 1614.0999999996275,
+   "meter": 91.16978719884011,
+   "band": "critical",
+   "at": 30421.60000000056,
+   "tags": "kk kk kk kk ru kk ru kk"
+  },
+  {
+   "seq": 5,
+   "text": "сіздің картаңыздан подозрительная операция жасалды қазір тоқтатамыз",
+   "language": "kk",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 2124.5999999996275,
+   "latencyMs": 2125.2999999998137,
+   "meter": 95.14421406138436,
+   "band": "critical",
+   "at": 37406.700000000186,
+   "tags": "kk kk ru kk kk kk kk"
+  },
+  {
+   "seq": 6,
+   "text": "телефоныңызға келген код иис смс айтыңызшы",
+   "language": "kk",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 1542.3999999994412,
+   "latencyMs": 1542.7000000001863,
+   "meter": 97.42740698167387,
+   "band": "critical",
+   "at": 41539.90000000037,
+   "tags": "kk kk kk ru ru kk"
+  }
+ ],
+ "line_latency_ms": [
+  2330.7374999998137,
+  2013.7249999996275,
+  2103.274999999441,
+  2489.0999999996275,
+  3169.875,
+  3906.1624999996275,
+  3514.9874999998137
+ ],
+ "latency_ms": {
+  "n": 7,
+  "median": 2489,
+  "max": 3906
+ },
+ "decode_ms": {
+  "n": 7,
+  "median": 1427,
+  "max": 2125
+ },
+ "segmentation": {
+  "reference_lines": 7,
+  "segments": 7,
+  "lines_found": 7,
+  "lines_split": 0,
+  "segments_merging_lines": 0,
+  "spurious_segments": 0,
+  "one_to_one": 7,
+  "start_error_ms": {
+   "n": 7,
+   "median": 149,
+   "max": 182
+  },
+  "end_error_ms": {
+   "n": 7,
+   "median": 14,
+   "max": 24
+  },
+  "cuts": [
+   "pause",
+   "pause",
+   "pause",
+   "pause",
+   "pause",
+   "pause",
+   "pause"
+  ]
+ },
+ "vad_close_after_speech_ms": {
+  "n": 7,
+  "median": 651,
+  "max": 672
+ },
+ "segments": [
+  {
+   "start": 4.834499999999999,
+   "end": 8.554499999999999,
+   "cut": "pause",
+   "closedAfterSpeechMs": 657,
+   "wallAt": 11437.100000000559
+  },
+  {
+   "start": 9.6345,
+   "end": 12.0945,
+   "cut": "pause",
+   "closedAfterSpeechMs": 651,
+   "wallAt": 14967.100000000559
+  },
+  {
+   "start": 13.2045,
+   "end": 15.4545,
+   "cut": "pause",
+   "closedAfterSpeechMs": 624,
+   "wallAt": 18307.10000000056
+  },
+  {
+   "start": 16.564500000000002,
+   "end": 19.6245,
+   "cut": "pause",
+   "closedAfterSpeechMs": 640,
+   "wallAt": 22487.10000000056
+  },
+  {
+   "start": 20.7345,
+   "end": 25.0545,
+   "cut": "pause",
+   "closedAfterSpeechMs": 665,
+   "wallAt": 27917.10000000056
+  },
+  {
+   "start": 26.1345,
+   "end": 31.264499999999998,
+   "cut": "pause",
+   "closedAfterSpeechMs": 646,
+   "wallAt": 34147
+  },
+  {
+   "start": 32.3745,
+   "end": 35.8245,
+   "cut": "pause",
+   "closedAfterSpeechMs": 672,
+   "wallAt": 38697
+  }
+ ],
+ "dropped": [],
+ "errors": []
+}
