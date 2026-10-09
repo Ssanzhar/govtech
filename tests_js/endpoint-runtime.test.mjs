@@ -1,4 +1,4 @@
-/* The endpoint pass's browser wiring with a fake GigaAM client (ADR D63): the audio span of
+/* The endpoint pass's browser wiring with a fake GigaAM client (ADR D64): the audio span of
    each utterance is cut from the ring and decoded; failure to load means the Vosk vote, marked. */
 import test from "node:test";
 import assert from "node:assert/strict";

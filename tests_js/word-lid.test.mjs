@@ -1,4 +1,4 @@
-/* Golden parity for site/core/word-lid.js against the spike's WordLID (ADR D63):
+/* Golden parity for site/core/word-lid.js against the spike's WordLID (ADR D64):
    tests_js/fixtures/word_lid.json comes from scripts/export_asr_wordlevel.py. */
 import test from "node:test";
 import assert from "node:assert/strict";

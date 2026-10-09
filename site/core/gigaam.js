@@ -1,4 +1,4 @@
-/* Page side of the GigaAM endpoint pass (ADR D63): owns the dedicated worker
+/* Page side of the GigaAM endpoint pass (ADR D64): owns the dedicated worker
    (site/core/gigaam-worker.js) and turns its messages into promises. No network primitive here:
    the worker loads the self-hosted runtime and model itself; audio goes in by postMessage
    (transferred, never copied to anything but the worker) and only text comes back. */

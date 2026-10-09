@@ -1,4 +1,4 @@
-/* Live per-word kk/ru/en tags from the three Vosk recognisers: the calibrated span vote (ADR D63).
+/* Live per-word kk/ru/en tags from the three Vosk recognisers: the calibrated span vote (ADR D64).
 
    A 1:1 port of `scripts/spikes/asr_wordlevel/spanvote/{common,vote,realtime}.py`, pinned by
    tests_js/fixtures/span_vote.json (`scripts/export_asr_wordlevel.py`):

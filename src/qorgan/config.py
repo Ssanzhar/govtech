@@ -38,9 +38,9 @@ _DEFAULT_VOSK_MODEL_RU = "vosk-model-small-ru-0.22"
 # confident-looking garbage, and a plain vote handed it 12.9 % of kk/ru utterances.
 _DEFAULT_VOSK_MODEL_EN = "vosk-model-small-en-us-0.15"
 # 0.15 (D62) gave English only 0.545 of real (FLEURS) English utterances; 0.05 gives 0.910 with
-# 0 false wins on real kk/ru speech (ADR D63). The per-utterance vote is now the fallback.
+# 0 false wins on real kk/ru speech (ADR D64). The per-utterance vote is now the fallback.
 _DEFAULT_ASR_EN_HANDICAP = 0.05
-# The endpoint pass (ADR D63): GigaAM-Multilingual 220M CTC int8 decodes each utterance once in
+# The endpoint pass (ADR D64): GigaAM-Multilingual 220M CTC int8 decodes each utterance once in
 # the browser (sherpa-onnx WASM) and replaces the Vosk text; "" = off (Vosk vote only).
 _DEFAULT_ASR_ENDPOINT_MODEL = "gigaam-multilingual-220m-ctc-int8"
 _DEFAULT_ASR_SAMPLE_RATE = 16000
@@ -158,7 +158,7 @@ class Config(BaseModel):
     vosk_model_en: str = ""
     asr_en_handicap: float = Field(default=_DEFAULT_ASR_EN_HANDICAP, ge=0.0, le=1.0)
     asr_sample_rate: int = Field(gt=0)
-    # The GigaAM endpoint pass (ADR D63); "" = off. Its sherpa-onnx browser runtime comes from a
+    # The GigaAM endpoint pass (ADR D64); "" = off. Its sherpa-onnx browser runtime comes from a
     # local build (scripts/sherpa_wasm/build.sh) or a mirror of it, hash-checked either way.
     asr_endpoint_model: str = _DEFAULT_ASR_ENDPOINT_MODEL
     sherpa_wasm_build_dir: str = ""

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the browser runtime of sherpa-onnx for the GigaAM endpoint pass (ADR D63).
+# Build the browser runtime of sherpa-onnx for the GigaAM endpoint pass (ADR D64).
 #
 #   scripts/sherpa_wasm/build.sh <work-dir> [<out-dir>]
 #
@@ -38,7 +38,15 @@ cp "$HERE/qorgan-sherpa.cc" "$SRC/wasm/web/qorgan-sherpa.cc"
 mkdir -p "$SRC/build-qorgan-web"
 cd "$SRC/build-qorgan-web"
 export SHERPA_ONNX_IS_USING_BUILD_WASM_SH=ON
+# sherpa-onnx logs with __FILE__: without the prefix map the absolute work directory is baked
+# into the wasm and the hashes depend on where it was built (measured: two directories, two hashes).
+# Every spelling of the source path is mapped: on macOS /tmp is /private/tmp, and the
+# compiler sees whichever form CMake hands it.
+REAL_SRC="$(realpath "$SRC")"
+PREFIX_MAP="-ffile-prefix-map=$SRC=/sherpa-onnx -ffile-prefix-map=$REAL_SRC=/sherpa-onnx -ffile-prefix-map=${REAL_SRC#/private}=/sherpa-onnx"
 cmake \
+  -DCMAKE_C_FLAGS="$PREFIX_MAP" \
+  -DCMAKE_CXX_FLAGS="$PREFIX_MAP" \
   -DCMAKE_INSTALL_PREFIX=./install \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_TOOLCHAIN_FILE="$EMSCRIPTEN/cmake/Modules/Platform/Emscripten.cmake" \

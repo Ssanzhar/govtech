@@ -1,4 +1,4 @@
-/* Golden parity for site/core/span-vote.js against the spike's span vote + freeze loop (ADR D63):
+/* Golden parity for site/core/span-vote.js against the spike's span vote + freeze loop (ADR D64):
    tests_js/fixtures/span_vote.json replays DEV rows (built from train text) step by step. */
 import test from "node:test";
 import assert from "node:assert/strict";

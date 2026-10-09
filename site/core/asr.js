@@ -120,7 +120,7 @@ export function initialAsrState(languages) {
     windowOpenedAt: null,
     suppressUntil: {}, // language -> timestamp: drop a late duplicate `result`
     lastPartialText: "",
-    live: initialLive(), // the live pass's word hypotheses for the open utterance (ADR D63)
+    live: initialLive(), // the live pass's word hypotheses for the open utterance (ADR D64)
   };
 }
 
@@ -129,7 +129,7 @@ const initialLive = (after = 0) => ({ finals: {}, partials: {}, freeze: { spans:
 /** Per language: committed final words + the latest partial after them (the spike's
     `hypothesis_at`), as the span vote reads them. Words of an already committed stretch
     (midpoint before `live.after`) are dropped: a recogniser that has not endpointed keeps one
-    partial across the committed utterance and the next (seen in Chromium, ADR D63). */
+    partial across the committed utterance and the next (seen in Chromium, ADR D64). */
 function liveHypotheses(live) {
   const after = live.after ?? 0;
   const fresh = (w) => (w[1] + w[2]) / 2 >= after;
@@ -229,7 +229,7 @@ function commit(state, now, suppressMs, lock = null, handicap = null) {
     }
   }
   const winner = voteFinal(hypotheses, state.preferred, handicap ?? {});
-  // The audio this utterance covers, for the endpoint pass (ADR D63); absent without timed words.
+  // The audio this utterance covers, for the endpoint pass (ADR D64); absent without timed words.
   const span = liveSpan(state.live ?? initialLive());
   const next = applyLock({
     ...state,
@@ -336,7 +336,7 @@ export function loadVoskletScript(url = VOSKLET_SCRIPT_URL, doc = globalThis.doc
     localise the status instead of parsing `message`. `start(stream)` takes a microphone
     MediaStream.
 
-    ADR D63, both optional: with `wordLevel` (site/core/asr-wordlevel.json) and `onLive`, the
+    ADR D64, both optional: with `wordLevel` (site/core/asr-wordlevel.json) and `onLive`, the
     span vote reruns on every recogniser event and `onLive(words)` gets provisional words
     tagged kk/ru/en; with `endpoint` (qorgan-config.json `asr.endpoint`), GigaAM re-decodes each
     committed utterance and its text replaces the Vosk text before `onUtterance` -- if GigaAM
@@ -420,7 +420,7 @@ export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus
         // recognizer stops being fed, which is the whole compute win (ADR D40). Its instance
         // stays loaded, so this saves decode work, not memory.
         for (const language of state.languages) recognizers[language].acceptWaveform(ev.data.slice()); // a copy each: buffers may be transferred
-        pass.push(ev.data); // the endpoint pass re-decodes committed utterances from here (ADR D63)
+        pass.push(ev.data); // the endpoint pass re-decodes committed utterances from here (ADR D64)
       };
       source = ctx.createMediaStreamSource(stream);
       source.connect(transferer);

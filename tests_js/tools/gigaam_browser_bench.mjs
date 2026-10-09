@@ -1,4 +1,4 @@
-/* GigaAM in the browser (ADR D63): the site's real worker (site/core/gigaam-worker.js, the
+/* GigaAM in the browser (ADR D64): the site's real worker (site/core/gigaam-worker.js, the
    single-threaded sherpa-onnx WASM build) in headless Chromium on a page that is NOT
    cross-origin isolated, decoding FLEURS utterances. Compares each transcript with the native
    sherpa-onnx decode of the same file (data/asr_capture/fleurs_decodes_<channel>.jsonl, the

@@ -99,7 +99,7 @@ def export_client_config() -> dict[str, Any]:
             # null = both recognisers run for the whole call (ADR D40).
             "lock": ({"after": cfg.asr_lock_after, "confFloor": cfg.asr_lock_conf_floor}
                      if cfg.asr_lock_after > 0 else None),
-            # The endpoint pass (ADR D63): GigaAM re-decodes each utterance and replaces the
+            # The endpoint pass (ADR D64): GigaAM re-decodes each utterance and replaces the
             # Vosk text; null = off. Optional: if it fails to load, the Vosk vote is used.
             "endpoint": _asr_endpoint(cfg.asr_endpoint_model),
         },

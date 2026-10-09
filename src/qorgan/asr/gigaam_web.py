@@ -1,4 +1,4 @@
-"""Self-host the GigaAM endpoint pass for the browser (ADR D63): sherpa-onnx WASM + the model.
+"""Self-host the GigaAM endpoint pass for the browser (ADR D64): sherpa-onnx WASM + the model.
 
 Two gitignored assets, each pinned by sha256 and checked before anything is written:
 
@@ -27,10 +27,11 @@ from urllib.request import urlopen
 SHERPA_WASM_VERSION = "1.13.8"
 SHERPA_VENDOR_SUBDIR = Path("vendor") / "sherpa-onnx" / SHERPA_WASM_VERSION
 # sha256 of scripts/sherpa_wasm/build.sh's output (emsdk 4.0.23, sherpa-onnx v1.13.8 source
-# b0374cc5..., onnxruntime-wasm-static_lib-simd 1.28.2 pinned by sherpa's CMake).
+# b0374cc5..., onnxruntime-wasm-static_lib-simd 1.28.2 pinned by sherpa's CMake); reproduced
+# byte for byte by two clean builds in different directories.
 SHERPA_WASM_FILES = {
-    "sherpa-onnx-wasm-web.js": "6b5ec5db8dab0eb45c7c7a961253ba444d83120c93ebab90864aec8091c35eab",
-    "sherpa-onnx-wasm-web.wasm": "d38edc5aaa21e026e3bb37d6ff315882919741e28bd754ffdc8210a538678a29",
+    "sherpa-onnx-wasm-web.js": "3d965c7efb172b050d15c5fe6bbcda2f49ff7b1739eb3806811a552db14d1ace",
+    "sherpa-onnx-wasm-web.wasm": "6ba50e27138f4ca3a060f050b85b4e9c16593c5cbf684afefcaa0c5640bdc082",
     "sherpa-onnx-asr.js": "d51ae8e8b756ee5e53423ffada0c9702973f154f561aca7984fe0b12f4060178",
 }
 

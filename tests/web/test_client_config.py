@@ -157,7 +157,7 @@ def test_english_is_a_third_handicapped_recogniser_and_can_be_switched_off(monke
 
 
 def test_endpoint_pass_names_the_self_hosted_gigaam_model_and_runtime(monkeypatch):
-    # ADR D63: GigaAM decodes each utterance once in the browser and replaces the Vosk text; the
+    # ADR D64: GigaAM decodes each utterance once in the browser and replaces the Vosk text; the
     # page must find the model under site/models/ and the runtime under site/vendor/, both
     # same-origin, and may start without them (the Vosk vote is the fallback).
     from qorgan.asr.gigaam_web import GIGAAM_MODEL_ID, SHERPA_WASM_VERSION
@@ -180,5 +180,5 @@ def test_endpoint_pass_names_the_self_hosted_gigaam_model_and_runtime(monkeypatc
 
 
 def test_english_handicap_is_the_measured_real_speech_value():
-    # ADR D63: 0.05 gives English 0.910 of real English utterances and 0 false wins on real kk/ru.
+    # ADR D64: 0.05 gives English 0.910 of real English utterances and 0 false wins on real kk/ru.
     assert export_client_config()["asr"]["handicap"] == {"en": 0.05}

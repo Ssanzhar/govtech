@@ -1,0 +1,180 @@
+{
+ "variant": "before",
+ "scene": "live_scam_bank_kk",
+ "audio_s": 29.9225625,
+ "files": [
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_scam_bank_kk_0.wav",
+   "start": 5,
+   "seconds": 3.0864375
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_scam_bank_kk_1.wav",
+   "start": 9.2864375,
+   "seconds": 4.2640625
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_scam_bank_kk_2.wav",
+   "start": 14.7505,
+   "seconds": 2.9025
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_scam_bank_kk_3.wav",
+   "start": 18.853,
+   "seconds": 3.9664375
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_scam_bank_kk_4.wav",
+   "start": 24.0194375,
+   "seconds": 4.703125
+  }
+ ],
+ "listening_after_ms": 9794,
+ "rss_mb": {
+  "listening": {
+   "total": 1019,
+   "browser": 103,
+   "GPU": 51,
+   "network.mojom.NetworkService": 43,
+   "renderer": 768,
+   "audio.mojom.AudioService": 55
+  },
+  "end_of_audio": {
+   "total": 1321,
+   "browser": 85,
+   "GPU": 82,
+   "network.mojom.NetworkService": 40,
+   "renderer": 1062,
+   "audio.mojom.AudioService": 51
+  }
+ },
+ "js_heap_mb": 10,
+ "summary_score": "96 / 100",
+ "final_meter": 96.22360409824549,
+ "final_band": "critical",
+ "utterances": [
+  {
+   "text": "сәлеметсіз бе бұл банктің қауіпсіздік қызметі",
+   "language": "kk",
+   "confidence": 1,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "сәлеметсіз бе бұл банктің қауіпсіздік қызметі",
+    "confidence": 1
+   },
+   "decodeMs": null,
+   "latencyMs": 0.16499996185302734,
+   "meter": 49.81960979241273,
+   "band": "medium",
+   "at": 20342.92000001669,
+   "tags": ""
+  },
+  {
+   "text": "сіздің картаңыздың күдікті операция тіркелді жағдай шұғыл",
+   "language": "kk",
+   "confidence": 0.8932468571428572,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "сіздің картаңыздың күдікті операция тіркелді жағдай шұғыл",
+    "confidence": 0.8932468571428572
+   },
+   "decodeMs": null,
+   "latencyMs": 0.019999980926513672,
+   "meter": 71.95810257665909,
+   "band": "high",
+   "at": 25568.149999976158,
+   "tags": ""
+  },
+  {
+   "text": "ешкімге айтпаңыз бұл құпия операция",
+   "language": "kk",
+   "confidence": 1,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "ешкімге айтпаңыз бұл құпия операция",
+    "confidence": 1
+   },
+   "decodeMs": null,
+   "latencyMs": 0.030000030994415283,
+   "meter": 85.97654365797592,
+   "band": "critical",
+   "at": 30788.730000019073,
+   "tags": ""
+  },
+  {
+   "text": "ешкімге айтпаңыз бұл құпия операция сыз тегі кодты айтыңыз біз операцияны тоқтатамыз",
+   "language": "kk",
+   "confidence": 0.9235799166666666,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "ешкімге айтпаңыз бұл құпия операция сыз тегі кодты айтыңыз біз операцияны тоқтатамыз",
+    "confidence": 0.9235799166666666
+   },
+   "decodeMs": null,
+   "latencyMs": 0.12999999523162842,
+   "meter": 92.45179490492588,
+   "band": "critical",
+   "at": 36073.00999999046,
+   "tags": ""
+  },
+  {
+   "text": "содан кейін ақшаны қаулысы шотқа аударамыз реквизиттерін айтамын",
+   "language": "kk",
+   "confidence": 1,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "содан кейін ақшаны қаулысы шотқа аударамыз реквизиттерін айтамын",
+    "confidence": 1
+   },
+   "decodeMs": null,
+   "latencyMs": 0.029999971389770508,
+   "meter": 96.22360409824549,
+   "band": "critical",
+   "at": 40951.94499999285,
+   "tags": ""
+  }
+ ],
+ "latency_ms": {
+  "n": 5,
+  "median": 0.030000030994415283,
+  "max": 0.16499996185302734
+ },
+ "live_events": 0,
+ "live_snapshot": [],
+ "endpoint": [],
+ "lines": [
+  {
+   "source": "vosk",
+   "text": "сәлеметсіз бе бұл банктің қауіпсіздік қызметі каз · уверенность 100%"
+  },
+  {
+   "source": "vosk",
+   "text": "сіздің картаңыздың күдікті операция тіркелді жағдай шұғыл каз · уверенность 89%"
+  },
+  {
+   "source": "vosk",
+   "text": "ешкімге айтпаңыз бұл құпия операция каз · уверенность 100%"
+  },
+  {
+   "source": "vosk",
+   "text": "ешкімге айтпаңыз бұл құпия операция сыз тегі кодты айтыңыз біз операцияны тоқтатамыз каз · уверенность 92%"
+  },
+  {
+   "source": "vosk",
+   "text": "содан кейін ақшаны қаулысы шотқа аударамыз реквизиттерін айтамын каз · уверенность 100%"
+  }
+ ],
+ "errors": [
+  "Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ]
+}

@@ -1,4 +1,4 @@
-/* Per-word language tags (kk / ru / en) for a transcript from the joint recogniser (ADR D63).
+/* Per-word language tags (kk / ru / en) for a transcript from the joint recogniser (ADR D64).
 
    A 1:1 port of `scripts/spikes/asr_wordlevel/word_lid.py`, pinned by
    tests_js/fixtures/word_lid.json (`scripts/export_asr_wordlevel.py`):

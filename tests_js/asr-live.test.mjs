@@ -1,4 +1,4 @@
-/* The live pass of the voice mode (ADR D63): word timings from Vosk, the span vote rerun on
+/* The live pass of the voice mode (ADR D64): word timings from Vosk, the span vote rerun on
    every recogniser event (per-word kk/ru/en tags while the person speaks), and the audio span
    each committed utterance carries for the endpoint pass. */
 import test from "node:test";

@@ -1,4 +1,4 @@
-/* The last N seconds of microphone audio, addressable by stream time (ADR D63).
+/* The last N seconds of microphone audio, addressable by stream time (ADR D64).
 
    The endpoint pass re-decodes each committed utterance with GigaAM, so the runtime keeps the
    PCM the recognisers were fed. Vosk word times count from the first sample fed; so does this

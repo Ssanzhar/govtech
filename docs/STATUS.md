@@ -76,6 +76,31 @@ kept as history._
   calls with call content: `POST /api/reports`, `DELETE /api/reports/{receipt}`. Model load
   ~3 s from localhost, ~0.6 s first inference (WASM/WebGPU).
 
+## 2026-10-08 — word-level voice mode: live language chips + GigaAM per phrase (ADR D64)
+
+- **Endpoint pass:** each phrase is decoded once more in the browser by GigaAM-Multilingual 220M
+  (sherpa-onnx WASM, single thread). Its text replaces the Vosk text, and only that text reaches
+  the meter.
+  - Real-speech WER (FLEURS): kk 0.074 / ru 0.070 / en 0.130 vs the old vote's 0.217 / 0.203 / 0.592.
+  - In Chromium: RTF 0.25 / 0.23 (clean / phone), browser WER = native, works without
+    cross-origin isolation.
+  - End to end, endpoint → replaced text takes a median of ~2.3 s.
+- **Live pass:** the calibrated span vote over the three Vosk recognisers tags provisional words
+  kk/ru/en while the person speaks.
+  - Code-switch TEST word-language accuracy is 0.873 vs 0.570.
+  - English stays provisional (recall 0.29).
+- **Fallback:** the per-utterance Vosk vote, now with English handicap 0.05 (real-speech English
+  0.910, 0 false wins on real kk/ru). It is marked "quick transcript" whenever GigaAM is loading or
+  unavailable.
+- **Demo scenes, meter before → after:** RU scam 98 → 98, KK scam 96 → 96, real bank call
+  18 → 18. Transcripts improved: «код из самая с» → «код из смс». Fixed in the same run: an
+  un-endpointed recogniser dragged the previous phrase into the next.
+- **Open:**
+  - The sherpa-onnx browser build (`scripts/sherpa_wasm/build.sh`, reproducible, hash-pinned) has
+    no hosted mirror yet. Until one is approved, deployments run the fallback.
+  - Real Kazakh-accented English recordings are needed (TTS English comes out in Cyrillic).
+  - A GigaAM + VAD mode for Android WebView.
+
 ## 2026-10-01 — English in the voice mode, test mode (ADR D62)
 
 - A third recogniser (`vosk-model-small-en-us-0.15`) ranks in the vote with a 0.15 handicap.

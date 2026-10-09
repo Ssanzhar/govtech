@@ -59,8 +59,8 @@ const TURN_DELAY_MS = 1200;
 // tokenizer 17 MB; the two Vosk tarballs 60 MB (kk) + 46 MB (ru).
 const MODEL_MB = 300;
 const SPEECH_MB = 147; // kk 60 + ru 46 + en 41 MB tarballs (ADR D62)
-const ENDPOINT_MB = 239; // GigaAM 225 MB + its sherpa-onnx runtime 14 MB (ADR D63), downloaded once
-// `live.html?debug=asr` keeps a per-utterance trace on window.__qorganVoice (evidence runs, D63).
+const ENDPOINT_MB = 239; // GigaAM 225 MB + its sherpa-onnx runtime 14 MB (ADR D64), downloaded once
+// `live.html?debug=asr` keeps a per-utterance trace on window.__qorganVoice (evidence runs, D64).
 const VOICE_TRACE = new URLSearchParams(location.search).get("debug") === "asr";
 const ENDPOINT_STATUS = { loading: "mic.endpoint_loading", ready: "mic.endpoint_ready", unavailable: "mic.endpoint_unavailable" };
 // The summary's "why" sentence quotes the first few flagged phrases; all of them are already
@@ -160,7 +160,7 @@ const detectModelCache = async () => {
   try {
     if (!("caches" in globalThis)) return false;
     for (const name of await caches.keys()) {
-      if (name.startsWith("qorgan-gigaam-")) continue; // the speech model's own store (ADR D63), not the analysis model
+      if (name.startsWith("qorgan-gigaam-")) continue; // the speech model's own store (ADR D64), not the analysis model
       const requests = await (await caches.open(name)).keys();
       if (requests.some((req) => /\/models\/.+\.onnx$/.test(new URL(req.url).pathname))) return true;
     }
@@ -269,7 +269,7 @@ const highlightLine = (line, evidence) => {
   return html;
 };
 
-/** Words grouped into same-language runs, each run led by a language chip (ADR D63).
+/** Words grouped into same-language runs, each run led by a language chip (ADR D64).
     `token(item)` renders one word's inner HTML; `cls(item)` adds per-word classes. */
 const runsHtml = (items, token, cls = () => "") =>
   runsOf(items)
@@ -314,7 +314,7 @@ const showPartial = (text) => {
   partialEl.textContent = text || "";
 };
 
-/** Provisional words while the person speaks (the span vote, ADR D63). English stays marked
+/** Provisional words while the person speaks (the span vote, ADR D64). English stays marked
     provisional (live English recall is 0.29); the endpoint pass replaces the whole line. */
 const showLiveWords = (words) => {
   liveEl.hidden = !words?.length;
@@ -636,7 +636,7 @@ const modelSpecs = (cfg) => {
 };
 
 /** A final utterance: GigaAM's text (or the Vosk vote, marked as the fallback) -- the only text
-    the session and the meter ever see (ADR D63). */
+    the session and the meter ever see (ADR D64). */
 const onMicUtterance = (utterance, info = {}) => {
   const { text, confidence, language } = utterance;
   showLiveWords([]);

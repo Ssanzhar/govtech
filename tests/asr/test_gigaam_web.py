@@ -1,4 +1,4 @@
-"""The GigaAM endpoint pass's self-hosted assets (ADR D63): pinned, hash-checked, never trusted."""
+"""The GigaAM endpoint pass's self-hosted assets (ADR D64): pinned, hash-checked, never trusted."""
 
 from __future__ import annotations
 

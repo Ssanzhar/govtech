@@ -75,7 +75,7 @@ test("replacing a cache-first (v1-v5) shell reloads the open pages", async () =>
   assert.deepEqual(navigated, ["https://host/admin.html", "https://host/live.html"]);
 });
 
-// ADR D63: the GigaAM worker keeps the 225 MB endpoint model in its own Cache API store; a
+// ADR D64: the GigaAM worker keeps the 225 MB endpoint model in its own Cache API store; a
 // service-worker update must not delete it (the citizen would download it again).
 test("activation keeps the GigaAM model cache", async () => {
   const { deleted } = await activateWith(["qorgan-shell-v8", "qorgan-gigaam-gigaam-multilingual-220m-ctc-int8-v1"]);

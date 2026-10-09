@@ -1,0 +1,263 @@
+{
+ "variant": "after",
+ "scene": "cs_mix",
+ "audio_s": 37.04025,
+ "files": [
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/cs/cs_081_spliced_clean.wav",
+   "start": 5,
+   "seconds": 3.593125
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/cs/cs_085_spliced_clean.wav",
+   "start": 9.793125,
+   "seconds": 2.353875
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/cs/cs_086_spliced_clean.wav",
+   "start": 13.347,
+   "seconds": 2.15275
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/cs/cs_087_spliced_clean.wav",
+   "start": 16.69975,
+   "seconds": 2.958375
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/cs/cs_001_single_clean.wav",
+   "start": 20.858125,
+   "seconds": 4.2068125
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/cs/cs_002_single_clean.wav",
+   "start": 26.2649375,
+   "seconds": 5.059625
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/cs/cs_003_single_clean.wav",
+   "start": 32.5245625,
+   "seconds": 3.3156875
+  }
+ ],
+ "listening_after_ms": 9345,
+ "rss_mb": {
+  "listening": {
+   "total": 1242,
+   "browser": 89,
+   "GPU": 74,
+   "network.mojom.NetworkService": 47,
+   "renderer": 982,
+   "audio.mojom.AudioService": 51
+  },
+  "end_of_audio": {
+   "total": 1392,
+   "browser": 76,
+   "GPU": 78,
+   "network.mojom.NetworkService": 36,
+   "renderer": 1153,
+   "audio.mojom.AudioService": 49
+  }
+ },
+ "js_heap_mb": 21,
+ "summary_score": "97 / 100",
+ "final_meter": 96.81154571391887,
+ "final_band": "critical",
+ "utterances": [
+  {
+   "text": "сіздің онлайн банкин есептік жазбаңыз бұғатталды",
+   "language": "kk",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "kk",
+    "text": "сіздің онлайн банкинг есептік жазбаңыз бұғатталды",
+    "confidence": 1
+   },
+   "decodeMs": 2565.889999985695,
+   "latencyMs": 2567.6449999809265,
+   "meter": 44.26648175146609,
+   "band": "medium",
+   "at": 23174.865000009537,
+   "tags": "kk ru ru kk kk kk"
+  },
+  {
+   "text": "зис из е бэнк коллинг назовите куд",
+   "language": "ru",
+   "confidence": 0.7301641666666666,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "ru",
+    "text": "ты связью пять каллен назовите год",
+    "confidence": 0.7301641666666666
+   },
+   "decodeMs": 1764.8849999904633,
+   "latencyMs": 1765.835000038147,
+   "meter": 55.15571779972489,
+   "band": "medium",
+   "at": 25885.44999998808,
+   "tags": "ru ru kk kk ru ru ru"
+  },
+  {
+   "text": "ер аккаунт ис блоккд кодты айтыңыз",
+   "language": "ru",
+   "confidence": 0.8974758571428572,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "en",
+    "text": "your account is blocked for typing this",
+    "confidence": 0.8974758571428572
+   },
+   "decodeMs": 1458.4900000095367,
+   "latencyMs": 1459.3400000333786,
+   "meter": 72.45762555314015,
+   "band": "high",
+   "at": 29823.740000009537,
+   "tags": "ru ru ru ru kk kk"
+  },
+  {
+   "text": "бұл секюрити тим сізге көмектесеміз",
+   "language": "kk",
+   "confidence": 0.8509483333333333,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "kk",
+    "text": "бұл кісіге уәли дейін сізге көмектесеміз",
+    "confidence": 0.8509483333333333
+   },
+   "decodeMs": 1731.4900000095367,
+   "latencyMs": 1732.2999999523163,
+   "meter": 82.8830374423687,
+   "band": "critical",
+   "at": 34503.77999997139,
+   "tags": "kk ru ru kk kk"
+  },
+  {
+   "text": "сәлеметсіз бе мен банктің службы бес опас ности қызметкерімін",
+   "language": "kk",
+   "confidence": 0.9998969999999999,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "kk",
+    "text": "сәлеметсіз бе мен банктің службы безопасности қызметкерімін",
+    "confidence": 0.9998969999999999
+   },
+   "decodeMs": 2339.6599999666214,
+   "latencyMs": 2340.4150000214577,
+   "meter": 90.37930759758049,
+   "band": "critical",
+   "at": 40487.31999999285,
+   "tags": "kk kk kk kk ru kk ru ru kk"
+  },
+  {
+   "text": "сіздің картаңыздан подозрительная операция жасалды қазір тоқтатамыз",
+   "language": "kk",
+   "confidence": 0.9654119999999999,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "kk",
+    "text": "сәлеметсіз бе мен банктің службы безопасности қызметкерімін сіздің картаңыздың подъезд ветеринария операция жасалды қазір тоқтатамыз",
+    "confidence": 0.9654119999999999
+   },
+   "decodeMs": 3204.5499999523163,
+   "latencyMs": 3205.4300000071526,
+   "meter": 94.80077826790672,
+   "band": "critical",
+   "at": 46830.91499996185,
+   "tags": "kk kk ru kk kk kk kk"
+  },
+  {
+   "text": "телефоныңызға келген код иис смс айтыңызшы",
+   "language": "kk",
+   "confidence": 0.8954596666666667,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "kk",
+    "text": "телефоныңызға келген кук иіс ұсыныс айтыңызшы",
+    "confidence": 0.8954596666666667
+   },
+   "decodeMs": 2272.4349999427795,
+   "latencyMs": 2273.149999976158,
+   "meter": 96.81154571391887,
+   "band": "critical",
+   "at": 50693.10500001907,
+   "tags": "kk kk kk ru ru kk"
+  }
+ ],
+ "latency_ms": {
+  "n": 7,
+  "median": 2273.149999976158,
+  "max": 3205.4300000071526
+ },
+ "live_events": 300,
+ "live_snapshot": [
+  {
+   "lang": "kk",
+   "words": [
+    "сіздің",
+    "картаңыздың"
+   ]
+  },
+  {
+   "lang": "ru",
+   "words": [
+    "подозрительная"
+   ]
+  },
+  {
+   "lang": "kk",
+   "words": [
+    "операция"
+   ]
+  }
+ ],
+ "endpoint": [
+  {
+   "status": "loading",
+   "at": 9852.769999980927
+  },
+  {
+   "status": "ready",
+   "loadMs": 2788.9050000309944,
+   "fromCache": false,
+   "at": 12656.990000009537
+  }
+ ],
+ "lines": [
+  {
+   "source": "gigaam",
+   "text": "казсіздің русонлайн банкин казесептік жазбаңыз бұғатталды каз · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "русзис из казе бэнк русколлинг назовите куд рус · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "русер аккаунт ис блоккд казкодты айтыңыз рус · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "казбұл руссекюрити тим казсізге көмектесеміз каз · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "казсәлеметсіз бе мен банктің русслужбы казбес русопас ности казқызметкерімін каз · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "казсіздің картаңыздан русподозрительная казоперация жасалды қазір тоқтатамыз каз · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "казтелефоныңызға келген код русиис смс казайтыңызшы каз · точная расшифровка"
+  }
+ ],
+ "errors": []
+}

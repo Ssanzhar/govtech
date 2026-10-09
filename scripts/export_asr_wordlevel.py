@@ -1,4 +1,4 @@
-"""Export the word-level ASR models for the browser and their Python↔JS golden fixtures (ADR D63).
+"""Export the word-level ASR models for the browser and their Python↔JS golden fixtures (ADR D64).
 
     python scripts/export_asr_wordlevel.py
 

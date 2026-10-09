@@ -7,7 +7,7 @@
    - /api/ and anything cross-origin: never cached, never intercepted -- the only network
      traffic with call content is the explicit report submit, and it must stay live. */
 
-const SHELL_CACHE = "qorgan-shell-v9"; // v9: word-level voice mode + GigaAM endpoint pass (D63); v8: large binaries bypass the worker (D61); v7: reload pages a cache-first worker rendered; v6: network-first shell (no mixed versions after a deploy); v5: landing in kk/ru/en (landing.js, i18n-dom.js); v4: live page in kk/ru/en; v3: report review (D44); v2: COOP/COEP (B9)
+const SHELL_CACHE = "qorgan-shell-v9"; // v9: word-level voice mode + GigaAM endpoint pass (D64); v8: large binaries bypass the worker (D61); v7: reload pages a cache-first worker rendered; v6: network-first shell (no mixed versions after a deploy); v5: landing in kk/ru/en (landing.js, i18n-dom.js); v4: live page in kk/ru/en; v3: report review (D44); v2: COOP/COEP (B9)
 // v2: the ONNX model is no longer kept here (transformers.js caches it itself); bumping the name
 // deletes the v1 copy (~278 MB) on activation.
 const MODEL_CACHE = "qorgan-models-v2";
@@ -28,7 +28,7 @@ const OPTIONAL_SHELL = [
   "/vendor/vosklet/Vosklet.js", "/vendor/vosklet/Vosklet.wasm",
   "/vendor/sherpa-onnx/1.13.8/sherpa-onnx-wasm-web.js", "/vendor/sherpa-onnx/1.13.8/sherpa-onnx-asr.js",
 ];
-// The GigaAM worker keeps its 225 MB model in its own Cache API store (ADR D63): never deleted here.
+// The GigaAM worker keeps its 225 MB model in its own Cache API store (ADR D64): never deleted here.
 const OWN_MODEL_CACHE = /^qorgan-gigaam-/;
 
 self.addEventListener("install", (event) => {
@@ -72,7 +72,7 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin || event.request.method !== "GET") return;
   if (url.pathname.startsWith("/api/")) return; // live, never cached
   if (url.pathname.startsWith("/models/vosk/")) return; // the speech recogniser keeps its own model cache
-  if (url.pathname.startsWith("/models/gigaam/")) return; // so does the GigaAM worker (ADR D63)
+  if (url.pathname.startsWith("/models/gigaam/")) return; // so does the GigaAM worker (ADR D64)
   // Large binaries go straight to the network (ADR D61). Firefox stops a service worker ~30 s into
   // an event and cuts off whatever it is still streaming: the 278 MB model failed with "Error in
   // input stream", and the 21 MB WASM runtimes can on a slow connection. transformers.js keeps

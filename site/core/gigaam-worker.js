@@ -1,4 +1,4 @@
-/* The endpoint pass's decoder (ADR D63): GigaAM-Multilingual 220M CTC int8 in sherpa-onnx WASM.
+/* The endpoint pass's decoder (ADR D64): GigaAM-Multilingual 220M CTC int8 in sherpa-onnx WASM.
 
    A dedicated, classic worker (the Emscripten glue is a classic script). Single-threaded build
    (scripts/sherpa_wasm/), so it needs neither SharedArrayBuffer nor cross-origin isolation.

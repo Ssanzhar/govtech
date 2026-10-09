@@ -1,4 +1,4 @@
-/* Display helpers for per-word language tags (ADR D63). Pure; the page renders the result.
+/* Display helpers for per-word language tags (ADR D64). Pure; the page renders the result.
 
    `alignTokens(text, words)` pairs each whitespace token of the transcript with its tagged
    word (`{word, lang}` from word-lid.js), keeping the token's character offsets so evidence

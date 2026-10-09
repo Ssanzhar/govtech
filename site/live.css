@@ -111,7 +111,7 @@
 .lv-partial::after{content:"▌";margin-left:.15em;color:var(--amber);animation:lv-caret 1s steps(1) infinite}
 @keyframes lv-caret{50%{opacity:0}}
 
-/* ── per-word language runs (ADR D63): live provisional words + the final line ── */
+/* ── per-word language runs (ADR D64): live provisional words + the final line ── */
 .lv-run{--lang-color:#8FB3D9;display:inline;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 .lv-run[data-lang="kk"]{--lang-color:var(--amber)}
 .lv-run[data-lang="ru"]{--lang-color:#8FB3D9}

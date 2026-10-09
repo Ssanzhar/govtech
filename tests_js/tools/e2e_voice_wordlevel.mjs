@@ -1,4 +1,4 @@
-/* The word-level voice mode end to end (ADR D63): the real live page in Chromium, a fake
+/* The word-level voice mode end to end (ADR D64): the real live page in Chromium, a fake
    microphone playing WAV files (`--use-file-for-fake-audio-capture`), against a running server.
 
      python -m qorgan.api   # serves site/ with COOP/COEP

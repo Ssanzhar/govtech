@@ -1,4 +1,4 @@
-/* The endpoint pass (ADR D63): every utterance the Vosk vote commits is decoded once more by
+/* The endpoint pass (ADR D64): every utterance the Vosk vote commits is decoded once more by
    GigaAM-Multilingual, whose text REPLACES the Vosk text -- only the replaced text reaches the
    session and the meter. Per-word kk/ru/en tags come from site/core/word-lid.js.
 

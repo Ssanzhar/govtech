@@ -1,4 +1,4 @@
-/* The endpoint pass's pure reducer (ADR D63): GigaAM's text replaces the Vosk utterance, in
+/* The endpoint pass's pure reducer (ADR D64): GigaAM's text replaces the Vosk utterance, in
    commit order; anything that keeps GigaAM from answering falls back to the Vosk vote, marked. */
 import test from "node:test";
 import assert from "node:assert/strict";

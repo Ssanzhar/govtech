@@ -1,6 +1,6 @@
 # Qorğan's browser build of sherpa-onnx: offline (non-streaming) ASR only, single-threaded,
 # no preloaded .data bundle. Copied over wasm/web/CMakeLists.txt of the pinned sherpa-onnx tag by
-# build.sh (ADR D63). Differences from upstream's web target:
+# build.sh (ADR D64). Differences from upstream's web target:
 #   - exports only the offline-recognizer C API (no TTS / KWS / diarization), so the wasm is small;
 #   - ENVIRONMENT=worker: it runs only inside the dedicated GigaAM worker (site/core/gigaam-worker.js);
 #   - WORKERFS is linked in, so the 225 MB model is mounted from a Blob instead of being copied

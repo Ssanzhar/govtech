@@ -198,7 +198,7 @@ def test_on_device_asr_module_makes_no_network_calls():
     assert "getUserMedia(" not in source  # capture is the page's explicit action, not the module's (a support check may name it)
 
 
-# Every module the word-level voice mode passes audio or transcripts through (ADR D63).
+# Every module the word-level voice mode passes audio or transcripts through (ADR D64).
 _AUDIO_MODULES = ("asr.js", "audio-ring.js", "endpoint.js", "endpoint-runtime.js", "gigaam.js", "span-vote.js", "word-lid.js")
 
 
@@ -211,7 +211,7 @@ def test_word_level_asr_modules_make_no_network_calls():
 
 
 def test_gigaam_worker_only_fetches_self_hosted_files():
-    """The GigaAM worker holds utterance audio (ADR D63). Its one network primitive is a GET of
+    """The GigaAM worker holds utterance audio (ADR D64). Its one network primitive is a GET of
     a same-origin file (runtime, model, tokens) through `fetchSameOrigin`, which refuses any
     other origin; it never sends anything (no body, no socket, no beacon)."""
     import re

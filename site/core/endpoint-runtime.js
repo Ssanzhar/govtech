@@ -1,4 +1,4 @@
-/* Browser wiring of the endpoint pass (ADR D63): keeps the recent microphone audio, sends each
+/* Browser wiring of the endpoint pass (ADR D64): keeps the recent microphone audio, sends each
    committed utterance's audio to GigaAM, and hands the final utterances (GigaAM's text, or the
    Vosk vote as a marked fallback) to the page in order. The decisions live in the pure
    `reduceEndpoint` (endpoint.js); this file only does I/O between it, the audio ring and the
