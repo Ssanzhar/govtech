@@ -1,3114 +1,6542 @@
 {
- "train": [
-  {
-   "id": "credentials_request_kk_1",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "credentials_request_kk_5",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "credentials_request_kk_6",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "fear_threat_kk_3",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "fear_threat_kk_4",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "fear_threat_mixed_0",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "fear_threat_mixed_2",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_ru_0",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_ru_4",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_kk_1",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_kk_3",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_kk_5",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_kk_6",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_kk_7",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_mixed_0",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_mixed_4",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_mixed_5",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_mixed_6",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_mixed_7",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_ru_0",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_ru_1",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_ru_4",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_ru_5",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_ru_6",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_ru_7",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_mixed_5",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_mixed_6",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "investment_scam_mixed_3",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "mule_recruitment_mixed_1",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "mule_recruitment_mixed_3",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "mule_recruitment_mixed_6",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "mule_recruitment_mixed_7",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "otp_request_kk_2",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "otp_request_mixed_1",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "otp_request_mixed_2",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "otp_request_mixed_4",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_ru_1",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_kk_1",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_kk_2",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_kk_3",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_kk_4",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_kk_5",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_mixed_7",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "prize_lottery_mixed_4",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "prize_lottery_mixed_7",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "remote_access_ru_5",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "remote_access_kk_0",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "remote_access_kk_1",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "remote_access_kk_2",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "remote_access_kk_6",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "remote_access_kk_7",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "remote_access_mixed_0",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "remote_access_mixed_3",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "safe_account_ru_1",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "safe_account_kk_4",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "safe_account_mixed_0",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "safe_account_mixed_1",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "safe_account_mixed_2",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "safe_account_mixed_4",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "safe_account_mixed_7",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "secrecy_kk_0",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "role_outside_family"
-   ],
-   "roles_found": [
-    "bank_security"
-   ]
-  },
-  {
-   "id": "secrecy_kk_1",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "role_outside_family"
-   ],
-   "roles_found": [
-    "bank_security"
-   ]
-  },
-  {
-   "id": "secrecy_kk_5",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "role_outside_family"
-   ],
-   "roles_found": [
-    "bank_security"
-   ]
-  },
-  {
-   "id": "secrecy_mixed_0",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "role_outside_family"
-   ],
-   "roles_found": [
-    "bank_security"
-   ]
-  },
-  {
-   "id": "secrecy_mixed_7",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "role_outside_family"
-   ],
-   "roles_found": [
-    "bank_security"
-   ]
-  },
-  {
-   "id": "urgency_kk_0",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_kk_1",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_kk_4",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_kk_6",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_kk_7",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_mixed_0",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_mixed_1",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_mixed_4",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_mixed_5",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_mixed_6",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_mixed_7",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "verification_ploy_mixed_1",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug_impersonation_gov_police_ru_0",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "fear_threat_en_1",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "fear_threat_en_4",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "fear_threat_en_6",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "fear_threat_en_7",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_en_1",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_en_3",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_en_4",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_en_7",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_telecom_delivery_en_1",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_telecom_delivery_en_2",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_telecom_delivery_en_3",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_telecom_delivery_en_4",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_telecom_delivery_en_5",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_telecom_delivery_en_7",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "investment_scam_en_4",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "mule_recruitment_en_0",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "mule_recruitment_en_3",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "mule_recruitment_en_7",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "otp_request_en_5",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "otp_request_en_7",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_en_0",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_en_5",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "prize_lottery_en_2",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "prize_lottery_en_7",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "safe_account_en_3",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "safe_account_en_7",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "secrecy_en_4",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "secrecy_en_6",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_en_2",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_en_6",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-urgency_ru_2",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-secrecy_mixed_1",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-safe_account_kk_1",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-credentials_request_kk_6",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-safe_account_mixed_7",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-impersonation_gov_police_ru_5",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-remote_access_mixed_0",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-secrecy_mixed_2",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-verification_ploy_mixed_1",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-verification_ploy_ru_2",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "reg_impersonation_bank_ru_0",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "reg_impersonation_bank_mixed_2",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "reg_impersonation_gov_police_kk_0",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "reg_impersonation_gov_police_mixed_1",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "reg_impersonation_gov_police_ru_2",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "credentials_request_kk_1-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "credentials_request_kk_5-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "credentials_request_kk_6-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "fear_threat_kk_3-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "fear_threat_kk_4-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "fear_threat_mixed_0-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "fear_threat_mixed_2-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_ru_0-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_ru_4-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_kk_1-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_kk_3-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_kk_5-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_kk_6-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_kk_7-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_mixed_0-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_mixed_4-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_mixed_5-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_mixed_6-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_bank_mixed_7-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_ru_0-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_ru_1-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_ru_4-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_ru_5-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_ru_6-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_ru_7-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_mixed_5-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_mixed_6-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "investment_scam_mixed_3-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "mule_recruitment_mixed_1-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "mule_recruitment_mixed_3-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "mule_recruitment_mixed_6-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "mule_recruitment_mixed_7-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "otp_request_kk_2-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "otp_request_mixed_1-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "otp_request_mixed_2-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "otp_request_mixed_4-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_ru_1-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_kk_1-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_kk_2-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_kk_3-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_kk_4-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_kk_5-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_mixed_7-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "prize_lottery_mixed_4-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "prize_lottery_mixed_7-asr",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "remote_access_ru_5-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "remote_access_kk_0-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "remote_access_kk_1-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "remote_access_kk_2-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "remote_access_kk_6-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "remote_access_kk_7-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "remote_access_mixed_0-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "remote_access_mixed_3-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "safe_account_ru_1-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "safe_account_kk_4-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "safe_account_mixed_0-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "safe_account_mixed_1-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "safe_account_mixed_2-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "safe_account_mixed_4-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "safe_account_mixed_7-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "secrecy_kk_0-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "role_outside_family"
-   ],
-   "roles_found": [
-    "bank_security"
-   ]
-  },
-  {
-   "id": "secrecy_kk_1-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "role_outside_family"
-   ],
-   "roles_found": [
-    "bank_security"
-   ]
-  },
-  {
-   "id": "secrecy_kk_5-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "role_outside_family"
-   ],
-   "roles_found": [
-    "bank_security"
-   ]
-  },
-  {
-   "id": "secrecy_mixed_0-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "role_outside_family"
-   ],
-   "roles_found": [
-    "bank_security"
-   ]
-  },
-  {
-   "id": "secrecy_mixed_7-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "role_outside_family"
-   ],
-   "roles_found": [
-    "bank_security"
-   ]
-  },
-  {
-   "id": "urgency_kk_0-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_kk_1-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_kk_4-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_kk_6-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_kk_7-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_mixed_0-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_mixed_1-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_mixed_4-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_mixed_5-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_mixed_6-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_mixed_7-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "verification_ploy_mixed_1-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug_impersonation_gov_police_ru_0-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "fear_threat_en_1-asr",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "fear_threat_en_4-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "fear_threat_en_6-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "fear_threat_en_7-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_en_1-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_en_3-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_en_4-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_en_7-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_telecom_delivery_en_1-asr",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_telecom_delivery_en_2-asr",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_telecom_delivery_en_3-asr",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_telecom_delivery_en_4-asr",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_telecom_delivery_en_5-asr",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_telecom_delivery_en_7-asr",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "investment_scam_en_4-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "mule_recruitment_en_0-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "mule_recruitment_en_3-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "mule_recruitment_en_7-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "otp_request_en_5-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "otp_request_en_7-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_en_0-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_en_5-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "prize_lottery_en_2-asr",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "prize_lottery_en_7-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "safe_account_en_3-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "safe_account_en_7-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "secrecy_en_4-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "secrecy_en_6-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_en_2-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "urgency_en_6-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-urgency_ru_2-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-secrecy_mixed_1-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-safe_account_kk_1-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-credentials_request_kk_6-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-safe_account_mixed_7-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-impersonation_gov_police_ru_5-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-remote_access_mixed_0-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-secrecy_mixed_2-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-verification_ploy_mixed_1-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "aug-legit-verification_ploy_ru_2-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "reg_impersonation_bank_ru_0-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "reg_impersonation_bank_mixed_2-asr",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "reg_impersonation_gov_police_kk_0-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "reg_impersonation_gov_police_mixed_1-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "reg_impersonation_gov_police_ru_2-asr",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
+ "version": 2,
+ "note": "ADR D63. Ids, reasons and roles only -- never transcript text. 'phase1_review' is the list the phase-1 dry run produced (246 train / 11 val rows; train includes the -asr copies). 'current_review' is the dry run with the phase-2 role lexicon. 'decisions' is the human review (2026-10-09) of every phase-1 row plus every row whose automatic mapping changed with the phase-2 role lexicon: per SOURCE id (an '-asr' copy takes its source's decision), 'imp' replaces all imp_* tags of the migrated row ([] = the v1 impersonation tag was wrong and is dropped), 'auto' is what the migration would have given.",
+ "phase1_review": {
+  "train": [
+   {
+    "id": "credentials_request_kk_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "credentials_request_kk_5",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "credentials_request_kk_6",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_kk_3",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_kk_4",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_mixed_0",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_mixed_2",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_ru_0",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_ru_4",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_kk_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_kk_3",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_kk_5",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_kk_6",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_kk_7",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_mixed_0",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_mixed_4",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_mixed_5",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_mixed_6",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_mixed_7",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_0",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_1",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_4",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_5",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_6",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_7",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_mixed_5",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_mixed_6",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "investment_scam_mixed_3",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_mixed_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_mixed_3",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_mixed_6",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_mixed_7",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "otp_request_kk_2",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "otp_request_mixed_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "otp_request_mixed_2",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "otp_request_mixed_4",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_ru_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_1",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_2",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_3",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_4",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_5",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_mixed_7",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "prize_lottery_mixed_4",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "prize_lottery_mixed_7",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_ru_5",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_kk_0",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_kk_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_kk_2",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_kk_6",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_kk_7",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_mixed_0",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_mixed_3",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_ru_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_kk_4",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_mixed_0",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_mixed_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_mixed_2",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_mixed_4",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_mixed_7",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "secrecy_kk_0",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "secrecy_kk_1",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "secrecy_kk_5",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "secrecy_mixed_0",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "secrecy_mixed_7",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "urgency_kk_0",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_kk_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_kk_4",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_kk_6",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_kk_7",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_mixed_0",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_mixed_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_mixed_4",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_mixed_5",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_mixed_6",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_mixed_7",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "verification_ploy_mixed_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug_impersonation_gov_police_ru_0",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_en_1",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_en_4",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_en_6",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_en_7",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_en_1",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_en_3",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_en_4",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_en_7",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_1",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_2",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_3",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_4",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_5",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_7",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "investment_scam_en_4",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_en_0",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_en_3",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_en_7",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "otp_request_en_5",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "otp_request_en_7",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_en_0",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_en_5",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "prize_lottery_en_2",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "prize_lottery_en_7",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_en_3",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_en_7",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "secrecy_en_4",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "secrecy_en_6",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_en_2",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_en_6",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-urgency_ru_2",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-secrecy_mixed_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-safe_account_kk_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-credentials_request_kk_6",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-safe_account_mixed_7",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-impersonation_gov_police_ru_5",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-remote_access_mixed_0",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-secrecy_mixed_2",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-verification_ploy_mixed_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-verification_ploy_ru_2",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_bank_ru_0",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_bank_mixed_2",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_gov_police_kk_0",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_gov_police_mixed_1",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_gov_police_ru_2",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "credentials_request_kk_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "credentials_request_kk_5-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "credentials_request_kk_6-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_kk_3-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_kk_4-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_mixed_0-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_mixed_2-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_ru_0-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_ru_4-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_kk_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_kk_3-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_kk_5-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_kk_6-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_kk_7-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_mixed_0-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_mixed_4-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_mixed_5-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_mixed_6-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_mixed_7-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_0-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_1-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_4-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_5-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_6-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_7-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_mixed_5-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_mixed_6-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "investment_scam_mixed_3-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_mixed_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_mixed_3-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_mixed_6-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_mixed_7-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "otp_request_kk_2-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "otp_request_mixed_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "otp_request_mixed_2-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "otp_request_mixed_4-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_ru_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_1-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_2-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_3-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_4-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_5-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_mixed_7-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "prize_lottery_mixed_4-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "prize_lottery_mixed_7-asr",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_ru_5-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_kk_0-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_kk_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_kk_2-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_kk_6-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_kk_7-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_mixed_0-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_mixed_3-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_ru_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_kk_4-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_mixed_0-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_mixed_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_mixed_2-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_mixed_4-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_mixed_7-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "secrecy_kk_0-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "secrecy_kk_1-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "secrecy_kk_5-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "secrecy_mixed_0-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "secrecy_mixed_7-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "urgency_kk_0-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_kk_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_kk_4-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_kk_6-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_kk_7-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_mixed_0-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_mixed_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_mixed_4-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_mixed_5-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_mixed_6-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_mixed_7-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "verification_ploy_mixed_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug_impersonation_gov_police_ru_0-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_en_1-asr",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_en_4-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_en_6-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_en_7-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_en_1-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_en_3-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_en_4-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_en_7-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_1-asr",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_2-asr",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_3-asr",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_4-asr",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_5-asr",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_7-asr",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "investment_scam_en_4-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_en_0-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_en_3-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_en_7-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "otp_request_en_5-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "otp_request_en_7-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_en_0-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_en_5-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "prize_lottery_en_2-asr",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "prize_lottery_en_7-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_en_3-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_en_7-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "secrecy_en_4-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "secrecy_en_6-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_en_2-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_en_6-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-urgency_ru_2-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-secrecy_mixed_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-safe_account_kk_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-credentials_request_kk_6-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-safe_account_mixed_7-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-impersonation_gov_police_ru_5-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-remote_access_mixed_0-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-secrecy_mixed_2-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-verification_ploy_mixed_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-verification_ploy_ru_2-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_bank_ru_0-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_bank_mixed_2-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_gov_police_kk_0-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_gov_police_mixed_1-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_gov_police_ru_2-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   }
+  ],
+  "val": [
+   {
+    "id": "credentials_request_mixed_3",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_ru_2",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "impersonation_bank_kk_4",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_mixed_1",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_kk_2",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_ru_3",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "prize_lottery_ru_3",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "secrecy_kk_2",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "impersonation_gov_police_en_5",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_en_6",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_en_5",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   }
+  ]
+ },
+ "current_review": {
+  "train": [
+   {
+    "id": "credentials_request_kk_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "credentials_request_kk_5",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_kk_3",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_kk_4",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_mixed_0",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_mixed_2",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_ru_0",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_kk_7",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_0",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_1",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_4",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_5",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_6",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_7",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_mixed_5",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_mixed_6",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "investment_scam_mixed_3",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_mixed_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "otp_request_mixed_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_ru_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_1",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_2",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_3",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_4",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_5",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_mixed_7",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "prize_lottery_mixed_7",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_ru_5",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_kk_0",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_kk_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_kk_2",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_kk_7",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_ru_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_kk_4",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_mixed_0",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_mixed_2",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_mixed_4",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_mixed_7",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "secrecy_kk_0",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "secrecy_kk_1",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "secrecy_kk_5",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "secrecy_mixed_0",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "secrecy_mixed_7",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "urgency_kk_0",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_kk_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_kk_6",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_kk_7",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_mixed_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_mixed_6",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_mixed_7",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug_impersonation_gov_police_ru_0",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_en_1",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "fear_threat_en_7",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_en_1",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_en_3",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_en_4",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_en_7",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_1",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_3",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_4",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_7",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "investment_scam_en_4",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_en_0",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_en_3",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_en_7",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "prize_lottery_en_7",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "secrecy_en_4",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "aug-legit-urgency_ru_2",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-secrecy_mixed_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-safe_account_kk_1",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-safe_account_mixed_7",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-impersonation_gov_police_ru_5",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-remote_access_mixed_0",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-verification_ploy_ru_2",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_bank_ru_0",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_bank_mixed_2",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_gov_police_kk_0",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_gov_police_mixed_1",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_gov_police_ru_2",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "credentials_request_kk_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "credentials_request_kk_5-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_kk_3-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_kk_4-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_mixed_0-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_mixed_2-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_ru_0-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_bank_kk_7-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_0-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_1-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_4-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_5-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_6-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_ru_7-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_mixed_5-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_mixed_6-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "investment_scam_mixed_3-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_mixed_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "otp_request_mixed_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_ru_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_1-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_2-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_3-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_4-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_kk_5-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_mixed_7-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "prize_lottery_mixed_7-asr",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_ru_5-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_kk_0-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_kk_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_kk_2-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "remote_access_kk_7-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_ru_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_kk_4-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_mixed_0-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_mixed_2-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_mixed_4-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "safe_account_mixed_7-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "secrecy_kk_0-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "secrecy_kk_1-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "secrecy_kk_5-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "secrecy_mixed_0-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "secrecy_mixed_7-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "urgency_kk_0-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_kk_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_kk_6-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_kk_7-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_mixed_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_mixed_6-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "urgency_mixed_7-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug_impersonation_gov_police_ru_0-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "fear_threat_en_1-asr",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "fear_threat_en_7-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_en_1-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_en_3-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_en_4-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_en_7-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_1-asr",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_3-asr",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_4-asr",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "impersonation_telecom_delivery_en_7-asr",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "investment_scam_en_4-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_en_0-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_en_3-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_en_7-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "prize_lottery_en_7-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "secrecy_en_4-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "aug-legit-urgency_ru_2-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-secrecy_mixed_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-safe_account_kk_1-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-safe_account_mixed_7-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-impersonation_gov_police_ru_5-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-remote_access_mixed_0-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "aug-legit-verification_ploy_ru_2-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_bank_ru_0-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_bank_mixed_2-asr",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_gov_police_kk_0-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_gov_police_mixed_1-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "reg_impersonation_gov_police_ru_2-asr",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   }
+  ],
+  "val": [
+   {
+    "id": "credentials_request_mixed_3",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "impersonation_gov_police_mixed_1",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "mule_recruitment_kk_2",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "payment_redirect_ru_3",
+    "mapped": {
+     "impersonation_bank": [
+      "imp_bank"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "prize_lottery_ru_3",
+    "mapped": {
+     "impersonation_telecom_delivery": [
+      "imp_telecom_delivery_utility"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   },
+   {
+    "id": "secrecy_kk_2",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "role_outside_family"
+    ],
+    "roles_found": [
+     "bank_security"
+    ]
+   },
+   {
+    "id": "impersonation_gov_police_en_5",
+    "mapped": {
+     "impersonation_gov_police": [
+      "imp_law_enforcement"
+     ]
+    },
+    "reasons": [
+     "no_role"
+    ],
+    "roles_found": []
+   }
+  ]
+ },
+ "decisions": {
+  "aug-legit-credentials_request_kk_6": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk security department"
+  },
+  "aug-legit-impersonation_gov_police_ru_5": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: financial monitoring service (AFM, a law-enforcement body)"
+  },
+  "aug-legit-remote_access_mixed_0": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: 'financial security department' about the callee's bank account"
+  },
+  "aug-legit-safe_account_kk_1": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: financial security department moving bank funds to a 'controlled deposit'"
+  },
+  "aug-legit-safe_account_mixed_7": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: the Bank's security department"
+  },
+  "aug-legit-secrecy_mixed_1": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller claims the Financial Monitoring Agency (AFM), not a bank; v1 tag corrected"
+  },
+  "aug-legit-secrecy_mixed_2": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank security department"
+  },
+  "aug-legit-urgency_ru_2": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: financial monitoring department about the callee's account (bank context)"
+  },
+  "aug-legit-verification_ploy_mixed_1": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank security department"
+  },
+  "aug-legit-verification_ploy_ru_2": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller says 'we represent your servicing bank'"
+  },
+  "aug_impersonation_gov_police_ru_0": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: captain, financial police"
+  },
+  "credentials_request_kk_1": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank of Kazakhstan"
+  },
+  "credentials_request_kk_5": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank of Kazakhstan"
+  },
+  "credentials_request_kk_6": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank"
+  },
+  "credentials_request_mixed_3": {
+   "split": "val",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank"
+  },
+  "fear_threat_en_1": {
+   "split": "train",
+   "imp": [
+    "imp_gov_service"
+   ],
+   "auto": [
+    "imp_telecom_delivery_utility"
+   ],
+   "reason": "caller: automated call from the eGov.kz portal (e-gov helpdesk, not telecom)"
+  },
+  "fear_threat_en_4": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Kaspi Bank financial security department"
+  },
+  "fear_threat_en_6": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Kaspi security"
+  },
+  "fear_threat_en_7": {
+   "split": "train",
+   "imp": [
+    "imp_gov_service"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: Ministry of Finance alert (a government body, not police)"
+  },
+  "fear_threat_kk_1": {
+   "split": "train",
+   "imp": [
+    "imp_regulator"
+   ],
+   "auto": [
+    "imp_regulator"
+   ],
+   "reason": "caller: National Bank security service"
+  },
+  "fear_threat_kk_3": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller speaks for the callee's bank account, no other body"
+  },
+  "fear_threat_kk_4": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: 'security service of Kazakhstan' (KNB-like)"
+  },
+  "fear_threat_kk_6": {
+   "split": "train",
+   "imp": [
+    "imp_regulator"
+   ],
+   "auto": [
+    "imp_regulator"
+   ],
+   "reason": "caller: National Bank security service"
+  },
+  "fear_threat_kk_7": {
+   "split": "val",
+   "imp": [
+    "imp_regulator"
+   ],
+   "auto": [
+    "imp_regulator"
+   ],
+   "reason": "caller: National Bank security service"
+  },
+  "fear_threat_mixed_0": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: 'Kazakhstan Bank' security service (a bank)"
+  },
+  "fear_threat_mixed_2": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: Ministry of Internal Affairs"
+  },
+  "fear_threat_ru_2": {
+   "split": "val",
+   "imp": [
+    "imp_telecom_delivery_utility"
+   ],
+   "auto": [
+    "imp_telecom_delivery_utility"
+   ],
+   "reason": "caller: Kazpost security service"
+  },
+  "impersonation_bank_kk_1": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank security department"
+  },
+  "impersonation_bank_kk_3": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank security department"
+  },
+  "impersonation_bank_kk_4": {
+   "split": "val",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank security department"
+  },
+  "impersonation_bank_kk_5": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank security department"
+  },
+  "impersonation_bank_kk_6": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank security specialist"
+  },
+  "impersonation_bank_kk_7": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: 'QazBank' security department"
+  },
+  "impersonation_bank_mixed_0": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank security department"
+  },
+  "impersonation_bank_mixed_4": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank security specialist"
+  },
+  "impersonation_bank_mixed_5": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank security department"
+  },
+  "impersonation_bank_mixed_6": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank security department"
+  },
+  "impersonation_bank_mixed_7": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank security department"
+  },
+  "impersonation_bank_ru_0": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: People's (Halyk) Bank security service"
+  },
+  "impersonation_bank_ru_4": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Eurasian Bank security service"
+  },
+  "impersonation_gov_police_en_1": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: officer, Financial Police"
+  },
+  "impersonation_gov_police_en_3": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: officer, Almaty Financial Police"
+  },
+  "impersonation_gov_police_en_4": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: officer, Financial Police"
+  },
+  "impersonation_gov_police_en_5": {
+   "split": "val",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: officer, Financial Police"
+  },
+  "impersonation_gov_police_en_7": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: officer, Almaty Financial Police"
+  },
+  "impersonation_gov_police_mixed_1": {
+   "split": "val",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: financial police"
+  },
+  "impersonation_gov_police_mixed_5": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: Financial Monitoring Agency (AFM)"
+  },
+  "impersonation_gov_police_mixed_6": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: financial police"
+  },
+  "impersonation_gov_police_ru_0": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: captain of the financial police"
+  },
+  "impersonation_gov_police_ru_1": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: National Security (KNB) officer"
+  },
+  "impersonation_gov_police_ru_4": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: Almaty city court summoning on a fraud case"
+  },
+  "impersonation_gov_police_ru_5": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: National Security officer"
+  },
+  "impersonation_gov_police_ru_6": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: financial police officer"
+  },
+  "impersonation_gov_police_ru_7": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: Security Service of the Republic"
+  },
+  "impersonation_telecom_delivery_en_1": {
+   "split": "train",
+   "imp": [
+    "imp_gov_service"
+   ],
+   "auto": [
+    "imp_telecom_delivery_utility"
+   ],
+   "reason": "caller: e-Gov helpdesk (government service, not telecom)"
+  },
+  "impersonation_telecom_delivery_en_2": {
+   "split": "train",
+   "imp": [
+    "imp_telecom_delivery_utility"
+   ],
+   "auto": [
+    "imp_telecom_delivery_utility"
+   ],
+   "reason": "caller: Beeline customer service"
+  },
+  "impersonation_telecom_delivery_en_3": {
+   "split": "train",
+   "imp": [
+    "imp_telecom_delivery_utility"
+   ],
+   "auto": [
+    "imp_telecom_delivery_utility"
+   ],
+   "reason": "caller: Kazakhtelecom technical support"
+  },
+  "impersonation_telecom_delivery_en_4": {
+   "split": "train",
+   "imp": [
+    "imp_telecom_delivery_utility"
+   ],
+   "auto": [
+    "imp_telecom_delivery_utility"
+   ],
+   "reason": "caller: Kazakhtelecom"
+  },
+  "impersonation_telecom_delivery_en_5": {
+   "split": "train",
+   "imp": [
+    "imp_telecom_delivery_utility"
+   ],
+   "auto": [
+    "imp_telecom_delivery_utility"
+   ],
+   "reason": "caller: Beeline customer support"
+  },
+  "impersonation_telecom_delivery_en_7": {
+   "split": "train",
+   "imp": [
+    "imp_telecom_delivery_utility"
+   ],
+   "auto": [
+    "imp_telecom_delivery_utility"
+   ],
+   "reason": "caller: Kazakhstan Post about a parcel"
+  },
+  "investment_scam_en_4": {
+   "split": "train",
+   "imp": [],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller is a private 'Global Invest' platform; no institution impersonated; v1 bank tag dropped"
+  },
+  "investment_scam_mixed_3": {
+   "split": "train",
+   "imp": [
+    "imp_gov_service"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller claims a state 'investment agency of Kazakhstan' (a government body, not police)"
+  },
+  "mule_recruitment_en_0": {
+   "split": "train",
+   "imp": [],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller is 'International Financial Solutions', a private firm; no bank claimed; tag dropped"
+  },
+  "mule_recruitment_en_3": {
+   "split": "train",
+   "imp": [],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller is 'Global Solutions', a private firm; no police or gov body claimed; tag dropped"
+  },
+  "mule_recruitment_en_7": {
+   "split": "train",
+   "imp": [],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller is 'a financial consulting firm'; no institution impersonated; tag dropped"
+  },
+  "mule_recruitment_kk_2": {
+   "split": "val",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: 'Kazakhstan Bank'"
+  },
+  "mule_recruitment_mixed_1": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank"
+  },
+  "mule_recruitment_mixed_3": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank"
+  },
+  "mule_recruitment_mixed_6": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank of Kazakhstan"
+  },
+  "mule_recruitment_mixed_7": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank"
+  },
+  "otp_request_en_5": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Kaspi.kz fraud department"
+  },
+  "otp_request_en_7": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: from Kaspi about the account"
+  },
+  "otp_request_kk_2": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank security service"
+  },
+  "otp_request_kk_3": {
+   "split": "train",
+   "imp": [
+    "imp_regulator"
+   ],
+   "auto": [
+    "imp_regulator"
+   ],
+   "reason": "caller: National Bank security service"
+  },
+  "otp_request_mixed_1": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: 'I am a bank manager'"
+  },
+  "otp_request_mixed_2": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank"
+  },
+  "otp_request_mixed_4": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank"
+  },
+  "payment_redirect_en_0": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Kaspi support"
+  },
+  "payment_redirect_en_5": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Kaspi security"
+  },
+  "payment_redirect_en_6": {
+   "split": "val",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Kaspi Security (the 'government holding account' is the ask, not the claim)"
+  },
+  "payment_redirect_kk_1": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: 'security service of Kazakhstan'"
+  },
+  "payment_redirect_kk_2": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: 'security service of Kazakhstan'"
+  },
+  "payment_redirect_kk_3": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: 'security service of Kazakhstan'"
+  },
+  "payment_redirect_kk_4": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: financial police of Kazakhstan"
+  },
+  "payment_redirect_kk_5": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: 'security service of Kazakhstan'"
+  },
+  "payment_redirect_mixed_7": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller speaks as the callee's bank about a suspicious transaction"
+  },
+  "payment_redirect_ru_1": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Kazkommertsbank security service"
+  },
+  "payment_redirect_ru_3": {
+   "split": "val",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Kazkommertsbank security service"
+  },
+  "prize_lottery_en_2": {
+   "split": "train",
+   "imp": [
+    "imp_gov_service"
+   ],
+   "auto": [
+    "imp_gov_service"
+   ],
+   "reason": "caller: notification 'from eGov' lottery"
+  },
+  "prize_lottery_en_7": {
+   "split": "train",
+   "imp": [
+    "imp_gov_service"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller claims the state National Lottery with eGov processing (gov body, not police)"
+  },
+  "prize_lottery_mixed_4": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank promotion"
+  },
+  "prize_lottery_mixed_7": {
+   "split": "train",
+   "imp": [
+    "imp_telecom_delivery_utility"
+   ],
+   "auto": [
+    "imp_telecom_delivery_utility"
+   ],
+   "reason": "caller: KazTelecom customer support"
+  },
+  "prize_lottery_ru_3": {
+   "split": "val",
+   "imp": [
+    "imp_telecom_delivery_utility"
+   ],
+   "auto": [
+    "imp_telecom_delivery_utility"
+   ],
+   "reason": "caller: MegaFon support (a mobile operator)"
+  },
+  "reg_impersonation_bank_mixed_2": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Kazakh Invest bank security department"
+  },
+  "reg_impersonation_bank_ru_0": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Bank Alem security department"
+  },
+  "reg_impersonation_gov_police_kk_0": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: regional anti-corruption service"
+  },
+  "reg_impersonation_gov_police_mixed_1": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: Economic Investigation Service, case number"
+  },
+  "reg_impersonation_gov_police_ru_2": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: operative of the Department of Economic Investigations"
+  },
+  "remote_access_en_5": {
+   "split": "val",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Kaspi security"
+  },
+  "remote_access_kk_0": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: 'security service of Kazakhstan' (KNB-like)"
+  },
+  "remote_access_kk_1": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller speaks for the callee's bank account security"
+  },
+  "remote_access_kk_2": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: 'security service of Kazakhstan' (KNB-like)"
+  },
+  "remote_access_kk_5": {
+   "split": "train",
+   "imp": [
+    "imp_regulator"
+   ],
+   "auto": [
+    "imp_regulator"
+   ],
+   "reason": "caller: National Bank security service"
+  },
+  "remote_access_kk_6": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank of Kazakhstan"
+  },
+  "remote_access_kk_7": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: the security service of the callee's bank account"
+  },
+  "remote_access_mixed_0": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank"
+  },
+  "remote_access_mixed_3": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Homebank (Halyk's banking app)"
+  },
+  "remote_access_ru_5": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: People's (Halyk) Bank security service"
+  },
+  "safe_account_en_3": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Kaspi Bank fraud alert"
+  },
+  "safe_account_en_7": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Kaspi security"
+  },
+  "safe_account_kk_4": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: 'security service of Kazakhstan' (KNB-like)"
+  },
+  "safe_account_mixed_0": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: 'security service of Kazakhstan' (KNB-like); 'our bank' account is the ask"
+  },
+  "safe_account_mixed_1": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank of Kazakhstan"
+  },
+  "safe_account_mixed_2": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: 'security service of Kazakhstan' (KNB-like)"
+  },
+  "safe_account_mixed_4": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: 'security service of Kazakhstan' (KNB-like)"
+  },
+  "safe_account_mixed_7": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: 'security service' about the callee's account (bank context)"
+  },
+  "safe_account_ru_1": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Sberbank security service"
+  },
+  "secrecy_en_4": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: major, Financial Crimes Unit"
+  },
+  "secrecy_en_6": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Kaspi Bank security department"
+  },
+  "secrecy_kk_0": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: 'security service of Kazakhstan' (KNB-like)"
+  },
+  "secrecy_kk_1": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: 'security service of Kazakhstan' (KNB-like)"
+  },
+  "secrecy_kk_2": {
+   "split": "val",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: 'security service of Kazakhstan' (KNB-like)"
+  },
+  "secrecy_kk_5": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: 'security service of Kazakhstan' (KNB-like)"
+  },
+  "secrecy_kk_7": {
+   "split": "train",
+   "imp": [
+    "imp_regulator"
+   ],
+   "auto": [
+    "imp_regulator"
+   ],
+   "reason": "caller: National Bank security service"
+  },
+  "secrecy_mixed_0": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: 'security service of Kazakhstan' (KNB-like)"
+  },
+  "secrecy_mixed_1": {
+   "split": "train",
+   "imp": [
+    "imp_regulator"
+   ],
+   "auto": [
+    "imp_regulator"
+   ],
+   "reason": "caller: National Bank security service"
+  },
+  "secrecy_mixed_7": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: 'security service of Kazakhstan' (KNB-like)"
+  },
+  "urgency_en_2": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Kaspi Security Department"
+  },
+  "urgency_en_6": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Kaspi Bank fraud alert"
+  },
+  "urgency_kk_0": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: 'Kazakhstan Bank'"
+  },
+  "urgency_kk_1": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: urgent message about the callee's bank account"
+  },
+  "urgency_kk_4": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank security service"
+  },
+  "urgency_kk_6": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: 'security service of Kazakhstan's banks' (a bank body, not the regulator)"
+  },
+  "urgency_kk_7": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank"
+  },
+  "urgency_mixed_0": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank"
+  },
+  "urgency_mixed_1": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: urgent message about the callee's bank account"
+  },
+  "urgency_mixed_4": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank"
+  },
+  "urgency_mixed_5": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank security service"
+  },
+  "urgency_mixed_6": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: urgent message about the callee's bank account"
+  },
+  "urgency_mixed_7": {
+   "split": "train",
+   "imp": [
+    "imp_law_enforcement"
+   ],
+   "auto": [
+    "imp_law_enforcement"
+   ],
+   "reason": "caller: 'security department of Kazakhstan'"
+  },
+  "verification_ploy_mixed_1": {
+   "split": "train",
+   "imp": [
+    "imp_bank"
+   ],
+   "auto": [
+    "imp_bank"
+   ],
+   "reason": "caller: Halyk Bank"
   }
- ],
- "val": [
-  {
-   "id": "credentials_request_mixed_3",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "fear_threat_ru_2",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "role_outside_family"
-   ],
-   "roles_found": [
-    "bank_security"
-   ]
-  },
-  {
-   "id": "impersonation_bank_kk_4",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "impersonation_gov_police_mixed_1",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "mule_recruitment_kk_2",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_ru_3",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "prize_lottery_ru_3",
-   "mapped": {
-    "impersonation_telecom_delivery": [
-     "imp_telecom_delivery_utility"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "secrecy_kk_2",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "role_outside_family"
-   ],
-   "roles_found": [
-    "bank_security"
-   ]
-  },
-  {
-   "id": "impersonation_gov_police_en_5",
-   "mapped": {
-    "impersonation_gov_police": [
-     "imp_law_enforcement"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "payment_redirect_en_6",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  },
-  {
-   "id": "remote_access_en_5",
-   "mapped": {
-    "impersonation_bank": [
-     "imp_bank"
-    ]
-   },
-   "reasons": [
-    "no_role"
-   ],
-   "roles_found": []
-  }
- ]
+ }
 }

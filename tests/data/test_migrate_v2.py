@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from qorgan.data.migrate_v2 import (
     REVIEW_NO_ROLE,
     REVIEW_OUTSIDE_FAMILY,
@@ -69,3 +71,51 @@ def test_review_list_and_summary_carry_no_text():
     summary = summarize([record])
     assert summary["rows_needing_review"] == 1
     assert "Алло" not in str(rows) + str(summary)
+
+
+# ---------------------------------------------------------------- human review applied (D63 phase 2)
+
+
+def _dlg(dialogue_id: str, tags: list[str], text: str = "Алло, у вас проблема со счётом.") -> Dialogue:
+    return Dialogue(
+        id=dialogue_id, language="ru",
+        utterances=(Utterance(speaker="caller", text=text), Utterance(speaker="callee", text="Да?")),
+        label=Label(risk=0.9, tactic_tags=tuple(TacticTag(id=t, weight=1.0) for t in tags)),
+    )
+
+
+def test_review_decision_replaces_every_impersonation_tag_and_keeps_the_rest():
+    from qorgan.data.migrate_v2 import apply_review
+
+    migrated, _ = migrate_dialogue(_dlg("x_1", ["impersonation_bank", "urgency"]))
+    decisions = {"x_1": {"imp": ["imp_law_enforcement"], "reason": "AFM"}}
+    out = apply_review(migrated, decisions)
+    assert [t.id for t in out.label.tactic_tags] == ["urgency", "imp_law_enforcement"]
+    assert out.utterances == migrated.utterances and out is not migrated
+
+
+def test_review_decision_reaches_the_asr_copy_and_can_drop_the_tag():
+    from qorgan.data.migrate_v2 import apply_review
+
+    migrated, _ = migrate_dialogue(_dlg("x_2-asr", ["impersonation_bank", "investment_scam"]))
+    out = apply_review(migrated, {"x_2": {"imp": [], "reason": "private broker"}})
+    assert [t.id for t in out.label.tactic_tags] == ["investment_scam"]
+
+
+def test_rows_without_a_decision_are_unchanged():
+    from qorgan.data.migrate_v2 import apply_review
+
+    migrated, _ = migrate_dialogue(_dlg("x_3", ["impersonation_bank"]))
+    assert apply_review(migrated, {}) == migrated
+
+
+def test_committed_review_decisions_are_well_formed():
+    from qorgan.data.migrate_v2 import load_review_decisions
+    from qorgan.taxonomy import get_taxonomy
+
+    decisions = load_review_decisions(Path("data/taxonomy/migration_v2_review.json"))
+    v2_imps = {t for t in get_taxonomy().label_space("v2") if t.startswith("imp_")}
+    assert len(decisions) >= 123  # every phase-1 train source + val rows
+    for row_id, decision in decisions.items():
+        assert not row_id.endswith("-asr")
+        assert set(decision["imp"]) <= v2_imps and decision["reason"].strip()

@@ -211,17 +211,27 @@ def load_taxonomy(path: Path | None = None) -> Taxonomy:
 # Parsed taxonomies keyed by (resolved path, mtime_ns): `get_taxonomy()` is called from every
 # feature computation (dozens of times per live turn), and re-parsing the YAML each time cost
 # ~25 % of a streaming replay. The mtime key keeps edits and per-test paths correct.
-_TAXONOMY_CACHE: dict[tuple[str, int], Taxonomy] = {}
+_TAXONOMY_CACHE: dict[tuple[str, int, str | None], Taxonomy] = {}
 
 
 def get_taxonomy() -> Taxonomy:
-    """Convenience accessor: the taxonomy at the configured path, cached until the file changes."""
-    path = get_config().taxonomy_path
+    """Convenience accessor: the taxonomy at the configured path, cached until the file changes.
+    `QORGAN_LABEL_SPACE` (ADR D63 phase 2) swaps the active label space for this process."""
+    cfg = get_config()
+    path = cfg.taxonomy_path
     try:
-        key = (str(path.resolve()), path.stat().st_mtime_ns)
+        key = (str(path.resolve()), path.stat().st_mtime_ns, cfg.label_space_override)
     except OSError as exc:  # missing file: let load_taxonomy raise its own error
         raise TaxonomyError(f"Taxonomy file not found: {path}") from exc
     cached = _TAXONOMY_CACHE.get(key)
     if cached is None:
-        cached = _TAXONOMY_CACHE[key] = load_taxonomy(path)
+        cached = load_taxonomy(path)
+        if cfg.label_space_override and cfg.label_space_override != cached.active_label_space:
+            if cfg.label_space_override not in cached.label_space_names():
+                raise TaxonomyError(
+                    f"QORGAN_LABEL_SPACE={cfg.label_space_override!r} is not a label space of {path} "
+                    f"({cached.label_space_names()})"
+                )
+            cached = Taxonomy.model_validate({**cached.model_dump(), "active_label_space": cfg.label_space_override})
+        _TAXONOMY_CACHE[key] = cached
     return cached

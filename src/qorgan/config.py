@@ -163,6 +163,10 @@ class Config(BaseModel):
     data_dir: Path
     model_dir: Path
     taxonomy_path: Path
+    # QORGAN_LABEL_SPACE (ADR D63 phase 2): run with a label space other than the yaml's
+    # `active_label_space` -- the v2 dry-run retrain trains on "v2" while the shipped weights
+    # (and so the committed yaml) stay on "v1". None = the yaml decides.
+    label_space_override: str | None = None
     cache_dir: Path
     corpus_config_path: Path
     cue_lexicon_path: Path
@@ -434,6 +438,7 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             ),
             # Reviewed, committed assets (like the explanation templates): anchored at the repo,
             # not at QORGAN_DATA_DIR, so a relocated data dir never loses the explanation layer.
+            label_space_override=(source.get("QORGAN_LABEL_SPACE") or "").strip() or None,
             role_lexicon_path=_read_path(source, "QORGAN_ROLE_LEXICON_PATH", _REPO_ROOT / "data" / "lexicon" / "roles.yaml"),
             schemes_path=_read_path(source, "QORGAN_SCHEMES_PATH", _REPO_ROOT / "data" / "taxonomy" / "schemes.yaml"),
             inspection_ledger_path=_read_path(

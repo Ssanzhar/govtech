@@ -105,6 +105,36 @@ def migrate_dialogue(dialogue: Dialogue) -> tuple[Dialogue, RowMigration]:
     return migrated, record
 
 
+_ASR_SUFFIX = "-asr"  # ASR-styled copy of a train row (ADR D31): takes its source's decision
+_IMP_PREFIX = "imp_"
+
+
+def load_review_decisions(path: Path) -> dict[str, dict]:
+    """`{source id: {"imp": [...], "reason": ...}}` from the reviewed file (empty if absent)."""
+    if not path.exists():
+        return {}
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    decisions = raw.get("decisions", {}) if isinstance(raw, dict) else {}
+    for row_id, decision in decisions.items():
+        if not isinstance(decision, dict) or not isinstance(decision.get("imp"), list) or not str(decision.get("reason", "")).strip():
+            raise ValueError(f"{path}: malformed review decision for {row_id!r}")
+    return decisions
+
+
+def apply_review(dialogue: Dialogue, decisions: dict[str, dict]) -> Dialogue:
+    """A migrated row with its human review applied: the decision's `imp` list replaces every
+    `imp_*` tag (an empty list drops a wrong v1 impersonation tag). Other tags, weights and
+    spans are kept. An `-asr` copy takes its source's decision. Pure."""
+    decision = decisions.get(dialogue.id.removesuffix(_ASR_SUFFIX))
+    if decision is None:
+        return dialogue
+    weight = max((t.weight for t in dialogue.label.tactic_tags if t.id.startswith(_IMP_PREFIX)), default=1.0)
+    kept = [t for t in dialogue.label.tactic_tags if not t.id.startswith(_IMP_PREFIX)]
+    tags = tuple(kept) + tuple(TacticTag(id=i, weight=weight) for i in dict.fromkeys(decision["imp"]))
+    label = dialogue.label.model_copy(update={"tactic_tags": tags})
+    return dialogue.model_copy(update={"label": label})
+
+
 def summarize(records: Sequence[RowMigration]) -> dict:
     """Aggregate counts only -- safe to print for any split."""
     transitions: Counter[str] = Counter()
