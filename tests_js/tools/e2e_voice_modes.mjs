@@ -6,7 +6,7 @@
      node tests_js/tools/static_site.mjs --isolation off --port 8410 &
      node tests_js/tools/static_site.mjs --isolation on  --port 8411 &
      node tests_js/tools/e2e_voice_modes.mjs --base http://127.0.0.1:8410 --label light --out DIR \
-          --scene NAME=a.wav,b.wav [--scene ...] [--gap 1.2] [--lead 5] [--voice full|light] [--warm]
+          --scene NAME=a.wav,b.wav [--scene ...] [--gap 1.2] [--lead 5] [--voice full|light] [--warm] [--mobile]
 
    One WAV = one reference utterance. Per scene it writes DIR/<label>-<scene>.json with: the
    mode the page chose and `crossOriginIsolated`; every final utterance (text, source, meter);
@@ -30,6 +30,10 @@ const OUT = resolve(opt("--out", "e2e-voice-modes"));
 const LABEL = opt("--label", "run");
 const VOICE = opt("--voice", null);
 const WARM = args.includes("--warm"); // measure a second visit (models already cached)
+// `--mobile`: a phone viewport and an Android System WebView user agent ("; wv"), so the page's
+// own phone checks see what eGov Mobile's WebView reports. Still desktop Chromium underneath.
+const MOBILE = args.includes("--mobile");
+const WEBVIEW_UA = "Mozilla/5.0 (Linux; Android 14; Pixel 7 Build/AP2A.240805.005; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/141.0.0.0 Mobile Safari/537.36";
 const GAP_S = Number(opt("--gap", "1.2"));
 const LEAD_S = Number(opt("--lead", "5"));
 const TAIL_S = 8;
@@ -45,14 +49,13 @@ const median = (xs) => (xs.length ? [...xs].sort((a, b) => a - b)[Math.floor(xs.
 const stats = (xs) => (xs.length ? { n: xs.length, median: Math.round(median(xs)), max: Math.round(Math.max(...xs)) } : null);
 const overlap = (a, b) => Math.min(a.end, b.end) - Math.max(a.start, b.start) > 0;
 
-/** Per reference line: ms from its speech end to the first final utterance shown after it. */
+/** Per reference line: ms from its speech end to its transcript line + meter on screen. Only
+    defined when the run produced exactly one final utterance per line (then the k-th utterance
+    is the k-th line's); otherwise every entry is null and the scene reports no latency, rather
+    than guessing which piece of a split line completed it. */
 function lineLatencies(lines, utterances, zero) {
-  return lines.map((line, i) => {
-    const endAt = zero + line.speechEnd * 1000;
-    const nextEndAt = i + 1 < lines.length ? zero + lines[i + 1].speechEnd * 1000 : Infinity;
-    const shown = utterances.find((u) => u.at > endAt && u.at <= nextEndAt);
-    return shown ? shown.at - endAt : null;
-  });
+  if (utterances.length !== lines.length) return lines.map(() => null);
+  return lines.map((line, i) => utterances[i].at - (zero + line.speechEnd * 1000));
 }
 
 /** The light mode's VAD segments (file seconds) against the reference lines. */
@@ -79,7 +82,9 @@ async function runScene(scene) {
   const wav = joinWavs(scene.files, join(OUT, `${scene.name}.wav`), { leadS: LEAD_S, gapS: GAP_S });
   const userDataDir = mkdtempSync(join(tmpdir(), "qorgan-voice-"));
   const launch = () => chromium.launchPersistentContext(userDataDir, {
-    viewport: { width: 1280, height: 1400 },
+    ...(MOBILE
+      ? { viewport: { width: 412, height: 915 }, deviceScaleFactor: 2.625, isMobile: true, hasTouch: true, userAgent: WEBVIEW_UA }
+      : { viewport: { width: 1280, height: 1400 } }),
     permissions: ["microphone"],
     args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", `--use-file-for-fake-audio-capture=${wav.path}%noloop`, "--autoplay-policy=no-user-gesture-required"],
   });
@@ -144,7 +149,7 @@ async function runScene(scene) {
   }
   const peakBy = (type) => Math.max(0, ...samples.map((r) => r[type] || 0));
   const result = {
-    label: LABEL, scene: scene.name, base: BASE, warm_cache: WARM, cross_origin_isolated: isolated, mode: trace.mode, mode_note: modeNote,
+    label: LABEL, scene: scene.name, base: BASE, warm_cache: WARM, mobile_webview_ua: MOBILE, capture_at: trace.captureAt, listening_at: trace.listeningAt, cross_origin_isolated: isolated, mode: trace.mode, mode_note: modeNote,
     audio_s: wav.seconds, lines: wav.offsets, listening_after_ms: listeningAfterMs,
     gigaam: (trace.endpoint || []).find((e) => e.status === "ready") ?? (trace.endpoint || []).at(-1) ?? null,
     rss_mb: {
@@ -170,4 +175,13 @@ async function runScene(scene) {
   }));
 }
 
-for (const scene of scenes) await runScene(scene);
+let failed = 0;
+for (const scene of scenes) {
+  try {
+    await runScene(scene);
+  } catch (err) {
+    failed += 1;
+    console.log(JSON.stringify({ scene: scene.name, label: LABEL, failed: String(err?.message || err).split("\n")[0] }));
+  }
+}
+process.exitCode = failed ? 1 : 0;

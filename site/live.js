@@ -748,6 +748,7 @@ const createLightRecogniser = async (rt) => {
       },
     });
   } catch (e) {
+    endpointNote.hidden = true; // its "loading" line is stale now
     disableVoice("mic.light_unavailable", { error: errText(e) }, true);
     return null;
   }
