@@ -169,8 +169,14 @@ bootstrap and server messages, never call content.
 - The server purges them itself, at startup and every `QORGAN_REPORT_PURGE_INTERVAL_HOURS`
   (default 24; 0 means you must schedule the purge yourself).
 - Preview a purge: `docker compose exec qorgan python -m qorgan.reports.purge --dry-run`.
-- Not covered: the audit log and the org-feedback digests have no retention period yet. That
-  is a legal decision (`docs/LEGAL_ASSESSMENT.md` §5.1, §6).
+- The audit log is kept **at least three years** (`QORGAN_AUDIT_RETENTION_DAYS`, default and
+  floor 1096; a lower value is refused at startup) and is **never** purged with the reports:
+  no deletion path touches `audit_log.jsonl` (ADR D66, `tests/test_audit_retention.py`).
+  Deleting lines would break `verify`. After the retention period, archive the whole file to
+  WORM storage together with its last `head` anchor, then start a new log; never edit it.
+- Not covered: the org-feedback digests have no separate retention period (they follow their
+  reports, ADR D49). Whether the audit log must be kept longer than 3 years is a legal decision
+  (`docs/LEGAL_ASSESSMENT.md` §5.2(5)).
 
 **Audit log.** The log is a keyed hash chain (ADR D46).
 
@@ -286,8 +292,9 @@ right for a laptop demo and wrong for citizens' data. A public deployment needs:
    volume disk-usage alerts, and log shipping with a retention period. Logs carry no content.
 8. **Supply chain:**
    - Pin the base image by digest.
-   - Scan the image (Trivy or Docker Scout), publish an SBOM, and use hash-checked
-     requirements.
+   - Scan the image (Trivy or Docker Scout) and use hash-checked requirements.
+   - SBOMs (CycloneDX) and the dependency / static-analysis reports are in
+     `docs/egov/security/` (ADR D66); regenerate with `python scripts/generate_sbom.py`.
    - Decide the publication posture before pushing the image to any registry. The image
      contains the head weights and the lexicons (council advice, ADR D15).
 9. **Legal preconditions.**
