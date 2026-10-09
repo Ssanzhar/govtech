@@ -12,11 +12,10 @@
    DIR/<variant>-<scene>.json, a screenshot of the live per-word chips mid-call and one of
    the final transcript. `--variant before` serves the shipped D62 configuration instead
    (per-utterance Vosk vote, English handicap 0.15, no word-level models, no GigaAM). */
-import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { chromium } from "playwright";
-import { readWav } from "./gigaam_browser_bench.mjs";
+import { browserRssMb, joinWavs } from "./voice_e2e_lib.mjs";
 
 const args = process.argv.slice(2);
 const opt = (name, fallback) => { const i = args.indexOf(name); return i > -1 ? args[i + 1] : fallback; };
@@ -33,46 +32,6 @@ const scenes = args.flatMap((a, i) => (a === "--scene" ? [args[i + 1]] : [])).ma
 if (!scenes.length) throw new Error("give at least one --scene NAME=a.wav,b.wav");
 mkdirSync(OUT, { recursive: true });
 
-/** Join 16-bit mono WAVs (same rate) with silence; returns {path, seconds, offsets}. */
-function joinWavs(files, path) {
-  const parts = files.map((f) => ({ f, ...readWav(f) }));
-  const rate = parts[0].sampleRate;
-  if (parts.some((p) => p.sampleRate !== rate)) throw new Error("all WAVs of a scene need one sample rate");
-  const silence = (s) => new Array(Math.round(s * rate)).fill(0);
-  let samples = silence(LEAD_S);
-  const offsets = [];
-  for (const p of parts) {
-    offsets.push({ file: p.f, start: samples.length / rate, seconds: p.samples.length / rate });
-    samples = samples.concat(p.samples, silence(GAP_S));
-  }
-  const data = Buffer.alloc(samples.length * 2);
-  samples.forEach((v, i) => data.writeInt16LE(Math.max(-32768, Math.min(32767, Math.round(v * 32768))), i * 2));
-  const header = Buffer.alloc(44);
-  header.write("RIFF", 0); header.writeUInt32LE(36 + data.length, 4); header.write("WAVE", 8);
-  header.write("fmt ", 12); header.writeUInt32LE(16, 16); header.writeUInt16LE(1, 20); header.writeUInt16LE(1, 22);
-  header.writeUInt32LE(rate, 24); header.writeUInt32LE(rate * 2, 28); header.writeUInt16LE(2, 32); header.writeUInt16LE(16, 34);
-  header.write("data", 36); header.writeUInt32LE(data.length, 40);
-  writeFileSync(path, Buffer.concat([header, data]));
-  return { path, seconds: samples.length / rate, offsets };
-}
-
-/** Resident memory (MB) of every process of this browser, by type, as Chromium lists them. */
-async function browserRssMb(cdp, rootPid) {
-  const { processInfo } = await cdp.send("SystemInfo.getProcessInfo");
-  const pids = new Map(processInfo.map((p) => [p.id, p.type]));
-  pids.set(rootPid, "browser");
-  const rows = execFileSync("ps", ["-A", "-o", "pid=,rss="], { encoding: "utf8" }).trim().split("\n").map((l) => l.trim().split(/\s+/).map(Number));
-  const byType = {};
-  let total = 0;
-  for (const [pid, kb] of rows) {
-    if (!pids.has(pid)) continue;
-    const type = pids.get(pid);
-    byType[type] = Math.round((byType[type] || 0) + kb / 1024);
-    total += kb / 1024;
-  }
-  return { total: Math.round(total), ...byType };
-}
-
 /** The shipped D62 voice mode: no word-level models, no endpoint pass, handicap 0.15. */
 async function serveBefore(page) {
   await page.route("**/core/qorgan-config.json", async (route) => {
@@ -85,7 +44,7 @@ async function serveBefore(page) {
 }
 
 async function runScene(scene) {
-  const wav = joinWavs(scene.files, join(OUT, `${scene.name}.wav`));
+  const wav = joinWavs(scene.files, join(OUT, `${scene.name}.wav`), { leadS: LEAD_S, gapS: GAP_S });
   const server = await chromium.launchServer({
     args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", `--use-file-for-fake-audio-capture=${wav.path}%noloop`, "--autoplay-policy=no-user-gesture-required"],
   });

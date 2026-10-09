@@ -35,6 +35,7 @@ const dlMicSpeech = $("lvDlMicSpeech");
 const dlMicModel = $("lvDlMicModel");
 const dlMicEndpoint = $("lvDlMicEndpoint");
 const endpointNote = $("lvEndpointNote");
+const voiceModeNote = $("lvVoiceModeNote");
 const liveEl = $("lvLive");
 const liveWordsEl = $("lvLiveWords");
 const callWrap = $("lvCallWrap");
@@ -63,6 +64,10 @@ const ENDPOINT_MB = 239; // GigaAM 225 MB + its sherpa-onnx runtime 14 MB (ADR D
 // `live.html?debug=asr` keeps a per-utterance trace on window.__qorganVoice (evidence runs, D64).
 const VOICE_TRACE = new URLSearchParams(location.search).get("debug") === "asr";
 const ENDPOINT_STATUS = { loading: "mic.endpoint_loading", ready: "mic.endpoint_ready", unavailable: "mic.endpoint_unavailable" };
+// The light mode (ADR D67) has no quick transcript to fall back on, so its loading notes differ.
+const LIGHT_STATUS = { loading: "mic.light_loading", ready: "mic.light_ready" };
+// `live.html?voice=full|light` forces a voice mode for evidence runs (ADR D67); see voiceMode().
+const VOICE_OVERRIDE = new URLSearchParams(location.search).get("voice");
 // The summary's "why" sentence quotes the first few flagged phrases; all of them are already
 // highlighted in the transcript above, and quoting every one turns the reason into a wall.
 const MAX_REASON_PHRASES = 3;
@@ -74,6 +79,7 @@ const MIC_REASON = {
   audio_worklet: "mic.reason_browser",
   capture: "mic.reason_capture",
   phone: "mic.reason_phone",
+  wasm: "mic.reason_browser",
 };
 const ASR_STATUS = { runtime: "mic.loading_runtime", model: "mic.loading_model", model_skipped: "mic.model_skipped", listening: "mic.listening", stopped: "mic.stopped" };
 
@@ -154,6 +160,7 @@ const applyLocale = (next, { persist = true } = {}) => {
 // ── model download disclosure ────────────────────────────────────────────────
 
 let modelCached = false;
+let voice = { mode: "full", issues: [], downgradedBy: [] }; // voiceMode() of this browser (ADR D67), set at start-up
 
 /** Is the analysis model already stored on this device (transformers.js / service-worker cache)? */
 const detectModelCache = async () => {
@@ -170,9 +177,15 @@ const detectModelCache = async () => {
 
 const renderDownloadNotes = () => {
   bind(dlReplay, modelCached ? "download.model_cached" : "download.model_first", { mb: MODEL_MB });
-  bind(dlMicSpeech, "download.speech_first", { mb: SPEECH_MB });
   bind(dlMicModel, "download.model_first", { mb: MODEL_MB });
   dlMicModel.hidden = modelCached;
+  if (voice.mode === "light") {
+    // GigaAM is the only speech model in the light mode (no Vosk tarballs).
+    bind(dlMicSpeech, "download.light_first", { mb: ENDPOINT_MB });
+    dlMicEndpoint.hidden = true;
+    return;
+  }
+  bind(dlMicSpeech, "download.speech_first", { mb: SPEECH_MB });
   bind(dlMicEndpoint, "download.endpoint_first", { mb: ENDPOINT_MB });
   dlMicEndpoint.hidden = false;
 };
@@ -310,8 +323,15 @@ const appendLine = (line, evidence, meta = null) => {
 };
 
 const showPartial = (text) => {
+  bind(partialEl, null); // drop a light-mode activity key, if any
   partialEl.hidden = !text;
   partialEl.textContent = text || "";
+};
+
+/** Light mode (ADR D67): no words while the person speaks, only what is happening. */
+const showActivity = (key) => {
+  bind(partialEl, key);
+  partialEl.hidden = !key;
 };
 
 /** Provisional words while the person speaks (the span vote, ADR D64). English stays marked
@@ -595,31 +615,45 @@ let micStream = null;
 let micState = null; // the live session while the microphone runs
 let micQueue = Promise.resolve(); // utterances are scored one at a time, in order
 
-const checkMicCapability = async () => {
-  // No server probe -- the server never accepts audio (ADR D12); support is a property of
-  // this browser: cross-origin isolation, AudioWorklet, a microphone, and (for now) not a
-  // phone (ADR D25: the on-device model is unmeasured there).
-  let reasons;
-  try {
-    const { supportIssues } = await import("./core/asr.js");
-    const codes = supportIssues();
-    if (!codes.length) {
-      setNote(micNote, "mic.ready");
-      return;
-    }
-    reasons = [...new Set(codes.map((code) => MIC_REASON[code] || "mic.reason_browser"))].map((key) => ({ $: key }));
-  } catch {
-    reasons = [{ $: "mic.reason_browser" }];
-  }
+/** Turn the voice mode off with `key` (params) as the reason; paste and replay stay available. */
+const disableVoice = (key, params, isError = false) => {
   const input = micChip.querySelector("input");
   input.disabled = true;
   micChip.classList.add("is-disabled");
-  micChip.dataset.i18nAttr = "title:mic.unavailable";
-  micChip.dataset.i18nParams = JSON.stringify({ reasons });
+  micChip.dataset.i18nAttr = `title:${key}`;
+  micChip.dataset.i18nParams = JSON.stringify(params);
   renderEl(micChip);
-  setNote(micNote, "mic.unavailable", { reasons });
+  setNote(micNote, key, params, isError);
   modeNote.hidden = false;
-  setNote(modeNote, "mic.unavailable", { reasons });
+  setNote(modeNote, key, params);
+};
+
+const checkMicCapability = async () => {
+  // No server probe -- the server never accepts audio (ADR D12); support is a property of
+  // this browser (voiceMode, ADR D67): the full word-level mode needs cross-origin isolation
+  // and is still off on phones (ADR D25); without isolation -- an Android WebView, eGov
+  // Mobile's included -- the light GigaAM-only mode runs; with no microphone, AudioWorklet,
+  // WASM or secure context, the voice mode is off.
+  let reasons;
+  try {
+    const { voiceMode } = await import("./core/asr.js");
+    voice = voiceMode(globalThis, VOICE_OVERRIDE);
+    renderDownloadNotes();
+    if (voice.mode === "full") {
+      setNote(micNote, "mic.ready");
+      return;
+    }
+    if (voice.mode === "light") {
+      setNote(micNote, "mic.ready_light");
+      voiceModeNote.hidden = false;
+      bind(voiceModeNote, "mic.light_mode");
+      return;
+    }
+    reasons = [...new Set(voice.issues.map((code) => MIC_REASON[code] || "mic.reason_browser"))].map((key) => ({ $: key }));
+  } catch {
+    reasons = [{ $: "mic.reason_browser" }];
+  }
+  disableVoice("mic.unavailable", { reasons });
 };
 
 // In `asr.order` (kk, ru, en -- ADR D62): the JSON's keys are sorted, and the first language is
@@ -650,7 +684,7 @@ const onMicUtterance = (utterance, info = {}) => {
       applyUpdate(out.update, micState, text, { language, confidence, words: utterance.words, source: utterance.source });
       if (VOICE_TRACE) {
         window.__qorganVoice.utterances.push({
-          text, language, confidence, source: utterance.source, fallback: utterance.fallback ?? null, vosk: utterance.vosk,
+          seq: utterance.seq ?? null, text, language, confidence, source: utterance.source, fallback: utterance.fallback ?? null, vosk: utterance.vosk,
           words: utterance.words, decodeMs: utterance.decodeMs ?? null, latencyMs: info.latencyMs ?? null,
           meter: out.update.meter.score, band: out.update.band, at: performance.now(),
         });
@@ -661,10 +695,12 @@ const onMicUtterance = (utterance, info = {}) => {
 
 const onEndpointStatus = (status) => {
   if (VOICE_TRACE && !status.total) window.__qorganVoice.endpoint.push({ ...status, at: performance.now() });
-  const key = status.status === "loading" && status.total ? "mic.endpoint_progress" : ENDPOINT_STATUS[status.status];
+  const light = voice.mode === "light";
+  const progressKey = light ? "mic.light_progress" : "mic.endpoint_progress";
+  const key = status.status === "loading" && status.total ? progressKey : (light ? LIGHT_STATUS : ENDPOINT_STATUS)[status.status];
   if (!key) return;
   endpointNote.hidden = false;
-  setNote(endpointNote, key, key === "mic.endpoint_progress" ? { pct: Math.round((100 * status.loaded) / status.total) } : null, status.status === "unavailable");
+  setNote(endpointNote, key, key === progressKey ? { pct: Math.round((100 * status.loaded) / status.total) } : null, status.status === "unavailable");
 };
 
 /** The word-level models (span vote + word LID, 212 kB); without them the page shows plain
@@ -684,6 +720,39 @@ const stopTracks = () => {
   micStream = null;
 };
 
+/** The light mode's recogniser (ADR D67): GigaAM only, phrases cut by the VAD. Null when GigaAM
+    cannot load -- there is no quick transcript to fall back on, so the voice mode is turned off
+    with the reason, and paste/replay stay available. */
+const createLightRecogniser = async (rt) => {
+  const wordLevel = await loadWordLevel();
+  if (VOICE_TRACE) window.__qorganVoice = { mode: "light", utterances: [], live: [], endpoint: [], speech: [], dropped: [], wordLevel: Boolean(wordLevel) };
+  const { createLightAsr } = await import("./core/voice-light.js");
+  try {
+    return await createLightAsr({
+      endpoint: rt.config.asr?.endpoint ?? null,
+      wordLevel,
+      onEndpointStatus,
+      onUtterance: onMicUtterance,
+      onSpeech: (event) => {
+        showActivity(event.type === "speech_start" ? "mic.light_hearing" : event.type === "segment" ? "mic.light_decoding" : null);
+        if (VOICE_TRACE) window.__qorganVoice.speech.push({ ...event, wallAt: performance.now() });
+      },
+      onDropped: (dropped) => {
+        showActivity(null);
+        setNote(endpointNote, "mic.light_dropped");
+        if (VOICE_TRACE) window.__qorganVoice.dropped.push({ ...dropped, at: performance.now() });
+      },
+      onStatus: (_message, info = {}) => {
+        const key = ASR_STATUS[info.code];
+        if (key) setNote(micNote, key);
+      },
+    });
+  } catch (e) {
+    disableVoice("mic.light_unavailable", { error: errText(e) }, true);
+    return null;
+  }
+};
+
 const startMic = async () => {
   if (running) return;
   running = true;
@@ -691,10 +760,14 @@ const startMic = async () => {
   resetCallUi();
   try {
     const rt = await deviceRuntime(micNote);
+    if (!asr && voice.mode === "light") {
+      asr = await createLightRecogniser(rt);
+      if (!asr) { running = false; return; } // GigaAM could not load: the voice mode is now off, paste/replay stay
+    }
     const { createDeviceAsr } = await import("./core/asr.js");
     if (!asr) {
       const wordLevel = await loadWordLevel();
-      if (VOICE_TRACE) window.__qorganVoice = { utterances: [], live: [], endpoint: [], wordLevel: Boolean(wordLevel) };
+      if (VOICE_TRACE) window.__qorganVoice = { mode: "full", utterances: [], live: [], endpoint: [], wordLevel: Boolean(wordLevel) };
       asr = await createDeviceAsr({
         models: modelSpecs(rt.config),
         lock: rt.config.asr?.lock ?? null,
@@ -723,8 +796,10 @@ const startMic = async () => {
     micStream = await navigator.mediaDevices.getUserMedia({
       audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
     });
+    if (VOICE_TRACE) window.__qorganVoice.captureAt = performance.now();
     micState = rt.newSession(cl());
     await asr.start(micStream);
+    if (VOICE_TRACE) window.__qorganVoice.listeningAt = performance.now();
     micStopBtn.hidden = false;
     micStartBtn.hidden = true;
   } catch (e) {
