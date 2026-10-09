@@ -1,0 +1,182 @@
+{
+ "variant": "after",
+ "scene": "live_hard_negative_bank_ru",
+ "audio_s": 27.1815,
+ "files": [
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_hard_negative_bank_ru_0.wav",
+   "start": 5,
+   "seconds": 4.0866875
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_hard_negative_bank_ru_1.wav",
+   "start": 10.2866875,
+   "seconds": 4.62875
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_hard_negative_bank_ru_2.wav",
+   "start": 16.1154375,
+   "seconds": 2.771375
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_hard_negative_bank_ru_3.wav",
+   "start": 20.0868125,
+   "seconds": 5.8946875
+  }
+ ],
+ "listening_after_ms": 8900,
+ "rss_mb": {
+  "listening": {
+   "total": 1304,
+   "browser": 94,
+   "GPU": 75,
+   "network.mojom.NetworkService": 45,
+   "renderer": 1038,
+   "audio.mojom.AudioService": 51
+  },
+  "end_of_audio": {
+   "total": 1998,
+   "browser": 300,
+   "GPU": 87,
+   "network.mojom.NetworkService": 41,
+   "renderer": 1520,
+   "audio.mojom.AudioService": 51
+  }
+ },
+ "js_heap_mb": 18,
+ "summary_score": "18 / 100",
+ "final_meter": 18.400329596292764,
+ "final_band": "low",
+ "utterances": [
+  {
+   "text": "здравствуйте это оператор банка звоню по вашей заявке",
+   "language": "ru",
+   "confidence": 0.95798,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "ru",
+    "text": "здравствуйте это оператор банка звоню по вашей заявке",
+    "confidence": 0.95798
+   },
+   "decodeMs": 2426.5800000429153,
+   "latencyMs": 2428.2900000214577,
+   "meter": 25.874337938119936,
+   "band": "low",
+   "at": 23817.040000021458,
+   "tags": "ru ru ru ru ru ru ru ru"
+  },
+  {
+   "text": "мы подтверждаем что перевод на пятнадцать тысяч тенге успешно проведен",
+   "language": "ru",
+   "confidence": 0.9767355,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "ru",
+    "text": "здравствуйте это оператор банка звоню по вашей заявке мы подтверждаем что перевод на пятнадцать тысяч тенге успешно проведён",
+    "confidence": 0.9767355
+   },
+   "decodeMs": 2793.2599999904633,
+   "latencyMs": 2794.4150000214577,
+   "meter": 22.914074796363053,
+   "band": "low",
+   "at": 29770.17000001669,
+   "tags": "ru ru ru ru ru ru ru ru ru ru"
+  },
+  {
+   "text": "никакие коды и данные карты называть не нужно",
+   "language": "ru",
+   "confidence": 0.8962843333333333,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "ru",
+    "text": "никакие годы данные карты называть ненужно",
+    "confidence": 0.8962843333333333
+   },
+   "decodeMs": 2166.610000014305,
+   "latencyMs": 2167.479999959469,
+   "meter": 20.485772969623852,
+   "band": "low",
+   "at": 33652.700000047684,
+   "tags": "ru ru ru ru ru ru ru ru"
+  },
+  {
+   "text": "если вы не совершали эту операцию позвоните на официальный номер банка на обратной стороне карты",
+   "language": "ru",
+   "confidence": 0.928772681818182,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "ru",
+    "text": "никакие годы и данные карты называть ненужно если вы не совершали эту операцию позвоните на официальный номер банка на обратной стороне карты",
+    "confidence": 0.928772681818182
+   },
+   "decodeMs": 3192.1449999809265,
+   "latencyMs": 3193.235000014305,
+   "meter": 18.400329596292764,
+   "band": "low",
+   "at": 40880.96500003338,
+   "tags": "ru ru ru ru ru ru ru ru ru ru ru ru ru ru ru"
+  }
+ ],
+ "latency_ms": {
+  "n": 4,
+  "median": 2794.4150000214577,
+  "max": 3193.235000014305
+ },
+ "live_events": 231,
+ "live_snapshot": [
+  {
+   "lang": "ru",
+   "words": [
+    "если",
+    "вы",
+    "не",
+    "совершали",
+    "эту",
+    "операцию",
+    "позвоните"
+   ]
+  },
+  {
+   "lang": "en",
+   "words": [
+    "it's",
+    "only"
+   ]
+  }
+ ],
+ "endpoint": [
+  {
+   "status": "loading",
+   "at": 9251.375
+  },
+  {
+   "status": "ready",
+   "loadMs": 3305.9949999451637,
+   "fromCache": false,
+   "at": 12564.5150000453
+  }
+ ],
+ "lines": [
+  {
+   "source": "gigaam",
+   "text": "русздравствуйте это оператор банка звоню по вашей заявке рус · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "русмы подтверждаем что перевод на пятнадцать тысяч тенге успешно проведен рус · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "русникакие коды и данные карты называть не нужно рус · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "русесли вы не совершали эту операцию позвоните на официальный номер банка на обратной стороне карты рус · точная расшифровка"
+  }
+ ],
+ "errors": []
+}

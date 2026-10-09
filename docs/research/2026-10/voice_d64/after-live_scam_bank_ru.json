@@ -1,0 +1,232 @@
+{
+ "variant": "after",
+ "scene": "live_scam_bank_ru",
+ "audio_s": 35.8154375,
+ "files": [
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_scam_bank_ru_0.wav",
+   "start": 5,
+   "seconds": 4.0255625
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_scam_bank_ru_1.wav",
+   "start": 10.2255625,
+   "seconds": 4.0386875
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_scam_bank_ru_2.wav",
+   "start": 15.46425,
+   "seconds": 3.752375
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_scam_bank_ru_3.wav",
+   "start": 20.416625,
+   "seconds": 4.280625
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_scam_bank_ru_4.wav",
+   "start": 25.89725,
+   "seconds": 3.52775
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_scam_bank_ru_5.wav",
+   "start": 30.625,
+   "seconds": 3.9904375
+  }
+ ],
+ "listening_after_ms": 8829,
+ "rss_mb": {
+  "listening": {
+   "total": 1327,
+   "browser": 116,
+   "GPU": 75,
+   "network.mojom.NetworkService": 45,
+   "renderer": 1038,
+   "audio.mojom.AudioService": 53
+  },
+  "end_of_audio": {
+   "total": 1057,
+   "browser": 81,
+   "GPU": 83,
+   "network.mojom.NetworkService": 40,
+   "renderer": 804,
+   "audio.mojom.AudioService": 48
+  }
+ },
+ "js_heap_mb": 22,
+ "summary_score": "98 / 100",
+ "final_meter": 98.01898699100846,
+ "final_band": "critical",
+ "utterances": [
+  {
+   "text": "алло здравствуйте это служба безопасности вашего банка",
+   "language": "ru",
+   "confidence": 0.9771182857142857,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "kk",
+    "text": "алло здравствуйте этой службы безопасности вашего банкі",
+    "confidence": 0.9771182857142857
+   },
+   "decodeMs": 2222.3799999952316,
+   "latencyMs": 2224.3300000429153,
+   "meter": 48.49662357380129,
+   "band": "medium",
+   "at": 23724.30000001192,
+   "tags": "ru ru ru ru ru ru ru"
+  },
+  {
+   "text": "по вашей карте зафиксирована подозрительная операция на крупную сумму",
+   "language": "ru",
+   "confidence": 0.917987588235294,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "kk",
+    "text": "алло здравствуйте этой службы безопасности вашего банка по вашей кортизол фиксингі ғана пайда рейтинг операцияны прогноз умму",
+    "confidence": 0.917987588235294
+   },
+   "decodeMs": 2372.2849999666214,
+   "latencyMs": 2373.0599999427795,
+   "meter": 72.12059995163413,
+   "band": "high",
+   "at": 28327.985000014305,
+   "tags": "ru ru ru ru ru ru ru ru ru"
+  },
+  {
+   "text": "действовать нужно прямо сейчас у вас есть только пять минут",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "ru",
+    "text": "действовать нужно прямо сейчас у вас есть только пять минут",
+    "confidence": 1
+   },
+   "decodeMs": 2590.5,
+   "latencyMs": 2592.0950000286102,
+   "meter": 86.03622651198907,
+   "band": "critical",
+   "at": 33374.65499997139,
+   "tags": "ru ru ru ru ru ru ru ru ru ru"
+  },
+  {
+   "text": "никому не говорите это секретная операция под контролем регулятора",
+   "language": "ru",
+   "confidence": 0.9999833333333333,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "ru",
+    "text": "никому не говорите это секретная операция под контролем регулятора",
+    "confidence": 0.9999833333333333
+   },
+   "decodeMs": 2182.5299999713898,
+   "latencyMs": 2183.524999976158,
+   "meter": 93.01369124047726,
+   "band": "critical",
+   "at": 39614.33499997854,
+   "tags": "ru ru ru ru ru ru ru ru ru"
+  },
+  {
+   "text": "продиктуйте код из смс чтобы мы отменили операцию",
+   "language": "ru",
+   "confidence": 0.9423198333333332,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "ru",
+    "text": "никому не говорите это секретная операция под контролем регулятора продиктуйте код из самая с чтобы мы отменили операцию",
+    "confidence": 0.9423198333333332
+   },
+   "decodeMs": 2432.525000035763,
+   "latencyMs": 2433.410000026226,
+   "meter": 96.3053386971718,
+   "band": "critical",
+   "at": 44321.82499998808,
+   "tags": "ru ru ru ru ru ru ru ru"
+  },
+  {
+   "text": "теперь переведите деньги на безопасный счет я продиктую реквизиты",
+   "language": "ru",
+   "confidence": 0.927634888888889,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "ru",
+    "text": "теперь переведите деньги на безопасной счёт я продиктую реквизиты",
+    "confidence": 0.927634888888889
+   },
+   "decodeMs": 2829.1949999928474,
+   "latencyMs": 2830.0150000452995,
+   "meter": 98.01898699100846,
+   "band": "critical",
+   "at": 49217.969999969006,
+   "tags": "ru ru ru ru ru ru ru ru ru"
+  }
+ ],
+ "latency_ms": {
+  "n": 6,
+  "median": 2433.410000026226,
+  "max": 2830.0150000452995
+ },
+ "live_events": 291,
+ "live_snapshot": [
+  {
+   "lang": "ru",
+   "words": [
+    "никому",
+    "не",
+    "говорите",
+    "это"
+   ]
+  },
+  {
+   "lang": "kk",
+   "words": [
+    "секіретін"
+   ]
+  }
+ ],
+ "endpoint": [
+  {
+   "status": "loading",
+   "at": 9313.524999976158
+  },
+  {
+   "status": "ready",
+   "loadMs": 3417.2699999809265,
+   "fromCache": false,
+   "at": 12737.560000002384
+  }
+ ],
+ "lines": [
+  {
+   "source": "gigaam",
+   "text": "русалло здравствуйте это служба безопасности вашего банка рус · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "руспо вашей карте зафиксирована подозрительная операция на крупную сумму рус · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "русдействовать нужно прямо сейчас у вас есть только пять минут рус · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "русникому не говорите это секретная операция под контролем регулятора рус · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "руспродиктуйте код из смс чтобы мы отменили операцию рус · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "рустеперь переведите деньги на безопасный счет я продиктую реквизиты рус · точная расшифровка"
+  }
+ ],
+ "errors": []
+}

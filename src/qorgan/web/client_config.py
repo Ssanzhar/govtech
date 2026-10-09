@@ -99,6 +99,9 @@ def export_client_config() -> dict[str, Any]:
             # null = both recognisers run for the whole call (ADR D40).
             "lock": ({"after": cfg.asr_lock_after, "confFloor": cfg.asr_lock_conf_floor}
                      if cfg.asr_lock_after > 0 else None),
+            # The endpoint pass (ADR D64): GigaAM re-decodes each utterance and replaces the
+            # Vosk text; null = off. Optional: if it fails to load, the Vosk vote is used.
+            "endpoint": _asr_endpoint(cfg.asr_endpoint_model),
         },
     }
 
@@ -111,6 +114,25 @@ def _asr_model_names(cfg) -> list[tuple[str, str]]:
     """The voice mode's recognisers in vote order; English only when configured (ADR D62)."""
     names = [("kk", cfg.vosk_model_kk), ("ru", cfg.vosk_model_ru)]
     return names + ([("en", cfg.vosk_model_en)] if cfg.vosk_model_en else [])
+
+
+def _asr_endpoint(model_id: str) -> dict[str, Any] | None:
+    """Where the page finds the GigaAM model (relative to site/models/) and its sherpa-onnx
+    runtime (relative to site/), both self-hosted by deploy_bootstrap (asr/gigaam_web.py)."""
+    if not model_id:
+        return None
+    from qorgan.asr.gigaam_web import GIGAAM_MB, GIGAAM_SUBDIR, SHERPA_VENDOR_SUBDIR
+
+    if model_id != GIGAAM_SUBDIR.name:
+        raise ValueError(f"unknown endpoint model {model_id!r}; only {GIGAAM_SUBDIR.name!r} is pinned")
+    return {
+        "id": model_id,
+        "model": {"url": f"{GIGAAM_SUBDIR.as_posix()}/model.int8.onnx", "tokens": f"{GIGAAM_SUBDIR.as_posix()}/tokens.txt", "mb": GIGAAM_MB},
+        "runtime": f"{SHERPA_VENDOR_SUBDIR.as_posix()}/",
+        # Cache API store the worker keeps the model in; bump the suffix when the bytes change.
+        "cache": f"qorgan-gigaam-{model_id}-v1",
+        "optional": True,
+    }
 
 
 def _asr_model(name: str) -> dict[str, str]:

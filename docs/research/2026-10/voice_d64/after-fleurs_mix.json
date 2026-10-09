@@ -1,0 +1,330 @@
+{
+ "variant": "after",
+ "scene": "fleurs_mix",
+ "audio_s": 99.2,
+ "files": [
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/fleurs/fleurs/fleurs_kk_000_clean.wav",
+   "start": 5,
+   "seconds": 14.88
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/fleurs/fleurs/fleurs_kk_001_clean.wav",
+   "start": 21.08,
+   "seconds": 24.36
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/fleurs/fleurs/fleurs_ru_000_clean.wav",
+   "start": 46.64,
+   "seconds": 16.92
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/fleurs/fleurs/fleurs_ru_001_clean.wav",
+   "start": 64.76,
+   "seconds": 11.52
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/fleurs/fleurs/fleurs_en_000_clean.wav",
+   "start": 77.48,
+   "seconds": 10.56
+  },
+  {
+   "file": "/Users/sanzhars/Documents/proga_/govtech/.claude/worktrees/agent-a7d255dd8c9869013/data/asr_capture/_wav/fleurs/fleurs/fleurs_en_001_clean.wav",
+   "start": 89.24,
+   "seconds": 8.76
+  }
+ ],
+ "listening_after_ms": 9439,
+ "rss_mb": {
+  "listening": {
+   "total": 1465,
+   "browser": 96,
+   "GPU": 76,
+   "network.mojom.NetworkService": 47,
+   "renderer": 1190,
+   "audio.mojom.AudioService": 55
+  },
+  "end_of_audio": {
+   "total": 1029,
+   "browser": 80,
+   "GPU": 80,
+   "network.mojom.NetworkService": 41,
+   "renderer": 780,
+   "audio.mojom.AudioService": 48
+  }
+ },
+ "js_heap_mb": 23,
+ "summary_score": "38 / 100",
+ "final_meter": 38.41750628948364,
+ "final_band": "medium",
+ "utterances": [
+  {
+   "text": "ақш тың гимнастика федерациясы ақш олимпиада комитетінің хатын қолдайды және біздің барлық спортсмендер үшін қоршаған ортаның қауіпсіздігін арттырудың абсолютті қажеттілігін мойындайды",
+   "language": "kk",
+   "confidence": 0.9742874285714287,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "kk",
+    "text": "ақш тың гимнастика федерациясы ақш олимпиада комитетінің ханның қолдайды және біздің барлық спортсмендер үшін қоршаған ортаның қауіпсіздігін арттырудың абсолютті қажеттілігін мойындайды",
+    "confidence": 0.9742874285714287
+   },
+   "decodeMs": 3289.899999976158,
+   "latencyMs": 3291.125,
+   "meter": 43.560767507623304,
+   "band": "medium",
+   "at": 34277.38499999046,
+   "tags": "kk kk kk kk kk kk kk kk kk kk kk kk ru kk kk kk kk kk kk kk kk"
+  },
+  {
+   "text": "оны вичи француздар билеген бұл бір мың тоғыз жүз қырықыншы жылы немістермен бейбіт келісім жасасқан",
+   "language": "kk",
+   "confidence": 0.8858277142857142,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "kk",
+    "text": "оның вичи француздар билеген бұл бір мың тоғыз жүз қырық үшінші немістермен бейбіт келісім",
+    "confidence": 0.8858277142857142
+   },
+   "decodeMs": 2679.8650000095367,
+   "latencyMs": 2681.7200000286102,
+   "meter": 45.29330513826401,
+   "band": "medium",
+   "at": 49795.54000002146,
+   "tags": "kk ru kk kk kk kk kk kk kk kk kk kk kk kk kk"
+  },
+  {
+   "text": "және соғысудың орнына жаулаушылармен бірге жұмыс істеген",
+   "language": "kk",
+   "confidence": 0.8915360476190476,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "kk",
+    "text": "оның вичи француздар билейтін бұл бір мың тоғыз жүз қырық үшінші немістермен бейбіт келісім жасасқан және су судың орнына жолаушылармен бірге",
+    "confidence": 0.8915360476190476
+   },
+   "decodeMs": 1510.7900000214577,
+   "latencyMs": 1511.7649999856949,
+   "meter": 43.55267397633934,
+   "band": "medium",
+   "at": 53601.810000002384,
+   "tags": "kk kk kk kk kk kk kk"
+  },
+  {
+   "text": "жұмыс істеген француздар болды",
+   "language": "kk",
+   "confidence": 0.92731275,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "kk",
+    "text": "жұмыс істеген француздар болды",
+    "confidence": 0.92731275
+   },
+   "decodeMs": 1139.4449999928474,
+   "latencyMs": 1140.0249999761581,
+   "meter": 42.61682469628173,
+   "band": "medium",
+   "at": 55514.02999997139,
+   "tags": "kk kk kk kk"
+  },
+  {
+   "text": "в древнем китае использовали уникальный способ обозначения периодов времени каждый этап китая или каждая семья находившаяся у власти были особой династией",
+   "language": "ru",
+   "confidence": 0.9264935238095239,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "ru",
+    "text": "в древнем китае использовали уникальный способ обозначения периодов времени каждая этап китая или каждая семья находившаяся у власти были особой династии",
+    "confidence": 0.9264935238095239
+   },
+   "decodeMs": 3689.5949999690056,
+   "latencyMs": 3690.810000002384,
+   "meter": 46.28199173783741,
+   "band": "medium",
+   "at": 77311.83999997377,
+   "tags": "ru ru ru ru ru ru ru ru ru ru ru ru ru ru ru ru ru ru ru ru ru"
+  },
+  {
+   "text": "мадагаскар намного больше других и является самобытным континентом в том что касается дикой природы",
+   "language": "ru",
+   "confidence": 0.9575223846153846,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "ru",
+    "text": "мадагаскар намного больше других является самобытным континентам в то что касается дикой природы",
+    "confidence": 0.9575223846153846
+   },
+   "decodeMs": 2320.625,
+   "latencyMs": 2321.5799999833107,
+   "meter": 42.96563338994892,
+   "band": "medium",
+   "at": 88804.05000001192,
+   "tags": "ru ru ru ru ru ru ru ru ru ru ru ru ru ru"
+  },
+  {
+   "text": "however due to the slow communication channels",
+   "language": "en",
+   "confidence": 0.82716875,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "en",
+    "text": "however due to the for communicate and channels",
+    "confidence": 0.82716875
+   },
+   "decodeMs": 1041.6499999761581,
+   "latencyMs": 1042.4849999547005,
+   "meter": 40.518721963221935,
+   "band": "medium",
+   "at": 95165.87999999523,
+   "tags": "en en en en en en en"
+  },
+  {
+   "text": "styles in the west could lag behind",
+   "language": "en",
+   "confidence": 0.951616,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "kk",
+    "text": "енді ояз",
+    "confidence": 0.951616
+   },
+   "decodeMs": 1243.3100000023842,
+   "latencyMs": 1243.8199999928474,
+   "meter": 37.07527757679791,
+   "band": "medium",
+   "at": 98424.81000000238,
+   "tags": "en en en en en en en"
+  },
+  {
+   "text": "and by twenty five to thirty years",
+   "language": "en",
+   "confidence": 0.9752466666666667,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "kk",
+    "text": "туника айыпты төлейді",
+    "confidence": 0.9752466666666667
+   },
+   "decodeMs": 1345.175000011921,
+   "latencyMs": 1346.1399999856949,
+   "meter": 34.82496851362264,
+   "band": "medium",
+   "at": 100752.25999999046,
+   "tags": "en en en en en en en"
+  },
+  {
+   "text": "all nouns alongside the world saye for you always begin with a capital letter even in the middle of a sentence",
+   "language": "en",
+   "confidence": 0.9044566956521739,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": "en",
+    "text": "all now so more side the world safe for you always begin with a capital letter even in the middle of a sentence",
+    "confidence": 0.9044566956521739
+   },
+   "decodeMs": 3382.5449999570847,
+   "latencyMs": 3383.110000014305,
+   "meter": 38.41750628948364,
+   "band": "medium",
+   "at": 113431.6399999857,
+   "tags": "en en en en en en en en en en en en en en en en en en en en en"
+  }
+ ],
+ "latency_ms": {
+  "n": 10,
+  "median": 2321.5799999833107,
+  "max": 3690.810000002384
+ },
+ "live_events": 728,
+ "live_snapshot": [
+  {
+   "lang": "kk",
+   "words": [
+    "және"
+   ]
+  },
+  {
+   "lang": "en",
+   "words": [
+    "social"
+   ]
+  },
+  {
+   "lang": "kk",
+   "words": [
+    "судың"
+   ]
+  },
+  {
+   "lang": "en",
+   "words": [
+    "order",
+    "more"
+   ]
+  }
+ ],
+ "endpoint": [
+  {
+   "status": "loading",
+   "at": 9738.990000009537
+  },
+  {
+   "status": "ready",
+   "loadMs": 3144.324999988079,
+   "fromCache": false,
+   "at": 12889.084999978542
+  }
+ ],
+ "lines": [
+  {
+   "source": "gigaam",
+   "text": "казақш тың гимнастика федерациясы ақш олимпиада комитетінің хатын қолдайды және біздің барлық русспортсмендер казүшін қоршаған ортаның қауіпсіздігін арттырудың абсолютті қажеттілігін мойындайды каз · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "казоны русвичи казфранцуздар билеген бұл бір мың тоғыз жүз қырықыншы жылы немістермен бейбіт келісім жасасқан каз · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "казжәне соғысудың орнына жаулаушылармен бірге жұмыс істеген каз · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "казжұмыс істеген француздар болды каз · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "русв древнем китае использовали уникальный способ обозначения периодов времени каждый этап китая или каждая семья находившаяся у власти были особой династией рус · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "русмадагаскар намного больше других и является самобытным континентом в том что касается дикой природы рус · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "англhowever due to the slow communication channels англ · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "англstyles in the west could lag behind англ · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "англand by twenty five to thirty years англ · точная расшифровка"
+  },
+  {
+   "source": "gigaam",
+   "text": "англall nouns alongside the world saye for you always begin with a capital letter even in the middle of a sentence англ · точная расшифровка"
+  }
+ ],
+ "errors": []
+}
