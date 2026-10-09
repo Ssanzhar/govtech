@@ -1,0 +1,79 @@
+{
+ "split": "court_quotes",
+ "adr": "D68",
+ "collected_on": "2026-10-09",
+ "label": "scam (positives only; utterance-level)",
+ "n_quotes": 47,
+ "by_language": {
+  "ru": 47
+ },
+ "by_speech": {
+  "reported": 42,
+  "direct": 5
+ },
+ "by_source": {
+  "sudact.ru": 46,
+  "sud.gov.kz": 1
+ },
+ "verdicts_read": 137,
+ "verdicts_with_quotes": 7,
+ "dropped_residual_pii": 2,
+ "verdict_date_range": [
+  "2018-06-17",
+  "2025-11-27"
+ ],
+ "citations": [
+  {
+   "source": "sud.gov.kz",
+   "url": "https://sud.gov.kz/rus/news/verhovnyy-sud-droppery-dolzhny-vozmeshchat-vred-ot-moshennicheskih-deystviy",
+   "court": "Верховный Суд РК, коллегия по гражданским делам (пресс-релиз)",
+   "date": "2024-03-14",
+   "verdict_id": "sudgovkz-2024-03-14-droppery"
+  },
+  {
+   "source": "sudact.ru",
+   "url": "https://sudact.ru/regular/doc/7xX7RROWAM5e/",
+   "court": "Ингодинский районный суд г. Читы (Забайкальский край)",
+   "date": "2024-10-15",
+   "verdict_id": "7xX7RROWAM5e"
+  },
+  {
+   "source": "sudact.ru",
+   "url": "https://sudact.ru/regular/doc/92fqXVD9Rto4/",
+   "court": "Альметьевский городской суд (Республика Татарстан )",
+   "date": "2024-03-17",
+   "verdict_id": "92fqXVD9Rto4"
+  },
+  {
+   "source": "sudact.ru",
+   "url": "https://sudact.ru/regular/doc/F8R4W0ptHcQb/",
+   "court": "Свердловский районный суд г. Перми (Пермский край)",
+   "date": "2025-08-27",
+   "verdict_id": "F8R4W0ptHcQb"
+  },
+  {
+   "source": "sudact.ru",
+   "url": "https://sudact.ru/regular/doc/FvY4EUlpWxmm/",
+   "court": "Центральный районный суд г. Читы (Забайкальский край)",
+   "date": "2024-02-05",
+   "verdict_id": "FvY4EUlpWxmm"
+  },
+  {
+   "source": "sudact.ru",
+   "url": "https://sudact.ru/regular/doc/OpYnDrpprrgg/",
+   "court": "Октябрьский районный суд г. Белгорода (Белгородская область)",
+   "date": "2018-06-17",
+   "verdict_id": "OpYnDrpprrgg"
+  },
+  {
+   "source": "sudact.ru",
+   "url": "https://sudact.ru/regular/doc/qwB6WXlsxpv/",
+   "court": "Бутырский районный суд (Город Москва)",
+   "date": "2025-11-27",
+   "verdict_id": "qwB6WXlsxpv"
+  }
+ ],
+ "text_location": "data/raw/court_quotes/quotes.jsonl (gitignored, local only)",
+ "candidates_before_review": 224,
+ "excluded_by_review": 177
+}

@@ -209,6 +209,22 @@ allow-patterns — that instinct was right, and this is the statutory reason for
 deserves a named section in `data/README.md` and an ADR, because the ТЗ §9 provenance grading
 will reward it and the government partner will ask.
 
+### 4.5 Court verdicts — collected 2026-10-09 as `court_quotes` (ADR D68)
+
+| Source | Reachable? | Allowed? | Used |
+|---|---|---|---|
+| **office.sud.kz** «Сот актілерінің банкі» (KZ, RU + KK verdicts 2009–2025) | yes | no robots.txt, but **reCAPTCHA v2 on every search** | no: automating it is CAPTCHA circumvention. A person must search by hand; the only route to Kazakh verdicts. |
+| **sudrf.ru** court sites (RU, official) | yes | robots.txt **disallows** `name=sud_delo` / `name=bsr` (the judgment pages) | no |
+| **sud.gov.kz** press releases (KZ Supreme Court) | browser only (curl gets an empty reply) | robots allows news (Crawl-delay 10); re-use with a hyperlink | 2 passages read, 1 row |
+| **sudact.ru** (RU aggregator of sudrf texts) | yes | robots allows `/regular/doc/<id>/`; its search (`doc_ajax`) is disallowed; no prohibiting terms found on its About / PD-policy pages | 135 verdict pages via web-search discovery, ≥ 12 s apart → 46 rows |
+
+Result: 47 rows, all Russian, 42 reported speech + 5 direct quotes, from 7 sources; 224 rule
+candidates, 177 excluded on review, 2 dropped for residual PII. Text stays in
+`data/raw/court_quotes/` (gitignored, never published); `data/manifests/court_quotes.manifest.json`
+holds counts and every citation. Held out: never tune on it, never extend the lexicon from it.
+Yield is the bottleneck (6 of 135 pages gave a kept row); sudact's own search, with permission, or
+a hand search of office.sud.kz would fix it.
+
 ---
 
 ## 5. Verified dead ends — stop looking

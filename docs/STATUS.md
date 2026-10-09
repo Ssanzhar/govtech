@@ -5,6 +5,13 @@ then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECI
 (ADRs D11–D54), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
 kept as history._
 
+- **2026-10-09 — First real-language number: `court_quotes` (ADR D68).** 47 real scammer
+  phrases (RU; 0 KK) reported or quoted in published criminal verdicts (sudact.ru, sud.gov.kz),
+  scrubbed, agent-reviewed, held out and **local-only** (`data/raw/court_quotes/`, gitignored,
+  refused by `hf_upload.py`; the committed manifest has counts and citations, no text). Shipped
+  model, one utterance each: risk ≥ 0.59 on 0.617 [0.464, 0.755] (29/47), but direct quotes 0/5;
+  **hard-signal cues fire on 0.021 [0.001, 0.113] (1/47)**. Positives only, no FPR; reported speech
+  inflates risk. The KZ acts bank (office.sud.kz) is CAPTCHA-gated: Kazakh verdicts need a person.
 - **2026-10-08 — NITEC / eGov pilot pack (RU, draft, nothing sent):** `docs/egov/` (README, ТЗ outline, data-flow/PII map, ГТС security checklist, API spec + proposed hand-off schema, questions for NITEC, architecture diagrams).
 
 ## TL;DR (September 2026)
