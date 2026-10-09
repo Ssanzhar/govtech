@@ -34,6 +34,19 @@ PUBLISHED_SPLITS: tuple[str, ...] = (
 )
 
 
+# Real court-verdict quotes (ADR D68) are local-only: the Hub is a public, cross-border
+# distribution channel (PD Law Arts. 7(3), 7(6), 16; docs/DATA_SOURCES.md SS4.4), and the legal
+# basis for redistributing them is unsettled. No allow pattern may ever name them.
+_NEVER_PUBLISH_MARKERS: tuple[str, ...] = ("court_quotes",)
+
+
+def assert_not_publishing_court_quotes(names: Iterable[str]) -> None:
+    """Exit (refuse the upload) if any path or allow pattern names the court_quotes split."""
+    offending = [str(name) for name in names if any(marker in str(name) for marker in _NEVER_PUBLISH_MARKERS)]
+    if offending:
+        raise SystemExit(f"refusing to publish court_quotes (ADR D68, local-only): {offending}")
+
+
 @dataclass(frozen=True)
 class Finding:
     """Where PII was found -- deliberately without the offending text."""

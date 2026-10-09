@@ -1777,3 +1777,103 @@ the only missing piece was what Vosk's endpointer did: cutting the audio into ph
 - Synthesised, clean audio only. Real speech through a speakerphone, with room noise and
   overlapping talkers, may need silero-vad. The energy VAD gave 0 errors here, so it was not
   justified yet.
+### D68 — `court_quotes`: real scammer phrasing from published court verdicts, held out and local-only (2026-10-09)
+Every number the project had was synthetic. Court verdicts on telephone fraud report what the
+caller said, so they are the one public source of **real** scam phrasing. This ADR records what
+could be collected lawfully, how it is stored, and what the shipped model does on it.
+
+**Reachability (checked 2026-10-09 from a Kazakhtelecom IP, identified user agent).**
+- **office.sud.kz (KZ judicial acts bank, the only Kazakh-language source):** reachable, no
+  robots.txt, but **every search is gated by a reCAPTCHA v2 checkbox**. Automating it would be
+  CAPTCHA circumvention, so nothing was harvested. A person can search it by hand.
+- **sudrf.ru court sites (RU, official):** reachable, but their robots.txt disallows
+  `name=sud_delo` and `name=bsr`, i.e. the case and judgment pages. Not used.
+- **sud.gov.kz (KZ Supreme Court press releases):** robots.txt allows news pages (Crawl-delay 10);
+  its copyright notice allows re-use with a hyperlink. Plain curl gets an empty reply, a browser
+  works. Phone-fraud releases are rare and narrative: 2 passages read, 1 row kept.
+- **sudact.ru (RU aggregator of sudrf texts):** robots.txt allows `/regular/doc/<id>/`; its own
+  search endpoint (`doc_ajax`) is disallowed, so verdicts were **discovered through a web search
+  engine** and only the document pages were fetched, ≥ 12 s apart, 137 pages, no CAPTCHA, no
+  login. Its About and personal-data-policy pages contain no terms that forbid this. The earlier
+  note in `docs/research/2026-10/datasets.md` (B1) that scraping sudact "violates its ToS" is not
+  supported by anything we could find, but it was not contradicted by a written licence either.
+
+**What was built.**
+- `src/qorgan/data/court_quotes.py`: from a *criminal* act (title gate) about an impersonation call
+  (call + "представился сотрудником/следователем/сыном…" gate), take caller speech: direct quotes
+  after a speech verb, and the reported content after «сообщил, что» / «о том, что» / «попросил».
+  Spans are verbatim; nothing is rewritten or translated. The rules were written without reading
+  `data/lexicon/`.
+- PII: every row goes through `scrub_text`; a row that still carries a name with initials, an
+  address, a long digit run, an e-mail or a plate-like id is **dropped**, never edited (2 dropped).
+  The courts had already masked names (`фио`, `ФИО17 №5`, `«...»`).
+- Review: the rules over-collect (victim, relative, courier and witness speech; a construction-fraud
+  and a drugs case passed the gate). All 224 candidates were read by the agent and 177 excluded as
+  not the caller's words to the victim. `data/manifests/court_quotes.exclusions.json` lists them by
+  sha256 prefix only. **A human should spot-check the 47 kept rows.**
+- `scripts/court_quotes_build.py` builds `data/raw/court_quotes/quotes.jsonl` (gitignored) and the
+  committed `data/manifests/court_quotes.manifest.json` (counts, dates, citations, no text).
+- `src/qorgan/eval/court_quotes.py` replays each quote as a fresh one-turn live session
+  (`live.session.advance`, exactly the citizen page's first utterance) and reports per-utterance
+  risk ≥ threshold, hard-signal cue firing and the meter, with Clopper–Pearson intervals.
+- `hf_upload.py` refuses anything that names `court_quotes` (`publish_guard.assert_not_publishing_court_quotes`);
+  `.gitignore` names `data/raw/court_quotes/`; both pinned by `tests/data/test_court_quotes.py`.
+
+**Data.** 47 rows (46 sudact.ru, 1 sud.gov.kz) from 7 of 137 sources read, all **Russian**, 0
+Kazakh; 42 reported speech, 5 direct quotes; verdict dates 2018-06-17 … 2025-11-27. Clustered: one
+grandparent-scam verdict gives 19 rows, so the intervals below (which assume independent rows)
+are optimistic. No victim-side legit context was collected: verdicts do not contain legitimate
+calls.
+
+**The shipped model on it** (`QORGAN_LINEAR_WEIGHTS=web`, the committed `site/models/weights.json`,
+threshold 0.59; `python -m qorgan.eval.court_quotes`):
+
+| Group | N | risk ≥ thr [95% CI] | cue fired [95% CI] | latched after 1 turn | median risk |
+|---|---|---|---|---|---|
+| all | 47 | 0.617 [0.464, 0.755] (29/47) | 0.021 [0.001, 0.113] (1/47) | 0.021 [0.001, 0.113] (1/47) | 0.690 |
+| reported speech | 42 | 0.690 [0.529, 0.824] (29/42) | 0.024 [0.001, 0.126] (1/42) | 0.024 [0.001, 0.126] | 0.778 |
+| direct quotes | 5 | 0.000 [0.000, 0.522] (0/5) | 0.000 [0.000, 0.522] (0/5) | 0.000 [0.000, 0.522] | 0.309 |
+
+Pseudo-calls (all kept quotes of one verdict streamed in verdict order — composed, not a real
+call): latched 4/7, 0.571 [0.184, 0.901]. The only cue that fired: `otp_request` (1).
+
+**How to read it.**
+- **Hard-signal cues almost never fire on real phrasing (1/47).** That is the robust finding.
+  Part of it is form (reported speech is third person: «необходимо сообщить код» rather than
+  «продиктуйте код»), but most kept rows describe pretexts with no OTP/safe-account wording at
+  all (accident, relative, investigator, «декларирование»), the low-arousal gaps
+  `RESEARCH_2026-10.md` §1 item 5 predicted.
+- **The 0.617 is not a recall comparable to `shift`.** The set has no negatives, so it says nothing
+  about FPR, and reported speech carries court-narrative words («якобы», «ДТП», «деньги»,
+  «сотрудник полиции») that may lift the embedding risk for reasons a real call would not share.
+  The 5 direct quotes, the closest thing to real utterances, all scored below threshold (median
+  0.309), but n = 5.
+- A single utterance cannot latch the meter unless a cue fires (A6 arms from the 3rd utterance),
+  so "latched after 1 turn" equals the cue rate by construction.
+
+**Rules.** Held out: never tune on it, never extend the lexicon from it (D35/D43). It is not in
+`data/anchors/inspection_ledger.yaml`, because the ledger only takes ids of committed evaluation
+splits (its test enforces that); instead, the whole split is **inspected by construction** (every
+row was read at curation), which the manifest's `excluded_by_review` records.
+
+**Legal footing (under `docs/LEGAL_ASSESSMENT.md`; not legal advice).**
+- Storage is on the developer's machine in Kazakhstan (PD Law Art. 12(2)). Russian verdicts are
+  published by law (ФЗ-262) with names already removed; after scrubbing and the drop rule the rows
+  are arguably no longer personal data at all **[I]**. Where they still are, PD Law Art. 7(5)
+  allows re-use of lawfully published personal data with a source citation **[S, per
+  `DATA_SOURCES.md` §4.4]**: the manifest cites every verdict URL. Court decisions are official
+  documents, not copyright objects under ГК РФ ст. 1259(6) **[I, not checked against the KZ
+  Copyright Law]**.
+- **Unclear, so local-only:** whether redistributing quotes (the Hub is public and cross-border,
+  PD Law Arts. 7(3), 7(6), 16) or processing Russian court data in Kazakhstan raises any Russian
+  152-ФЗ point **[U]**. The rows never leave `data/raw/`, never reach Gemini (cloud tier off, D49)
+  and never the Hub.
+- AI Law 230-VIII: evaluation only; no training use, no change to the system's classification.
+
+**Needs the user.**
+1. Kazakh: a person searching office.sud.kz by hand (ст. 190 УК РК, «телефон», «қоңырау»), saving
+   verdict texts into `data/raw/court_quotes/` for `scripts/court_quotes_build.py` (add a reader for
+   their format), so the CAPTCHA is solved by a human, as intended.
+2. Volume: sudact's own search would give far more than web-search discovery (6 of 135 fetched pages
+   gave a kept row); ask the operator for permission, or for an export.
+3. A human spot-check of the 47 rows and a KZ advocate's line on the "local-only" boundary.

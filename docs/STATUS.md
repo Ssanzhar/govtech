@@ -6,6 +6,13 @@ then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECI
 kept as history._
 
 - **2026-10-09 — WebView-safe voice mode (ADR D67):** without cross-origin isolation (an Android WebView such as eGov Mobile's), or on a phone, the citizen page now uses a light GigaAM-only voice mode. An energy/ZCR VAD (`site/core/vad.js`) cuts the phrases, and each one goes through the unchanged D64 endpoint pass. There are no live words in this mode, and the kk/ru/en UI says so. If GigaAM is missing, voice turns off and paste/replay stay. Desktop Chromium with isolation off, demo scenes: meter 98 / 97 / 19 / 97, the same as the isolated mode. 22/22 lines segmented, 0 split/merged/spurious. Latency 2.5–3.0 s median vs 3.2–3.7 s for the full mode, peak renderer ~2.2 GB vs ~3.2 GB. Android: `android/` holds a TWA config (Bubblewrap), a WebView harness and an `assetlinks.json` template. None of it was built or run on an emulator (the download link was too slow for the SDK). Still needed: a real phone, a signing key, the production host.
+- **2026-10-09 — First real-language number: `court_quotes` (ADR D68).** 47 real scammer
+  phrases (RU; 0 KK) reported or quoted in published criminal verdicts (sudact.ru, sud.gov.kz),
+  scrubbed, agent-reviewed, held out and **local-only** (`data/raw/court_quotes/`, gitignored,
+  refused by `hf_upload.py`; the committed manifest has counts and citations, no text). Shipped
+  model, one utterance each: risk ≥ 0.59 on 0.617 [0.464, 0.755] (29/47), but direct quotes 0/5;
+  **hard-signal cues fire on 0.021 [0.001, 0.113] (1/47)**. Positives only, no FPR; reported speech
+  inflates risk. The KZ acts bank (office.sud.kz) is CAPTCHA-gated: Kazakh verdicts need a person.
 - **2026-10-08 — NITEC / eGov pilot pack (RU, draft, nothing sent):** `docs/egov/` (README, ТЗ outline, data-flow/PII map, ГТС security checklist, API spec + proposed hand-off schema, questions for NITEC, architecture diagrams).
 
 ## TL;DR (September 2026)
