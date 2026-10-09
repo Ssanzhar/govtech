@@ -26,6 +26,8 @@ site/models/gigaam/
 # ...nor the pinned Vosklet runtime (2.5 MB wasm, hash-verified by deploy_bootstrap)
 site/vendor/
 data/raw/
+# Real scammer phrases quoted in court verdicts (ADR D68): local-only, never in git or on the Hub.
+data/raw/court_quotes/
 data/synthetic/
 # Real partner calls (docs/DATA_INTAKE.md): scrubbed + hashed, still never in git.
 data/real/

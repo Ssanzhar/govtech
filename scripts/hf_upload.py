@@ -7,7 +7,8 @@ Model repo  sanzh-ts/govtech     <- models/linear (heads + metadata + web/weight
 Dataset repo sanzh-ts/govtech_ds <- the processed splits by explicit name + data/augment.
 Never published: data/processed/{incidents,organizations,citizen_reports,audit_log}.jsonl,
 real_heldout_v2.jsonl / real_train.jsonl (real partner calls, docs/DATA_INTAKE.md),
-data/synthetic/, data/real/ -- the allow list below is the guard, keep it explicit.
+data/synthetic/, data/real/, data/raw/court_quotes/ (real verdict quotes, ADR D68) -- the
+allow list below is the guard, keep it explicit.
 """
 
 import sys
@@ -15,7 +16,7 @@ from pathlib import Path
 
 from huggingface_hub import HfApi
 
-from qorgan.data.publish_guard import PUBLISHED_SPLITS, find_unscrubbed
+from qorgan.data.publish_guard import PUBLISHED_SPLITS, assert_not_publishing_court_quotes, find_unscrubbed
 
 # PII gate (ADR D45): every utterance headed for the public dataset must already be a
 # scrub_text fixed point -- nothing is uploaded otherwise.
@@ -26,6 +27,15 @@ if _findings:
     for f in _findings:
         print(f"PII gate: {f.file} {f.dialogue_id} utterance {f.utterance_index} is not scrubbed", file=sys.stderr)
     sys.exit("refusing to publish: run `python -m qorgan.data.publish_guard --fix`, then re-run the eval")
+
+DATASET_ALLOW_PATTERNS = [
+    "train.jsonl", "val.jsonl", "test.jsonl", "authored_heldout.jsonl", "ood.jsonl",
+    "adversarial.jsonl", "adversarial_legit.jsonl", "manifest.json",
+    "shift.jsonl", "shift.manifest.json",  # the second-generator eval split (ADR D35)
+]
+# Real court-verdict quotes (ADR D68) never leave the machine: refuse if anything names them.
+assert_not_publishing_court_quotes([*DATASET_ALLOW_PATTERNS, *PUBLISHED_SPLITS])
+assert_not_publishing_court_quotes(str(path) for path in Path("data/augment").glob("*"))
 
 api = HfApi()
 
@@ -41,11 +51,7 @@ api.upload_folder(repo_id=MODEL_REPO, repo_type="model", folder_path="data/lexic
 DATASET_REPO = "sanzh-ts/govtech_ds"
 api.upload_folder(
     repo_id=DATASET_REPO, repo_type="dataset", folder_path="data/processed",
-    allow_patterns=[
-        "train.jsonl", "val.jsonl", "test.jsonl", "authored_heldout.jsonl", "ood.jsonl",
-        "adversarial.jsonl", "adversarial_legit.jsonl", "manifest.json",
-        "shift.jsonl", "shift.manifest.json",  # the second-generator eval split (ADR D35)
-    ],
+    allow_patterns=DATASET_ALLOW_PATTERNS,
     # The pre-A2 name of the hand-written set; it was never real calls, but the name misleads.
     delete_patterns=["real_heldout.jsonl"],
 )
