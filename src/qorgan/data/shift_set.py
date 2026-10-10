@@ -73,11 +73,13 @@ def _scenarios(raw_dir: Path) -> dict[str, str]:
     return out
 
 
-def _overlaps(dialogues: Sequence[Dialogue], processed_dir: Path) -> dict[str, list[str]]:
+def _overlaps(
+    dialogues: Sequence[Dialogue], processed_dir: Path, checked: Sequence[str] = EVAL_SPLITS_CHECKED
+) -> dict[str, list[str]]:
     """`{split: [shift ids]}` for shift rows whose normalised transcript exists in that split."""
     own = {normalize_for_dedup(d.transcript()): d.id for d in dialogues}
     found: dict[str, list[str]] = {}
-    for split in EVAL_SPLITS_CHECKED:
+    for split in checked:
         path = processed_dir / f"{split}.jsonl"
         if not path.exists():
             continue
@@ -90,33 +92,41 @@ def _overlaps(dialogues: Sequence[Dialogue], processed_dir: Path) -> dict[str, l
     return found
 
 
-def build_shift_split(*, raw_dir: Path, processed_dir: Path) -> dict:
+def build_shift_split(
+    *,
+    raw_dir: Path,
+    processed_dir: Path,
+    split_name: str = SPLIT_NAME,
+    generator: str = GENERATOR_NOTE,
+    checked: Sequence[str] = EVAL_SPLITS_CHECKED,
+) -> dict:
     """Ground, clean, scrub and deduplicate the raw rows, refuse any overlap with an existing
-    split, then write `processed_dir/shift.jsonl` + `shift.manifest.json`. Returns the manifest."""
+    split, then write `processed_dir/<split_name>.jsonl` + `<split_name>.manifest.json`.
+    Returns the manifest. `shift_local` (ADR D65) reuses this with its own name and checks."""
     raw_rows = load_raw_shift_rows(raw_dir)
     cleaned = [(d.id, clean_dialogue(d)) for d in raw_rows]
     corrupted = [dialogue_id for dialogue_id, d in cleaned if d is None]
     if corrupted:  # hand-written data is fixed at the source, never silently dropped
-        raise ValueError(f"corrupted shift dialogue(s): {corrupted}")
+        raise ValueError(f"corrupted {split_name} dialogue(s): {corrupted}")
     dialogues = deduplicate(tuple(scrub_dialogue(d) for _, d in cleaned if d is not None))
-    overlaps = _overlaps(dialogues, processed_dir)
+    overlaps = _overlaps(dialogues, processed_dir, checked)
     if overlaps:
         detail = "; ".join(f"overlaps {split}: {ids}" for split, ids in overlaps.items())
-        raise ValueError(f"shift set is not disjoint -- {detail}")
+        raise ValueError(f"{split_name} set is not disjoint -- {detail}")
     processed_dir.mkdir(parents=True, exist_ok=True)
-    (processed_dir / f"{SPLIT_NAME}.jsonl").write_text(
+    (processed_dir / f"{split_name}.jsonl").write_text(
         "".join(d.model_dump_json() + "\n" for d in dialogues), encoding="utf-8"
     )
     manifest = {
-        "split": SPLIT_NAME,
-        "generator": GENERATOR_NOTE,
+        "split": split_name,
+        "generator": generator,
         "source_files": [p.name for p in sorted(raw_dir.glob("*.jsonl"))],
         "counts": split_counts(dialogues),
         "content_hash": content_hash(dialogues),
-        "disjoint_from": list(EVAL_SPLITS_CHECKED),
+        "disjoint_from": list(checked),
         "scenarios": _scenarios(raw_dir),
     }
-    (processed_dir / f"{SPLIT_NAME}.manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    (processed_dir / f"{split_name}.manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return manifest
 
 

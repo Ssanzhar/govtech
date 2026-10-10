@@ -1,0 +1,188 @@
+# Scenario briefs for the `shift_local` held-out split (ADR D65).
+#
+# Written 2026-10-09 from PUBLIC descriptions of phone fraud in Kazakhstan and Russia
+# (police / bank / regulator warnings and press coverage of the 2024-26 waves) and from
+# ordinary legitimate calls that share the same pretexts. Written WITHOUT opening the cue
+# lexicons, the corpus, the generation prompts or any evaluation split. The label of every
+# generated call comes from its brief, never from a model's score.
+#
+# Track-2 rule: these briefs describe an evaluation split. Do not build training prompts,
+# grid cells or seed scenarios from this file.
+#
+# tactics: taxonomy ids (data/taxonomy/tactics.yaml) the brief implies; legit briefs carry none.
+# hard_negative: legit briefs are look-alikes (same pretext, none of the asks) unless marked false.
+version: 1
+briefs:
+  # ---------------------------------------------------------------- scam
+  - id: s_parcel_code
+    label: scam
+    tactics: [impersonation_telecom_delivery, otp_request, urgency]
+    brief: "A caller says he is from a courier service and a parcel is waiting in the person's name. To book the delivery slot he asks the person to tell him the code that has just arrived by text message."
+  - id: s_clinic_code
+    label: scam
+    tactics: [impersonation_gov_police, otp_request, verification_ploy]
+    brief: "A caller introduces herself as a registrar from the local polyclinic who is updating the patient list or booking a free check-up. She says a confirmation code was sent to the phone and asks the person to read it out."
+  - id: s_utility_meter
+    label: scam
+    tactics: [impersonation_telecom_delivery, otp_request, fear_threat]
+    brief: "A caller claims to be from the city gas or electricity company and says the meter must be replaced or the supply will be cut off. To register the visit he asks for the code from a text message."
+  - id: s_pension_recalc
+    label: scam
+    tactics: [impersonation_gov_police, credentials_request, otp_request]
+    brief: "A caller says he works for the pension fund and the person is owed a recalculated payment. To transfer the money he needs the person's ID number and then the code sent to the phone."
+  - id: s_mirror_loan
+    label: scam
+    tactics: [impersonation_bank, safe_account, urgency, secrecy]
+    brief: "A caller from a bank security department says criminals have applied for a loan in the person's name. To cancel it, the person must urgently take out a counter loan themselves and move the money to a protected account, and must not tell bank staff why."
+  - id: s_courier_cash
+    label: scam
+    tactics: [impersonation_gov_police, fear_threat, secrecy, payment_redirect]
+    brief: "A caller posing as a police investigator tells an elderly person that their savings are at risk in a criminal case. A trusted courier will come to the door to collect the cash for safekeeping, and nobody, including relatives, may know."
+  - id: s_wrong_transfer
+    label: scam
+    tactics: [payment_redirect, urgency]
+    brief: "A stranger calls, very polite, saying they transferred money to the person's card by mistake and begs them to send it back, but to a different card number \"because the old card is blocked\"."
+  - id: s_job_tasks
+    label: scam
+    tactics: [mule_recruitment, investment_scam, payment_redirect]
+    brief: "A recruiter offers well-paid remote work liking products or completing simple online tasks. After explaining the first easy payouts, she says to unlock bigger tasks the person must first deposit their own money."
+  - id: s_bank_security
+    label: scam
+    tactics: [impersonation_bank, fear_threat, otp_request, urgency]
+    brief: "A caller says he is from the bank's security service and someone is trying to withdraw money from the person's account right now. To block the operation he asks the person to confirm the card details and the code from the bank's message."
+  - id: s_police_card
+    label: scam
+    tactics: [impersonation_gov_police, fear_threat, safe_account]
+    brief: "A caller says he is a police officer: the person's card was used to finance a crime and they will be questioned. The only way to clear their name is to move all savings to an account the officer names."
+  - id: s_nbk_safe_account
+    label: scam
+    tactics: [impersonation_gov_police, safe_account, secrecy, fear_threat]
+    brief: "A caller claims to be from the National Bank's financial monitoring service and says the person's bank is under investigation. Their deposits will be frozen unless they move them to a special state account today."
+  - id: s_knb_agent
+    label: scam
+    tactics: [impersonation_gov_police, secrecy, fear_threat, remote_access]
+    brief: "A caller presents himself as an officer of the national security committee investigating bank employees who leak data. He asks the person to help the operation secretly and to install an app so the committee can watch the account."
+  - id: s_relative_trouble
+    label: scam
+    tactics: [fear_threat, urgency, secrecy]
+    brief: "A caller says the person's son has caused a road accident and the injured side will drop the complaint if money is paid immediately. Someone sobbing is put on the line briefly, then the caller asks how much cash is at home."
+  - id: s_egov_signature
+    label: scam
+    tactics: [impersonation_gov_police, credentials_request, otp_request, urgency]
+    brief: "A caller says she is from the public service centre and the person's electronic digital signature expires today. To renew it remotely she asks for the ID number and then the code that will arrive by text message."
+  - id: s_investment
+    label: scam
+    tactics: [investment_scam, urgency]
+    brief: "A friendly manager from an \"investment platform\" says the person can earn a fixed high monthly return trading oil or crypto with the help of a personal analyst. He pushes for a first deposit today while a bonus is active."
+  - id: s_remote_app
+    label: scam
+    tactics: [impersonation_bank, remote_access, fear_threat]
+    brief: "A bank \"technical support\" caller says the banking app has a security fault and walks the person through installing a screen-sharing application so a specialist can \"fix\" it."
+  - id: s_sim_expiry
+    label: scam
+    tactics: [impersonation_telecom_delivery, otp_request, urgency]
+    brief: "A caller claiming to be from the mobile operator says the SIM card contract is expiring and the number will be disconnected tonight. To extend it he needs the code the operator sends."
+  - id: s_prize
+    label: scam
+    tactics: [prize_lottery, payment_redirect]
+    brief: "A cheerful caller says the person's number has won a car or a big cash prize in a supermarket promotion. To receive it they must first pay a small registration fee or tax."
+  - id: s_marketplace_buyer
+    label: scam
+    tactics: [credentials_request, otp_request, payment_redirect]
+    brief: "A buyer calls about an item the person is selling online and wants to pay in advance. He asks for the full card number, the expiry date and then a code \"to receive the payment\"."
+  - id: s_tax_debt
+    label: scam
+    tactics: [impersonation_gov_police, fear_threat, payment_redirect, urgency]
+    brief: "A caller from the \"tax authority\" says there is an unpaid tax debt and a travel ban will be imposed by evening. The debt can be settled only by transfer to a number he dictates."
+  - id: s_mule_card
+    label: scam
+    tactics: [mule_recruitment, secrecy]
+    brief: "A caller offers easy money for receiving transfers on one's card and passing them on, or for handing over a spare bank card for a fee. He insists it is legal and asks the person to keep it quiet."
+  - id: s_medical_compensation
+    label: scam
+    tactics: [impersonation_gov_police, prize_lottery, payment_redirect]
+    brief: "A caller says the person is entitled to compensation for a poor-quality medicine or supplement they bought earlier. To release the payment, a legal fee must be paid first."
+  - id: s_bank_staff_doublecall
+    label: scam
+    tactics: [impersonation_bank, impersonation_gov_police, safe_account, secrecy]
+    brief: "A caller says she is a bank manager and transfers the line to a \"police colleague\" who explains that a bank employee is stealing deposits. The person is asked to withdraw cash and deposit it through an ATM to a code the police give."
+  - id: s_school_payment
+    label: scam
+    tactics: [impersonation_gov_police, payment_redirect, urgency]
+    brief: "A caller pretending to be from the education department says the child's place in the school or kindergarten queue will be lost unless a fee is paid today to a personal card."
+  # ---------------------------------------------------------------- legit (same pretexts, none of the asks)
+  - id: l_parcel_delivery
+    label: legit
+    brief: "A courier calls to agree on a delivery time for a parcel and asks for the entrance and floor. He says he will show the code screen at the door only when handing over, and asks for nothing else."
+  - id: l_clinic_reminder
+    label: legit
+    brief: "A nurse from the polyclinic reminds the person of a scheduled check-up or vaccination, asks whether the time still suits them, and offers to move the appointment."
+  - id: l_utility_visit
+    label: legit
+    brief: "An employee of the city utility company calls to agree on a date for a routine meter inspection, tells the person the inspector will carry an ID card, and that the visit is free."
+  - id: l_pension_info
+    label: legit
+    brief: "A pension fund operator returns the person's own enquiry about their savings statement and explains how to check it in the official app or at a service centre, without asking for any personal data."
+  - id: l_bank_fraud_alert
+    label: legit
+    brief: "A bank employee calls to check whether a large card payment abroad was made by the client. When the client says no, she blocks the card and tells them to never give anyone codes or passwords, and to visit a branch for a new card."
+  - id: l_bank_loan_offer
+    label: legit
+    brief: "A bank sales manager calls with a pre-approved loan offer, describes the rate and term, and when the person hesitates says they can apply themselves in the app if interested."
+  - id: l_police_witness
+    label: legit
+    brief: "A local police inspector calls to invite the person to the station as a witness about a minor traffic incident they saw, gives the address and office hours, and asks for nothing."
+  - id: l_wrong_number_family
+    label: legit
+    hard_negative: false
+    brief: "A relative calls from a new number, explains the old phone broke, and chats about family news and plans for a weekend visit."
+  - id: l_family_money_real
+    label: legit
+    brief: "A grown daughter calls her mother and asks to borrow a modest amount until payday for a car repair; they agree she will pick the cash up in person on Sunday."
+  - id: l_employer_hr
+    label: legit
+    brief: "An HR specialist from a company where the person applied calls to invite them to an interview, describes the position and salary range, and says no payment is ever required from candidates."
+  - id: l_egov_service
+    label: legit
+    brief: "A public service centre operator calls to say the person's requested document is ready and can be collected at the centre with their ID card, or viewed in the official portal."
+  - id: l_operator_tariff
+    label: legit
+    brief: "The mobile operator calls to offer a new tariff with more internet, explains the price, and says the person can switch in the official app if they like."
+  - id: l_tax_reminder
+    label: legit
+    brief: "A tax office specialist reminds the person that the property tax deadline is approaching and says they can pay through their bank app or the government portal at any time."
+  - id: l_investment_advisor
+    label: legit
+    brief: "An advisor from a licensed broker the person contacted calls back to explain the risks of investing, says returns are not guaranteed, and invites them to the office to sign documents."
+  - id: l_insurance_sales
+    label: legit
+    brief: "An insurance agent calls persistently to sell car insurance renewal, praises the offer, but accepts when the person says they will think about it and asks for no payment by phone."
+  - id: l_marketplace_seller
+    label: legit
+    brief: "Someone calls about an item the person is selling online, asks about its condition, and arranges to meet at a metro station to inspect it and pay in cash."
+  - id: l_school_teacher
+    label: legit
+    brief: "A class teacher calls a parent to tell them about a parent meeting and a school excursion, and says the trip fee will be collected by the parent committee at the meeting."
+  - id: l_bank_card_ready
+    label: legit
+    brief: "A bank branch calls to say the new card the client ordered is ready and can be picked up at the branch with an ID; they mention working hours."
+  - id: l_bank_survey
+    label: legit
+    hard_negative: false
+    brief: "A bank's call-centre runs a short satisfaction survey about the client's last visit to a branch, asking two or three rating questions and thanking them."
+  - id: l_lottery_real_winner
+    label: legit
+    brief: "A shop's customer service calls to say the person's receipt won a small gift certificate in a store promotion and they can collect it at the shop's information desk, free of charge."
+  - id: l_clinic_test_results
+    label: legit
+    brief: "A doctor's assistant calls to say the person's test results are ready, that nothing urgent was found, and that the doctor recommends a follow-up visit next month."
+  - id: l_delivery_food
+    label: legit
+    hard_negative: false
+    brief: "A food delivery courier calls because he cannot find the building, asks for directions and the apartment number, and says he will be there in five minutes."
+  - id: l_bank_debt_reminder
+    label: legit
+    brief: "A bank collections officer politely reminds the client that a loan payment is three days overdue, states the amount, and says it can be paid in the app or at any branch."
+  - id: l_remote_support_real
+    label: legit
+    brief: "An internet provider's technician calls back about the client's complaint of slow internet, asks them to restart the router, and books a technician visit if it does not help."
