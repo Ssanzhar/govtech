@@ -413,12 +413,13 @@ def _fingerprint_gate(valid, pool, seed: int, store: EmbeddingStore | None, cell
 
 
 def row_verdicts(report: dict, valid_ids: Sequence[str]) -> dict[str, list[str]]:
-    """Row-level rejections: {row id: reasons}. A row is accepted when it is schema-valid, a
-    scrub fixed point, not a near-duplicate (vs train or the run) and below the ROUGE-L cap.
+    """Row-level rejections: {row id: reasons}. A row is accepted when it is schema-valid, not
+    a near-duplicate (vs train or the run) and below the ROUGE-L cap.
     Pure over the report; schema-invalid rows carry their schema errors."""
     reasons: dict[str, list[str]] = {rid: ["schema: " + "; ".join(errs)] for rid, errs in report["schema"]["errors"].items()}
-    for rid in report["scrub"]["rows_not_fixed_point"]:
-        reasons.setdefault(rid, []).append("scrub: not a fixed point")
+    # Not a rejection: scrubber v2 (D66) masks self-introduced names («это Асель из Kaspi»),
+    # which every natural call has. The fold scrubs each row (`build_corpus.scrub_dialogue`),
+    # so the corpus stays a scrub fixed point (D45); the count is reported, not dropped.
     near = report.get("near_dup", {})
     for rid in near.get("flagged_vs_train", []):
         reasons.setdefault(rid, []).append("near-duplicate of a train row")

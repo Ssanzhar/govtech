@@ -54,7 +54,7 @@ def test_row_verdicts_collect_every_reason_and_chunk_verdict_applies_the_floor()
         "disjoint": {"overlaps": {"test": ["c"]}},
     }
     rejected = row_verdicts(report, ["a", "b", "c", "d", "e"])
-    assert set(rejected) == {"x", "a", "b", "c"} and len(rejected["b"]) == 2
+    assert set(rejected) == {"x", "b", "c"} and len(rejected["b"]) == 2  # "a" is scrubbed at fold, not dropped
     verdict = chunk_verdict(6, rejected, ["a", "b", "c", "d", "e"], 0.3)
-    assert verdict["accepted_ids"] == ["d", "e"] and verdict["verdict"] == "pass"
-    assert chunk_verdict(6, rejected, ["a", "b", "c", "d", "e"], 0.5)["verdict"] == "fail"
+    assert verdict["accepted_ids"] == ["a", "d", "e"] and verdict["verdict"] == "pass"
+    assert chunk_verdict(6, rejected, ["a", "b", "c", "d", "e"], 0.6)["verdict"] == "fail"
