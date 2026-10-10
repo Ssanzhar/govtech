@@ -54,9 +54,13 @@ def test_every_brief_is_used_before_any_repeats_within_a_language():
             assert len(set(used)) == min(len(used), pool)
 
 
-def test_no_model_writes_every_language():
-    assert len(set(plan.LANGUAGE_GENERATOR.values())) >= 2
+def test_every_language_has_a_registered_generator_outside_the_training_families():
+    """One family writes the set today (ADR D65 records why); it must not be Gemini or Claude."""
+    assert set(plan.LANGUAGE_GENERATOR) == set(plan.LANGUAGE_TARGETS)
     assert set(plan.LANGUAGE_GENERATOR.values()) <= set(plan.GENERATORS)
+    for key in set(plan.LANGUAGE_GENERATOR.values()):
+        meta = " ".join(plan.GENERATORS[key].values()).lower()
+        assert "gemini" not in meta and "claude" not in meta and "gemma" not in meta
 
 
 def test_the_label_comes_from_the_brief_and_the_raw_row_parses():

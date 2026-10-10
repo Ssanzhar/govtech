@@ -17,7 +17,10 @@ from pathlib import Path
 import yaml
 
 PLAN_SEED = 20261009
-LANGUAGE_TARGETS: dict[str, int] = {"kk": 50, "ru": 50, "mixed": 40, "en": 30}
+# `mixed` was planned at 40. The only local Kazakh-capable model never produced kk-ru
+# code-switching in the pilot (0 / 8 calls, both inter- and intra-sentence prompts; it falls back
+# to pure Kazakh), so mixed is 0 here and stays pending for court_authored / real_asr (ADR D65).
+LANGUAGE_TARGETS: dict[str, int] = {"kk": 50, "ru": 50, "mixed": 0, "en": 30}
 TURN_RANGE = (8, 18)
 TEMPERATURE = 0.8
 TOP_P = 0.95
@@ -27,7 +30,10 @@ ATTEMPT_SEED_STRIDE = 100_003
 SCAM_RISK = 0.95
 LEGIT_RISK = 0.02
 
-# Which local model writes which language. No single model writes everything.
+# Which local model writes which language. The plan was two families (Qwen-Kazakh for kk/mixed,
+# YandexGPT for ru/en); the link delivered ~0.1-1 MB/s for a day and the YandexGPT download was
+# dropped, so ONE family (Qwen3.5, ISSAI's Kazakh fine-tune) writes every language (ADR D65).
+# YandexGPT stays registered so a second family can be added for ru/en without code changes.
 GENERATORS: dict[str, dict[str, str]] = {
     "qwen35_kk": {
         "repo": "mradermacher/Qwen3.5-9B-Kazakh-GGUF",
@@ -46,7 +52,7 @@ GENERATORS: dict[str, dict[str, str]] = {
         "licence": "YandexGPT-5-Lite-8B license (custom; see the repo's LICENSE)",
     },
 }
-LANGUAGE_GENERATOR: dict[str, str] = {"kk": "qwen35_kk", "mixed": "qwen35_kk", "ru": "yandexgpt5_lite", "en": "yandexgpt5_lite"}
+LANGUAGE_GENERATOR: dict[str, str] = {"kk": "qwen35_kk", "mixed": "qwen35_kk", "ru": "qwen35_kk", "en": "qwen35_kk"}
 
 PERSONAS: tuple[str, ...] = (
     "a 67-year-old retired schoolteacher in Shymkent",
@@ -75,19 +81,43 @@ LEGIT_OUTCOMES: tuple[str, ...] = (
     "They are busy and keep the call short.",
     "They ask a few practical questions before agreeing.",
 )
+# The Kazakh fine-tune answers in Kazakh unless told otherwise in the target language itself
+# (pilot, plan seed 7: 0 / 6 ru and mixed calls in the right language with English-only
+# instructions), so every instruction carries a native-language directive. Within-sentence
+# code-switching was never produced (0 / 5 pilot calls); `mixed` therefore asks for the
+# speaker-level switch (Russian caller, Kazakh answerer, slips both ways) -- ADR D65.
 LANGUAGE_INSTRUCTIONS: dict[str, str] = {
-    "kk": "Kazakh only, in Cyrillic script, everyday spoken Kazakh.",
-    "ru": "Russian only. The call takes place in Kazakhstan.",
-    "mixed": (
-        "Kazakh-Russian code-switching, the way many people in Almaty and Astana talk: both speakers "
-        "mix Kazakh and Russian words and sentences throughout the call. Cyrillic script."
+    "kk": "Kazakh only, in Cyrillic script, everyday spoken Kazakh. Диалог тек қазақ тілінде болсын.",
+    "ru": (
+        "Russian only, not Kazakh. The call takes place in Kazakhstan. "
+        "Весь диалог пиши только на русском языке, без казахских слов и фраз."
     ),
-    "en": "English only. The call takes place in Kazakhstan (Kazakh names, tenge, local places).",
+    "mixed": (
+        "Kazakh-Russian code-switching as it is heard in Kazakhstan: the caller speaks mostly Russian, "
+        "the person answering replies mostly in Kazakh, and both slip into the other language at times. "
+        "Cyrillic script. Звонящий говорит по-русски, ал жауап беруші негізінен қазақша сөйлейді."
+    ),
+    "en": (
+        "English only, not Kazakh or Russian. The call takes place in Kazakhstan "
+        "(Kazakh names, tenge, local places). Write every line in English."
+    ),
 }
 SYSTEM_PROMPT = (
     "You are a screenwriter who writes realistic, natural telephone conversations for a public-awareness "
     "research project in Kazakhstan. You write only the conversation itself."
 )
+_SYSTEM_LANGUAGE = {
+    "kk": "Сен диалогты тек қазақ тілінде жазасың.",
+    "ru": "Ты пишешь диалог только на русском языке. Никакого казахского текста.",
+    "mixed": (
+        "Звонящий говорит по-русски. Жауап беретін адам қазақша сөйлейді, кейде орысша сөздер қосады."
+    ),
+    "en": "You write the conversation in English only.",
+}
+
+
+def system_prompt(language: str) -> str:
+    return f"{SYSTEM_PROMPT} {_SYSTEM_LANGUAGE[language]}"
 _LABEL_NOTES = {
     "scam": "The caller is a fraudster but never admits it; the call should sound natural, the way real calls do.",
     "legit": "The caller is genuine and acts in good faith.",
@@ -172,14 +202,15 @@ def build_plan(briefs: tuple[Brief, ...], *, seed: int = PLAN_SEED, targets: dic
 
 def user_prompt(slot: Slot) -> str:
     return "\n".join((
+        f"Language: {LANGUAGE_INSTRUCTIONS[slot.language]}",
         "Write one telephone conversation.",
         f"Situation: {slot.brief.brief}",
         _LABEL_NOTES[slot.brief.label],
         f"The person who answers is {slot.persona}. {slot.outcome}",
-        f"Language: {LANGUAGE_INSTRUCTIONS[slot.language]}",
         f"Length: about {slot.turns} turns in total, alternating speakers.",
         "Format: one turn per line. Start every line with CALLER: or CALLEE: followed by the spoken words. "
         "No title, no narration, no stage directions, no explanations before or after.",
+        f"Remember the language: {LANGUAGE_INSTRUCTIONS[slot.language]}",
     ))
 
 

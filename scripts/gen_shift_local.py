@@ -27,7 +27,7 @@ from pathlib import Path
 
 from qorgan.data.shift_local_checks import accept
 from qorgan.data.shift_local_plan import (
-    MAX_ATTEMPTS, MAX_TOKENS, PLAN_SEED, SYSTEM_PROMPT, TEMPERATURE, TOP_P, Slot, build_plan, load_briefs, raw_row, user_prompt,
+    MAX_ATTEMPTS, MAX_TOKENS, PLAN_SEED, TEMPERATURE, system_prompt, TOP_P, Slot, build_plan, load_briefs, raw_row, user_prompt,
 )
 
 _REPO = Path(__file__).resolve().parents[1]
@@ -38,7 +38,7 @@ _REQUEST_TIMEOUT_S = 900
 
 def _complete(server: str, slot: Slot, attempt: int) -> str:
     body = {
-        "messages": [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user_prompt(slot)}],
+        "messages": [{"role": "system", "content": system_prompt(slot.language)}, {"role": "user", "content": user_prompt(slot)}],
         "temperature": TEMPERATURE,
         "top_p": TOP_P,
         "seed": slot.attempt_seed(attempt),
@@ -65,11 +65,16 @@ def _append(path: Path, row: dict) -> None:
         handle.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
-def run(server: str, generator: str, out_dir: Path, limit: int | None, plan_seed: int) -> None:
+def run(server: str, generator: str, out_dir: Path, limit: int | None, plan_seed: int, languages: list[str] | None = None) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     attempts_path = out_dir / "attempts.jsonl"
     past = _read_jsonl(attempts_path)
-    slots = [s for s in build_plan(load_briefs(_BRIEFS), seed=plan_seed) if s.generator == generator][:limit]
+    slots = [
+        s for s in build_plan(load_briefs(_BRIEFS), seed=plan_seed)
+        if s.generator == generator and (not languages or s.language in languages)
+    ]
+    if limit:  # a smoke test samples both labels: the plan lists each language's scams first
+        slots = slots[::max(1, len(slots) // limit)][:limit]
     for slot in slots:
         lang_path = out_dir / f"{slot.language}.jsonl"
         done = {r["id"] for r in _read_jsonl(lang_path)}
@@ -83,7 +88,7 @@ def run(server: str, generator: str, out_dir: Path, limit: int | None, plan_seed
                 raw = _complete(server, slot, attempt)
             except (urllib.error.URLError, TimeoutError, KeyError) as exc:
                 sys.exit(f"{slot.slot_id}: generation failed ({exc}); fix the server and re-run (resumable)")
-            prompt = SYSTEM_PROMPT + "\n" + user_prompt(slot)
+            prompt = system_prompt(slot.language) + "\n" + user_prompt(slot)
             verdict = accept(raw, language=slot.language, prompt=prompt, accepted=accepted_texts)
             record = {
                 "slot": slot.slot_id, "attempt": attempt, "seed": slot.attempt_seed(attempt),
@@ -105,7 +110,8 @@ def main() -> None:
     parser.add_argument("--generator", required=True)
     parser.add_argument("--server", default="http://127.0.0.1:8091")
     parser.add_argument("--out-dir", type=Path, default=_OUT)
-    parser.add_argument("--limit", type=int, default=None, help="only the first N slots (smoke test)")
+    parser.add_argument("--limit", type=int, default=None, help="only N evenly spaced slots (smoke test)")
+    parser.add_argument("--languages", nargs="+", default=None, help="only these languages (parallel runs)")
     parser.add_argument(
         "--plan-seed", type=int, default=PLAN_SEED,
         help="a different seed gives different slots and texts: use one for smoke tests a person may read",
@@ -113,7 +119,7 @@ def main() -> None:
     args = parser.parse_args()
     if args.plan_seed != PLAN_SEED and args.out_dir.resolve() == _OUT.resolve():
         sys.exit("a non-default --plan-seed must write to another --out-dir (it is a pilot, not the split)")
-    run(args.server, args.generator, args.out_dir, args.limit, args.plan_seed)
+    run(args.server, args.generator, args.out_dir, args.limit, args.plan_seed, args.languages)
 
 
 if __name__ == "__main__":
