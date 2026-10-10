@@ -254,7 +254,10 @@ def build_corpus(
     scrubbed_augment = tuple(scrub_dialogue(d) for _, d in cleaned_augment if d is not None)
     if scrubbed_augment:
         splits = {**splits, "train": deduplicate(splits["train"] + scrubbed_augment)}
-    asr_styled = asr_style_augment(splits["train"], fraction=active_asr_fraction, seed=active_seed)
+    # Scrubbed AFTER styling (found while folding taxonomy-v2 rows, ADR D63 phase 2): styling
+    # lower-cases a "[NAME]" placeholder into "name", which scrubber v2 (D66) masks again, so an
+    # unscrubbed copy would not be the scrub fixed point every published row must be (D45).
+    asr_styled = tuple(scrub_dialogue(d) for d in asr_style_augment(splits["train"], fraction=active_asr_fraction, seed=active_seed))
     if asr_styled:
         splits = {**splits, "train": deduplicate(splits["train"] + asr_styled)}
     cleaned_anchors = [(d.id, clean_dialogue(d)) for d in anchors]
