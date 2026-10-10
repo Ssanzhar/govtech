@@ -1735,6 +1735,17 @@ server ONNX embedder as the documented proxy, `linear_model_source=bundle`, thre
 | kk | 0.080 [0.010, 0.260] | 0.846 | 0.458 [0.256, 0.672] | 0.595 | 0.872 [0.742, 0.966] | 49 |
 | ru | 0.000 [0.000, 0.142] | 1.000 | 0.625 [0.406, 0.812] | 0.769 | 0.927 [0.834, 0.979] | 48 |
 
+Streaming (`eval.stream`, live meter replayed turn by turn):
+
+| Split | False-Latch Rate [95% CI] | Alert-Hit Rate [95% CI] | Median Turns | P90 Turns | N+ | N- |
+|---|---|---|---|---|---|---|
+| shift_local | 0.125 [0.056, 0.232] | 0.694 [0.563, 0.804] | 3.000 | 8.000 | 62 | 64 |
+| shift_local (clean) | 0.133 [0.059, 0.246] | 0.679 [0.537, 0.801] | 3.000 | 8.000 | 53 | 60 |
+| shift_local (inspected) | 0.000 [0.000, 0.602] | 0.778 [0.400, 0.972] | 3.000 | 5.000 | 9 | 4 |
+
+The live meter latches on 8 / 64 legitimate calls at some point (0.125) — twice the
+full-transcript FPR; this is the number a citizen would feel.
+
 Read with care: recall 0.548 is in the same range as `shift_v1` (0.455, D54) and far from `test`;
 FPR 0.062 is double `shift_v1`'s 0.030, with overlapping intervals; Kazakh recall (0.458) is the
 weakest language, as on `shift_v1`. The device-runtime number (`QORGAN_EMBED_BACKEND=device`) was
