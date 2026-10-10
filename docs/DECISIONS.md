@@ -1751,6 +1751,114 @@ in the UI. `live.js` and `asr.js` are untouched.
   stored report.
 - Inferring the 5 new tactics on old rows by keyword. That writes the lexicon into the labels.
 - Making the role a learned head. It would add FPR exposure for a display string.
+#### D63 phase 2 — generation, corpus fold-in and a dry-run retrain (2026-10-09/10)
+_Approved by the user on 2026-10-09: the six phase-1 "(approve)" items, all as proposed. No
+held-out split was evaluated; nothing shipped; `site/models/weights.json` is unchanged._
+
+**Grid v2** (`configs/gen_grid.yaml`). Four changes:
+- age band is drawn first, then an occupation that fits it;
+- an optional `imp_*` tactic is drawn only when it is the role's own `imp_tactic`;
+- `hook_only` is allowed only when every tactic of the cell is hook-compatible;
+- the scam share is 0.48, the train base rate (896/1880 = 0.477). The pilot used 0.60.
+
+A new field, `lookalike_of`, gives 80 % of the negatives the pretext of a scheme in proportion to
+that scheme's scam count. Each such negative is that scheme's `twin` class, with the scheme's role
+when that role can call legitimately (police yes; regulator and antifraud never).
+
+**Role slot.** Self-introduction by organisation. Python and `role.js` are 1:1, and the fixture
+was regenerated. Each role gets `orgs`, plus intro markers and Kazakh ablative affixes. A claim is
+an organisation with a marker within `ROLE_INTRO_WINDOW` = 4 tokens on the same line, or a
+line-opening ablative. The longest organisation wins. Personal names are never matched. The lexicon
+stays display-only.
+
+| | role recall | fires on role-less rows | wrong role |
+|---|---|---|---|
+| pilot, before → after (designed on it) | 43/102 (0.42) → 75/102 (0.735) | 1/18 → 1/18 | 9 → 4 |
+| phase-2 batch, before → after (**not** designed on it) | 399/1136 (0.351) → 749/1136 (0.659) | 31/189 → 47/189 | 70 → 63 |
+
+**Migration review (user item 3).** I read every phase-1 review row: 123 train sources plus their
+-asr copies, and 11 val rows. I also read every row whose automatic mapping moved with the
+widened role lexicon, 141 sources in all. Each decision has a one-line reason in
+`data/taxonomy/migration_v2_review.json`:
+- imp_bank 75, imp_law_enforcement 41, imp_telecom_delivery_utility 8, imp_regulator 7,
+  imp_gov_service 6;
+- 4 rows dropped: a private "investment/financial firm" caller impersonates no institution.
+
+10 of the 141 differ from the automatic mapping. `apply_review` applies the decision per source id.
+
+**Generation.** Run `p2`: 1,800 cells, 72 interleaved chunks of 25, written by writer sub-agents.
+Each writer saw only its own chunk specs, and resume state comes from disk
+(`python -m qorgan.data.gen status`). Usage limits and network drops killed several writers, so
+**19 chunks were skipped** at the coordinator's instruction ("stop at ≥ ~1,400"):
+chunk_31, 34, 38, 41, 42, 45, 46, 58, 61–71. Chunks are interleaved samples of the grid, so the
+balance holds.
+- Written: 53 chunks = 1,325 rows. With the pilot that is **1,445 QC-accepted dialogues**; no row
+  was rejected.
+- Whole-run QC (`qc --run p2`):
+  - schema 1325/1325; 0 eval-split hash overlaps; 0 near-duplicates (threshold 0.9749);
+  - ROUGE-L max 0.382;
+  - cue-free scams 0.871, no scheme under 0.30;
+  - scheme rules 636/636;
+  - 46 of 689 negatives fire a hard-signal cue (confusables, as designed).
+- Language split, scam/legit: kk 213/223, ru 228/238, mixed 161/164, en 106/112.
+- **Fingerprint: char AUC 0.9999, e5 0.990. On v1 topics only: 0.9998 / 0.986.** Claude style
+  remains perfectly separable from Gemini style. That is why the label balance below matters.
+- Every v2 tactic clears the ≥ 40 generation floor:
+  - the five new tactics: loan 47, cash courier 42, refund 46, task fee 40, callback 54;
+  - imp_personal 57.
+- A scrub change is no longer a rejection. Scrubber v2 (D66) masks self-introduced names, and
+  the fold scrubs every row. 126 rows changed.
+
+**Corpus fold-in.**
+- `build_corpus --gen-run pilot --gen-run p2 --label-space v2 --processed-dir …`:
+  - generated rows go to train/val only, never test (`GEN_VAL_FRACTION` = 0.15, seeded id hash);
+  - they get ASR-styled copies like any train row;
+  - v1 rows are migrated, with the review applied;
+  - `provenance.json` records each row's generator.
+- Rebuilt first under scrubber v2 (`publish_guard --fix`). ASR copies are now scrubbed after
+  styling: styling turned "[NAME]" into "name", which v2 re-masks.
+- **P(scam | generator):**
+
+  | split | Claude | Gemini |
+  |---|---|---|
+  | train (incl. ASR copies) | 1204/2454 = 0.491 | 896/1880 = 0.477 |
+  | val | 106/218 = 0.486 | 58/135 = 0.430 |
+
+- `QORGAN_LABEL_SPACE=v2` switches the space for a process. **The yaml stays `v1`**: flipping it
+  without new weights would break the shipped model. It flips together with an export.
+
+**Trainer.**
+- Label masking: Gemini rows are unlabelled for the five new tactics in fit, OOF and threshold
+  tuning (1,880 train rows masked).
+- Thin heads: `V2_MIN_OOF_POSITIVES` = 8 (config.py), counted on train + val labelled
+  positives. No head was dropped; the smallest are callback 54 and cash courier 42.
+
+**Dry run** (validation only, risk 0.59). Embeddings come from the **ONNX server proxy, not the
+device bridge**: inside the agent sandbox, headless Chromium cannot reach its loopback server
+(ERR_SOCKET_NOT_CONNECTED), and running it unsandboxed was refused.
+- 23 heads, `models/linear_v2_dryrun/web/weights.json`, sha256 `7f1c4299…f0b610`.
+
+| val, threshold 0.59 | FPR [95 % CP] | recall [95 % CP] |
+|---|---|---|
+| shipped v1, all | 4/189 = 0.021 [0.006, 0.053] | 84/164 = 0.512 [0.433, 0.591] |
+| shipped v1, Claude rows | 3/112 = 0.027 [0.006, 0.076] | 26/106 = 0.245 [0.167, 0.338] |
+| shipped v1, Gemini rows | 1/77 = 0.013 [0.000, 0.070] | 58/58 = 1.000 [0.938, 1.000] |
+| **v2 dry run, all** | **16/189 = 0.085 [0.049, 0.134]** | 145/164 = 0.884 [0.825, 0.929] |
+| v2 dry run, Claude rows | 10/112 = 0.089 [0.044, 0.158] | 88/106 = 0.830 [0.745, 0.896] |
+| v2 dry run, Gemini rows | 6/77 = 0.078 [0.029, 0.162] | 57/58 = 0.983 [0.908, 1.000] |
+
+Validation threshold sweep for the dry-run model (validation only; nothing is chosen yet):
+
+| threshold | 0.59 | 0.70 | 0.80 | 0.85 | 0.90 |
+|---|---|---|---|---|---|
+| FPR | 16/189 | 9/189 | 6/189 | 1/189 | 0/189 |
+| recall | 145/164 | 136/164 | 121/164 | 110/164 | 100/164 |
+
+**Verdict: not sane to ship at 0.59.** Recall on the new pretexts rises a lot, but validation FPR
+quadruples, including on the Gemini rows (1/77 → 6/77). The model would need either a new
+operating point, for which 0.85 is where validation FPR returns to baseline, or a fix of the
+cause. That choice belongs to the user. Per the protocol, no held-out split was run.
+
 ### D64 — Word-level voice mode: live per-word language chips + a GigaAM pass per phrase (2026-10-08)
 The voice mode tagged a whole utterance with one language (the per-utterance Vosk vote, D62), so a
 code-switched sentence was transcribed by one monolingual model, and English was the weakest leg.
