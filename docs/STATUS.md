@@ -5,6 +5,7 @@ then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECI
 (ADRs D11–D54), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
 kept as history._
 
+- **2026-10-10 — New independent held-out `shift_local` (ADR D65):** 126 calls (kk 49 · ru 48 · en 29; 62 scam / 64 legit) written offline by a local open model (Qwen3.5-9B-Kazakh GGUF, one family for every row), accepted by automated checks only, gitignored and refused by the HF guard. Shipped model: FPR **0.062 [0.017, 0.152]**, recall **0.548 [0.417, 0.675]**; kk recall 0.458. **No `mixed` calls** (the model never code-switched). `shift` is now documented as `shift_v1` and becomes validation-only once Claude-written data enters train. Build: `scripts/gen_shift_local.py` → `python -m qorgan.data.shift_local_set`.
 - **2026-10-08 — NITEC / eGov pilot pack (RU, draft, nothing sent):** `docs/egov/` (README, ТЗ outline, data-flow/PII map, ГТС security checklist, API spec + proposed hand-off schema, questions for NITEC, architecture diagrams).
 
 ## TL;DR (September 2026)

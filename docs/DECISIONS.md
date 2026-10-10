@@ -1662,3 +1662,85 @@ evidence in `docs/research/2026-10/voice_d64/`.
   (`docs/RECORDING_SCRIPT.md`). Cue survival on real speech is unmeasured.
 - Not done: a GigaAM + VAD mode for Android WebView, where Vosklet cannot run (no cross-origin
   isolation).
+
+### D65 — An independent held-out from a local open model (`shift_local`); `shift` becomes `shift_v1`, validation only (2026-10-10)
+**Why.** `shift` (66 calls) was written by Claude. Claude is now becoming a *training* generator
+(track 2), and phase 1 showed a classifier tells Claude rows from Gemini rows at AUC 0.975, so the
+moment Claude rows enter train `shift` stops measuring cross-generator generalisation.
+**Decision.**
+- `shift` is documented as **`shift_v1`** from now on (the code split name stays `shift` to avoid
+  churn). Once Claude-written data is in train it is a *validation* number, never the headline.
+- **`shift_local`** is the new honest headline: calls written offline on the Mac by an open-weights
+  model from a different family, with no access to the corpus, prompts, lexicons or any split.
+- `court_authored` (track D68 / the team) and `real_asr` (the team's recordings,
+  `docs/RECORDING_SCRIPT.md`) are pending; the headline becomes the worst of the three, with
+  intervals, as soon as they exist (`docs/RESEARCH_2026-10.md` §3.2).
+- **Rules:** nothing is tuned on `shift_local`, no threshold is picked on it, and the lexicon is
+  never extended from it (as D35/D43). Rows a person reads go into the inspection ledger. It is
+  never published: `publish_guard.NEVER_PUBLISHED` + `assert_publishable` make
+  `scripts/hf_upload.py` refuse any allow pattern that would match it (tests), and its raw and
+  processed files are gitignored (test). Track-2 prompts must not be built from its briefs.
+
+**How it was built.** `configs/shift_local_briefs.yaml`: 48 one-to-two-sentence briefs (24 scam,
+24 legit; 21 legit are look-alikes with the same pretext and none of the asks), written from public
+descriptions of the 2024–26 KZ/RU waves without opening the lexicons, corpus or prompts.
+`qorgan.data.shift_local_plan` fixes every slot (language × brief × persona × victim outcome ×
+length × seed; plan seed 20261009, temperature 0.8, top-p 0.95, ≤ 3 attempts per slot) before any
+text exists; the label comes from the brief. `scripts/gen_shift_local.py` runs llama.cpp
+(`llama-server` 0.6.0, build 11429, Metal); `qorgan.data.shift_local_checks` accepts or rejects
+each attempt on **automated checks only** — format, 8–22 turns, both speakers, turn length, prompt
+echo, script/language (Cyrillic vs Latin, Kazakh-letter share, Russian function words), loops,
+near-duplicates — never on a classifier score. `python -m qorgan.data.shift_local_set` reuses the
+`shift` pipeline (clean, scrub, dedup, proven disjoint from every split incl. `shift`), then
+refuses to write unless the file is a scrub fixed point (D45). Provenance with hashes, seeds,
+thresholds and rejection counts, no text: `data/provenance/shift_local.json`.
+
+**Generator — one model family, stated plainly.** `mradermacher/Qwen3.5-9B-Kazakh-GGUF` @
+`b6810719`, `Qwen3.5-9B-Kazakh.Q4_K_M.gguf`, sha256 `4e3ca9f6…02021e2`, Apache-2.0; a GGUF of
+ISSAI's `issai/Qwen3.5-9B-Kazakh` (Qwen3.5 family — neither Gemini nor Claude). **It wrote every
+row in every language.** The preferred `issai/LLama-3.1-KazLLM-1.0-8B-GGUF4` is gated
+(CC-BY-NC-4.0, access must be requested from the user's own HF account — not done on their
+behalf). A second family (`yandex/YandexGPT-5-Lite-8B-instruct-GGUF`, custom licence) was planned
+for ru/en and is still registered in the plan, but the link delivered 0.01–7 MB/s for a day
+(including an outage and a corrupted first download, fixed with range-verified resumes and a
+final sha256 check), so it was dropped. Consequence: `shift_local` carries Qwen3.5-Kazakh's house
+style; it is independent of our training generators, not of style in general.
+
+**No code-switched (`mixed`) calls.** Planned at 40. In the pilot (plan seed 7, outside the
+split) the Kazakh fine-tune answered in Kazakh whatever the instruction language, and with
+native-language directives it produced Russian and English but **never kk–ru code-switching**
+(0 / 8 calls, both intra-sentence and speaker-level prompts — it falls back to pure Kazakh). The
+acceptance check would have rejected every one, so `mixed` is 0 and stays pending for
+`court_authored` / `real_asr`. `mixed` therefore has no independent held-out at all today.
+
+**Accepted / attempts (rejection reasons):** kk scam 24/32 (turn_count 8) · kk legit 25/25 ·
+ru scam 24/31 (language 6, turn_count 1) · ru legit 24/33 (language 7, turn_count 2) · en scam
+14/18 (turn_count 4) · en legit 15/15. **126 calls** (62 scam / 64 legit; kk 49 · ru 48 · en 29),
+4 slots unfilled after 3 attempts. Russian rejections are the model drifting back into Kazakh.
+
+**Label validity.** A seeded 10 % sample (13 rows, `random.Random(65)`) was read only to check
+call ↔ brief: 13 / 13 match; two have blurred speaker roles (a scam still). All 13 are in the
+inspection ledger, so the harness reports `(clean)` / `(inspected)` rows. No score was looked at
+before the sample was read.
+
+**Baseline — the shipped model, evaluated, not tuned** (`QORGAN_CLASSIFIER_BACKEND=linear`,
+server ONNX embedder as the documented proxy, `linear_model_source=bundle`, threshold 0.59):
+
+| Split | FPR [95% CI] | Precision | Recall [95% CI] | F1 | PR-AUC [95% CI] | N |
+|---|---|---|---|---|---|---|
+| shift_local | 0.062 [0.017, 0.152] | 0.895 | 0.548 [0.417, 0.675] | 0.680 | 0.883 [0.808, 0.944] | 126 |
+| shift_local (clean) | 0.067 [0.018, 0.162] | 0.879 | 0.547 [0.404, 0.684] | 0.674 | 0.873 [0.795, 0.938] | 113 |
+| shift_local (inspected) | 0.000 [0.000, 0.602] | 1.000 | 0.556 [0.212, 0.863] | 0.714 | 0.950 [0.828, 1.000] | 13 |
+| en | 0.133 [0.017, 0.405] | 0.800 | 0.571 [0.289, 0.823] | 0.667 | 0.833 [0.610, 0.984] | 29 |
+| kk | 0.080 [0.010, 0.260] | 0.846 | 0.458 [0.256, 0.672] | 0.595 | 0.872 [0.742, 0.966] | 49 |
+| ru | 0.000 [0.000, 0.142] | 1.000 | 0.625 [0.406, 0.812] | 0.769 | 0.927 [0.834, 0.979] | 48 |
+
+Read with care: recall 0.548 is in the same range as `shift_v1` (0.455, D54) and far from `test`;
+FPR 0.062 is double `shift_v1`'s 0.030, with overlapping intervals; Kazakh recall (0.458) is the
+weakest language, as on `shift_v1`. The device-runtime number (`QORGAN_EMBED_BACKEND=device`) was
+not run (the Mac's browser was in use by other tracks); the server proxy is what `eval.run`
+reports elsewhere too.
+
+**Open (needs a decision):** request KazLLM access and/or fetch YandexGPT to add a second family
+for ru/en; a code-switching generator (or the team) for `mixed`; whether 126 is enough — at this
+size FPR intervals are ±0.07.

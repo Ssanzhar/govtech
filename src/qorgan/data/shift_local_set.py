@@ -130,7 +130,7 @@ def main() -> None:  # pragma: no cover - CLI
     cfg = get_config()
     raw_dir = cfg.data_dir / RAW_SUBDIR
     manifest = build(raw_dir=raw_dir, processed_dir=cfg.data_dir / "processed")
-    attempts_path = raw_dir / "attempts.jsonl"
+    attempts_path = raw_dir / "meta" / "attempts.jsonl"
     attempts = [json.loads(l) for l in attempts_path.read_text(encoding="utf-8").splitlines() if l.strip()]
     version = subprocess.run(["llama-server", "--version"], capture_output=True, text=True, check=False)
     llama = " ".join(line for line in (version.stdout + version.stderr).splitlines() if line.startswith("version"))

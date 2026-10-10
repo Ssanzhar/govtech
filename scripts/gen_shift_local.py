@@ -10,7 +10,7 @@ ONLY (format / turns / language / echo / loops / duplicates) -- never by a class
 
 Writes under `data/raw/shift_local/` (gitignored, never published):
   <language>.jsonl          accepted calls, raw shape read by `shift_set.parse_raw_row`
-  attempts.jsonl            one line per attempt: slot, seed, reason, sha256 of the raw output
+  meta/attempts.jsonl       one line per attempt: slot, seed, reason, sha256 of the raw output
 Resumable: slots already accepted, or already out of attempts, are skipped.
 """
 
@@ -67,7 +67,8 @@ def _append(path: Path, row: dict) -> None:
 
 def run(server: str, generator: str, out_dir: Path, limit: int | None, plan_seed: int, languages: list[str] | None = None) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
-    attempts_path = out_dir / "attempts.jsonl"
+    attempts_path = out_dir / "meta" / "attempts.jsonl"  # a subdir: the split builder globs *.jsonl
+    attempts_path.parent.mkdir(parents=True, exist_ok=True)
     past = _read_jsonl(attempts_path)
     slots = [
         s for s in build_plan(load_briefs(_BRIEFS), seed=plan_seed)
