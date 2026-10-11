@@ -133,3 +133,38 @@ def test_scrub_file_is_idempotent(tmp_path):
 
 def test_scrub_file_skips_a_missing_file(tmp_path):
     assert scrub_file(tmp_path / "absent.jsonl") == []
+
+
+# --- never-published held-outs (ADR D65) ------------------------------------------------------
+
+
+def test_shift_local_is_never_in_the_published_splits_or_the_upload_allow_list():
+    from qorgan.data.publish_guard import DATASET_ALLOW_PATTERNS, NEVER_PUBLISHED, assert_publishable
+
+    assert "shift_local.jsonl" in NEVER_PUBLISHED
+    assert not set(NEVER_PUBLISHED) & set(PUBLISHED_SPLITS)
+    assert_publishable(DATASET_ALLOW_PATTERNS)  # the real allow list passes
+
+
+@pytest.mark.parametrize("patterns", [["shift_local.jsonl"], ["*.jsonl"], ["shift*"], ["train.jsonl", "*.manifest.json"]])
+def test_an_allow_list_that_would_publish_shift_local_is_refused(patterns):
+    from qorgan.data.publish_guard import PublishRefused, assert_publishable
+
+    with pytest.raises(PublishRefused, match="shift_local"):
+        assert_publishable(patterns)
+
+
+def test_hf_upload_refuses_shift_local_before_uploading_anything():
+    upload = (_REPO / "scripts" / "hf_upload.py").read_text(encoding="utf-8")
+    guard_at = upload.index("assert_publishable(DATASET_ALLOW_PATTERNS)")
+    assert guard_at < upload.index("HfApi()"), "the guard must run before any client exists"
+    assert "allow_patterns=list(DATASET_ALLOW_PATTERNS)" in upload
+    assert "shift_local" not in upload.split("allow_patterns=")[1].split(")")[0]
+
+
+def test_shift_local_raw_and_processed_files_are_gitignored():
+    import subprocess
+
+    for path in ("data/raw/shift_local/kk.jsonl", "data/processed/shift_local.jsonl", "data/processed/shift_local.manifest.json"):
+        result = subprocess.run(["git", "check-ignore", "-q", path], cwd=_REPO, check=False)
+        assert result.returncode == 0, f"{path} must be gitignored"

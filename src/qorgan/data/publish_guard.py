@@ -14,8 +14,9 @@ and drops any span that *was* the PII -- a split must never ship a highlight poi
 
 from __future__ import annotations
 
+import fnmatch
 import json
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -32,6 +33,25 @@ PUBLISHED_SPLITS: tuple[str, ...] = (
     "adversarial_legit.jsonl",
     "shift.jsonl",
 )
+
+# What `scripts/hf_upload.py` uploads from data/processed -- one explicit allow list.
+DATASET_ALLOW_PATTERNS: tuple[str, ...] = (*PUBLISHED_SPLITS, "manifest.json", "shift.manifest.json")
+
+# Held-out splits that must NEVER reach the Hub (ADR D65). `shift_local` is the independent
+# held-out written by a local model: once public, the next training generator or a crawler
+# can see it, and it stops being independent. Kept in data/processed only for the harness.
+NEVER_PUBLISHED: tuple[str, ...] = ("shift_local.jsonl", "shift_local.manifest.json")
+
+
+class PublishRefused(ValueError):
+    """An upload pattern would publish a never-published held-out file."""
+
+
+def assert_publishable(patterns: Sequence[str]) -> None:
+    """Raise `PublishRefused` if any allow pattern matches a `NEVER_PUBLISHED` file."""
+    blocked = sorted({name for pattern in patterns for name in NEVER_PUBLISHED if fnmatch.fnmatch(name, pattern)})
+    if blocked:
+        raise PublishRefused(f"refusing to publish never-published held-out file(s): {blocked} (ADR D65)")
 
 
 # Real court-verdict quotes (ADR D68) are local-only: the Hub is a public, cross-border

@@ -39,3 +39,45 @@ entries:
     inspected_on: 2026-09-27
     reason: the ASR-styled false positive at 0.612 after the D51 retrain (clean 0.132); read to attribute the movement, which turned out to be the joint-LR refit and not the new cues -- no cue fires on it at all. Deliberately NOT fixed with data -- it is an eval-split row, so targeting it would be tuning on held-out data
 
+  # `shift_local` rows read 2026-10-10 ONLY to check that the generated call matches its brief's label
+  # (ADR D65: a seeded 10 % sample, random.Random(65) over ids, 13 of 126). Not read for features or
+  # tuning; no model scores were looked at. 13 / 13 matched their brief's label.
+  - id: sl_kk_legit_25
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_kk_legit_08
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_kk_scam_12
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Speaker roles blur (the caller narrates as the relative); label still a scam. Not used for tuning
+  - id: sl_ru_scam_07
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_en_scam_15
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_kk_scam_03
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Roles partly inverted (the card-number ask is voiced by the other side); label still a scam. Not used for tuning
+  - id: sl_kk_scam_05
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_kk_scam_14
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_kk_scam_17
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_ru_scam_18
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_kk_legit_15
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_ru_scam_04
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_ru_legit_05
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
