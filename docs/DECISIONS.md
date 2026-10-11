@@ -1859,6 +1859,90 @@ quadruples, including on the Gemini rows (1/77 → 6/77). The model would need e
 operating point, for which 0.85 is where validation FPR returns to baseline, or a fix of the
 cause. That choice belongs to the user. Per the protocol, no held-out split was run.
 
+#### D63 phase 2 — diagnosis and PRE-REGISTRATION of the held-out run (2026-10-11)
+_Written and committed before any held-out split was evaluated. Everything below was chosen on
+train / validation only._
+
+**Device embeddings.** The model is retrained on the browser's own vectors (the device bridge,
+transformers.js 3.8.1 / ORT-web wasm). On validation they tell the same story as the ONNX proxy.
+
+**Diagnosis 1: ranking.** v2 ranks better than the shipped model, so the regression is an
+operating-point shift.
+
+| validation ROC-AUC / PR-AUC | shipped v1 | v2 (device) |
+|---|---|---|
+| overall | 0.872 / 0.881 | **0.956 / 0.963** |
+| Claude rows | 0.759 / 0.763 | **0.919 / 0.933** |
+| Gemini rows | 1.000 / 1.000 | 0.9996 / 0.9994 |
+
+**Diagnosis 2: the 13 validation false positives of v2 at 0.59.**
+- 11 are Claude rows and 2 are Gemini rows (one legit_gov_service, one delivery_notification).
+- 9 of the 11 Claude false positives are Russian.
+- 9 of the 11 are twin / look-alike negatives:
+  - legit_delivery_code ×2;
+  - one each of legit_refund_request, legit_employer_request, legit_telecom_offer and
+    legit_gov_service (eGov);
+  - legit_bank_call ×2;
+  - general_conversation look-alike of investment_broker ×2.
+- 2 of the 13 fire a hard-signal cue.
+- The top heads are the pretext's own: imp_telecom_delivery_utility, otp_request,
+  refund_request, task_advance_fee, imp_gov_service, investment_scam.
+
+So v2 learned the pretexts. At 0.59 their legitimate twins cross the line.
+
+**Operating-point rule (stated by the orchestrator before computing it).** enter is the lowest
+threshold on a 0.01 grid at which v2's validation false positives are ≤ the shipped model's
+(4/189), on device embeddings. This gives:
+- **enter = 0.78, exit = 0.68**; the single-shot `risk_threshold` is also 0.78;
+- **single hard-signal floor = enter + 2 = 80**; double floor = max(81, single) = **81**.
+  These come from `meter.hard_signal_floors`; JS reads the same numbers from the config;
+- shipped stays at 0.59 / 0.49 with floors 61 / 81.
+
+| validation (device) | FPR | recall |
+|---|---|---|
+| shipped v1 @ 0.59 | 4/189 = 0.021 [0.006, 0.053] | 86/164 = 0.524 [0.445, 0.603] |
+| v2 @ 0.59 | 13/189 = 0.069 [0.037, 0.115] | 146/164 = 0.890 [0.832, 0.934] |
+| **v2 @ 0.78 (rule)** | **4/189 = 0.021 [0.006, 0.053]** | **132/164 = 0.805 [0.736, 0.863]** |
+| v2 @ 0.78, Claude rows | 3/112 | 75/106 |
+| v2 @ 0.78, Gemini rows | 1/77 | 57/58 |
+
+**Live meter on validation** (`eval.stream`, ONNX proxy for both models, each at its own point):
+- shipped @ 0.59/0.49: false-latch **0.085 [0.049, 0.134]** (16/189), alert-hit 0.573;
+- v2 @ 0.78/0.68: false-latch **0.138 [0.092, 0.195]** (26/189), alert-hit 0.848.
+
+**The streaming false-latch rate is worse for v2 on validation even at the rule point.** This is
+recorded here before the held-out run. The ship criteria below are the orchestrator's and do not
+include it; it goes to the user as a known risk.
+
+**Frozen model** (`models/linear_v2_device`):
+- 23 heads; no thin head dropped. The minimum out-of-fold positive count is ≥ 8 for all; the
+  smallest are cash_courier_handoff 42 and callback_instruction 54;
+- `_RISK_C` = 4.0 (unchanged); label masking on; per-tactic thresholds re-fit by D30 (OOF +
+  val), 0.55–0.70;
+- embed_backend `device`;
+- `web/weights.json` sha256 **7fc405ac52057d3ed4188a748884b6f1a8ffb17d5bf57917674c9c4e22b2bf92**;
+- meter settings otherwise unchanged (alpha 0.5/0.12, min turns to arm 3).
+
+0 of the 1,445 generated rows hash-collide with `shift_local`.
+
+**Ship criteria (the orchestrator's, fixed before looking):**
+1. FPR does not rise on test / authored_heldout / ood / ASR-styled / the browser gate.
+2. shift_local FPR stays within the baseline's 0.062 (4/64) plus one false positive.
+3. shift_local recall improves on the baseline's 0.548.
+
+If any fails: report and stop, no iteration.
+
+**Role line, extra fires on role-less rows (31 → 47/189 on the batch).** Of the 16 new fires,
+14 are wrong:
+- Kaspi named as a channel, not as the caller: "Kaspi support", a line-opening «Kaspi-ден»
+  transfer, «Kaspi-ге»;
+- these sit in erroneous_transfer ×7, legit_refund_request ×5, prize ×1 and
+  general_conversation ×1 rows.
+
+The other 2 are OLX buyers who name the listing site; that is factual. The lexicon is
+display-only, so these only mislabel the role line. Dropping the markers "support" / "here" and
+requiring a marker for the ablative is a later display-only fix, re-measured on a new batch.
+
 ### D64 — Word-level voice mode: live per-word language chips + a GigaAM pass per phrase (2026-10-08)
 The voice mode tagged a whole utterance with one language (the per-utterance Vosk vote, D62), so a
 code-switched sentence was transcribed by one monolingual model, and English was the weakest leg.
