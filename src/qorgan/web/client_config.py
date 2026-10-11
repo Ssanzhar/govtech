@@ -84,8 +84,8 @@ def export_client_config() -> dict[str, Any]:
                 "score_max": meter.SCORE_MAX,
             },
             "hard_signal_confidence_floor": meter.HARD_SIGNAL_CONFIDENCE_FLOOR,
-            "single_hard_signal_floor": meter.SINGLE_HARD_SIGNAL_FLOOR,
-            "double_hard_signal_floor": meter.DOUBLE_HARD_SIGNAL_FLOOR,
+            "single_hard_signal_floor": meter.hard_signal_floors(cfg)[0],
+            "double_hard_signal_floor": meter.hard_signal_floors(cfg)[1],
         },
         "window": {
             "max_chars": session.MAX_WINDOW_CHARS,

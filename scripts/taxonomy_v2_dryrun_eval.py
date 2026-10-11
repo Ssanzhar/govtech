@@ -58,6 +58,46 @@ def score(bundle, dialogues) -> tuple[np.ndarray, np.ndarray]:
     return risk, tactic
 
 
+def _aucs(truth: np.ndarray, risk: np.ndarray) -> dict:
+    from sklearn.metrics import average_precision_score, roc_auc_score
+
+    if truth.min() == truth.max():
+        return {}
+    return {"roc_auc": round(float(roc_auc_score(truth, risk)), 4), "pr_auc": round(float(average_precision_score(truth, risk)), 4)}
+
+
+def auc_breakdown(dialogues, generator, truth, risk) -> dict:
+    out = {"overall": _aucs(truth, risk)}
+    for g in ("claude", "gemini"):
+        idx = np.array([i for i, d in enumerate(dialogues) if generator.get(d.id, "gemini") == g])
+        out[f"generator={g}"] = _aucs(truth[idx], risk[idx])
+    return out
+
+
+def rule_threshold(truth: np.ndarray, risk: np.ndarray, max_false_positives: int) -> float | None:
+    """The LOWEST threshold on a 0.01 grid whose false positives <= `max_false_positives`
+    (ADR D63 phase 2 operating-point rule, decided before the held-out run)."""
+    for step in range(1, 100):
+        t = round(step / 100, 2)
+        if int(((risk >= t) & (truth == 0)).sum()) <= max_false_positives:
+            return t
+    return None
+
+
+def false_positive_table(bundle, dialogues, generator, risk, tactic, threshold) -> list[dict]:
+    from qorgan.classifier.features import match_cues
+
+    rows = []
+    for i, d in enumerate(dialogues):
+        if d.label.is_scam or risk[i] < threshold:
+            continue
+        top = sorted(zip(bundle.label_space, tactic[i]), key=lambda kv: -kv[1])[:2]
+        rows.append({"id": d.id, "generator": generator.get(d.id, "gemini"), "language": d.language, "risk": round(float(risk[i]), 3),
+                     "hard_cue": bool(match_cues(d.transcript(), bundle.lexicon)) if bundle.lexicon else None,
+                     "top_heads": [f"{t}:{p:.2f}" for t, p in top]})
+    return rows
+
+
 def _breakdown(dialogues, generator, truth, alert) -> dict:
     out = {"overall": _metrics(truth, alert)}
     groups: dict[str, list[int]] = {}
@@ -107,13 +147,23 @@ def main() -> None:
     report = {"split": "val", "threshold": threshold, "label_space": list(bundle.label_space),
               "v2_dryrun": _breakdown(val, generator, truth, risk >= threshold),
               "per_tactic": per_tactic(bundle, val, generator, tactic)}
+    report["v2_auc"] = auc_breakdown(val, generator, truth, risk)
+    report["v2_false_positives"] = false_positive_table(bundle, val, generator, risk, tactic, threshold)
     if args.baseline:
         base = load_linear_from_web(args.baseline)
         base_risk, _ = score(base, val)
         report["shipped_v1_baseline"] = _breakdown(val, generator, truth, base_risk >= threshold)
+        report["shipped_v1_auc"] = auc_breakdown(val, generator, truth, base_risk)
+        base_fp = int(((base_risk >= threshold) & (truth == 0)).sum())
+        rule = rule_threshold(truth, risk, base_fp)
+        report["operating_point_rule"] = {"baseline_false_positives": base_fp, "enter": rule,
+                                          "exit": None if rule is None else round(rule - 0.10, 2)}
+        if rule is not None:
+            report["v2_at_rule"] = _breakdown(val, generator, truth, risk >= rule)
     out = args.out or args.model_dir / "dryrun_val_report.json"
     out.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    for name in ("v2_dryrun", "shipped_v1_baseline"):
+    print(json.dumps({k: report.get(k) for k in ("v2_auc", "shipped_v1_auc", "operating_point_rule")}, indent=1))
+    for name in ("v2_dryrun", "shipped_v1_baseline", "v2_at_rule"):
         if name in report:
             print(f"== {name} (val, threshold {threshold})")
             for key, m in report[name].items():
