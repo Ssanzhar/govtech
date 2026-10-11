@@ -1943,6 +1943,43 @@ The other 2 are OLX buyers who name the listing site; that is factual. The lexic
 display-only, so these only mislabel the role line. Dropping the markers "support" / "here" and
 requiring a marker for the ablative is a later display-only fix, re-measured on a new batch.
 
+#### D63 phase 2 — the one-shot held-out result (2026-10-12): the ship criteria FAIL, so v2 is not shipped
+_The run used the frozen model and operating point of the pre-registration commit (f038cde).
+Shipped v1 ran at 0.59/0.49 and v2 at 0.78/0.68, in the same harness, on device embeddings.
+The streams ran on the ONNX server proxy for both models: on the device bridge, v1's streams
+alone took more than 10 h. Numbers are pasted from `data/synthetic/gen/_heldout/*.log`._
+
+| split | shipped v1: FPR · recall | v2: FPR · recall |
+|---|---|---|
+| test | 0.000 [0.000, 0.060] · 1.000 | **0.033 [0.004, 0.115]** · 0.976 |
+| authored_heldout | 0.000 [0.000, 0.142] · 0.889 | 0.000 [0.000, 0.142] · 0.944 |
+| ood | 0.000 [0.000, 0.049] · 0.932 | **0.041 [0.008, 0.114]** · 0.909 |
+| adversarial (all scams) | recall 0.936 | recall 0.945 |
+| adversarial_legit (legit-sounding scams) | recall 0.862 | recall **0.716** |
+| shift_v1 (contaminated, validation only) | 0.000 · 0.455 | 0.000 · 0.727 |
+| **shift_local** (headline) | 0.047 [0.010, 0.131] · 0.548 [0.417, 0.675] | 0.047 [0.010, 0.131] · **0.661 [0.530, 0.777]** |
+| styled test / authored / ood, FPR | 0.000 / 0.000 / 0.014 | 0.000 / 0.000 / 0.000 |
+| stream test, false-latch · alert-hit | 0.050 · 0.988 | 0.050 · 1.000 |
+| stream authored, false-latch · alert-hit | 0.125 · 0.889 | 0.000 · 0.833 |
+| stream shift_local, false-latch · alert-hit | 0.125 (8/64) · 0.694 | 0.094 (6/64) · 0.774 |
+| court_quotes, risk ≥ threshold / latched@1 | 29/47 / 1/47 | 41/47 / 7/47 |
+| court_quotes pseudo-calls, latched | 4/7 | 5/7 |
+
+**Criteria verdict:**
+
+| criterion | result |
+|---|---|
+| 1. FPR does not rise on test / authored / ood / styled / browser gate | **FAILS** |
+| 2. shift_local FPR within 0.062 + one false positive | passes (3/64 both) |
+| 3. shift_local recall improves | passes (0.548 → 0.661) |
+
+- Criterion 1 fails on two splits: **test** (0/60 → 2/60) and **ood** (0/74 → 3/74). Authored and
+  styled hold.
+- The browser gate was not run: it is a parity check of exported weights, and the criteria had
+  already failed.
+- Per protocol: no export, no re-tuning, no data edits aimed at these rows. `weights.json`,
+  config defaults and fixtures are unchanged. The user decides.
+
 ### D64 — Word-level voice mode: live per-word language chips + a GigaAM pass per phrase (2026-10-08)
 The voice mode tagged a whole utterance with one language (the per-utterance Vosk vote, D62), so a
 code-switched sentence was transcribed by one monolingual model, and English was the weakest leg.
