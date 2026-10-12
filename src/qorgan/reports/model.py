@@ -13,10 +13,10 @@ from datetime import datetime
 from types import MappingProxyType
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
 
 from qorgan.data.schema import Incident, Label, TacticTag, spans_from_phrases
-from qorgan.data.scrub import scrub_text
+from qorgan.data.scrub import is_stored_record, scrub_text
 from qorgan.partners import PARTNER_ID_PATTERN
 from qorgan.privacy.numbers import is_number_hash
 
@@ -71,7 +71,9 @@ class StoredReport(BaseModel):
 
     @field_validator("transcript")
     @classmethod
-    def _transcript_is_scrubbed(cls, value: str) -> str:
+    def _transcript_is_scrubbed(cls, value: str, info: ValidationInfo) -> str:
+        if is_stored_record(info):  # checked when written; see STORED_RECORD_CONTEXT
+            return value
         if scrub_text(value) != value:
             raise ValueError("StoredReport.transcript still contains PII -- scrub before storing")
         return value

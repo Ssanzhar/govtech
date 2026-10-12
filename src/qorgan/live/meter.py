@@ -35,6 +35,17 @@ SCORE_MAX = 100.0
 HARD_SIGNAL_CONFIDENCE_FLOOR = 0.8
 SINGLE_HARD_SIGNAL_FLOOR = BAND_MEDIUM_MAX + 1.0
 DOUBLE_HARD_SIGNAL_FLOOR = BAND_HIGH_MAX + 1.0
+# A single hard signal must still latch the alert when the operating point moves (ADR D63
+# phase 2): the single floor sits this many points above the enter threshold, never below
+# the band edge above; the double floor never below the single one.
+HARD_SIGNAL_FLOOR_MARGIN = 2.0
+
+
+def hard_signal_floors(cfg: Config) -> tuple[float, float]:
+    """(single, double) floors on the 0-100 scale for `cfg`'s enter threshold. At the
+    shipped 0.59 this is exactly (61, 81), the band edges."""
+    single = max(SINGLE_HARD_SIGNAL_FLOOR, round(cfg.risk_threshold_enter * SCORE_MAX + HARD_SIGNAL_FLOOR_MARGIN, 6))
+    return single, max(DOUBLE_HARD_SIGNAL_FLOOR, single)
 
 Band = Literal["low", "medium", "high", "critical"]
 
@@ -127,10 +138,11 @@ def update(
         if confidence >= HARD_SIGNAL_CONFIDENCE_FLOOR
     )
     accumulated = state.hard_signal_ids | confident
+    single_floor, double_floor = hard_signal_floors(cfg)
     if len(accumulated) >= 2:
-        score = max(score, DOUBLE_HARD_SIGNAL_FLOOR)
+        score = max(score, double_floor)
     elif len(accumulated) == 1:
-        score = max(score, SINGLE_HARD_SIGNAL_FLOOR)
+        score = max(score, single_floor)
     score = min(max(score, 0.0), SCORE_MAX)
 
     # §08 step 5: the warning latch reuses the shipped FPR-tuned hysteresis pair,

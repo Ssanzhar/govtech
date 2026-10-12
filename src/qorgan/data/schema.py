@@ -262,6 +262,11 @@ class Explanation(BaseModel):
     confidence_label: str | None = None
     caveat: str
     human_note: str
+    # Layer 2 role slot (ADR D63): who the caller claimed to be -- a role id from
+    # data/lexicon/roles.yaml, the verbatim span, and the templated line. Display only.
+    role_id: str | None = None
+    role_span: Span | None = None
+    role_line: str | None = None
 
 
 class Organization(BaseModel):

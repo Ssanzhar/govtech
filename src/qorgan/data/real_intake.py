@@ -88,7 +88,7 @@ class CallRow(BaseModel):
     @field_validator("tactic_ids")
     @classmethod
     def _known_tactics(cls, value: tuple[str, ...]) -> tuple[str, ...]:
-        unknown = sorted(set(value) - set(get_taxonomy().tactic_ids()))
+        unknown = sorted(set(value) - set(get_taxonomy().all_tactic_ids()))  # v1 + v2 (ADR D63)
         if unknown:
             raise ValueError(f"unknown tactic ids: {unknown}")
         return value

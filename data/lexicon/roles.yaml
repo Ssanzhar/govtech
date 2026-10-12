@@ -1,0 +1,638 @@
+# Layer 2 of taxonomy v2 (ADR D63): who the caller CLAIMS to be.
+#
+# DISPLAY-ONLY. This file never feeds the classifier: it is not a model feature, not hashed
+# into the trained bundle (`weights.json::lexicon` holds only the cue and reassurance hashes),
+# and editing it does not trigger the "lexicon edit forces a retrain" rule. It drives exactly
+# two things: the role line of the explanation («Звонящий представился …», a verbatim span
+# from the transcript plus a reviewed template) and the `role` input of the Layer-3 scheme
+# rules (`data/taxonomy/schemes.yaml`). The one-time v1 -> v2 label migration
+# (`qorgan.data.migrate_v2`) also reads it; its output is frozen into the corpus and reviewed.
+#
+# Matching: `cue_match.find_cue` (the same matcher, Python and JS, as the hard-signal cues --
+# verbatim case-insensitive first, bounded-edit only for long cues). For each role the first
+# cue that matches gives a span; a span overlapped by a LONGER span of another role is
+# dropped; the earliest remaining span wins (ties: file order). Cues are CLAIM-shaped
+# ("звоню из банка", "служба безопасности банка"), never a bare topic word that a victim or a
+# legitimate caller would say about someone else.
+#
+# Sources: docs/research/2026-10/model_taxonomy.md Part B (B1 scenarios, B2 roles) and
+# general knowledge of KZ institutions. NEVER extended from a held-out split (ADR D35/D43).
+#
+# names: ru is INSTRUMENTAL (fills «Звонящий представился {role}»), kk is NOMINATIVE (fills
+# «Қоңырау шалушы өзін {role} деп таныстырды»), en takes an article ("claimed to be {role}").
+# `imp_tactic` is the v2 impersonation tactic the role belongs to (null: no impersonation
+# tactic -- an online buyer or a broker is a pretext, not an impersonated body).
+
+version: 1
+
+# Self-introduction by organisation (ADR D63 phase 2; matcher in `qorgan.explain.roles`).
+# A role's `orgs` are organisation names; one becomes a claim when it carries a Kazakh ablative
+# affix («Kaspi-ден», «емханасынан») or an introduction marker below sits within
+# `ROLE_INTRO_WINDOW` (config.py) tokens of it on the same line. Tokens: a trailing `*` makes
+# that word a prefix; otherwise it matches exactly or with one affix glued on. Personal names
+# are never matched. Sources: the 59 role misses of the phase-1 pilot (future TRAIN data, never
+# a held-out split) and general knowledge of KZ brands; measured again on the phase-2 batch,
+# which this list was NOT widened from.
+intro:
+  markers:
+    # ru
+    - это
+    - меня зовут
+    - беспоко*
+    - звоню
+    - звоним
+    - звонит
+    - звонят
+    - говорит
+    - на связи
+    - компани*
+    - служб*
+    - отдел*
+    - филиал*
+    - департамент*
+    - менеджер*
+    - оператор*
+    - специалист*
+    - сотрудни*
+    - представител*
+    - курьер*
+    - мониторинг*
+    # kk
+    - хабарлас*
+    - қоңырау
+    - бөлім*
+    - қызмет*
+    - маман*
+    - орталығ*
+    - атым
+    - есімім
+    - банктен
+    - банкінен
+    - банктің
+    # en
+    - this is
+    - it s
+    - it is
+    - my name is
+    - calling
+    - here
+    - team
+    - department
+    - customer care
+    - customer service
+    - support
+    - courier
+    - delivery
+    - speaking
+    - on behalf of
+  affixes: [дан, ден, тан, тен, нан, нен]
+
+roles:
+  - id: bank_security
+    imp_tactic: imp_bank
+    names:
+      ru: сотрудником банка
+      kk: банк қызметкері
+      en: a bank employee
+    cues:
+      - служба безопасности банка
+      - службы безопасности банка
+      - безопасности вашего банка
+      - служба безопасности каспи
+      - служба безопасности kaspi
+      - службы безопасности kaspi
+      - служба безопасности халык
+      - служба безопасности halyk
+      - звоню из банка
+      - звоню вам из банка
+      - сотрудник банка
+      - специалист банка
+      - менеджер банка
+      - из кредитного отдела
+      - банктің қауіпсіздік қызметі
+      - банк қауіпсіздік қызметі
+      - банкіңіздің қауіпсіздік қызметі
+      - банктен хабарласып
+      - банктен қоңырау шалып
+      - банк қызметкері
+      - банктің қызметкері
+      - bank's security
+      - bank security department
+      - calling from your bank
+      - calling from kaspi
+      - calling from halyk
+      - bank's fraud department
+    orgs:
+      - kaspi
+      - каспи
+      - halyk
+      - халык банк*
+      - халық банк*
+      - jusan
+      - жусан
+      - freedom bank
+      - фридом банк*
+      - forte*
+      - форте*
+      - bereke bank
+      - береке банк*
+      - centercredit
+      - центркредит
+      - bcc
+      - home credit
+      - хоум кредит
+      - eurasian bank
+      - евразийск* банк*
+      - otbasy
+      - отбасы банк*
+      - altyn bank
+      - алтын банк*
+      - rbk
+      - homebank
+
+  - id: police
+    imp_tactic: imp_law_enforcement
+    names:
+      ru: сотрудником полиции
+      kk: полиция қызметкері
+      en: a police officer
+    cues:
+      - беспокоит следователь
+      - это следователь
+      - я следователь
+      - старший следователь
+      - сотрудник полиции
+      - из полиции
+      - управления полиции
+      - департамента полиции
+      - киберполиции
+      - по борьбе с киберпреступностью
+      - тергеуші
+      - полиция қызметкері
+      - полициядан хабарласып
+      - полиция департаменті
+      - киберполиция
+      - calling from the police
+      - police department
+      - i'm an investigator
+      - i am an investigator
+      - cybercrime unit
+
+  - id: prosecutor
+    imp_tactic: imp_law_enforcement
+    names:
+      ru: сотрудником прокуратуры
+      kk: прокуратура қызметкері
+      en: a prosecutor's office employee
+    cues:
+      - из прокуратуры
+      - сотрудник прокуратуры
+      - генеральной прокуратуры
+      - генпрокуратуры
+      - прокуратурадан
+      - прокуратура қызметкері
+      - бас прокуратура
+      - prosecutor's office
+      - prosecutor general
+
+  - id: knb
+    imp_tactic: imp_law_enforcement
+    names:
+      ru: сотрудником КНБ
+      kk: ҰҚК қызметкері
+      en: a national security (KNB) officer
+    cues:
+      - кнб
+      - комитета национальной безопасности
+      - ұқк
+      - ұлттық қауіпсіздік комитеті
+      - national security committee
+      - knb officer
+
+  - id: regulator
+    imp_tactic: imp_regulator
+    names:
+      ru: представителем финансового регулятора (Нацбанк, АРРФР, АФМ)
+      kk: қаржы реттеушісінің (Ұлттық банк, ҚНРДА, ҚМА) өкілі
+      en: a financial regulator (National Bank, ARDFM, AFM)
+    cues:
+      - национального банка
+      - национальный банк
+      - нацбанка
+      - нацбанк
+      - аррфр
+      - агентства по регулированию
+      - антифрод-центр
+      - антифрод центр
+      - агентства по финансовому мониторингу
+      - афм
+      - ұлттық банк
+      - қнрда
+      - антифрод орталығы
+      - қаржылық мониторинг агенттігі
+      - national bank
+      - antifraud centre
+      - antifraud center
+      - anti-fraud centre
+      - financial regulator
+      - financial monitoring agency
+    orgs:
+      - аррфр
+      - arrfr
+      - агентств* по регулированию
+      - financial regulation agency
+      - нацбанк*
+      - национальн* банк*
+      - ұлттық банк*
+      - national bank
+
+  - id: antifraud_service
+    imp_tactic: imp_regulator
+    names:
+      ru: сотрудником «антифрод-службы»
+      kk: «антифрод қызметінің» қызметкері
+      en: an "anti-fraud service" employee
+    cues:
+      - служба антифрода
+      - службы антифрода
+      - отдел антифрода
+      - служба финансовой безопасности
+      - службы финансовой безопасности
+      - служба защиты от мошенников
+      - службы кибербезопасности
+      - антифрод қызметі
+      - қаржылық қауіпсіздік қызметі
+      - алаяқтықтан қорғау қызметі
+      - anti-fraud service
+      - fraud prevention service
+      - cyber security service
+    orgs:
+      - антифрод*
+      - antifraud
+      - anti fraud
+
+  - id: antikor
+    imp_tactic: imp_law_enforcement
+    names:
+      ru: сотрудником Антикора
+      kk: Антикор қызметкері
+      en: an anti-corruption agency officer
+    cues:
+      - антикор
+      - противодействию коррупции
+      - сыбайлас жемқорлыққа қарсы
+      - anti-corruption agency
+      - anti-corruption service
+
+  - id: telecom_operator
+    imp_tactic: imp_telecom_delivery_utility
+    names:
+      ru: сотрудником оператора связи
+      kk: байланыс операторының қызметкері
+      en: a mobile operator employee
+    cues:
+      - оператор связи
+      - оператора связи
+      - абонентский отдел
+      - абонентского отдела
+      - договор на услуги связи
+      - из beeline
+      - из билайн
+      - из kcell
+      - из tele2
+      - из теле2
+      - казахтелеком
+      - байланыс операторы
+      - байланыс операторынан
+      - абоненттік бөлім
+      - қазақтелеком
+      - your mobile operator
+      - calling from beeline
+      - calling from kcell
+      - calling from tele2
+      - kazakhtelecom
+      - your network provider
+    orgs:
+      - beeline
+      - билайн
+      - kcell
+      - кселл
+      - tele2
+      - теле2
+      - altel
+      - алтел
+      - activ
+      - izi
+      - kazakhtelecom
+      - казахтелеком
+      - қазақтелеком
+
+  - id: courier_post
+    imp_tactic: imp_telecom_delivery_utility
+    names:
+      ru: курьером или сотрудником почты
+      kk: курьер немесе пошта қызметкері
+      en: a courier or post office employee
+    cues:
+      - курьерская служба
+      - курьерской службы
+      - служба доставки
+      - службы доставки
+      - я курьер
+      - это курьер
+      - казпочта
+      - казпочты
+      - пункт выдачи
+      - курьерлік қызмет
+      - жеткізу қызметі
+      - қазпошта
+      - курьермін
+      - delivery service
+      - courier service
+      - this is the courier
+      - kazpost
+    orgs:
+      - kazpost
+      - казпочт*
+      - қазпошт*
+      - ozon
+      - озон
+      - wildberries
+      - вайлдберриз
+      - cdek
+      - сдэк
+      - dhl
+      - kaspi доставк*
+      - kaspi delivery
+      - каспи доставк*
+      - glovo
+      - яндекс доставк*
+
+  - id: marketplace_buyer
+    imp_tactic: null
+    names:
+      ru: покупателем по объявлению
+      kk: хабарландыру бойынша сатып алушы
+      en: a buyer answering a listing
+    cues:
+      - по объявлению
+      - ваше объявление
+      - на olx
+      - на олх
+      - хабарландыру бойынша
+      - хабарландыруыңыз
+      - your listing
+      - your ad on olx
+      - about your ad
+    orgs:
+      - olx
+      - олх
+      - krisha
+      - крыша kz
+
+  - id: egov_con
+    imp_tactic: imp_gov_service
+    names:
+      ru: сотрудником eGov / ЦОНа
+      kk: eGov / ХҚКО қызметкері
+      en: an eGov / public service centre employee
+    cues:
+      - из цона
+      - сотрудник цона
+      - центра обслуживания населения
+      - электронного правительства
+      - служба поддержки egov
+      - удостоверяющего центра
+      - госкорпорации
+      - хқко
+      - халыққа қызмет көрсету орталығы
+      - электрондық үкімет
+      - public service centre
+      - public service center
+      - e-government
+      - egov support
+      - certification centre
+    orgs:
+      - цон*
+      - хқко
+      - egov
+      - е гов
+      - электронного правительства
+      - электрондық үкімет*
+      - халыққа қызмет*
+      - public service centre
+      - public service center
+
+  - id: tax_kgd
+    imp_tactic: imp_gov_service
+    names:
+      ru: сотрудником налоговой (КГД)
+      kk: салық қызметінің (МКК) қызметкері
+      en: a tax committee (KGD) officer
+    cues:
+      - кгд
+      - комитета государственных доходов
+      - департамента государственных доходов
+      - налогового комитета
+      - из налоговой
+      - мемлекеттік кірістер
+      - кірістер комитеті
+      - салық қызметі
+      - салық органы
+      - state revenue committee
+      - tax committee
+      - calling from the tax
+    orgs:
+      - кгд
+      - мкб
+      - налогов* комитет*
+      - мемлекеттік кірістер*
+      - state revenue committee
+      - tax committee
+
+  - id: pension_social
+    imp_tactic: imp_gov_service
+    names:
+      ru: сотрудником пенсионного фонда или соцслужбы
+      kk: зейнетақы қоры немесе әлеуметтік қызмет қызметкері
+      en: a pension fund or social payments officer
+    cues:
+      - енпф
+      - пенсионного фонда
+      - пенсионный фонд
+      - гцвп
+      - центра по выплате пенсий
+      - отдела соцвыплат
+      - социальной защиты
+      - зейнетақы қоры
+      - бжзқ
+      - әлеуметтік төлем
+      - pension fund
+      - enpf
+      - social payments office
+    orgs:
+      - енпф
+      - бжзқ
+      - гцвп
+      - enpf
+      - госкорпорац*
+      - государственной корпорац*
+      - государственная корпорац*
+      - үкімет корпорац*
+      - government for citizens
+      - enbek
+      - енбек
+      - жұмыспен қамту*
+      - pension fund
+
+  - id: clinic
+    imp_tactic: imp_gov_service
+    names:
+      ru: сотрудником поликлиники
+      kk: емхана қызметкері
+      en: a clinic employee
+    cues:
+      - из поликлиники
+      - поликлиника номер
+      - звоню из больницы
+      - регистратура
+      - минздрав
+      - министерства здравоохранения
+      - участковый врач
+      - емханадан
+      - емхана тіркеу
+      - денсаулық сақтау министрлігі
+      - учаскелік дәрігер
+      - calling from the clinic
+      - calling from your clinic
+      - ministry of health
+    orgs:
+      - поликлиник*
+      - polyclinic*
+      - clinic
+      - емхан*
+      - damumed
+
+  - id: utility
+    imp_tactic: imp_telecom_delivery_utility
+    names:
+      ru: сотрудником коммунальной службы
+      kk: коммуналдық қызмет қызметкері
+      en: a utility company employee
+    cues:
+      - коммунальной службы
+      - коммунальная служба
+      - водоканал
+      - горгаз
+      - газовой службы
+      - энергосбыт
+      - теплосети
+      - управляющей компании
+      - обслуживанию домофонов
+      - коммуналдық қызмет
+      - жылу желісі
+      - су арнасы
+      - пәтер иелері бірлестігі
+      - utility company
+      - water utility
+      - gas service
+      - housing association
+    orgs:
+      - кск
+      - кооператив*
+      - водоканал*
+      - энергосбыт*
+      - энергосбыт
+      - теплосет*
+      - тепловой энерги*
+      - qazaqgaz
+      - алсеко
+      - alseco
+      - су құбыр*
+      - жылу желі*
+      - домофон сервис*
+
+  - id: employer
+    imp_tactic: imp_personal
+    names:
+      ru: руководителем или сотрудником отдела кадров
+      kk: басшы немесе кадр бөлімінің қызметкері
+      en: a boss or HR manager
+    cues:
+      - ваш руководитель
+      - ваш директор
+      - ваш начальник
+      - это директор
+      - из отдела кадров
+      - отдел кадров
+      - басшыңыз
+      - директорыңыз
+      - кадр бөлімі
+      - кадрлар бөлімі
+      - your manager
+      - your boss
+      - your director
+      - from hr
+      - human resources
+
+  - id: relative_friend
+    imp_tactic: imp_personal
+    names:
+      ru: родственником или знакомым
+      kk: туыс немесе таныс
+      en: a relative or friend
+    cues:
+      - мам, это я
+      - мама, это я
+      - пап, это я
+      - папа, это я
+      - бабушка, это я
+      - это твой сын
+      - это твоя дочь
+      - это твой внук
+      - у меня новый номер
+      - это мой новый номер
+      - апа, бұл менмін
+      - әке, бұл менмін
+      - әже, бұл менмін
+      - ата, бұл менмін
+      - бұл менмін
+      - жаңа нөмірім
+      - нөмірім ауысты
+      - mom, it's me
+      - mum, it's me
+      - dad, it's me
+      - grandma, it's me
+      - my new number
+
+  - id: broker
+    imp_tactic: null
+    names:
+      ru: брокером или представителем инвестплатформы
+      kk: брокер немесе инвестициялық платформа өкілі
+      en: a broker or investment platform agent
+    cues:
+      - брокер
+      - инвестиционной платформы
+      - инвестиционной компании
+      - личный аналитик
+      - финансовый аналитик
+      - инвестициялық платформа
+      - қаржы талдаушысы
+      - broker
+      - investment platform
+      - trading platform
+      - investment advisor
+
+  - id: military_office
+    imp_tactic: imp_gov_service
+    names:
+      ru: сотрудником военкомата
+      kk: әскери комиссариат қызметкері
+      en: a military enlistment office employee
+    cues:
+      - военкомат
+      - военного комиссариата
+      - әскери комиссариат
+      - enlistment office
+      - draft office

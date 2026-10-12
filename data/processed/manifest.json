@@ -60,7 +60,8 @@
     }
   },
   "total": 2200,
-  "content_hash": "d61b92a0d8929f56e551c8d1b19c00b4f911fa8f3d3830a2807552390b5d245b",
+  "content_hash": "a183b0e596789ea1458303bf6ff6fda9f01824d1516d8bae4ab975898a21e9be",
+  "scrubber_version": 2,
   "train_augment_count": 221,
   "train_asr_style_count": 940,
   "dropped_corrupted": [
@@ -72,7 +73,6 @@
     "aug_secrecy_mixed_0",
     "reassure_legit_bank_call_mixed_0",
     "reassure_legit_bank_call_mixed_1",
-    "reassure_legit_gov_service_mixed_1",
     "reassure_legit_bank_call_mixed_5",
     "reassure_legit_bank_call_mixed_7"
   ],

@@ -17,7 +17,10 @@ already exists, so re-running (container restart, local dev) is a fast no-op.
    Then the bundle's exported head weights are copied to `site/models/weights.json`.
 6. Speech models   ← the small Vosk KK + RU models as USTAR tarballs under site/models/vosk/
    for the on-device microphone mode (PLAN B9, ADR D25); ~106 MB, from ~/.cache/vosk or
-   the official alphacephei zips.
+   the official alphacephei zips. Then the GigaAM endpoint pass (ADR D64, optional): the
+   pinned sherpa-onnx browser runtime under site/vendor/sherpa-onnx/ (from a local
+   `scripts/sherpa_wasm/build.sh` output or a mirror of it) and the 225 MB model under
+   site/models/gigaam/, every file sha256-checked; without them the page uses the Vosk vote.
 """
 
 from __future__ import annotations
@@ -260,6 +263,29 @@ def ensure_asr_models() -> None:
             _log(f"asr model: {target.relative_to(REPO_ROOT)} ({target.stat().st_size / 1e6:.0f} MB)")
         except Exception as exc:  # offline / upstream down: the mic mode degrades, the demo does not
             _log(f"asr model: {name} unavailable ({exc}); microphone mode will report it")
+    ensure_asr_endpoint(cfg)
+
+
+def ensure_asr_endpoint(cfg) -> None:
+    """Self-host the GigaAM endpoint pass (ADR D64): its sherpa-onnx browser runtime (a pinned
+    local build or a mirror of it) and the 225 MB model, every file sha256-checked. Optional:
+    without them the page falls back to the Vosk vote and says so."""
+    from qorgan.asr.gigaam_web import ensure_gigaam_model, ensure_sherpa_runtime
+
+    if not cfg.asr_endpoint_model:
+        _log("asr endpoint: off (QORGAN_ASR_ENDPOINT_MODEL is empty)")
+        return
+    try:
+        vendor = ensure_sherpa_runtime(
+            REPO_ROOT / "site",
+            build_dir=Path(cfg.sherpa_wasm_build_dir) if cfg.sherpa_wasm_build_dir else None,
+            base_url=cfg.sherpa_wasm_url or None,
+        )
+        _log(f"asr endpoint runtime: {vendor.relative_to(REPO_ROOT)} (pinned, hash-verified)")
+        target = ensure_gigaam_model(SITE_MODELS)
+        _log(f"asr endpoint model: {target.relative_to(REPO_ROOT)} (pinned, hash-verified)")
+    except Exception as exc:  # noqa: BLE001 - the page falls back to the Vosk vote
+        _log(f"asr endpoint: unavailable ({exc}); the voice mode falls back to the Vosk vote")
 
 
 # `serve`: everything the server needs before it listens. `seeds`: the Level-2 demo seeding --

@@ -16,6 +16,7 @@ from qorgan.classifier import predict
 from qorgan.config import get_config
 from qorgan.data.schema import UTTERANCE_JOIN
 from qorgan.explain import explainer, recommend, templates as templates_mod
+from qorgan.explain.roles import get_role_lexicon
 from qorgan.live import meter, session
 from qorgan.taxonomy import get_taxonomy
 
@@ -40,9 +41,24 @@ def export_client_config() -> dict[str, Any]:
                     "hard_signal": bool(tactic.hard_signal),
                     "names": {locale: taxonomy.display_name(tactic.id, locale) for locale in locales},
                 }
+                # Every id of every space (ADR D63): v2 tags must render and get advice; the
+                # decoded label space itself comes from weights.json, not from this list.
                 for tactic in taxonomy.tactics
             ],
             "hard_signal_ids": list(taxonomy.hard_signal_ids()),
+            "active_label_space": taxonomy.active_label_space,
+        },
+        # Layer 2 role slot (ADR D63): display-only lexicon, matched by core/role.js.
+        "roles": [
+            {"id": role.id, "cues": list(role.cues), "orgs": [list(org) for org in role.orgs],
+             "names": {locale: role.names[locale] for locale in locales}}
+            for role in get_role_lexicon().roles
+        ],
+        # Self-introduction by organisation (ADR D63 phase 2): markers, ablative affixes, window.
+        "role_intro": {
+            "markers": [list(m) for m in get_role_lexicon().intro.markers],
+            "affixes": list(get_role_lexicon().intro.affixes),
+            "window": get_role_lexicon().intro.window,
         },
         "templates": {locale: _templates(locale) for locale in locales},
         "advice": {locale: _advice(locale) for locale in locales},
@@ -68,8 +84,8 @@ def export_client_config() -> dict[str, Any]:
                 "score_max": meter.SCORE_MAX,
             },
             "hard_signal_confidence_floor": meter.HARD_SIGNAL_CONFIDENCE_FLOOR,
-            "single_hard_signal_floor": meter.SINGLE_HARD_SIGNAL_FLOOR,
-            "double_hard_signal_floor": meter.DOUBLE_HARD_SIGNAL_FLOOR,
+            "single_hard_signal_floor": meter.hard_signal_floors(cfg)[0],
+            "double_hard_signal_floor": meter.hard_signal_floors(cfg)[1],
         },
         "window": {
             "max_chars": session.MAX_WINDOW_CHARS,
@@ -99,6 +115,9 @@ def export_client_config() -> dict[str, Any]:
             # null = both recognisers run for the whole call (ADR D40).
             "lock": ({"after": cfg.asr_lock_after, "confFloor": cfg.asr_lock_conf_floor}
                      if cfg.asr_lock_after > 0 else None),
+            # The endpoint pass (ADR D64): GigaAM re-decodes each utterance and replaces the
+            # Vosk text; null = off. Optional: if it fails to load, the Vosk vote is used.
+            "endpoint": _asr_endpoint(cfg.asr_endpoint_model),
         },
     }
 
@@ -111,6 +130,25 @@ def _asr_model_names(cfg) -> list[tuple[str, str]]:
     """The voice mode's recognisers in vote order; English only when configured (ADR D62)."""
     names = [("kk", cfg.vosk_model_kk), ("ru", cfg.vosk_model_ru)]
     return names + ([("en", cfg.vosk_model_en)] if cfg.vosk_model_en else [])
+
+
+def _asr_endpoint(model_id: str) -> dict[str, Any] | None:
+    """Where the page finds the GigaAM model (relative to site/models/) and its sherpa-onnx
+    runtime (relative to site/), both self-hosted by deploy_bootstrap (asr/gigaam_web.py)."""
+    if not model_id:
+        return None
+    from qorgan.asr.gigaam_web import GIGAAM_MB, GIGAAM_SUBDIR, SHERPA_VENDOR_SUBDIR
+
+    if model_id != GIGAAM_SUBDIR.name:
+        raise ValueError(f"unknown endpoint model {model_id!r}; only {GIGAAM_SUBDIR.name!r} is pinned")
+    return {
+        "id": model_id,
+        "model": {"url": f"{GIGAAM_SUBDIR.as_posix()}/model.int8.onnx", "tokens": f"{GIGAAM_SUBDIR.as_posix()}/tokens.txt", "mb": GIGAAM_MB},
+        "runtime": f"{SHERPA_VENDOR_SUBDIR.as_posix()}/",
+        # Cache API store the worker keeps the model in; bump the suffix when the bytes change.
+        "cache": f"qorgan-gigaam-{model_id}-v1",
+        "optional": True,
+    }
 
 
 def _asr_model(name: str) -> dict[str, str]:
@@ -132,6 +170,7 @@ def _templates(locale: str) -> dict[str, Any]:
         "reason_template": t.reason_template,
         "no_signal_reason": t.no_signal_reason,
         "spans_placeholder": t.spans_placeholder,
+        "role_template": t.role_template,
         "caveat": t.caveat,
         "uncalibrated_suffix": t.uncalibrated_suffix,
         "human_note": t.human_note,

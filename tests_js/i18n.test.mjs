@@ -47,7 +47,7 @@ test("markup is confined to _html keys and to <em>, <b> and the analyst link", (
 });
 
 // A Kazakh value identical to the Russian one is almost always an untranslated copy.
-const SAME_IN_KK_AND_RU = new Set(["mode.mic", "band.pill"]);
+const SAME_IN_KK_AND_RU = new Set(["mode.mic", "band.pill", "call.line_meta_src"]); // pure templates
 test("Kazakh is translated, not copied from Russian", () => {
   const copied = keys("kk").filter((k) => STRINGS.kk[k] === STRINGS.ru[k] && !SAME_IN_KK_AND_RU.has(k));
   assert.deepEqual(copied, []);

@@ -3,6 +3,9 @@
 # reports them as a separate "(inspected)" subset. Append, never delete. See
 # src/qorgan/data/ledger.py and docs/PLAN_2026-09.md (A2).
 version: 1
+# `court_quotes` (ADR D68, local-only, real verdict phrasing) is NOT listed row by row: the ledger
+# only takes ids of committed evaluation splits. Every one of its rows was read at curation, so the
+# whole split is inspected by construction; its numbers are never an unbiased tuning signal.
 entries:
   - id: real_neg_bank_fraud_alert_ru
     inspected_on: 2026-07-13
@@ -36,3 +39,62 @@ entries:
     inspected_on: 2026-09-27
     reason: the ASR-styled false positive at 0.612 after the D51 retrain (clean 0.132); read to attribute the movement, which turned out to be the joint-LR refit and not the new cues -- no cue fires on it at all. Deliberately NOT fixed with data -- it is an eval-split row, so targeting it would be tuning on held-out data
 
+  # `shift_local` rows read 2026-10-10 ONLY to check that the generated call matches its brief's label
+  # (ADR D65: a seeded 10 % sample, random.Random(65) over ids, 13 of 126). Not read for features or
+  # tuning; no model scores were looked at. 13 / 13 matched their brief's label.
+  - id: sl_kk_legit_25
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_kk_legit_08
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_kk_scam_12
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Speaker roles blur (the caller narrates as the relative); label still a scam. Not used for tuning
+  - id: sl_ru_scam_07
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_en_scam_15
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_kk_scam_03
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Roles partly inverted (the card-number ask is voiced by the other side); label still a scam. Not used for tuning
+  - id: sl_kk_scam_05
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_kk_scam_14
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_kk_scam_17
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_ru_scam_18
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_kk_legit_15
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_ru_scam_04
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  - id: sl_ru_legit_05
+    inspected_on: 2026-10-10
+    reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  # The five new held-out false positives of taxonomy-v2 (ADR D63 phase 2, check 1 of the user's
+  # ship decision, 2026-10-12): read to classify them, nothing was changed because of them.
+  - id: neg_general_conversation_mixed_21
+    inspected_on: 2026-10-12
+    reason: v2 false positive (test, 0.949); D63 phase-2 check 1 -- ex-colleague now at a bank, card bonus, identity-confirmation link (pretext matches)
+  - id: aug_neg_family_money_request_ru_1
+    inspected_on: 2026-10-12
+    reason: v2 false positive (test, 0.860); D63 phase-2 check 1 -- relative in hospital asks for money by Kaspi (family call, no institutional pretext)
+  - id: ood_neg_family_money_request_mixed_0
+    inspected_on: 2026-10-12
+    reason: v2 false positive (ood, 0.805); D63 phase-2 check 1 -- acquaintance asks to cover a stuck supplier payment by Kaspi (family/friend call, no institutional pretext)
+  - id: ood_neg_general_conversation_ru_1
+    inspected_on: 2026-10-12
+    reason: v2 false positive (ood, 0.814); D63 phase-2 check 1 -- Kaspi support confirms a transfer, no asks (pretext matches)
+  - id: ood_neg_general_conversation_ru_3
+    inspected_on: 2026-10-12
+    reason: v2 false positive (ood, 0.798); D63 phase-2 check 1 -- Kaspi asks to confirm a transaction by in-app push (pretext matches)

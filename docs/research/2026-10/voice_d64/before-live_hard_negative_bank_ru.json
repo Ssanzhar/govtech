@@ -1,0 +1,153 @@
+{
+ "variant": "before",
+ "scene": "live_hard_negative_bank_ru",
+ "audio_s": 27.1815,
+ "files": [
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_hard_negative_bank_ru_0.wav",
+   "start": 5,
+   "seconds": 4.0866875
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_hard_negative_bank_ru_1.wav",
+   "start": 10.2866875,
+   "seconds": 4.62875
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_hard_negative_bank_ru_2.wav",
+   "start": 16.1154375,
+   "seconds": 2.771375
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/02b26aea-782c-4df0-a718-7c38b2a23f0a/scratchpad/evidence/audio/live_hard_negative_bank_ru_3.wav",
+   "start": 20.0868125,
+   "seconds": 5.8946875
+  }
+ ],
+ "listening_after_ms": 8995,
+ "rss_mb": {
+  "listening": {
+   "total": 1498,
+   "browser": 108,
+   "GPU": 51,
+   "network.mojom.NetworkService": 43,
+   "renderer": 1241,
+   "audio.mojom.AudioService": 55
+  },
+  "end_of_audio": {
+   "total": 1458,
+   "browser": 86,
+   "GPU": 86,
+   "network.mojom.NetworkService": 41,
+   "renderer": 1194,
+   "audio.mojom.AudioService": 51
+  }
+ },
+ "js_heap_mb": 10,
+ "summary_score": "18 / 100",
+ "final_meter": 18.355555249946157,
+ "final_band": "low",
+ "utterances": [
+  {
+   "text": "здравствуйте это оператор банка звоню по вашей заявке",
+   "language": "ru",
+   "confidence": 0.9739866250000001,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "ru",
+    "text": "здравствуйте это оператор банка звоню по вашей заявке",
+    "confidence": 0.9739866250000001
+   },
+   "decodeMs": null,
+   "latencyMs": 0.22999995946884155,
+   "meter": 26.306665152152338,
+   "band": "low",
+   "at": 21264.935000002384,
+   "tags": ""
+  },
+  {
+   "text": "здравствуйте это оператор банка звоню по вашей заявке мы подтверждаем что перевод на пятнадцать тысяч тенге успешно проведён",
+   "language": "ru",
+   "confidence": 0.9883715000000001,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "ru",
+    "text": "здравствуйте это оператор банка звоню по вашей заявке мы подтверждаем что перевод на пятнадцать тысяч тенге успешно проведён",
+    "confidence": 0.9883715000000001
+   },
+   "decodeMs": null,
+   "latencyMs": 0.02499997615814209,
+   "meter": 23.260180305373623,
+   "band": "low",
+   "at": 27318.78499996662,
+   "tags": ""
+  },
+  {
+   "text": "здравствуйте это оператор банка звоню по вашей заявке мы подтверждаем что перевод на пятнадцать тысяч тенге успешно проведён никакие года и данные карты называть ненужно если вы",
+   "language": "ru",
+   "confidence": 0.9513879629629629,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "ru",
+    "text": "здравствуйте это оператор банка звоню по вашей заявке мы подтверждаем что перевод на пятнадцать тысяч тенге успешно проведён никакие года и данные карты называть ненужно если вы",
+    "confidence": 0.9513879629629629
+   },
+   "decodeMs": null,
+   "latencyMs": 0.034999966621398926,
+   "meter": 20.65590402108761,
+   "band": "low",
+   "at": 31585.82499998808,
+   "tags": ""
+  },
+  {
+   "text": "не совершали эту операцию позвоните на официальный номер банка на обратной стороне карты",
+   "language": "ru",
+   "confidence": 0.9608863846153847,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "ru",
+    "text": "не совершали эту операцию позвоните на официальный номер банка на обратной стороне карты",
+    "confidence": 0.9608863846153847
+   },
+   "decodeMs": null,
+   "latencyMs": 0.02499997615814209,
+   "meter": 18.355555249946157,
+   "band": "low",
+   "at": 37599.15499997139,
+   "tags": ""
+  }
+ ],
+ "latency_ms": {
+  "n": 4,
+  "median": 0.034999966621398926,
+  "max": 0.22999995946884155
+ },
+ "live_events": 0,
+ "live_snapshot": [],
+ "endpoint": [],
+ "lines": [
+  {
+   "source": "vosk",
+   "text": "здравствуйте это оператор банка звоню по вашей заявке рус · уверенность 97%"
+  },
+  {
+   "source": "vosk",
+   "text": "здравствуйте это оператор банка звоню по вашей заявке мы подтверждаем что перевод на пятнадцать тысяч тенге успешно проведён рус · уверенность 99%"
+  },
+  {
+   "source": "vosk",
+   "text": "здравствуйте это оператор банка звоню по вашей заявке мы подтверждаем что перевод на пятнадцать тысяч тенге успешно проведён никакие года и данные карты называть ненужно если вы рус · уверенность 95%"
+  },
+  {
+   "source": "vosk",
+   "text": "не совершали эту операцию позвоните на официальный номер банка на обратной стороне карты рус · уверенность 96%"
+  }
+ ],
+ "errors": [
+  "Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ]
+}

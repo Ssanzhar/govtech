@@ -198,6 +198,59 @@ def test_on_device_asr_module_makes_no_network_calls():
     assert "getUserMedia(" not in source  # capture is the page's explicit action, not the module's (a support check may name it)
 
 
+# Every module the word-level voice mode passes audio or transcripts through (ADR D64), and the
+# WebView-safe light mode's capture worklet, VAD and wiring (ADR D67).
+_AUDIO_MODULES = (
+    "asr.js", "audio-ring.js", "endpoint.js", "endpoint-runtime.js", "gigaam.js", "span-vote.js", "word-lid.js",
+    "capture-worklet.js", "vad.js", "voice-light.js",
+)
+
+
+def test_every_core_module_that_touches_audio_is_guarded():
+    """A new module that handles microphone samples must join `_AUDIO_MODULES` (ADR D67): any
+    site/core file that names an audio API, a Float32Array of samples or the VAD/ring is listed."""
+    import re
+
+    core = Path(__file__).resolve().parents[1] / "site" / "core"
+    markers = re.compile(r"AudioWorklet|AudioContext|MediaStream|createAudioRing|createVad|acceptWaveform|\.push\(chunk\)")
+    exempt = {"gigaam-worker.js"}  # guarded by its own, stricter test below
+    touching = {p.name for p in core.glob("*.js") if markers.search(p.read_text(encoding="utf-8"))}
+    assert {"asr.js", "voice-light.js", "capture-worklet.js", "endpoint-runtime.js"} <= touching  # the markers still match
+    unguarded = sorted(touching - set(_AUDIO_MODULES) - exempt)
+    assert not unguarded, f"audio-handling modules missing from _AUDIO_MODULES: {unguarded}"
+
+
+def test_light_mode_capture_only_posts_to_its_own_port():
+    """The capture worklet's only outlet is its AudioWorkletNode's port (ADR D67)."""
+    source = (Path(__file__).resolve().parents[1] / "site" / "core" / "capture-worklet.js").read_text(encoding="utf-8")
+    assert source.count("postMessage(") == 1 and "this.port.postMessage(" in source
+
+
+def test_word_level_asr_modules_make_no_network_calls():
+    core = Path(__file__).resolve().parents[1] / "site" / "core"
+    for name in _AUDIO_MODULES:
+        source = (core / name).read_text(encoding="utf-8")
+        offending = [call for call in _NETWORK_CALLS if call in source]
+        assert not offending, f"site/core/{name} contains network primitives: {offending}"
+
+
+def test_gigaam_worker_only_fetches_self_hosted_files():
+    """The GigaAM worker holds utterance audio (ADR D64). Its one network primitive is a GET of
+    a same-origin file (runtime, model, tokens) through `fetchSameOrigin`, which refuses any
+    other origin; it never sends anything (no body, no socket, no beacon)."""
+    import re
+
+    source = (Path(__file__).resolve().parents[1] / "site" / "core" / "gigaam-worker.js").read_text(encoding="utf-8")
+    code = re.sub(r"/\*.*?\*/|//[^\n]*", "", source, flags=re.S)  # comments may name what is forbidden
+    assert code.count("fetch(") == 1, "exactly one fetch call site: fetchSameOrigin"
+    assert re.search(r"function fetchSameOrigin\(url\) \{\s*return fetch\(sameOrigin\(url\), \{ credentials: \"same-origin\" \}\);", code)
+    assert "resolved.origin !== self.location.origin" in code
+    for primitive in ("XMLHttpRequest", "WebSocket", "sendBeacon", "EventSource", "RTCPeerConnection", "method:", "body:"):
+        assert primitive not in code, f"gigaam-worker.js contains {primitive}"
+    imports = re.findall(r"importScripts\(([^;]*)\);", code)
+    assert imports and all("sameOrigin(" in call for call in imports), "importScripts must go through sameOrigin()"
+
+
 # sanity: the guard list is not silently empty
 def test_guarded_module_list_is_populated():
     names = {p.name for p in _GUARDED_MODULES}

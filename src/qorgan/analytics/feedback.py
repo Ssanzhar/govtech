@@ -17,10 +17,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
 
 from qorgan.data.schema import Organization
-from qorgan.data.scrub import scrub_text
+from qorgan.data.scrub import STORED_RECORD_CONTEXT, is_stored_record, scrub_text
 from qorgan.atomic import write_text_atomic
 
 FEEDBACK_FILENAME = "org_feedback.jsonl"
@@ -52,7 +52,9 @@ class FeedbackEvent(BaseModel):
 
     @field_validator("note", "analyst_id")
     @classmethod
-    def _content_free(cls, value: str | None) -> str | None:
+    def _content_free(cls, value: str | None, info: ValidationInfo) -> str | None:
+        if is_stored_record(info):  # checked when written; see STORED_RECORD_CONTEXT
+            return value
         if value is not None and scrub_text(value) != value:
             raise ValueError("feedback must not carry numbers or other call content")
         return value
@@ -81,7 +83,8 @@ def append_feedback(event: FeedbackEvent, path: Path) -> Path:
 def load_feedback(path: Path) -> list[FeedbackEvent]:
     if not path.exists():
         return []
-    return [FeedbackEvent.model_validate_json(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return [FeedbackEvent.model_validate_json(line, context=STORED_RECORD_CONTEXT) for line in lines if line.strip()]
 
 
 def forget_in_feedback(path: Path, *, incident_id: str, number_hash: str | None, live_numbers: set[str]) -> int:

@@ -1608,3 +1608,881 @@ browser, served weights):
 **Limits, on record.** Synthesised, clean audio, not a speakerphone. About a third of English
 utterances still go to kk/ru (the handicap's price). English classification keeps its D54
 false-alarm rate on sales calls. "Test mode" in the UI says so.
+
+
+### D63 (taxonomy v2) — Three-layer taxonomy and a Claude-written generation grid; phase 1 ships the code, the pilot and the plan, not a retrain (2026-10-08)
+_Number note: written on branch `feat/taxonomy-v2-datagen`. If another D63 lands first, renumber
+this one at merge. Code comments cite "ADR D63"._
+_Proposal status: the choices marked **(approve)** need the maintainers' sign-off before phase 2._
+
+**Why.** On `shift`, recall is 0.455, and the cause is the low-arousal pretexts the 15 tactics cannot
+name: parcel, clinic and utility "codes", eGov EDS renewal, KGD tax, telecom contract expiry, the mirror
+loan, cash couriers, erroneous transfers, task jobs and voice-cloned relatives or bosses
+(`docs/RESEARCH_2026-10.md` §2.3, `docs/research/2026-10/model_taxonomy.md` Part B). Nineteen
+observed caller roles do not fit three `impersonation_*` ids. The team has no LLM API budget, so new
+data is written by Claude. The pilot (below) puts a number on the gap: the shipped model catches
+**0 / 27** low-arousal pilot scams.
+
+**Layer 1 — tactics (what the heads learn).**
+- `data/taxonomy/tactics.yaml` becomes **version 2**. It holds two label spaces in one file:
+  - `v1` is the 15 shipped ids.
+  - `v2` keeps the 12 non-impersonation ids, replaces the three `impersonation_*` with `imp_bank`,
+    `imp_law_enforcement`, `imp_gov_service`, `imp_regulator`, `imp_telecom_delivery_utility` and
+    `imp_personal`, and adds `loan_inducement`, `cash_courier_handoff`, `refund_request`,
+    `task_advance_fee` and `callback_instruction`. That makes **23 heads**.
+- `active_label_space: v1` stays until the phase-2 retrain. `Taxonomy.tactic_ids()`, `hard_signal_ids()`
+  and `active_tactics()` describe the active space, so training, decoding, evaluation, the mock heuristic
+  and the LLM prompt are byte-identical today. A test pins `weights.json::label_space ==
+  tactic_ids()`.
+- Display names, advice and report/partner/intake validation run over `all_tactic_ids()`, so v2 tags
+  already render and validate. The retrain flips one line.
+- **(approve)** No v2 tactic is a hard signal. The cue block stays at 5 columns; promoting, say,
+  `cash_courier_handoff` would be its own ADR with a retrain.
+
+**Negatives.** Six new hard-negative classes, each the legitimate twin of a new scheme:
+`legit_delivery_code`, `legit_refund_request`, `legit_employer_request`, `legit_clinic_appointment`,
+`legit_telecom_offer` and `legit_utility_notice`. Negatives carry `label_spaces` too, so the v1 Gemini
+generator (`generate.py`) still writes only the five v1 classes and a full regeneration of the existing
+corpus stays reproducible (D54).
+
+**Layer 2 — role slot.**
+- `data/lexicon/roles.yaml` lists 19 roles. Each has an `imp_tactic`, reviewed RU (instrumental) / KK
+  (nominative) / EN names and claim-shaped cues.
+- Matching uses the same `find_cue` as the hard-signal cues, in both runtimes. The first cue per role
+  wins, a longer overlapping span beats a shorter one, and the earliest claim wins.
+- `explain()` gains `role_id`, `role_span` (verbatim) and `role_line`, rendered from the reviewed
+  `role_template` («Звонящий представился {role}: «{span}».» / «Қоңырау шалушы өзін {role} деп
+  таныстырды: …» / "The caller claimed to be {role}: …"). The reason string is unchanged.
+- `site/core/role.js` is the 1:1 port. It is pinned by `tests_js/fixtures/roles.json`
+  (`scripts/export_role_fixture.py`, 62 cases) and drift-checked from Python.
+- **This lexicon is display-only. It is not a feature, not in the bundle hash
+  (`weights.json::lexicon` = cue + reassurance only — tested) and editing it does NOT trigger the
+  "lexicon edit forces a retrain" rule.** Its only other consumers are the scheme rules and the
+  one-time label migration, whose output is frozen into the corpus.
+
+**Layer 3 — schemes.**
+- `data/taxonomy/schemes.yaml` defines 21 rule-derived schemes in priority order, in a five-operator
+  rule language (`all` / `any` / `tactic` / `any_tactic` / `role`) evaluated by `qorgan.explain.schemes`.
+  The first match wins.
+- Advice is keyed by scheme (`advice_{ru,kk,en}.yaml::scheme_advice`, 21 × 3 reviewed lines). Eleven
+  new per-tactic lines are added for each locale.
+- The shipped v1 tags are read through the migration below, so the layer works before the retrain.
+- A test proves every scheme's generation spec derives back to itself. It caught three ordering
+  bugs while writing: prize vs benefits, mule vs fake boss, and egov vs clinic.
+- **(approve)** It is not yet in the UI or the JS core. Without v2 heads its input is v1 tags. Phase 2
+  ports it with fixtures once the heads exist.
+
+**Migration of existing labels — (approve).**
+- `qorgan.data.migrate_v2` is deterministic. Each `impersonation_*` maps to the successors whose
+  family matches a role the transcript claims. Otherwise it maps to the first successor (bank →
+  `imp_bank`, gov_police → `imp_law_enforcement`, telecom_delivery → `imp_telecom_delivery_utility`)
+  and the row goes on a review list (ids, reasons and roles only, no text).
+- Dry run on train: 686 rows carry an impersonation tag. Transitions: bank → imp_bank 404,
+  → imp_regulator 44, → both 2; gov_police → law 116, → regulator 6; telecom → telecom 110, → gov 4.
+- **246 rows go to review**: 146 bank and 72 gov_police with no role found, 10 role outside the family,
+  18 telecom with no role.
+- Val: 49 rows with an impersonation tag, 11 to review.
+- The list is `data/taxonomy/migration_v2_review.json`. A human pass over it (or a sampled audit) comes
+  before phase-2 training.
+- Held-out splits are migrated by the same function with **aggregate counts only**; their review rows
+  are never opened.
+- **The five new tactics are not inferred on old rows.** An old row is *unlabelled* for them, not
+  negative. The phase-2 trainer masks v1-sourced rows out of those five heads ("label masking")
+  instead of guessing.
+
+**Thin heads — (approve).** D30 stays as written: a tactic with < 8 tuning positives keeps 0.5. Phase-2
+acceptance additionally requires ≥ 8 out-of-fold positives for **every** v2 id. A head that still
+misses that is dropped from the v2 space (a yaml edit plus a note here) rather than shipped at an
+untuned 0.5. No untuned head reaches users.
+
+**Generation pipeline (`python -m qorgan.data.gen`).**
+- `configs/gen_grid.yaml` defines a seeded, quota-exact grid over:
+  - scheme or negative class, and role;
+  - register: kk 30 %, ru 30 %, mixed 25 %, en 15 %; negatives ≥ 35 %;
+  - persona (age band, region, occupation), outcome, channel, stage and an explicit length target;
+  - direct vs indirect phrasing, and confusable negatives.
+- Scam tactics are the scheme's core plus 0–2 optional, kept only if the rules still derive the cell's
+  scheme.
+- Chunk specs carry instructions, the JSON schema and an English glossary of names and descriptions.
+  They never carry example phrases or cue lists, and no Russian or Kazakh lexicon phrase reaches the
+  writer (tested). English definitions unavoidably share a few words with English cues.
+- Rows are the existing `Dialogue` plus per-utterance `stage` and verbatim `{id, phrase}` tactic spans.
+- QC gates, all automated (`qc.py`):
+  1. schema and cell agreement;
+  2. scrub fixed point;
+  3. e5 near-duplicate, with the threshold calibrated so that no train pair exceeds it;
+  4. ROUGE-L < 0.7, computed with a bit-parallel LCS;
+  5. disjointness from all eight processed splits, by hash only;
+  6. lexicon-leak share per scheme;
+  7. a generator-fingerprint LR (char n-grams and e5), also restricted to v1 topics.
+- No new dependency is needed (numpy and sklearn are already in), so no `tooling` extra was added.
+  semhash is unnecessary at this size.
+
+**Pilot (120 dialogues, 3 sub-agents; full report `docs/gen_pilot_qc_2026-10.md`).**
+- Gates 1–5: 120/120 valid, 0 scrub, 0 near-duplicates (threshold 0.974; the 0.92 starting point is
+  meaningless for e5 because train's own median nearest neighbour is 0.937), 0 ROUGE-L flags (max
+  0.307), 0 eval overlaps.
+- Cue-free scams 64/72 = 0.889. Scheme agreement 72/72. Role-slot recall 0.42.
+- **Fingerprint AUC 0.975 (char) / 0.948 (e5); on shared v1 topics, 0.91 / 0.91.** The style leak is
+  real, so §3.2's held-out redesign is mandatory, not optional.
+- Shipped v1 model on the pilot (diagnostic): recall **0.208 [0.122, 0.320]**, 0/27 on the low-arousal
+  schemes, FPR 1/48.
+
+**Not done, on purpose.** Nothing is added to the corpus and nothing is retrained. `parity.json`,
+`runtime_gate*` and weights are untouched (they regenerate after the retrain). The scheme layer is not
+in the UI. `live.js` and `asr.js` are untouched.
+
+**Phase 2 (after review).**
+1. Fix the three grid issues (persona coherence, role-consistent optional `imp_*`, stage vs core).
+2. Freeze `shift` as `shift_v1` (validation). Build `shift_local` (KazLLM, offline) and `court_authored`
+   as the honest held-outs **before** training on Claude rows.
+3. Generate about 1,600–2,000 rows: about 70 chunks of 25, written by sub-agents in batches of ≤ 16.
+   About 60 % scams over 21 schemes (≥ 40 per new tactic, ≥ 8 OOF positives per head) and about 40 %
+   negatives (≥ 60 per v2 guardrail class, the reassurance counter-signal in ~40 %, D42).
+4. QC every chunk. Human-review the migration list.
+5. Build the corpus with v2 labels and masking, flip `active_label_space`, retrain on device
+   embeddings, export, and regenerate fixtures and the browser gate.
+6. Gates: FPR first on test / authored / ood / styled / browser, plus the new held-outs.
+7. Port the scheme layer to JS with fixtures. Add any v2 cue additions only from train, paired with
+   negatives, in a separate measured step.
+
+**Rejected.**
+- Renaming the ids in place with a flag day. It would break the shipped weights' label space and every
+  stored report.
+- Inferring the 5 new tactics on old rows by keyword. That writes the lexicon into the labels.
+- Making the role a learned head. It would add FPR exposure for a display string.
+#### D63 phase 2 — generation, corpus fold-in and a dry-run retrain (2026-10-09/10)
+_Approved by the user on 2026-10-09: the six phase-1 "(approve)" items, all as proposed. No
+held-out split was evaluated; nothing shipped; `site/models/weights.json` is unchanged._
+
+**Grid v2** (`configs/gen_grid.yaml`). Four changes:
+- age band is drawn first, then an occupation that fits it;
+- an optional `imp_*` tactic is drawn only when it is the role's own `imp_tactic`;
+- `hook_only` is allowed only when every tactic of the cell is hook-compatible;
+- the scam share is 0.48, the train base rate (896/1880 = 0.477). The pilot used 0.60.
+
+A new field, `lookalike_of`, gives 80 % of the negatives the pretext of a scheme in proportion to
+that scheme's scam count. Each such negative is that scheme's `twin` class, with the scheme's role
+when that role can call legitimately (police yes; regulator and antifraud never).
+
+**Role slot.** Self-introduction by organisation. Python and `role.js` are 1:1, and the fixture
+was regenerated. Each role gets `orgs`, plus intro markers and Kazakh ablative affixes. A claim is
+an organisation with a marker within `ROLE_INTRO_WINDOW` = 4 tokens on the same line, or a
+line-opening ablative. The longest organisation wins. Personal names are never matched. The lexicon
+stays display-only.
+
+| | role recall | fires on role-less rows | wrong role |
+|---|---|---|---|
+| pilot, before → after (designed on it) | 43/102 (0.42) → 75/102 (0.735) | 1/18 → 1/18 | 9 → 4 |
+| phase-2 batch, before → after (**not** designed on it) | 399/1136 (0.351) → 749/1136 (0.659) | 31/189 → 47/189 | 70 → 63 |
+
+**Migration review (user item 3).** I read every phase-1 review row: 123 train sources plus their
+-asr copies, and 11 val rows. I also read every row whose automatic mapping moved with the
+widened role lexicon, 141 sources in all. Each decision has a one-line reason in
+`data/taxonomy/migration_v2_review.json`:
+- imp_bank 75, imp_law_enforcement 41, imp_telecom_delivery_utility 8, imp_regulator 7,
+  imp_gov_service 6;
+- 4 rows dropped: a private "investment/financial firm" caller impersonates no institution.
+
+10 of the 141 differ from the automatic mapping. `apply_review` applies the decision per source id.
+
+**Generation.** Run `p2`: 1,800 cells, 72 interleaved chunks of 25, written by writer sub-agents.
+Each writer saw only its own chunk specs, and resume state comes from disk
+(`python -m qorgan.data.gen status`). Usage limits and network drops killed several writers, so
+**19 chunks were skipped** at the coordinator's instruction ("stop at ≥ ~1,400"):
+chunk_31, 34, 38, 41, 42, 45, 46, 58, 61–71. Chunks are interleaved samples of the grid, so the
+balance holds.
+- Written: 53 chunks = 1,325 rows. With the pilot that is **1,445 QC-accepted dialogues**; no row
+  was rejected.
+- Whole-run QC (`qc --run p2`):
+  - schema 1325/1325; 0 eval-split hash overlaps; 0 near-duplicates (threshold 0.9749);
+  - ROUGE-L max 0.382;
+  - cue-free scams 0.871, no scheme under 0.30;
+  - scheme rules 636/636;
+  - 46 of 689 negatives fire a hard-signal cue (confusables, as designed).
+- Language split, scam/legit: kk 213/223, ru 228/238, mixed 161/164, en 106/112.
+- **Fingerprint: char AUC 0.9999, e5 0.990. On v1 topics only: 0.9998 / 0.986.** Claude style
+  remains perfectly separable from Gemini style. That is why the label balance below matters.
+- Every v2 tactic clears the ≥ 40 generation floor:
+  - the five new tactics: loan 47, cash courier 42, refund 46, task fee 40, callback 54;
+  - imp_personal 57.
+- A scrub change is no longer a rejection. Scrubber v2 (D66) masks self-introduced names, and
+  the fold scrubs every row. 126 rows changed.
+
+**Corpus fold-in.**
+- `build_corpus --gen-run pilot --gen-run p2 --label-space v2 --processed-dir …`:
+  - generated rows go to train/val only, never test (`GEN_VAL_FRACTION` = 0.15, seeded id hash);
+  - they get ASR-styled copies like any train row;
+  - v1 rows are migrated, with the review applied;
+  - `provenance.json` records each row's generator.
+- Rebuilt first under scrubber v2 (`publish_guard --fix`). ASR copies are now scrubbed after
+  styling: styling turned "[NAME]" into "name", which v2 re-masks.
+- **P(scam | generator):**
+
+  | split | Claude | Gemini |
+  |---|---|---|
+  | train (incl. ASR copies) | 1204/2454 = 0.491 | 896/1880 = 0.477 |
+  | val | 106/218 = 0.486 | 58/135 = 0.430 |
+
+- `QORGAN_LABEL_SPACE=v2` switches the space for a process. **The yaml stays `v1`**: flipping it
+  without new weights would break the shipped model. It flips together with an export.
+
+**Trainer.**
+- Label masking: Gemini rows are unlabelled for the five new tactics in fit, OOF and threshold
+  tuning (1,880 train rows masked).
+- Thin heads: `V2_MIN_OOF_POSITIVES` = 8 (config.py), counted on train + val labelled
+  positives. No head was dropped; the smallest are callback 54 and cash courier 42.
+
+**Dry run** (validation only, risk 0.59). Embeddings come from the **ONNX server proxy, not the
+device bridge**: inside the agent sandbox, headless Chromium cannot reach its loopback server
+(ERR_SOCKET_NOT_CONNECTED), and running it unsandboxed was refused.
+- 23 heads, `models/linear_v2_dryrun/web/weights.json`, sha256 `7f1c4299…f0b610`.
+
+| val, threshold 0.59 | FPR [95 % CP] | recall [95 % CP] |
+|---|---|---|
+| shipped v1, all | 4/189 = 0.021 [0.006, 0.053] | 84/164 = 0.512 [0.433, 0.591] |
+| shipped v1, Claude rows | 3/112 = 0.027 [0.006, 0.076] | 26/106 = 0.245 [0.167, 0.338] |
+| shipped v1, Gemini rows | 1/77 = 0.013 [0.000, 0.070] | 58/58 = 1.000 [0.938, 1.000] |
+| **v2 dry run, all** | **16/189 = 0.085 [0.049, 0.134]** | 145/164 = 0.884 [0.825, 0.929] |
+| v2 dry run, Claude rows | 10/112 = 0.089 [0.044, 0.158] | 88/106 = 0.830 [0.745, 0.896] |
+| v2 dry run, Gemini rows | 6/77 = 0.078 [0.029, 0.162] | 57/58 = 0.983 [0.908, 1.000] |
+
+Validation threshold sweep for the dry-run model (validation only; nothing is chosen yet):
+
+| threshold | 0.59 | 0.70 | 0.80 | 0.85 | 0.90 |
+|---|---|---|---|---|---|
+| FPR | 16/189 | 9/189 | 6/189 | 1/189 | 0/189 |
+| recall | 145/164 | 136/164 | 121/164 | 110/164 | 100/164 |
+
+**Verdict: not sane to ship at 0.59.** Recall on the new pretexts rises a lot, but validation FPR
+quadruples, including on the Gemini rows (1/77 → 6/77). The model would need either a new
+operating point, for which 0.85 is where validation FPR returns to baseline, or a fix of the
+cause. That choice belongs to the user. Per the protocol, no held-out split was run.
+
+#### D63 phase 2 — diagnosis and PRE-REGISTRATION of the held-out run (2026-10-11)
+_Written and committed before any held-out split was evaluated. Everything below was chosen on
+train / validation only._
+
+**Device embeddings.** The model is retrained on the browser's own vectors (the device bridge,
+transformers.js 3.8.1 / ORT-web wasm). On validation they tell the same story as the ONNX proxy.
+
+**Diagnosis 1: ranking.** v2 ranks better than the shipped model, so the regression is an
+operating-point shift.
+
+| validation ROC-AUC / PR-AUC | shipped v1 | v2 (device) |
+|---|---|---|
+| overall | 0.872 / 0.881 | **0.956 / 0.963** |
+| Claude rows | 0.759 / 0.763 | **0.919 / 0.933** |
+| Gemini rows | 1.000 / 1.000 | 0.9996 / 0.9994 |
+
+**Diagnosis 2: the 13 validation false positives of v2 at 0.59.**
+- 11 are Claude rows and 2 are Gemini rows (one legit_gov_service, one delivery_notification).
+- 9 of the 11 Claude false positives are Russian.
+- 9 of the 11 are twin / look-alike negatives:
+  - legit_delivery_code ×2;
+  - one each of legit_refund_request, legit_employer_request, legit_telecom_offer and
+    legit_gov_service (eGov);
+  - legit_bank_call ×2;
+  - general_conversation look-alike of investment_broker ×2.
+- 2 of the 13 fire a hard-signal cue.
+- The top heads are the pretext's own: imp_telecom_delivery_utility, otp_request,
+  refund_request, task_advance_fee, imp_gov_service, investment_scam.
+
+So v2 learned the pretexts. At 0.59 their legitimate twins cross the line.
+
+**Operating-point rule (stated by the orchestrator before computing it).** enter is the lowest
+threshold on a 0.01 grid at which v2's validation false positives are ≤ the shipped model's
+(4/189), on device embeddings. This gives:
+- **enter = 0.78, exit = 0.68**; the single-shot `risk_threshold` is also 0.78;
+- **single hard-signal floor = enter + 2 = 80**; double floor = max(81, single) = **81**.
+  These come from `meter.hard_signal_floors`; JS reads the same numbers from the config;
+- shipped stays at 0.59 / 0.49 with floors 61 / 81.
+
+| validation (device) | FPR | recall |
+|---|---|---|
+| shipped v1 @ 0.59 | 4/189 = 0.021 [0.006, 0.053] | 86/164 = 0.524 [0.445, 0.603] |
+| v2 @ 0.59 | 13/189 = 0.069 [0.037, 0.115] | 146/164 = 0.890 [0.832, 0.934] |
+| **v2 @ 0.78 (rule)** | **4/189 = 0.021 [0.006, 0.053]** | **132/164 = 0.805 [0.736, 0.863]** |
+| v2 @ 0.78, Claude rows | 3/112 | 75/106 |
+| v2 @ 0.78, Gemini rows | 1/77 | 57/58 |
+
+**Live meter on validation** (`eval.stream`, ONNX proxy for both models, each at its own point):
+- shipped @ 0.59/0.49: false-latch **0.085 [0.049, 0.134]** (16/189), alert-hit 0.573;
+- v2 @ 0.78/0.68: false-latch **0.138 [0.092, 0.195]** (26/189), alert-hit 0.848.
+
+**The streaming false-latch rate is worse for v2 on validation even at the rule point.** This is
+recorded here before the held-out run. The ship criteria below are the orchestrator's and do not
+include it; it goes to the user as a known risk.
+
+**Frozen model** (`models/linear_v2_device`):
+- 23 heads; no thin head dropped. The minimum out-of-fold positive count is ≥ 8 for all; the
+  smallest are cash_courier_handoff 42 and callback_instruction 54;
+- `_RISK_C` = 4.0 (unchanged); label masking on; per-tactic thresholds re-fit by D30 (OOF +
+  val), 0.55–0.70;
+- embed_backend `device`;
+- `web/weights.json` sha256 **7fc405ac52057d3ed4188a748884b6f1a8ffb17d5bf57917674c9c4e22b2bf92**;
+- meter settings otherwise unchanged (alpha 0.5/0.12, min turns to arm 3).
+
+0 of the 1,445 generated rows hash-collide with `shift_local`.
+
+**Ship criteria (the orchestrator's, fixed before looking):**
+1. FPR does not rise on test / authored_heldout / ood / ASR-styled / the browser gate.
+2. shift_local FPR stays within the baseline's 0.062 (4/64) plus one false positive.
+3. shift_local recall improves on the baseline's 0.548.
+
+If any fails: report and stop, no iteration.
+
+**Role line, extra fires on role-less rows (31 → 47/189 on the batch).** Of the 16 new fires,
+14 are wrong:
+- Kaspi named as a channel, not as the caller: "Kaspi support", a line-opening «Kaspi-ден»
+  transfer, «Kaspi-ге»;
+- these sit in erroneous_transfer ×7, legit_refund_request ×5, prize ×1 and
+  general_conversation ×1 rows.
+
+The other 2 are OLX buyers who name the listing site; that is factual. The lexicon is
+display-only, so these only mislabel the role line. Dropping the markers "support" / "here" and
+requiring a marker for the ablative is a later display-only fix, re-measured on a new batch.
+
+#### D63 phase 2 — the one-shot held-out result (2026-10-12): the ship criteria FAIL, so v2 is not shipped
+_The run used the frozen model and operating point of the pre-registration commit (f038cde).
+Shipped v1 ran at 0.59/0.49 and v2 at 0.78/0.68, in the same harness, on device embeddings.
+The streams ran on the ONNX server proxy for both models: on the device bridge, v1's streams
+alone took more than 10 h. Numbers are pasted from `data/synthetic/gen/_heldout/*.log`._
+
+| split | shipped v1: FPR · recall | v2: FPR · recall |
+|---|---|---|
+| test | 0.000 [0.000, 0.060] · 1.000 | **0.033 [0.004, 0.115]** · 0.976 |
+| authored_heldout | 0.000 [0.000, 0.142] · 0.889 | 0.000 [0.000, 0.142] · 0.944 |
+| ood | 0.000 [0.000, 0.049] · 0.932 | **0.041 [0.008, 0.114]** · 0.909 |
+| adversarial (all scams) | recall 0.936 | recall 0.945 |
+| adversarial_legit (legit-sounding scams) | recall 0.862 | recall **0.716** |
+| shift_v1 (contaminated, validation only) | 0.000 · 0.455 | 0.000 · 0.727 |
+| **shift_local** (headline) | 0.047 [0.010, 0.131] · 0.548 [0.417, 0.675] | 0.047 [0.010, 0.131] · **0.661 [0.530, 0.777]** |
+| styled test / authored / ood, FPR | 0.000 / 0.000 / 0.014 | 0.000 / 0.000 / 0.000 |
+| stream test, false-latch · alert-hit | 0.050 · 0.988 | 0.050 · 1.000 |
+| stream authored, false-latch · alert-hit | 0.125 · 0.889 | 0.000 · 0.833 |
+| stream shift_local, false-latch · alert-hit | 0.125 (8/64) · 0.694 | 0.094 (6/64) · 0.774 |
+| court_quotes, risk ≥ threshold / latched@1 | 29/47 / 1/47 | 41/47 / 7/47 |
+| court_quotes pseudo-calls, latched | 4/7 | 5/7 |
+
+**Criteria verdict:**
+
+| criterion | result |
+|---|---|
+| 1. FPR does not rise on test / authored / ood / styled / browser gate | **FAILS** |
+| 2. shift_local FPR within 0.062 + one false positive | passes (3/64 both) |
+| 3. shift_local recall improves | passes (0.548 → 0.661) |
+
+- Criterion 1 fails on two splits: **test** (0/60 → 2/60) and **ood** (0/74 → 3/74). Authored and
+  styled hold.
+- The browser gate was not run: it is a parity check of exported weights, and the criteria had
+  already failed.
+- Per protocol: no export, no re-tuning, no data edits aimed at these rows. `weights.json`,
+  config defaults and fixtures are unchanged. The user decides.
+
+#### D63 phase 2 — USER DECISION (2026-10-12): ship v2 under an ADR exception if, and only if, three pre-stated checks pass
+_Copied verbatim from the decision and committed before any of the checks was run. If any check fails: stop, keep v1, report._
+
+CHECK 1, the nature of the 5 new held-out FPs (test 2, ood 3). Read only those 5 rows, add them to data/anchors/inspection_ledger.yaml, and classify each.
+- PASS for a row if it is a legitimate call whose pretext matches a scam pretext: a bank / courier / delivery / telecom / utility / government / employer contact that mentions codes, payments, transfers, accounts, cards, verification, security or personal data.
+- FAIL for a row if it is an ordinary call with no such pretext (appointment, family, casual, generic sales without money/credential talk).
+- Check 1 passes if ≥ 4 of 5 rows pass AND none is a plain everyday call.
+- Report each row's one-line gist (no PII), v1 and v2 risk, and which heads fired. Do not change anything based on what you read.
+
+CHECK 2, export and the browser gate.
+- Export v2: export_parity_fixtures + client_config, active_label_space → v2, the new floors/thresholds into qorgan-config.json, sw.js SHELL_CACHE → v11.
+- Run the existing int8 browser runtime gate on device embeddings via the bridge (http://127.0.0.1:8765; restart it with `--pages 4` if it is down). It passes under that test's existing assertion; do not loosen it.
+- Full `pytest -q` and `npm test` green.
+
+CHECK 3, the demo scenes in Chromium (live.html replay, the three shipped scenes + the code-switch scene).
+- RU scam and KK scam must reach the alert band.
+- The real bank call must stay LOW (below the new exit threshold, no alert).
+- New tactic names, reasons and advice must render in kk/ru/en (no missing i18n/YAML keys).
+- Screenshots go to docs/research/2026-10/taxonomy_v2/.
+
+**Check 1 result (2026-10-12): FAIL, so stop and keep v1.** Only these 5 rows were read, and
+all 5 are in the inspection ledger. Risk is v1 → v2; scoring is whole-transcript on device
+embeddings.
+
+| row | gist | v1 → v2 risk | v2 tactic heads over threshold | verdict |
+|---|---|---|---|---|
+| test `neg_general_conversation_mixed_21` | ex-colleague now at a bank; an unpaid card bonus; sends a link to confirm identity and pick a card for the transfer | 0.538 → 0.949 | none | PASS (bank contact: card, verification, transfer) |
+| test `aug_neg_family_money_request_ru_1` | relative "in hospital" asks for 40k tenge by Kaspi today | 0.015 → 0.860 | imp_personal 0.75 | **FAIL** (family call) |
+| ood `ood_neg_family_money_request_mixed_0` | acquaintance asks for 50k by Kaspi to cover a stuck supplier payment | 0.058 → 0.805 | payment_redirect 0.63 | **FAIL** (family/friend call) |
+| ood `ood_neg_general_conversation_ru_1` | Kaspi support confirms a large transfer to the callee's mother; no asks | 0.073 → 0.814 | none | PASS (bank contact: transfer, security) |
+| ood `ood_neg_general_conversation_ru_3` | Kaspi asks to confirm a transaction with an in-app push | 0.508 → 0.798 | none | PASS (bank contact: verification) |
+
+- 3 of 5 rows pass, below the required ≥ 4.
+- Two rows are family money requests. Under the check's own wording ("appointment, **family**,
+  casual"), those are everyday calls.
+
+Per the decision: checks 2 and 3 were not run, there is no export, and v1 stays shipped. The
+role-line fix was conditional on all three checks passing, so it was not made.
+
+Observation (not acted on): the two family false positives are the cost of the new
+relative-in-trouble / payment-redirect heads (imp_personal). Legitimate relatives asking for
+money by Kaspi now score like the scam. They were in the v1 guardrail class
+`family_money_request`, and the generated batch had only 46 family negatives against 35
+relative_in_trouble scams.
+
+### D64 — Word-level voice mode: live per-word language chips + a GigaAM pass per phrase (2026-10-08)
+The voice mode tagged a whole utterance with one language (the per-utterance Vosk vote, D62), so a
+code-switched sentence was transcribed by one monolingual model, and English was the weakest leg.
+Requested: three recognisers in parallel, a language decision **per word**, better English. The
+literature has no support for per-word ROVER across monolingual models; what works is one joint
+model for the final text plus a calibrated tagger for the live view. Measurements in
+`docs/research/2026-10/stt_wordlevel.md` and `scripts/spikes/asr_wordlevel/*/REPORT.md`; browser
+evidence in `docs/research/2026-10/voice_d64/`.
+
+**Change.**
+- **Endpoint pass:** at each Vosk endpoint, GigaAM-Multilingual 220M CTC int8 (Sber, MIT, 225 MB)
+  decodes the utterance's audio once more, in a dedicated worker running a single-threaded
+  sherpa-onnx WASM build (`scripts/sherpa_wasm/build.sh`, pinned v1.13.8 + emsdk 4.0.23,
+  reproducible byte for byte, hashes in `asr/gigaam_web.py`). Its text **replaces** the Vosk text,
+  and only that text reaches the session and the meter. Per-word kk/ru/en tags come from the word
+  LID (`site/core/word-lid.js`: letters first, then a char-trigram LM + lexicon + Viterbi).
+- **Live pass:** while the person speaks, the calibrated span vote over the three Vosk recognisers
+  (`site/core/span-vote.js`: 13 features, per-model logistic calibrators, 3-state Viterbi, 1.0 s
+  freeze) shows provisional words in same-language runs with a chip. English is shown dashed.
+- **Fallback:** while GigaAM loads, when it is unavailable, times out or returns nothing, the
+  per-utterance vote passes through, marked as the quick transcript. Its English handicap goes
+  **0.15 → 0.05**.
+- Both ports are 1:1 with the spike code, pinned by golden fixtures (`scripts/export_asr_wordlevel.py`).
+  `tests/test_architecture.py` asserts that no module audio passes through has a network primitive,
+  and that the GigaAM worker's only fetch is a same-origin GET. Service worker v9 never streams or
+  deletes the model's own cache.
+
+**Evidence.**
+- Real read speech (FLEURS) WER: GigaAM **kk 0.074 / ru 0.070 / en 0.130** vs the vote's 0.217 /
+  0.203 / 0.592. The 600M variant was rejected (collapsed on 5/31 phone code-switch clips, 2.4×
+  slower, 866 MB).
+- Headless Chromium, no cross-origin isolation: load 1.0 s (0.43 s cached), RTF 0.25 clean / 0.23
+  phone-channel, 49/60 browser outputs identical to native (the rest differ by a word),
+  endpoint → replaced text median ~2.3 s (max 3.2 s).
+- Code-switch TEST (authored, synthesised, tuning on DEV only), word-language accuracy: span vote
+  **0.873** vs per-utterance 0.570. Live English recall is only 0.29, hence the dashed display.
+- Handicap 0.05 on FLEURS: English wins 0.910 of English utterances (0.545 at 0.15), 0 false wins on
+  real kk/ru (0.020 on synthetic Aru code-switch rows).
+- Demo scenes, meter before → after: RU scam 98 → 98, KK scam 96 → 96, real bank call 18 → 18.
+  Transcripts get better («код из самая с» → «код из смс»). A bug found in the run (an
+  un-endpointed recogniser dragged the previous phrase into the next) is fixed, with a test.
+- `pytest` 1341 passed / 2 skipped, `npm test` 115/115.
+
+**Costs and limits, on record.**
+- Download +239 MB (model + runtime), disclosed on the page before it starts. Renderer RSS peaks
+  ~1.15 GB during a call on desktop Chromium, which is a phone risk: no phone measured (B9).
+- The sherpa-onnx browser build has no hosted mirror yet. Until one is approved, deployments run
+  the fallback (the page says so).
+- All audio is synthesised or read speech. TTS English comes out of GigaAM in Cyrillic (a TTS
+  artefact, ~100 % Latin on real speech); real Kazakh-accented English needs the team's recordings
+  (`docs/RECORDING_SCRIPT.md`). Cue survival on real speech is unmeasured.
+- Not done: a GigaAM + VAD mode for Android WebView, where Vosklet cannot run (no cross-origin
+  isolation).
+
+### D65 — An independent held-out from a local open model (`shift_local`); `shift` becomes `shift_v1`, validation only (2026-10-10)
+**Why.** `shift` (66 calls) was written by Claude. Claude is now becoming a *training* generator
+(track 2), and phase 1 showed a classifier tells Claude rows from Gemini rows at AUC 0.975, so the
+moment Claude rows enter train `shift` stops measuring cross-generator generalisation.
+**Decision.**
+- `shift` is documented as **`shift_v1`** from now on (the code split name stays `shift` to avoid
+  churn). Once Claude-written data is in train it is a *validation* number, never the headline.
+- **`shift_local`** is the new honest headline: calls written offline on the Mac by an open-weights
+  model from a different family, with no access to the corpus, prompts, lexicons or any split.
+- `court_authored` (track D68 / the team) and `real_asr` (the team's recordings,
+  `docs/RECORDING_SCRIPT.md`) are pending; the headline becomes the worst of the three, with
+  intervals, as soon as they exist (`docs/RESEARCH_2026-10.md` §3.2).
+- **Rules:** nothing is tuned on `shift_local`, no threshold is picked on it, and the lexicon is
+  never extended from it (as D35/D43). Rows a person reads go into the inspection ledger. It is
+  never published: `publish_guard.NEVER_PUBLISHED` + `assert_publishable` make
+  `scripts/hf_upload.py` refuse any allow pattern that would match it (tests), and its raw and
+  processed files are gitignored (test). Track-2 prompts must not be built from its briefs.
+
+**How it was built.** `configs/shift_local_briefs.yaml`: 48 one-to-two-sentence briefs (24 scam,
+24 legit; 21 legit are look-alikes with the same pretext and none of the asks), written from public
+descriptions of the 2024–26 KZ/RU waves without opening the lexicons, corpus or prompts.
+`qorgan.data.shift_local_plan` fixes every slot (language × brief × persona × victim outcome ×
+length × seed; plan seed 20261009, temperature 0.8, top-p 0.95, ≤ 3 attempts per slot) before any
+text exists; the label comes from the brief. `scripts/gen_shift_local.py` runs llama.cpp
+(`llama-server` 0.6.0, build 11429, Metal); `qorgan.data.shift_local_checks` accepts or rejects
+each attempt on **automated checks only** — format, 8–22 turns, both speakers, turn length, prompt
+echo, script/language (Cyrillic vs Latin, Kazakh-letter share, Russian function words), loops,
+near-duplicates — never on a classifier score. `python -m qorgan.data.shift_local_set` reuses the
+`shift` pipeline (clean, scrub, dedup, proven disjoint from every split incl. `shift`), then
+refuses to write unless the file is a scrub fixed point (D45). Provenance with hashes, seeds,
+thresholds and rejection counts, no text: `data/provenance/shift_local.json`.
+
+**Generator — one model family, stated plainly.** `mradermacher/Qwen3.5-9B-Kazakh-GGUF` @
+`b6810719`, `Qwen3.5-9B-Kazakh.Q4_K_M.gguf`, sha256 `4e3ca9f6…02021e2`, Apache-2.0; a GGUF of
+ISSAI's `issai/Qwen3.5-9B-Kazakh` (Qwen3.5 family — neither Gemini nor Claude). **It wrote every
+row in every language.** The preferred `issai/LLama-3.1-KazLLM-1.0-8B-GGUF4` is gated
+(CC-BY-NC-4.0, access must be requested from the user's own HF account — not done on their
+behalf). A second family (`yandex/YandexGPT-5-Lite-8B-instruct-GGUF`, custom licence) was planned
+for ru/en and is still registered in the plan, but the link delivered 0.01–7 MB/s for a day
+(including an outage and a corrupted first download, fixed with range-verified resumes and a
+final sha256 check), so it was dropped. Consequence: `shift_local` carries Qwen3.5-Kazakh's house
+style; it is independent of our training generators, not of style in general.
+
+**No code-switched (`mixed`) calls.** Planned at 40. In the pilot (plan seed 7, outside the
+split) the Kazakh fine-tune answered in Kazakh whatever the instruction language, and with
+native-language directives it produced Russian and English but **never kk–ru code-switching**
+(0 / 8 calls, both intra-sentence and speaker-level prompts — it falls back to pure Kazakh). The
+acceptance check would have rejected every one, so `mixed` is 0 and stays pending for
+`court_authored` / `real_asr`. `mixed` therefore has no independent held-out at all today.
+
+**Accepted / attempts (rejection reasons):** kk scam 24/32 (turn_count 8) · kk legit 25/25 ·
+ru scam 24/31 (language 6, turn_count 1) · ru legit 24/33 (language 7, turn_count 2) · en scam
+14/18 (turn_count 4) · en legit 15/15. **126 calls** (62 scam / 64 legit; kk 49 · ru 48 · en 29),
+4 slots unfilled after 3 attempts. Russian rejections are the model drifting back into Kazakh.
+
+**Label validity.** A seeded 10 % sample (13 rows, `random.Random(65)`) was read only to check
+call ↔ brief: 13 / 13 match; two have blurred speaker roles (a scam still). All 13 are in the
+inspection ledger, so the harness reports `(clean)` / `(inspected)` rows. No score was looked at
+before the sample was read.
+
+**Baseline — the shipped model, evaluated, not tuned** (`QORGAN_CLASSIFIER_BACKEND=linear`,
+server ONNX embedder as the documented proxy, `linear_model_source=bundle`, threshold 0.59):
+
+| Split | FPR [95% CI] | Precision | Recall [95% CI] | F1 | PR-AUC [95% CI] | N |
+|---|---|---|---|---|---|---|
+| shift_local | 0.062 [0.017, 0.152] | 0.895 | 0.548 [0.417, 0.675] | 0.680 | 0.883 [0.808, 0.944] | 126 |
+| shift_local (clean) | 0.067 [0.018, 0.162] | 0.879 | 0.547 [0.404, 0.684] | 0.674 | 0.873 [0.795, 0.938] | 113 |
+| shift_local (inspected) | 0.000 [0.000, 0.602] | 1.000 | 0.556 [0.212, 0.863] | 0.714 | 0.950 [0.828, 1.000] | 13 |
+| en | 0.133 [0.017, 0.405] | 0.800 | 0.571 [0.289, 0.823] | 0.667 | 0.833 [0.610, 0.984] | 29 |
+| kk | 0.080 [0.010, 0.260] | 0.846 | 0.458 [0.256, 0.672] | 0.595 | 0.872 [0.742, 0.966] | 49 |
+| ru | 0.000 [0.000, 0.142] | 1.000 | 0.625 [0.406, 0.812] | 0.769 | 0.927 [0.834, 0.979] | 48 |
+
+Streaming (`eval.stream`, live meter replayed turn by turn):
+
+| Split | False-Latch Rate [95% CI] | Alert-Hit Rate [95% CI] | Median Turns | P90 Turns | N+ | N- |
+|---|---|---|---|---|---|---|
+| shift_local | 0.125 [0.056, 0.232] | 0.694 [0.563, 0.804] | 3.000 | 8.000 | 62 | 64 |
+| shift_local (clean) | 0.133 [0.059, 0.246] | 0.679 [0.537, 0.801] | 3.000 | 8.000 | 53 | 60 |
+| shift_local (inspected) | 0.000 [0.000, 0.602] | 0.778 [0.400, 0.972] | 3.000 | 5.000 | 9 | 4 |
+
+The live meter latches on 8 / 64 legitimate calls at some point (0.125) — twice the
+full-transcript FPR; this is the number a citizen would feel.
+
+Read with care: recall 0.548 is in the same range as `shift_v1` (0.455, D54) and far from `test`;
+FPR 0.062 is double `shift_v1`'s 0.030, with overlapping intervals; Kazakh recall (0.458) is the
+weakest language, as on `shift_v1`. The device-runtime number (`QORGAN_EMBED_BACKEND=device`) was
+not run (the Mac's browser was in use by other tracks); the server proxy is what `eval.run`
+reports elsewhere too.
+
+**Open (needs a decision):** request KazLLM access and/or fetch YandexGPT to add a second family
+for ru/en; a code-switching generator (or the team) for `mixed`; whether 126 is enough — at this
+size FPR intervals are ±0.07.
+
+### D66 — The scrubber masks spoken numbers and self-introduced names; 3-year audit retention; SBOM and scans (2026-10-09)
+The eGov/NITEC review (`docs/egov/SECURITY_CHECKLIST.md`, `DATA_FLOW_PII.md`) and the legal gap list
+(`docs/LEGAL_ASSESSMENT.md` §6, M7 / M4) left code-side gaps. The worst: voice mode writes numbers as
+words («восемь семьсот ноль один…»), so a report could carry a full phone, card, IIN or account
+number past the digit-only scrubber.
+
+**Scrubber (`data/scrub.py` + `scrub_numbers.py`, `scrub_names.py`, `scrub_tokens.py`; 1:1 JS port
+`site/core/scrub-*.js`).**
+- *Number runs.* Number words in ru / kk / en, ASR spellings («семсот», «пятдесят») and Kazakh
+  without its special letters («сегиз жуз»), optionally mixed with digit groups, separated only
+  by spaces, commas or hyphens (up to 3 characters, line breaks included). Each run is composed
+  as a listener writes dictation down («семьсот ноль один» = 701, «сегіз жүз жетпіс» = 870,
+  «он бір» = 11). A run with a word is masked from **7 digit-equivalents**. 7 is the shortest
+  phone number (city); a dictated 6-digit code stays, like the digit rule's OTP. Placeholder by
+  shape: 16 `[CARD]`, 12 `[IIN]`, 10/11 starting 7/8 `[PHONE]`, else `[NUMBER]`. A run split by
+  the endpointer across two utterances is judged as one and masked line by line.
+- *Left alone:* short quantities («два раза», «код из шести цифр», «назовите шесть цифр»),
+  amounts (multiplier words such as тысяча / мың / thousand break a run; a following currency
+  word or sign keeps it), em-dash prose, dates, times.
+- *Digits:* KZ IBAN (`KZ` + 2 digits + 16 alphanumerics, optional spaces) → `[IBAN]`. Digit
+  groups split by single spaces or hyphens in a card / IIN / phone shape («940101 300123»,
+  «707 123 45 67») are masked; ASCII-glued ids stay fixed points.
+- *Names, conservatively.* Strong triggers («меня зовут», «моё имя», «моя фамилия», «атым»,
+  «есімім», "my name is") take the next word in any case (ASR is lower case), plus up to two
+  capitalised or surname-ending words. Weak triggers («это», "this is", "I'm") need a
+  capitalised name and a following «из / с / от» / "from / calling / with"; two words only if
+  the second has a surname ending. A stop list keeps organisations and brands out; a rank stays
+  visible («это майор [NAME] из полиции»). Only the name is replaced.
+- *Addresses are out of scope.* Scammers rarely need the victim's address, and address patterns
+  in kk/ru free text collide with branch and organisation names, which are the evidence. On the
+  corpus the only address is one synthetic delivery row. The citizen reviews and edits the text
+  before sending, and only an audited investigator opens a full transcript. Also not masked:
+  addressing someone by name («Здравствуйте, Аида Кайратовна»), IBANs said as words.
+
+**Evidence survives.** Measured by `scripts/scrub_impact.py` over every published split plus
+`data/augment/`: **0** rows change their hard-signal cue tactics, **0** cue spans change text, **0**
+reassurance flags flip, and **0** gold trigger spans are lost. 38 gold spans (train 26, val 3,
+test 8, ood 1) survive in masked form. That needed two changes after the first measurement on
+train: "this is Kazakhstan Post calling" and "this is Major Ivanov from…" were read as names.
+Flagged phrases and gold spans are now grounded in this order (`data/span_grounding.py`, mirrored
+in `report.js`): as-is, then scrubbed alone, then scrubbed in their original context. Before, a
+phrase that held PII was dropped. «Назовите код из СМС: [NUMBER]» keeps the request. Parity:
+fixture 102 cases, plus a corpus-wide check of 21,714 texts with 0 Python/JS mismatches.
+
+**Impact analysis.** The scrubber runs on: the report path (`prepare_report`; the browser preview
+and `finalizeReport`), partner ingress (unscrubbed text → 422, so partners must apply the same
+rules), the content-free checks of the audit log, feedback, analyst ids and stored reports,
+`build_corpus` / `incident_seed` / `real_intake`, and the publish guard (D45). **It does not run
+on scoring.** `/api/analyze` and the browser score raw text, so the served model sees no change
+at runtime.
+- *Corpus rows the new scrubber changes* (not rebuilt, on purpose): train **286 / 1,880** (125
+  scam, 161 legit; 276 `[NAME]`, 11 `[PHONE]`, 7 `[NUMBER]`), val 24 / 135, test 29 / 143,
+  authored 0 / 42, ood 18 / 118, shift 14 / 66, adversarial 13 / 109, adversarial_legit 17 / 109.
+  Augment: 52 rows in 4 of 5 files. Almost all are names.
+- *Score effect on the served weights* (`weights.json`, server ONNX proxy, `qorgan.eval.run` on
+  re-scrubbed copies vs the current splits; measured, nothing tuned). FPR: test 0.017 → 0.017,
+  val 0.013 → 0.013, ood 0.014 → **0.000**, shift 0.030 → 0.030, adversarial_legit 0 → 0.
+  Recall: test 0.988 = , ood 0.909 → 0.932, shift 0.394 → 0.455, adversarial 0.936 = ,
+  adversarial_legit 0.908 = . No split or language gets a higher FPR. The ood false positive
+  that goes away is a ledger-inspected row.
+- *What the scheduled retrain (after taxonomy-v2) must do:* (1) re-scrub `data/augment/*.jsonl`
+  and the separately built splits (`ood`, `shift`, `adversarial*`) with
+  `python -m qorgan.data.publish_guard --fix`; (2) `python -m qorgan.data.build_corpus`, whose
+  manifest now records `scrubber_version: 2`; (3) retrain, export, regenerate fixtures and
+  re-gate as usual. No lexicon change is needed: cue matching is unaffected. Until then
+  `test_local_published_splits_are_scrubbed` and `test_every_augment_file_is_already_scrubbed`
+  **xfail** as "rebuild pending" (the manifest says v1), and `scripts/hf_upload.py` refuses to
+  publish (the guard finds the rows).
+
+**Stored records under a stricter scrubber.** A record on disk was checked by the scrubber of its
+day. Re-checking it on read would break `qorgan.audit verify` with no tampering, and make the
+reports file unreadable (console, deletion by receipt, purge). Loaders now validate with
+`STORED_RECORD_CONTEXT`, which skips only the content check; every write is still checked
+(`tests/test_scrub_evolution.py`). Stored reports are **not** re-scrubbed: their incident ids
+derive from the transcript, so a rewrite would orphan incidents. Reports stored before D66 keep
+their old scrubbing until they expire (≤ 180 days). A pilot starts with an empty store.
+
+**Audit retention.** `QORGAN_AUDIT_RETENTION_DAYS`, default and floor 1096 (3 years with a leap
+day; lower is refused at startup). The purge and every deletion path are pinned never to touch
+`audit_log.jsonl`. A purge leaves it byte-identical and `verify` passing
+(`tests/test_audit_retention.py`). Archiving older entries is an operator procedure (WORM plus the
+last `head`), never deleting lines (`docs/DEPLOY.md` §4).
+
+**Supply chain** (`docs/egov/security/`).
+- *SBOMs:* CycloneDX for the image pins, the npm toolchain and the self-hosted browser runtime
+  (`scripts/generate_sbom.py`).
+- *pip-audit:* image pins **0 findings**. The dev venv has 61 advisories in 9 packages that are
+  not in the image.
+- *npm audit:* 2 high, 4 moderate, all in transformers.js 3.8.1's dev tree. Parity-pinned, so
+  documented and not bumped; none of it runs in production.
+- *bandit:* 2 HIGH fixed (SHA-1 id marked non-cryptographic, same digest; a path-checked zip
+  extract annotated). 10 MEDIUM triaged. semgrep over the own JS in `site/` was not run (install did not complete here): open.
+- Not touched: the `onnxruntime` / `onnxruntime-node` / transformers.js pins.
+
+**Stays organisational.** KZ hosting and platform access-log retention (M5), whether the audit
+log must be kept longer than 3 years, and whether addresses or forms of address must be masked
+(lawyer, M1 / M4). Also: MFA/SSO, the ТД ИБ, the incident procedure, the responsible person, the
+SOC contract, and CI integration of the scans plus Trivy.
+
+### D67 — A WebView-safe voice mode (GigaAM + an energy VAD) and an Android build path (2026-10-09)
+Android WebView, including the one inside eGov Mobile, never grants cross-origin isolation. So
+Vosklet (WASM threads + SharedArrayBuffer) cannot start there, and the D64 voice mode dies. Paste
+and replay worked. GigaAM's single-threaded sherpa-onnx build does not need isolation (D64), so
+the only missing piece was what Vosk's endpointer did: cutting the audio into phrases.
+
+**Change.**
+- `voiceMode()` (`site/core/asr.js`) picks one of three modes:
+  - **full** (the D64 word-level mode): needs isolation + SharedArrayBuffer and a non-phone.
+  - **light**: GigaAM only. It runs whenever the full mode is blocked by isolation,
+    SharedArrayBuffer or the phone gate.
+  - **off**: no secure context, AudioWorklet, microphone, WebAssembly or Worker.
+
+  The D25 phone gate still holds for the full mode: a phone gets the light mode, even an
+  isolated one such as a TWA. `live.html?voice=full|light` forces a mode for evidence runs;
+  `full` lifts only the phone gate and cannot make a page isolated.
+- Light mode pipeline: `capture-worklet.js` (AudioWorklet, ~43 ms chunks) → audio ring +
+  `vad.js` → each segment goes through the **unchanged D64 endpoint pass**
+  (`createEndpointPass`: padded span, GigaAM worker, word LID) → the session and meter, the
+  same path as D64. `voice-light.js` wires it (`createLightPass` is the testable core,
+  `createLightAsr` the browser runtime).
+- **VAD:** deterministic energy + zero-crossing, with no model. 30 ms frames. A frame is active
+  when its RMS clears an adaptive floor by 12 dB to open a phrase (6 dB to stay in one) and clears
+  −50 dBFS. The floor is the minimum level over 2.5 s, capped at −35 dBFS. Frames crossing zero
+  fewer than 150 times/s are excluded, which removes mains hum. Inside a phrase, a quiet "hissy"
+  frame still counts (fricatives).
+  - Onset 150 ms, hangover 600 ms (250 ms past 8 s), hard cut at 15 s, minimum phrase 300 ms,
+    pre-roll 150 ms.
+  - Parameters were set from first principles and checked only on synthetic signals and the
+    demo scenes. Nothing was tuned on held-out data. Silero-VAD was not needed (below).
+- **No fallback in light mode:** there is no Vosk text to fall back on. A phrase whose decode
+  fails, times out or comes back empty is dropped and reported ("one phrase could not be
+  transcribed"); it is never scored as empty text.
+- The meter's step uses confidence 1, the same as a pasted transcript, because GigaAM's CTC
+  decode exposes none.
+- If GigaAM itself cannot load, the voice mode turns off with the reason. Paste and replay stay.
+- UI (kk/ru/en in `site/i18n.js`): a light-mode note saying phrases are transcribed after a
+  pause and no live words appear, "hearing speech… / transcribing…" while it works,
+  light-specific loading notes, and a 239 MB disclosure (no Vosk tarballs) instead of 147 + 239.
+- `tests/test_architecture.py`: `capture-worklet.js`, `vad.js` and `voice-light.js` join the
+  no-network audio modules. A new test fails if any `site/core` file that touches an audio API,
+  the ring or the VAD is missing from that list. The worklet's only outlet is its own port.
+- Service worker **v10** precaches the three modules. The taxonomy branch also moves to v10; the
+  merge will reconcile.
+- **Android:**
+  - `android/twa/twa-manifest.json`: Bubblewrap, `fallbackType: customtabs`, never a WebView,
+    because WebView would lose isolation.
+  - `android/webview-shell/`: a minimal WebView harness shaped like eGov Mobile's mini-service.
+  - `site/.well-known/assetlinks.json`: a template with a placeholder fingerprint.
+  - `android/README.md`: steps.
+  - No signing key was generated. `*.keystore`/`*.jks` are gitignored, and
+    `tests/web/test_android_twa.py` checks that none is tracked.
+
+**Evidence.**
+- Tests first: `vad.test.mjs` (14), `voice-light.test.mjs` (5) and `voiceMode` cases in
+  `asr.test.mjs`. `npm test` 139/139, `pytest` 1346 passed / 2 skipped.
+- Browser runs (`docs/research/2026-10/voice_d67/`): real page, desktop Chromium, fake
+  microphone, served by `tests_js/tools/static_site.mjs` with isolation **off** (light) or **on**
+  (full, the production header set). Second visit, models cached (`--warm`), one sweep, both modes
+  under the same machine load. Audio is synthesised (`say`: Milena/Aru, one WAV per line) plus the
+  D64 code-switch clips (`cs_mix`).
+
+  | Scene | full, isolated: meter · utterances/lines · speech end → line on screen, median / max | light, not isolated: meter · utterances/lines · segments found | light latency |
+  |---|---|---|---|
+  | RU scam | 98 · 6/6 · 3.24 / 3.82 s | 98 · 6/6 · 6/6 | 3.03 / 3.39 s |
+  | KK scam | 97 · 5/5 · 3.60 / 4.45 s | 97 · 5/5 · 5/5 | 2.91 / 3.62 s |
+  | real bank call (legit) | 19 · 4/4 · 3.71 / 4.64 s | 19 · 4/4 · 4/4 | 2.79 / 3.54 s |
+  | code-switch `cs_mix` | 92 · 7/7 · 3.52 / 4.86 s | 97 · 7/7 · 7/7 | 2.49 / 3.91 s |
+
+  D64 reported 98 / 96 / 18 / 97 for the same scenes. Every light transcript is GigaAM's
+  ("точная расшифровка"); no phrase was dropped.
+- **Segmentation:** 22/22 reference lines found, 0 split, 0 merged, 0 spurious segments.
+  - Start error median 150–166 ms. That is the 150 ms pre-roll, by design.
+  - End error median 10–14 ms. The KK run reads 0.57 / 0.40 s for both, a constant offset that
+    comes from the run's timing zero (getUserMedia → first sample), not the VAD.
+- **Latency (light):**
+  - The VAD closes a phrase 0.62–0.72 s after the speech ends (the 0.6 s hangover).
+  - GigaAM decodes in median 1.4–1.8 s in this sweep (1.0–1.1 s in an earlier, quieter sweep);
+    scoring takes the rest.
+  - The full mode is slower because three Vosk recognisers share the CPU with the decode.
+  - From the click to "listening": 2.1–2.3 s (light) vs 3.7–4.1 s (full). GigaAM loads from cache
+    in 0.86–0.92 s.
+- **Memory:** renderer RSS, read with `ps` over the browser's process tree (dedicated workers live
+  in the renderer). This is a different accounting from D64's CDP reading, so compare within this
+  table, not with D64's 1.15 GB.
+  - Warm: light peak **2.11–2.23 GB**, in-call median 2.09–2.21 GB; full peak **3.13–3.20 GB**,
+    in-call median 1.58–3.14 GB (bimodal, depending on GC).
+  - Cold RU: light peak 2.50 GB vs full 2.94 GB. A first visit holds download buffers.
+  - Two earlier sweeps, not committed, showed the same picture (light peaks 2.06–2.21 GB, one
+    1.15 GB; full 1.77–3.25 GB).
+  - The light mode saves about 1 GB at peak. It is still ~2.1 GB on desktop: the e5 embedder plus
+    GigaAM. That is a real phone risk, and it is unmeasured on a phone.
+- **WebView proxy:** the light mode with an Android-WebView user agent (`; wv`) and a 412 px phone
+  viewport, `cs_mix`: meter 97, 7/7 lines, latency 1.98 / 2.87 s.
+- **No-GigaAM path** (`e2e_voice_unavailable.mjs`, model answered 404): the voice mode turns off
+  with "…модель распознавания речи не загрузилась (HTTP 404 …)", the mic radio is disabled, and
+  replay still scores 98/100.
+
+**Not done, on record.**
+- No emulator run. Installing the needed tooling took too long: the download link measured
+  17–46 KB/s. A JDK alone was ~180 MB, plus an Android SDK and a ~1.5 GB arm64 system image, so
+  hours. A Homebrew `openjdk@17` install was stopped after 10 min at 4 MB, and `npm i
+  @bubblewrap/cli` failed on the network.
+- The TWA and WebView shells are configuration and source only, never built. Steps are in
+  `android/README.md`.
+- Still needs a person:
+  - a real Android phone (B9: memory, latency, speakerphone audio);
+  - an upload/signing key and its SHA-256 for `assetlinks.json`;
+  - the production HTTPS host in `twa-manifest.json`;
+  - a decision on whether the D25 phone gate should also cover the light mode once phone numbers
+    exist.
+- Synthesised, clean audio only. Real speech through a speakerphone, with room noise and
+  overlapping talkers, may need silero-vad. The energy VAD gave 0 errors here, so it was not
+  justified yet.
+
+### D68 — `court_quotes`: real scammer phrasing from published court verdicts, held out and local-only (2026-10-09)
+Every number the project had was synthetic. Court verdicts on telephone fraud report what the
+caller said, so they are the one public source of **real** scam phrasing. This ADR records what
+could be collected lawfully, how it is stored, and what the shipped model does on it.
+
+**Reachability (checked 2026-10-09 from a Kazakhtelecom IP, identified user agent).**
+- **office.sud.kz (KZ judicial acts bank, the only Kazakh-language source):** reachable, no
+  robots.txt, but **every search is gated by a reCAPTCHA v2 checkbox**. Automating it would be
+  CAPTCHA circumvention, so nothing was harvested. A person can search it by hand.
+- **sudrf.ru court sites (RU, official):** reachable, but their robots.txt disallows
+  `name=sud_delo` and `name=bsr`, i.e. the case and judgment pages. Not used.
+- **sud.gov.kz (KZ Supreme Court press releases):** robots.txt allows news pages (Crawl-delay 10);
+  its copyright notice allows re-use with a hyperlink. Plain curl gets an empty reply, a browser
+  works. Phone-fraud releases are rare and narrative: 2 passages read, 1 row kept.
+- **sudact.ru (RU aggregator of sudrf texts):** robots.txt allows `/regular/doc/<id>/`; its own
+  search endpoint (`doc_ajax`) is disallowed, so verdicts were **discovered through a web search
+  engine** and only the document pages were fetched, ≥ 12 s apart, 137 pages, no CAPTCHA, no
+  login. Its About and personal-data-policy pages contain no terms that forbid this. The earlier
+  note in `docs/research/2026-10/datasets.md` (B1) that scraping sudact "violates its ToS" is not
+  supported by anything we could find, but it was not contradicted by a written licence either.
+
+**What was built.**
+- `src/qorgan/data/court_quotes.py`: from a *criminal* act (title gate) about an impersonation call
+  (call + "представился сотрудником/следователем/сыном…" gate), take caller speech: direct quotes
+  after a speech verb, and the reported content after «сообщил, что» / «о том, что» / «попросил».
+  Spans are verbatim; nothing is rewritten or translated. The rules were written without reading
+  `data/lexicon/`.
+- PII: every row goes through `scrub_text`; a row that still carries a name with initials, an
+  address, a long digit run, an e-mail or a plate-like id is **dropped**, never edited (2 dropped).
+  The courts had already masked names (`фио`, `ФИО17 №5`, `«...»`).
+- Review: the rules over-collect (victim, relative, courier and witness speech; a construction-fraud
+  and a drugs case passed the gate). All 224 candidates were read by the agent and 177 excluded as
+  not the caller's words to the victim. `data/manifests/court_quotes.exclusions.json` lists them by
+  sha256 prefix only. **A human should spot-check the 47 kept rows.**
+- `scripts/court_quotes_build.py` builds `data/raw/court_quotes/quotes.jsonl` (gitignored) and the
+  committed `data/manifests/court_quotes.manifest.json` (counts, dates, citations, no text).
+- `src/qorgan/eval/court_quotes.py` replays each quote as a fresh one-turn live session
+  (`live.session.advance`, exactly the citizen page's first utterance) and reports per-utterance
+  risk ≥ threshold, hard-signal cue firing and the meter, with Clopper–Pearson intervals.
+- `hf_upload.py` refuses anything that names `court_quotes` (`publish_guard.assert_not_publishing_court_quotes`);
+  `.gitignore` names `data/raw/court_quotes/`; both pinned by `tests/data/test_court_quotes.py`.
+
+**Data.** 47 rows (46 sudact.ru, 1 sud.gov.kz) from 7 of 137 sources read, all **Russian**, 0
+Kazakh; 42 reported speech, 5 direct quotes; verdict dates 2018-06-17 … 2025-11-27. Clustered: one
+grandparent-scam verdict gives 19 rows, so the intervals below (which assume independent rows)
+are optimistic. No victim-side legit context was collected: verdicts do not contain legitimate
+calls.
+
+**The shipped model on it** (`QORGAN_LINEAR_WEIGHTS=web`, the committed `site/models/weights.json`,
+threshold 0.59; `python -m qorgan.eval.court_quotes`):
+
+| Group | N | risk ≥ thr [95% CI] | cue fired [95% CI] | latched after 1 turn | median risk |
+|---|---|---|---|---|---|
+| all | 47 | 0.617 [0.464, 0.755] (29/47) | 0.021 [0.001, 0.113] (1/47) | 0.021 [0.001, 0.113] (1/47) | 0.690 |
+| reported speech | 42 | 0.690 [0.529, 0.824] (29/42) | 0.024 [0.001, 0.126] (1/42) | 0.024 [0.001, 0.126] | 0.778 |
+| direct quotes | 5 | 0.000 [0.000, 0.522] (0/5) | 0.000 [0.000, 0.522] (0/5) | 0.000 [0.000, 0.522] | 0.309 |
+
+Pseudo-calls (all kept quotes of one verdict streamed in verdict order — composed, not a real
+call): latched 4/7, 0.571 [0.184, 0.901]. The only cue that fired: `otp_request` (1).
+
+**How to read it.**
+- **Hard-signal cues almost never fire on real phrasing (1/47).** That is the robust finding.
+  Part of it is form (reported speech is third person: «необходимо сообщить код» rather than
+  «продиктуйте код»), but most kept rows describe pretexts with no OTP/safe-account wording at
+  all (accident, relative, investigator, «декларирование»), the low-arousal gaps
+  `RESEARCH_2026-10.md` §1 item 5 predicted.
+- **The 0.617 is not a recall comparable to `shift`.** The set has no negatives, so it says nothing
+  about FPR, and reported speech carries court-narrative words («якобы», «ДТП», «деньги»,
+  «сотрудник полиции») that may lift the embedding risk for reasons a real call would not share.
+  The 5 direct quotes, the closest thing to real utterances, all scored below threshold (median
+  0.309), but n = 5.
+- A single utterance cannot latch the meter unless a cue fires (A6 arms from the 3rd utterance),
+  so "latched after 1 turn" equals the cue rate by construction.
+
+**Rules.** Held out: never tune on it, never extend the lexicon from it (D35/D43). It is not in
+`data/anchors/inspection_ledger.yaml`, because the ledger only takes ids of committed evaluation
+splits (its test enforces that); instead, the whole split is **inspected by construction** (every
+row was read at curation), which the manifest's `excluded_by_review` records.
+
+**Legal footing (under `docs/LEGAL_ASSESSMENT.md`; not legal advice).**
+- Storage is on the developer's machine in Kazakhstan (PD Law Art. 12(2)). Russian verdicts are
+  published by law (ФЗ-262) with names already removed; after scrubbing and the drop rule the rows
+  are arguably no longer personal data at all **[I]**. Where they still are, PD Law Art. 7(5)
+  allows re-use of lawfully published personal data with a source citation **[S, per
+  `DATA_SOURCES.md` §4.4]**: the manifest cites every verdict URL. Court decisions are official
+  documents, not copyright objects under ГК РФ ст. 1259(6) **[I, not checked against the KZ
+  Copyright Law]**.
+- **Unclear, so local-only:** whether redistributing quotes (the Hub is public and cross-border,
+  PD Law Arts. 7(3), 7(6), 16) or processing Russian court data in Kazakhstan raises any Russian
+  152-ФЗ point **[U]**. The rows never leave `data/raw/`, never reach Gemini (cloud tier off, D49)
+  and never the Hub.
+- AI Law 230-VIII: evaluation only; no training use, no change to the system's classification.
+
+**Needs the user.**
+1. Kazakh: a person searching office.sud.kz by hand (ст. 190 УК РК, «телефон», «қоңырау»), saving
+   verdict texts into `data/raw/court_quotes/` for `scripts/court_quotes_build.py` (add a reader for
+   their format), so the CAPTCHA is solved by a human, as intended.
+2. Volume: sudact's own search would give far more than web-search discovery (6 of 135 fetched pages
+   gave a kept row); ask the operator for permission, or for an export.
+3. A human spot-check of the 47 rows and a KZ advocate's line on the "local-only" boundary.

@@ -1,9 +1,42 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: **2026-10-01**. Current-state doc for anyone picking the project up. Read this,
-then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECISIONS.md`
-(ADRs D11–D54), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
-kept as history._
+_Last updated: **2026-10-12**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
+day (what is shipped, the honest numbers, the strategy, who does what). Then read this file
+(the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D68) and `docs/eval_report.md`
+(numbers, with intervals). The July sprint log below is kept as history._
+
+- **2026-10-12 — v2 not shipped; v1 stays.** The taxonomy-v2 retrain improved `shift_local`
+  recall 0.548 → 0.661 at equal FPR (3/64) but added 5 held-out false alarms (test 2/60, ood
+  3/74). Two of them are ordinary family money requests, which failed the user's pre-stated
+  check. All v2 infrastructure is merged with `active_label_space: v1`. Next: v2.1
+  (`docs/PLAN_2026-10.md` §4 track A).
+
+## October 2026 — taxonomy v2, phase 1 (ADR D63, branch `feat/taxonomy-v2-datagen`)
+- `tactics.yaml` v2 holds two label spaces. **`v1` is still active** (the shipped heads), and `v2`
+  (23 heads) waits for the phase-2 retrain. Six new guardrail negative classes are added.
+- New layers:
+  - Layer 2: a display-only role slot (`data/lexicon/roles.yaml`, 19 roles; Python + `site/core/role.js`).
+    `explain()` now returns `role_id` / `role_span` / `role_line`.
+  - Layer 3: 21 rule-derived schemes with per-scheme advice. Python only so far.
+- `python -m qorgan.data.migrate_v2` dry-runs the label migration. On train, 686 rows are mapped
+  and 246 need review (`data/taxonomy/migration_v2_review.json`).
+- `python -m qorgan.data.gen` provides the grid → chunk spec → QC pipeline. A 120-dialogue
+  Claude-written pilot passes every gate. Its fingerprint AUC is 0.91–0.97, so the held-out must move
+  off Claude. The shipped model catches 0/27 of its low-arousal scams. Details are in
+  `docs/gen_pilot_qc_2026-10.md`.
+- Nothing is in the corpus yet and nothing is retrained.
+- **Phase 2 (2026-10-09/10, D63 phase 2):** grid v2 with look-alike negatives at the base rate; role slot reads «это Асель из Kaspi» (batch recall 0.35 → 0.66); the migration review is done (141 rows); 1,445 Claude-written dialogues pass QC (19 chunks skipped); `build_corpus --gen-run … --label-space v2` and the masked trainer work. The dry run (validation only, ONNX proxy) lifts recall 0.51 → 0.88 but validation FPR 0.021 → 0.085 at 0.59. **Not shipped. The user decides the operating point, and the final run needs device embeddings.** **2026-10-12 one-shot held-out (pre-registered, v2 @ 0.78/0.68):** shift_local recall 0.548 → 0.661 at the same FPR 3/64, but test FPR 0 → 2/60 and ood 0 → 3/74. Ship criteria fail, so it is not shipped (D63 phase 2). The user's conditional exception (three pre-stated checks) stopped at check 1: 3/5 of the new false positives matched a scam pretext, and 2 were family money requests. **v1 stays shipped.**
+- **2026-10-09 — WebView-safe voice mode (ADR D67):** without cross-origin isolation (an Android WebView such as eGov Mobile's), or on a phone, the citizen page now uses a light GigaAM-only voice mode. An energy/ZCR VAD (`site/core/vad.js`) cuts the phrases, and each one goes through the unchanged D64 endpoint pass. There are no live words in this mode, and the kk/ru/en UI says so. If GigaAM is missing, voice turns off and paste/replay stay. Desktop Chromium with isolation off, demo scenes: meter 98 / 97 / 19 / 97, the same as the isolated mode. 22/22 lines segmented, 0 split/merged/spurious. Latency 2.5–3.0 s median vs 3.2–3.7 s for the full mode, peak renderer ~2.2 GB vs ~3.2 GB. Android: `android/` holds a TWA config (Bubblewrap), a WebView harness and an `assetlinks.json` template. None of it was built or run on an emulator (the download link was too slow for the SDK). Still needed: a real phone, a signing key, the production host.
+- **2026-10-09 — First real-language number: `court_quotes` (ADR D68).** 47 real scammer
+  phrases (RU; 0 KK) reported or quoted in published criminal verdicts (sudact.ru, sud.gov.kz),
+  scrubbed, agent-reviewed, held out and **local-only** (`data/raw/court_quotes/`, gitignored,
+  refused by `hf_upload.py`; the committed manifest has counts and citations, no text). Shipped
+  model, one utterance each: risk ≥ 0.59 on 0.617 [0.464, 0.755] (29/47), but direct quotes 0/5;
+  **hard-signal cues fire on 0.021 [0.001, 0.113] (1/47)**. Positives only, no FPR; reported speech
+  inflates risk. The KZ acts bank (office.sud.kz) is CAPTCHA-gated: Kazakh verdicts need a person.
+- **2026-10-09 — eGov code gaps closed (ADR D66):** the scrubber now masks numbers said as words or as mixed digits and words (ru/kk/en, from 7 digits), KZ IBANs, digit groups split by spaces, and self-introduced names. The JS port matches on 21,714 corpus texts. Measured on the corpus: no hard-signal cue, cue span, reassurance flag or gold span is lost; on the served weights no FPR rises. The corpus is NOT rebuilt: 286/1,880 train rows change, mostly names. The scheduled retrain after taxonomy-v2 must run `publish_guard --fix` on augment/ood/shift/adversarial, then `build_corpus` (which records `scrubber_version: 2`). Until then two on-disk checks xfail and `hf_upload` refuses. The audit log is kept ≥ 3 years and never purged. SBOMs, pip-audit, npm audit and bandit reports are in `docs/egov/security/`.
+- **2026-10-10 — New independent held-out `shift_local` (ADR D65):** 126 calls (kk 49 · ru 48 · en 29; 62 scam / 64 legit) written offline by a local open model (Qwen3.5-9B-Kazakh GGUF, one family for every row), accepted by automated checks only, gitignored and refused by the HF guard. Shipped model: FPR **0.062 [0.017, 0.152]**, recall **0.548 [0.417, 0.675]**; kk recall 0.458. **No `mixed` calls** (the model never code-switched). `shift` is now documented as `shift_v1` and becomes validation-only once Claude-written data enters train. Build: `scripts/gen_shift_local.py` → `python -m qorgan.data.shift_local_set`.
+- **2026-10-08 — NITEC / eGov pilot pack (RU, draft, nothing sent):** `docs/egov/` (README, ТЗ outline, data-flow/PII map, ГТС security checklist, API spec + proposed hand-off schema, questions for NITEC, architecture diagrams).
 
 ## TL;DR (September 2026)
 - **What it is:** scam-pattern decision support for KK/RU phone calls. Level 1 (citizen) runs
@@ -75,6 +108,31 @@ kept as history._
   receipt, digest + `+7 700 ***` on disk, raw number absent; delete → gone. Only network
   calls with call content: `POST /api/reports`, `DELETE /api/reports/{receipt}`. Model load
   ~3 s from localhost, ~0.6 s first inference (WASM/WebGPU).
+
+## 2026-10-08 — word-level voice mode: live language chips + GigaAM per phrase (ADR D64)
+
+- **Endpoint pass:** each phrase is decoded once more in the browser by GigaAM-Multilingual 220M
+  (sherpa-onnx WASM, single thread). Its text replaces the Vosk text, and only that text reaches
+  the meter.
+  - Real-speech WER (FLEURS): kk 0.074 / ru 0.070 / en 0.130 vs the old vote's 0.217 / 0.203 / 0.592.
+  - In Chromium: RTF 0.25 / 0.23 (clean / phone), browser WER = native, works without
+    cross-origin isolation.
+  - End to end, endpoint → replaced text takes a median of ~2.3 s.
+- **Live pass:** the calibrated span vote over the three Vosk recognisers tags provisional words
+  kk/ru/en while the person speaks.
+  - Code-switch TEST word-language accuracy is 0.873 vs 0.570.
+  - English stays provisional (recall 0.29).
+- **Fallback:** the per-utterance Vosk vote, now with English handicap 0.05 (real-speech English
+  0.910, 0 false wins on real kk/ru). It is marked "quick transcript" whenever GigaAM is loading or
+  unavailable.
+- **Demo scenes, meter before → after:** RU scam 98 → 98, KK scam 96 → 96, real bank call
+  18 → 18. Transcripts improved: «код из самая с» → «код из смс». Fixed in the same run: an
+  un-endpointed recogniser dragged the previous phrase into the next.
+- **Open:**
+  - The sherpa-onnx browser build (`scripts/sherpa_wasm/build.sh`, reproducible, hash-pinned) has
+    no hosted mirror yet. Until one is approved, deployments run the fallback.
+  - Real Kazakh-accented English recordings are needed (TTS English comes out in Cyrillic).
+  - A GigaAM + VAD mode for Android WebView.
 
 ## 2026-10-01 — English in the voice mode, test mode (ADR D62)
 

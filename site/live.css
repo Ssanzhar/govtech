@@ -111,6 +111,29 @@
 .lv-partial::after{content:"▌";margin-left:.15em;color:var(--amber);animation:lv-caret 1s steps(1) infinite}
 @keyframes lv-caret{50%{opacity:0}}
 
+/* ── per-word language runs (ADR D64): live provisional words + the final line ── */
+.lv-run{--lang-color:#8FB3D9;display:inline;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.lv-run[data-lang="kk"]{--lang-color:var(--amber)}
+.lv-run[data-lang="ru"]{--lang-color:#8FB3D9}
+.lv-run[data-lang="en"]{--lang-color:#7CC49A}
+.lv-run-tag{
+  display:inline-block;margin-right:.3em;padding:0 .35em;border-radius:4px;vertical-align:.1em;
+  font-size:.66rem;letter-spacing:.04em;text-transform:uppercase;line-height:1.5;
+  color:var(--night);background:var(--lang-color);
+}
+.lv-w{border-bottom:2px solid color-mix(in srgb,var(--lang-color) 70%,transparent)}
+.lv-w.is-provisional{border-bottom-style:dashed;opacity:.75}
+.lv-live{
+  margin-top:.5rem;padding:.5rem .9rem;border-radius:8px;font-size:.82rem;line-height:1.9;
+  border:1px dashed color-mix(in srgb,var(--paper) 22%,transparent);
+  color:color-mix(in srgb,var(--paper) 75%,transparent);
+}
+.lv-live-label{display:block;font-size:.68rem;letter-spacing:.04em;color:color-mix(in srgb,var(--paper) 50%,transparent)}
+.lv-live-words::after{content:"▌";margin-left:.15em;color:var(--amber);animation:lv-caret 1s steps(1) infinite}
+.lv-line[data-source="vosk"] .lv-line-meta{font-style:italic}
+.lv-endpoint-note{margin-top:.4rem}
+.lv-voice-mode-note{display:block;margin:.2rem 0 .6rem}
+
 /* ── post-call summary + report (dark) ── */
 .lv-summary-wrap{margin-top:1.4rem}
 .lv-summary{

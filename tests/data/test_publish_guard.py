@@ -6,8 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from qorgan.data.publish_guard import PUBLISHED_SPLITS, find_unscrubbed, scrub_file
+from qorgan.data.publish_guard import PUBLISHED_SPLITS, corpus_scrubber_version, find_unscrubbed, scrub_file
 from qorgan.data.schema import SCAM_RISK_THRESHOLD, Dialogue, Label, Utterance, spans_from_phrases
+from qorgan.data.scrub import SCRUBBER_VERSION
 
 _REPO = Path(__file__).resolve().parents[2]
 
@@ -56,7 +57,21 @@ def test_local_published_splits_are_scrubbed():
     paths = [processed / name for name in PUBLISHED_SPLITS] + sorted((_REPO / "data" / "augment").glob("*.jsonl"))
     if not any(p.exists() for p in paths[: len(PUBLISHED_SPLITS)]):
         pytest.skip("no local corpus (run scripts/deploy_bootstrap.py)")
+    built_with = corpus_scrubber_version(processed / "manifest.json")
+    if built_with < SCRUBBER_VERSION:
+        # ADR D66: the stricter scrubber changes corpus text; the scheduled rebuild absorbs it.
+        # Until then the guard must block publishing -- which is exactly what it does here.
+        assert find_unscrubbed(paths), "a stale corpus that is still a fixed point needs no rebuild"
+        pytest.xfail(f"corpus scrubbed with v{built_with} < v{SCRUBBER_VERSION}: rebuild pending (ADR D66)")
     assert find_unscrubbed(paths) == []
+
+
+def test_corpus_scrubber_version_defaults_to_one(tmp_path):
+    assert corpus_scrubber_version(tmp_path / "absent.json") == 1
+    (tmp_path / "m.json").write_text('{"seed": 1}', encoding="utf-8")
+    assert corpus_scrubber_version(tmp_path / "m.json") == 1
+    (tmp_path / "m.json").write_text('{"scrubber_version": 2}', encoding="utf-8")
+    assert corpus_scrubber_version(tmp_path / "m.json") == 2
 
 
 # --- scrub_file: the repair that establishes the gate's invariant (ADR D45 / legal gap M11) ---
@@ -118,3 +133,38 @@ def test_scrub_file_is_idempotent(tmp_path):
 
 def test_scrub_file_skips_a_missing_file(tmp_path):
     assert scrub_file(tmp_path / "absent.jsonl") == []
+
+
+# --- never-published held-outs (ADR D65) ------------------------------------------------------
+
+
+def test_shift_local_is_never_in_the_published_splits_or_the_upload_allow_list():
+    from qorgan.data.publish_guard import DATASET_ALLOW_PATTERNS, NEVER_PUBLISHED, assert_publishable
+
+    assert "shift_local.jsonl" in NEVER_PUBLISHED
+    assert not set(NEVER_PUBLISHED) & set(PUBLISHED_SPLITS)
+    assert_publishable(DATASET_ALLOW_PATTERNS)  # the real allow list passes
+
+
+@pytest.mark.parametrize("patterns", [["shift_local.jsonl"], ["*.jsonl"], ["shift*"], ["train.jsonl", "*.manifest.json"]])
+def test_an_allow_list_that_would_publish_shift_local_is_refused(patterns):
+    from qorgan.data.publish_guard import PublishRefused, assert_publishable
+
+    with pytest.raises(PublishRefused, match="shift_local"):
+        assert_publishable(patterns)
+
+
+def test_hf_upload_refuses_shift_local_before_uploading_anything():
+    upload = (_REPO / "scripts" / "hf_upload.py").read_text(encoding="utf-8")
+    guard_at = upload.index("assert_publishable(DATASET_ALLOW_PATTERNS)")
+    assert guard_at < upload.index("HfApi()"), "the guard must run before any client exists"
+    assert "allow_patterns=list(DATASET_ALLOW_PATTERNS)" in upload
+    assert "shift_local" not in upload.split("allow_patterns=")[1].split(")")[0]
+
+
+def test_shift_local_raw_and_processed_files_are_gitignored():
+    import subprocess
+
+    for path in ("data/raw/shift_local/kk.jsonl", "data/processed/shift_local.jsonl", "data/processed/shift_local.manifest.json"):
+        result = subprocess.run(["git", "check-ignore", "-q", path], cwd=_REPO, check=False)
+        assert result.returncode == 0, f"{path} must be gitignored"

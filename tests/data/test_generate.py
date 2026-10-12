@@ -263,8 +263,8 @@ output_path: data/synthetic/small.jsonl
     )
     cfg = load_corpus_config(bad)
     taxonomy = get_taxonomy()
-    n_tactics = len(taxonomy.tactics)
-    n_negatives = len(taxonomy.negatives)
+    n_tactics = len(taxonomy.tactic_ids())  # the active label space (ADR D63)
+    n_negatives = len(taxonomy.negative_ids("v1"))  # the v1 generator (ADR D63)
 
     responses = [_tool_response(VALID_DIALOGUE_PAYLOAD) for _ in range(n_tactics)]
     responses += [

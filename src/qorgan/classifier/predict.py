@@ -398,7 +398,7 @@ def _heuristic_score(transcript: str) -> ScoreResult:
     spans: list[Span] = []
     matched_hard_signal = False
 
-    for tactic in taxonomy.tactics:
+    for tactic in taxonomy.active_tactics():
         examples = (*tactic.examples_ru, *tactic.examples_kk)
         match = next((example for example in examples if example.lower() in lowered), None)
         if match is None:

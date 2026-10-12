@@ -50,6 +50,40 @@ tactic_advice:
   verification_ploy: >-
     Do not "confirm" your identity or a transaction on an incoming call. Hang up and call the
     organisation on its official number.
+  # ---- taxonomy v2 (ADR D63) ----
+  imp_bank: >-
+    Hang up and call your bank yourself on the number on the back of your card or in its
+    app — not the number that called you.
+  imp_law_enforcement: >-
+    The police, the KNB and prosecutors never settle cases by phone or ask for money, codes
+    or "help with the investigation". Ask for a name and case number, then call 102 yourself.
+  imp_gov_service: >-
+    eGov, public service centres, the tax committee, the pension fund and clinics never ask
+    for codes or passwords by phone. Check for yourself on egov.kz or by calling 1414.
+  imp_regulator: >-
+    The National Bank and the financial regulator do not call citizens or "protect" money by
+    phone. Hang up and call your own bank on its official number.
+  imp_telecom_delivery_utility: >-
+    Mobile operators, the post office, couriers and utilities never ask for an SMS code.
+    Check your contract, parcel or bill in the official app.
+  imp_personal: >-
+    Hang up and call your relative or boss back on the number you already know. Voices can be
+    faked; agree a family code word.
+  loan_inducement: >-
+    Never take out a loan because a caller tells you to — there is no such thing as a
+    "mirror" or "protective" loan. Turn on the loan ban ("Stop-credit") in eGov.
+  cash_courier_handoff: >-
+    Do not withdraw cash or hand it to a courier or a "bank representative". No organisation
+    collects money to "declare" or "keep it safe".
+  refund_request: >-
+    A mistaken transfer is returned only through the bank — with "Return transfer to sender",
+    to the same account. Never send it to a different card or number.
+  task_advance_fee: >-
+    A job that makes you pay first is a scam. Do not pay "deposits" or "fees" for tasks,
+    likes or buying out goods.
+  callback_instruction: >-
+    Do not press keys or call back a number the caller gives you. Look up the organisation's
+    official number yourself — on its website or your card.
 
 verification_questions:
   - "Give me the case or request number, and your position."
@@ -60,3 +94,70 @@ verification_questions:
 low_confidence_note: >-
   The signals are ambiguous. We are not saying this is a scam — please verify through official
   channels yourself.
+
+# Layer 3 (ADR D63): one reviewed line per scheme of data/taxonomy/schemes.yaml. Coverage is
+# validated by explain/schemes.py.
+scheme_advice:
+  mirror_loan: >-
+    This is the "mirror loan" scheme: a real bank never asks you to take a loan to "cancel"
+    someone else's application. Sign nothing and call your bank on the number in its app.
+  cash_declaration_courier: >-
+    Cash is never "declared" or "insured" through a courier. Hand money to no one and report
+    the call to 102.
+  two_stage_escalation: >-
+    First a "courier" or "public service centre" asks for a code, then "the police" or "the
+    National Bank" call — it is one scheme. Hang up, call your bank and change your passwords.
+  erroneous_transfer: >-
+    If money really arrived by mistake, return it only through your bank, to the same account.
+    Being asked to send it "to another card" is the sign of a scam.
+  job_task_advance_fee: >-
+    A "paid for likes" job that needs a deposit before you can withdraw is a scam. Do not pay
+    and do not share card details.
+  egov_eds_renewal: >-
+    You renew a digital signature yourself, on egov.kz or pki.gov.kz; nobody calls to remind
+    you or asks for a code. Hang up.
+  tax_kgd_business: >-
+    The tax committee does not suspend a business by phone or ask you to install apps. Check
+    notices in your taxpayer account (cabinet.kgd.gov.kz).
+  benefits_recalc_and_clinic: >-
+    No SMS code is needed to recalculate a benefit or book a clinic visit. The code is the key
+    to your eGov and your accounts: tell it to no one.
+  parcel_code: >-
+    A parcel code is entered by you in the app or shown to the courier in person — never read
+    out over the phone. Check the parcel in the official app.
+  telecom_contract_expiry: >-
+    A phone contract does not "expire" because someone calls. Check your tariff in the
+    operator's app or shop; install nothing and give no codes.
+  utility_code: >-
+    Utilities never ask for an SMS code for meters or the intercom. Check with your housing
+    association or the number on your bill.
+  marketplace_seller_phish: >-
+    You do not need to give card details, a CVV or a code to receive a payment. Do not open
+    "pay through the platform" links; talk only inside the service.
+  fake_boss: >-
+    A "boss" who urgently and secretly asks for money or hands you to a "curator" is almost
+    certainly fake. Call them back on the number you know or speak in person.
+  relative_in_trouble: >-
+    A "relative in trouble" calling from a new number is a common scheme; voices can be faked.
+    Call your relative on their usual number and ask something only they would know.
+  regulator_impersonation: >-
+    The National Bank, the regulator and the Antifraud Centre do not call citizens or move
+    money "into protection". Hang up and call your own bank.
+  law_enforcement_threat: >-
+    Real investigators summon you in writing; they do not demand secrecy, data or money by
+    phone. Hang up and call 102.
+  bank_safe_account: >-
+    "Safe accounts" do not exist. Transfer nothing; call the bank on the number on your card
+    and block the card in the app if needed.
+  bank_card_phish: >-
+    A bank never asks for an SMS code, CVV or password, or for you to install software. Hang
+    up and call the bank yourself.
+  investment_broker: >-
+    There is no such thing as guaranteed returns. Check the company's licence on the
+    regulator's site and never give remote access to your phone.
+  prize_compensation: >-
+    A real prize or compensation never costs a "fee" or needs your card details. Check on the
+    organisation's official website.
+  mule_recruitment: >-
+    Receiving and forwarding other people's money for a cut is money-mule work and a crime.
+    Say no.

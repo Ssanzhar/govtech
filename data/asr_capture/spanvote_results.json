@@ -1,0 +1,2004 @@
+{
+ "dev": {
+  "rows": 900,
+  "calibration_oof_log_loss": {
+   "base": {
+    "kk": 0.4142,
+    "ru": 0.4567,
+    "en": 0.0637
+   },
+   "lid": {
+    "kk": 0.2867,
+    "ru": 0.4039,
+    "en": 0.0637
+   },
+   "raw_conf": {
+    "kk": 2.4644,
+    "ru": 1.8368,
+    "en": 2.8387
+   },
+   "positive_rate": {
+    "kk": 0.4177,
+    "ru": 0.3285,
+    "en": 0.018
+   }
+  },
+  "features": "lid",
+  "tuned": {
+   "switch": 0.25,
+   "missing": -2.0,
+   "pause": null,
+   "bias": {
+    "kk": 0.0,
+    "ru": 0.0,
+    "en": 0.0
+   }
+  },
+  "tuned_dev_metrics": {
+   "n_utts": 900,
+   "n_ref_words": 5156,
+   "word_lang_acc": 0.8897,
+   "wer": 0.2711,
+   "right_word_right_tag": 0.7523,
+   "en_recall": 0.3021,
+   "kkru_to_en_rate": 0.0095,
+   "word_lang_acc_kk": 0.9312,
+   "word_lang_acc_ru": 0.8831,
+   "word_lang_acc_en": 0.3718
+  },
+  "grid": {
+   "switch": [
+    0.0,
+    0.25,
+    0.5,
+    1.0,
+    2.0,
+    4.0
+   ],
+   "missing": [
+    -1.0,
+    -2.0,
+    -4.0,
+    -6.0
+   ],
+   "pause": [
+    null,
+    0.15
+   ],
+   "en_bias": [
+    0.0,
+    0.5,
+    1.0,
+    1.5,
+    2.0,
+    3.0
+   ],
+   "kk_bias": [
+    -0.5,
+    0.0,
+    0.5
+   ]
+  },
+  "freeze": {
+   "none": {
+    "n_words": 5148,
+    "latency_mean_s": 1.0065,
+    "latency_mean_s_ci": [
+     0.9886,
+     1.0244
+    ],
+    "first_shown_mean_s": 0.968,
+    "first_shown_mean_s_ci": [
+     0.9536,
+     0.9819
+    ],
+    "flicker_per_word": 0.088,
+    "flicker_per_word_ci": [
+     0.075,
+     0.1023
+    ],
+    "share_words_flipped": 0.076,
+    "share_words_flipped_ci": [
+     0.0668,
+     0.0854
+    ],
+    "latency_p50_s": 1.049,
+    "latency_p90_s": 1.851,
+    "word_lang_acc": 0.8904
+   },
+   "0.5": {
+    "n_words": 5197,
+    "latency_mean_s": 0.9955,
+    "latency_mean_s_ci": [
+     0.98,
+     1.0114
+    ],
+    "first_shown_mean_s": 0.9755,
+    "first_shown_mean_s_ci": [
+     0.9609,
+     0.9906
+    ],
+    "flicker_per_word": 0.0554,
+    "flicker_per_word_ci": [
+     0.0485,
+     0.0622
+    ],
+    "share_words_flipped": 0.0527,
+    "share_words_flipped_ci": [
+     0.046,
+     0.0588
+    ],
+    "latency_p50_s": 1.051,
+    "latency_p90_s": 1.83,
+    "word_lang_acc": 0.8808
+   },
+   "1.0": {
+    "n_words": 5147,
+    "latency_mean_s": 0.9976,
+    "latency_mean_s_ci": [
+     0.9814,
+     1.0133
+    ],
+    "first_shown_mean_s": 0.968,
+    "first_shown_mean_s_ci": [
+     0.9537,
+     0.9821
+    ],
+    "flicker_per_word": 0.0769,
+    "flicker_per_word_ci": [
+     0.0669,
+     0.0865
+    ],
+    "share_words_flipped": 0.0699,
+    "share_words_flipped_ci": [
+     0.0616,
+     0.0779
+    ],
+    "latency_p50_s": 1.049,
+    "latency_p90_s": 1.84,
+    "word_lang_acc": 0.8879
+   },
+   "1.5": {
+    "n_words": 5148,
+    "latency_mean_s": 1.0029,
+    "latency_mean_s_ci": [
+     0.9858,
+     1.0203
+    ],
+    "first_shown_mean_s": 0.9681,
+    "first_shown_mean_s_ci": [
+     0.9537,
+     0.9821
+    ],
+    "flicker_per_word": 0.0839,
+    "flicker_per_word_ci": [
+     0.0729,
+     0.0953
+    ],
+    "share_words_flipped": 0.0748,
+    "share_words_flipped_ci": [
+     0.0659,
+     0.0841
+    ],
+    "latency_p50_s": 1.049,
+    "latency_p90_s": 1.849,
+    "word_lang_acc": 0.8892
+   },
+   "2.0": {
+    "n_words": 5146,
+    "latency_mean_s": 1.0032,
+    "latency_mean_s_ci": [
+     0.9862,
+     1.0209
+    ],
+    "first_shown_mean_s": 0.9678,
+    "first_shown_mean_s_ci": [
+     0.9535,
+     0.9817
+    ],
+    "flicker_per_word": 0.0843,
+    "flicker_per_word_ci": [
+     0.0735,
+     0.0958
+    ],
+    "share_words_flipped": 0.075,
+    "share_words_flipped_ci": [
+     0.0663,
+     0.0846
+    ],
+    "latency_p50_s": 1.049,
+    "latency_p90_s": 1.849,
+    "word_lang_acc": 0.8896
+   },
+   "3.0": {
+    "n_words": 5149,
+    "latency_mean_s": 1.0064,
+    "latency_mean_s_ci": [
+     0.988,
+     1.0247
+    ],
+    "first_shown_mean_s": 0.9682,
+    "first_shown_mean_s_ci": [
+     0.9539,
+     0.9821
+    ],
+    "flicker_per_word": 0.088,
+    "flicker_per_word_ci": [
+     0.075,
+     0.1022
+    ],
+    "share_words_flipped": 0.0759,
+    "share_words_flipped_ci": [
+     0.0669,
+     0.0853
+    ],
+    "latency_p50_s": 1.049,
+    "latency_p90_s": 1.852,
+    "word_lang_acc": 0.89
+   }
+  },
+  "freeze_chosen_s": 1.0
+ },
+ "js_port": {
+  "features": [
+   "logit_conf",
+   "conf_is_one",
+   "duration",
+   "log_cps",
+   "log_chars",
+   "has_kk",
+   "has_latin",
+   "utt_mean_conf",
+   "utt_mean_conf_best_other",
+   "utt_words_per_s",
+   "overlap_conf_best_other",
+   "overlap_words_per_s_other",
+   "charlm_kk_minus_ru"
+  ],
+  "calibrators": {
+   "kk": {
+    "intercept": 3.63615,
+    "coef": {
+     "logit_conf": 0.5883,
+     "conf_is_one": -0.39585,
+     "duration": -2.51393,
+     "log_cps": -2.14718,
+     "log_chars": 1.66731,
+     "has_kk": 0.59186,
+     "has_latin": 0.0,
+     "utt_mean_conf": -0.92026,
+     "utt_mean_conf_best_other": -0.84635,
+     "utt_words_per_s": -0.45001,
+     "overlap_conf_best_other": -2.06092,
+     "overlap_words_per_s_other": 0.06388,
+     "charlm_kk_minus_ru": 0.89751
+    }
+   },
+   "ru": {
+    "intercept": -1.20108,
+    "coef": {
+     "logit_conf": 0.36028,
+     "conf_is_one": 0.1299,
+     "duration": 0.92993,
+     "log_cps": -0.21239,
+     "log_chars": 0.58203,
+     "has_kk": 0.0,
+     "has_latin": 0.0,
+     "utt_mean_conf": 1.30858,
+     "utt_mean_conf_best_other": 0.20302,
+     "utt_words_per_s": -0.35681,
+     "overlap_conf_best_other": -3.01554,
+     "overlap_words_per_s_other": -0.04447,
+     "charlm_kk_minus_ru": -0.44013
+    }
+   },
+   "en": {
+    "intercept": 0.24338,
+    "coef": {
+     "logit_conf": 0.27041,
+     "conf_is_one": 1.24003,
+     "duration": 5.24746,
+     "log_cps": 0.39349,
+     "log_chars": -1.49508,
+     "has_kk": 0.0,
+     "has_latin": 0.0,
+     "utt_mean_conf": -0.34412,
+     "utt_mean_conf_best_other": 1.02868,
+     "utt_words_per_s": -0.39621,
+     "overlap_conf_best_other": -5.53212,
+     "overlap_words_per_s_other": -0.1046,
+     "charlm_kk_minus_ru": 0.0
+    }
+   }
+  },
+  "switch_penalty": 0.25,
+  "missing_logit": -2.0,
+  "pause_reset_s": null,
+  "bias_logit": {
+   "kk": 0.0,
+   "ru": 0.0,
+   "en": 0.0
+  },
+  "freeze_s": 1.0,
+  "conf_clip": 0.001,
+  "min_duration_s": 0.03
+ },
+ "test": {
+  "rows": 440,
+  "offline": {
+   "shipped_utterance_vote": {
+    "all": {
+     "n_utts": 440,
+     "n_ref_words": 2474,
+     "word_lang_acc": 0.5699,
+     "word_lang_acc_ci": [
+      0.5543,
+      0.5858
+     ],
+     "wer": 0.4228,
+     "wer_ci": [
+      0.3941,
+      0.4543
+     ],
+     "right_word_right_tag": 0.5061,
+     "right_word_right_tag_ci": [
+      0.4868,
+      0.5242
+     ],
+     "en_recall": 0.0581,
+     "en_recall_ci": [
+      0.0,
+      0.1887
+     ],
+     "kkru_to_en_rate": 0.0008,
+     "kkru_to_en_rate_ci": [
+      0.0,
+      0.0026
+     ],
+     "word_lang_acc_kk": 0.8036,
+     "word_lang_acc_kk_ci": [
+      0.7681,
+      0.8395
+     ],
+     "word_lang_acc_ru": 0.3463,
+     "word_lang_acc_ru_ci": [
+      0.2957,
+      0.3933
+     ],
+     "word_lang_acc_en": 0.0694,
+     "word_lang_acc_en_ci": [
+      0.0,
+      0.2144
+     ]
+    },
+    "single/clean": {
+     "n_utts": 100,
+     "n_ref_words": 568,
+     "word_lang_acc": 0.575,
+     "word_lang_acc_ci": [
+      0.5483,
+      0.6054
+     ],
+     "wer": 0.3979,
+     "wer_ci": [
+      0.3459,
+      0.4491
+     ],
+     "right_word_right_tag": 0.5123,
+     "right_word_right_tag_ci": [
+      0.4809,
+      0.5436
+     ],
+     "kkru_to_en_rate": 0.0,
+     "kkru_to_en_rate_ci": [
+      0.0,
+      0.0
+     ],
+     "word_lang_acc_kk": 0.8562,
+     "word_lang_acc_kk_ci": [
+      0.7882,
+      0.9121
+     ],
+     "word_lang_acc_ru": 0.2605,
+     "word_lang_acc_ru_ci": [
+      0.1673,
+      0.3645
+     ]
+    },
+    "single/phone": {
+     "n_utts": 100,
+     "n_ref_words": 568,
+     "word_lang_acc": 0.5529,
+     "word_lang_acc_ci": [
+      0.5223,
+      0.5832
+     ],
+     "wer": 0.456,
+     "wer_ci": [
+      0.3986,
+      0.5177
+     ],
+     "right_word_right_tag": 0.463,
+     "right_word_right_tag_ci": [
+      0.4293,
+      0.4965
+     ],
+     "kkru_to_en_rate": 0.0,
+     "kkru_to_en_rate_ci": [
+      0.0,
+      0.0
+     ],
+     "word_lang_acc_kk": 0.8276,
+     "word_lang_acc_kk_ci": [
+      0.7543,
+      0.8936
+     ],
+     "word_lang_acc_ru": 0.2442,
+     "word_lang_acc_ru_ci": [
+      0.1545,
+      0.3434
+     ]
+    },
+    "spliced/clean": {
+     "n_utts": 120,
+     "n_ref_words": 669,
+     "word_lang_acc": 0.5741,
+     "word_lang_acc_ci": [
+      0.5416,
+      0.6032
+     ],
+     "wer": 0.4036,
+     "wer_ci": [
+      0.3523,
+      0.4571
+     ],
+     "right_word_right_tag": 0.5336,
+     "right_word_right_tag_ci": [
+      0.4992,
+      0.5659
+     ],
+     "en_recall": 0.0,
+     "en_recall_ci": [
+      0.0,
+      0.0
+     ],
+     "kkru_to_en_rate": 0.0,
+     "kkru_to_en_rate_ci": [
+      0.0,
+      0.0
+     ],
+     "word_lang_acc_kk": 0.7975,
+     "word_lang_acc_kk_ci": [
+      0.7204,
+      0.8667
+     ],
+     "word_lang_acc_ru": 0.4054,
+     "word_lang_acc_ru_ci": [
+      0.3011,
+      0.5032
+     ],
+     "word_lang_acc_en": 0.0,
+     "word_lang_acc_en_ci": [
+      0.0,
+      0.0
+     ]
+    },
+    "spliced/phone": {
+     "n_utts": 120,
+     "n_ref_words": 669,
+     "word_lang_acc": 0.5757,
+     "word_lang_acc_ci": [
+      0.5449,
+      0.6026
+     ],
+     "wer": 0.435,
+     "wer_ci": [
+      0.3885,
+      0.4875
+     ],
+     "right_word_right_tag": 0.5097,
+     "right_word_right_tag_ci": [
+      0.4738,
+      0.5447
+     ],
+     "en_recall": 0.1163,
+     "en_recall_ci": [
+      0.0,
+      0.3488
+     ],
+     "kkru_to_en_rate": 0.0032,
+     "kkru_to_en_rate_ci": [
+      0.0,
+      0.0102
+     ],
+     "word_lang_acc_kk": 0.7389,
+     "word_lang_acc_kk_ci": [
+      0.6478,
+      0.8245
+     ],
+     "word_lang_acc_ru": 0.4536,
+     "word_lang_acc_ru_ci": [
+      0.337,
+      0.5501
+     ],
+     "word_lang_acc_en": 0.1389,
+     "word_lang_acc_en_ci": [
+      0.0,
+      0.3848
+     ]
+    }
+   },
+   "raw_span_maxconf": {
+    "all": {
+     "n_utts": 440,
+     "n_ref_words": 2474,
+     "word_lang_acc": 0.6378,
+     "word_lang_acc_ci": [
+      0.6175,
+      0.6577
+     ],
+     "wer": 0.3682,
+     "wer_ci": [
+      0.3406,
+      0.4006
+     ],
+     "right_word_right_tag": 0.5821,
+     "right_word_right_tag_ci": [
+      0.5616,
+      0.6028
+     ],
+     "en_recall": 0.5349,
+     "en_recall_ci": [
+      0.3867,
+      0.6606
+     ],
+     "kkru_to_en_rate": 0.0758,
+     "kkru_to_en_rate_ci": [
+      0.0633,
+      0.0878
+     ],
+     "word_lang_acc_kk": 0.9017,
+     "word_lang_acc_kk_ci": [
+      0.8818,
+      0.9183
+     ],
+     "word_lang_acc_ru": 0.355,
+     "word_lang_acc_ru_ci": [
+      0.3244,
+      0.3876
+     ],
+     "word_lang_acc_en": 0.5823,
+     "word_lang_acc_en_ci": [
+      0.4222,
+      0.7059
+     ]
+    },
+    "single/clean": {
+     "n_utts": 100,
+     "n_ref_words": 568,
+     "word_lang_acc": 0.6391,
+     "word_lang_acc_ci": [
+      0.6025,
+      0.6759
+     ],
+     "wer": 0.3451,
+     "wer_ci": [
+      0.2884,
+      0.408
+     ],
+     "right_word_right_tag": 0.5827,
+     "right_word_right_tag_ci": [
+      0.545,
+      0.6188
+     ],
+     "kkru_to_en_rate": 0.0775,
+     "kkru_to_en_rate_ci": [
+      0.0532,
+      0.1038
+     ],
+     "word_lang_acc_kk": 0.9452,
+     "word_lang_acc_kk_ci": [
+      0.9187,
+      0.9694
+     ],
+     "word_lang_acc_ru": 0.3019,
+     "word_lang_acc_ru_ci": [
+      0.2351,
+      0.3698
+     ]
+    },
+    "single/phone": {
+     "n_utts": 100,
+     "n_ref_words": 568,
+     "word_lang_acc": 0.6051,
+     "word_lang_acc_ci": [
+      0.562,
+      0.6477
+     ],
+     "wer": 0.4859,
+     "wer_ci": [
+      0.418,
+      0.5583
+     ],
+     "right_word_right_tag": 0.5194,
+     "right_word_right_tag_ci": [
+      0.4792,
+      0.5603
+     ],
+     "kkru_to_en_rate": 0.1144,
+     "kkru_to_en_rate_ci": [
+      0.0833,
+      0.1474
+     ],
+     "word_lang_acc_kk": 0.8478,
+     "word_lang_acc_kk_ci": [
+      0.8028,
+      0.8924
+     ],
+     "word_lang_acc_ru": 0.3384,
+     "word_lang_acc_ru_ci": [
+      0.2639,
+      0.4157
+     ]
+    },
+    "spliced/clean": {
+     "n_utts": 120,
+     "n_ref_words": 669,
+     "word_lang_acc": 0.6261,
+     "word_lang_acc_ci": [
+      0.5898,
+      0.6637
+     ],
+     "wer": 0.3019,
+     "wer_ci": [
+      0.2564,
+      0.3459
+     ],
+     "right_word_right_tag": 0.5994,
+     "right_word_right_tag_ci": [
+      0.5597,
+      0.639
+     ],
+     "en_recall": 0.4651,
+     "en_recall_ci": [
+      0.2439,
+      0.6579
+     ],
+     "kkru_to_en_rate": 0.0463,
+     "kkru_to_en_rate_ci": [
+      0.0295,
+      0.0649
+     ],
+     "word_lang_acc_kk": 0.9156,
+     "word_lang_acc_kk_ci": [
+      0.8808,
+      0.9454
+     ],
+     "word_lang_acc_ru": 0.3311,
+     "word_lang_acc_ru_ci": [
+      0.2669,
+      0.3921
+     ],
+     "word_lang_acc_en": 0.5128,
+     "word_lang_acc_en_ci": [
+      0.2758,
+      0.7015
+     ]
+    },
+    "spliced/phone": {
+     "n_utts": 120,
+     "n_ref_words": 669,
+     "word_lang_acc": 0.6758,
+     "word_lang_acc_ci": [
+      0.6372,
+      0.7143
+     ],
+     "wer": 0.3543,
+     "wer_ci": [
+      0.299,
+      0.4058
+     ],
+     "right_word_right_tag": 0.6173,
+     "right_word_right_tag_ci": [
+      0.5743,
+      0.6584
+     ],
+     "en_recall": 0.6047,
+     "en_recall_ci": [
+      0.4249,
+      0.7648
+     ],
+     "kkru_to_en_rate": 0.0687,
+     "kkru_to_en_rate_ci": [
+      0.0484,
+      0.0928
+     ],
+     "word_lang_acc_kk": 0.8969,
+     "word_lang_acc_kk_ci": [
+      0.858,
+      0.9327
+     ],
+     "word_lang_acc_ru": 0.4411,
+     "word_lang_acc_ru_ci": [
+      0.3693,
+      0.5137
+     ],
+     "word_lang_acc_en": 0.65,
+     "word_lang_acc_en_ci": [
+      0.45,
+      0.8205
+     ]
+    }
+   },
+   "raw_span_maxconf_en_handicap": {
+    "all": {
+     "n_utts": 440,
+     "n_ref_words": 2474,
+     "word_lang_acc": 0.6503,
+     "word_lang_acc_ci": [
+      0.6298,
+      0.6698
+     ],
+     "wer": 0.3464,
+     "wer_ci": [
+      0.3201,
+      0.3756
+     ],
+     "right_word_right_tag": 0.5837,
+     "right_word_right_tag_ci": [
+      0.5645,
+      0.6045
+     ],
+     "en_recall": 0.3953,
+     "en_recall_ci": [
+      0.2602,
+      0.5143
+     ],
+     "kkru_to_en_rate": 0.0469,
+     "kkru_to_en_rate_ci": [
+      0.038,
+      0.0561
+     ],
+     "word_lang_acc_kk": 0.9115,
+     "word_lang_acc_kk_ci": [
+      0.8937,
+      0.9275
+     ],
+     "word_lang_acc_ru": 0.3815,
+     "word_lang_acc_ru_ci": [
+      0.3492,
+      0.416
+     ],
+     "word_lang_acc_en": 0.4304,
+     "word_lang_acc_en_ci": [
+      0.2875,
+      0.5441
+     ]
+    },
+    "single/clean": {
+     "n_utts": 100,
+     "n_ref_words": 568,
+     "word_lang_acc": 0.6661,
+     "word_lang_acc_ci": [
+      0.6278,
+      0.705
+     ],
+     "wer": 0.3275,
+     "wer_ci": [
+      0.2732,
+      0.3896
+     ],
+     "right_word_right_tag": 0.588,
+     "right_word_right_tag_ci": [
+      0.5504,
+      0.6235
+     ],
+     "kkru_to_en_rate": 0.0423,
+     "kkru_to_en_rate_ci": [
+      0.0226,
+      0.0641
+     ],
+     "word_lang_acc_kk": 0.9553,
+     "word_lang_acc_kk_ci": [
+      0.9315,
+      0.9768
+     ],
+     "word_lang_acc_ru": 0.346,
+     "word_lang_acc_ru_ci": [
+      0.2751,
+      0.4157
+     ]
+    },
+    "single/phone": {
+     "n_utts": 100,
+     "n_ref_words": 568,
+     "word_lang_acc": 0.6275,
+     "word_lang_acc_ci": [
+      0.5876,
+      0.6679
+     ],
+     "wer": 0.4401,
+     "wer_ci": [
+      0.3805,
+      0.5055
+     ],
+     "right_word_right_tag": 0.5317,
+     "right_word_right_tag_ci": [
+      0.4918,
+      0.5709
+     ],
+     "kkru_to_en_rate": 0.0792,
+     "kkru_to_en_rate_ci": [
+      0.0538,
+      0.1061
+     ],
+     "word_lang_acc_kk": 0.869,
+     "word_lang_acc_kk_ci": [
+      0.828,
+      0.9091
+     ],
+     "word_lang_acc_ru": 0.3612,
+     "word_lang_acc_ru_ci": [
+      0.2874,
+      0.4353
+     ]
+    },
+    "spliced/clean": {
+     "n_utts": 120,
+     "n_ref_words": 669,
+     "word_lang_acc": 0.6267,
+     "word_lang_acc_ci": [
+      0.5906,
+      0.6647
+     ],
+     "wer": 0.2975,
+     "wer_ci": [
+      0.253,
+      0.3409
+     ],
+     "right_word_right_tag": 0.5934,
+     "right_word_right_tag_ci": [
+      0.5527,
+      0.6342
+     ],
+     "en_recall": 0.3488,
+     "en_recall_ci": [
+      0.1538,
+      0.5345
+     ],
+     "kkru_to_en_rate": 0.0288,
+     "kkru_to_en_rate_ci": [
+      0.0162,
+      0.0441
+     ],
+     "word_lang_acc_kk": 0.925,
+     "word_lang_acc_kk_ci": [
+      0.8925,
+      0.952
+     ],
+     "word_lang_acc_ru": 0.34,
+     "word_lang_acc_ru_ci": [
+      0.2752,
+      0.3986
+     ],
+     "word_lang_acc_en": 0.3846,
+     "word_lang_acc_en_ci": [
+      0.1724,
+      0.5676
+     ]
+    },
+    "spliced/phone": {
+     "n_utts": 120,
+     "n_ref_words": 669,
+     "word_lang_acc": 0.6799,
+     "word_lang_acc_ci": [
+      0.6418,
+      0.718
+     ],
+     "wer": 0.3318,
+     "wer_ci": [
+      0.2813,
+      0.3807
+     ],
+     "right_word_right_tag": 0.6143,
+     "right_word_right_tag_ci": [
+      0.5731,
+      0.6565
+     ],
+     "en_recall": 0.4419,
+     "en_recall_ci": [
+      0.2895,
+      0.6001
+     ],
+     "kkru_to_en_rate": 0.0399,
+     "kkru_to_en_rate_ci": [
+      0.0233,
+      0.0592
+     ],
+     "word_lang_acc_kk": 0.8969,
+     "word_lang_acc_kk_ci": [
+      0.8581,
+      0.932
+     ],
+     "word_lang_acc_ru": 0.473,
+     "word_lang_acc_ru_ci": [
+      0.402,
+      0.5413
+     ],
+     "word_lang_acc_en": 0.475,
+     "word_lang_acc_en_ci": [
+      0.3142,
+      0.6415
+     ]
+    }
+   },
+   "span_vote_calibrated_hmm": {
+    "all": {
+     "n_utts": 440,
+     "n_ref_words": 2474,
+     "word_lang_acc": 0.8732,
+     "word_lang_acc_ci": [
+      0.8589,
+      0.8872
+     ],
+     "wer": 0.2595,
+     "wer_ci": [
+      0.2361,
+      0.2831
+     ],
+     "right_word_right_tag": 0.7607,
+     "right_word_right_tag_ci": [
+      0.7405,
+      0.7807
+     ],
+     "en_recall": 0.2907,
+     "en_recall_ci": [
+      0.1515,
+      0.4256
+     ],
+     "kkru_to_en_rate": 0.0067,
+     "kkru_to_en_rate_ci": [
+      0.0038,
+      0.0102
+     ],
+     "word_lang_acc_kk": 0.9432,
+     "word_lang_acc_kk_ci": [
+      0.9296,
+      0.9565
+     ],
+     "word_lang_acc_ru": 0.8333,
+     "word_lang_acc_ru_ci": [
+      0.8061,
+      0.8575
+     ],
+     "word_lang_acc_en": 0.3333,
+     "word_lang_acc_en_ci": [
+      0.1781,
+      0.4748
+     ]
+    },
+    "single/clean": {
+     "n_utts": 100,
+     "n_ref_words": 568,
+     "word_lang_acc": 0.8857,
+     "word_lang_acc_ci": [
+      0.8597,
+      0.9094
+     ],
+     "wer": 0.2799,
+     "wer_ci": [
+      0.2306,
+      0.3357
+     ],
+     "right_word_right_tag": 0.7465,
+     "right_word_right_tag_ci": [
+      0.71,
+      0.7815
+     ],
+     "kkru_to_en_rate": 0.0088,
+     "kkru_to_en_rate_ci": [
+      0.0018,
+      0.0161
+     ],
+     "word_lang_acc_kk": 0.9589,
+     "word_lang_acc_kk_ci": [
+      0.9347,
+      0.9799
+     ],
+     "word_lang_acc_ru": 0.8031,
+     "word_lang_acc_ru_ci": [
+      0.751,
+      0.8536
+     ]
+    },
+    "single/phone": {
+     "n_utts": 100,
+     "n_ref_words": 568,
+     "word_lang_acc": 0.8324,
+     "word_lang_acc_ci": [
+      0.8003,
+      0.8624
+     ],
+     "wer": 0.3715,
+     "wer_ci": [
+      0.3217,
+      0.4259
+     ],
+     "right_word_right_tag": 0.6637,
+     "right_word_right_tag_ci": [
+      0.6243,
+      0.7038
+     ],
+     "kkru_to_en_rate": 0.0123,
+     "kkru_to_en_rate_ci": [
+      0.0035,
+      0.023
+     ],
+     "word_lang_acc_kk": 0.9303,
+     "word_lang_acc_kk_ci": [
+      0.8986,
+      0.9588
+     ],
+     "word_lang_acc_ru": 0.7252,
+     "word_lang_acc_ru_ci": [
+      0.6604,
+      0.7915
+     ]
+    },
+    "spliced/clean": {
+     "n_utts": 120,
+     "n_ref_words": 669,
+     "word_lang_acc": 0.8913,
+     "word_lang_acc_ci": [
+      0.8648,
+      0.9177
+     ],
+     "wer": 0.1749,
+     "wer_ci": [
+      0.1364,
+      0.2143
+     ],
+     "right_word_right_tag": 0.8341,
+     "right_word_right_tag_ci": [
+      0.7997,
+      0.869
+     ],
+     "en_recall": 0.2558,
+     "en_recall_ci": [
+      0.0681,
+      0.4518
+     ],
+     "kkru_to_en_rate": 0.0032,
+     "kkru_to_en_rate_ci": [
+      0.0,
+      0.0083
+     ],
+     "word_lang_acc_kk": 0.9525,
+     "word_lang_acc_kk_ci": [
+      0.9293,
+      0.9742
+     ],
+     "word_lang_acc_ru": 0.903,
+     "word_lang_acc_ru_ci": [
+      0.8627,
+      0.9408
+     ],
+     "word_lang_acc_en": 0.2895,
+     "word_lang_acc_en_ci": [
+      0.08,
+      0.5
+     ]
+    },
+    "spliced/phone": {
+     "n_utts": 120,
+     "n_ref_words": 669,
+     "word_lang_acc": 0.8788,
+     "word_lang_acc_ci": [
+      0.8501,
+      0.9075
+     ],
+     "wer": 0.2317,
+     "wer_ci": [
+      0.1899,
+      0.2715
+     ],
+     "right_word_right_tag": 0.7818,
+     "right_word_right_tag_ci": [
+      0.7434,
+      0.8208
+     ],
+     "en_recall": 0.3256,
+     "en_recall_ci": [
+      0.1579,
+      0.5476
+     ],
+     "kkru_to_en_rate": 0.0032,
+     "kkru_to_en_rate_ci": [
+      0.0,
+      0.0083
+     ],
+     "word_lang_acc_kk": 0.931,
+     "word_lang_acc_kk_ci": [
+      0.9003,
+      0.9601
+     ],
+     "word_lang_acc_ru": 0.8851,
+     "word_lang_acc_ru_ci": [
+      0.8388,
+      0.9272
+     ],
+     "word_lang_acc_en": 0.3784,
+     "word_lang_acc_en_ci": [
+      0.1923,
+      0.6061
+     ]
+    }
+   },
+   "span_vote_calibrated_no_hmm": {
+    "all": {
+     "n_utts": 440,
+     "n_ref_words": 2474,
+     "word_lang_acc": 0.8639,
+     "word_lang_acc_ci": [
+      0.8497,
+      0.8778
+     ],
+     "wer": 0.2688,
+     "wer_ci": [
+      0.2455,
+      0.2925
+     ],
+     "right_word_right_tag": 0.7518,
+     "right_word_right_tag_ci": [
+      0.7333,
+      0.7718
+     ],
+     "en_recall": 0.2791,
+     "en_recall_ci": [
+      0.1733,
+      0.381
+     ],
+     "kkru_to_en_rate": 0.0168,
+     "kkru_to_en_rate_ci": [
+      0.0116,
+      0.0226
+     ],
+     "word_lang_acc_kk": 0.9273,
+     "word_lang_acc_kk_ci": [
+      0.9124,
+      0.9404
+     ],
+     "word_lang_acc_ru": 0.8324,
+     "word_lang_acc_ru_ci": [
+      0.8066,
+      0.8548
+     ],
+     "word_lang_acc_en": 0.3158,
+     "word_lang_acc_en_ci": [
+      0.1961,
+      0.431
+     ]
+    },
+    "single/clean": {
+     "n_utts": 100,
+     "n_ref_words": 568,
+     "word_lang_acc": 0.8885,
+     "word_lang_acc_ci": [
+      0.8641,
+      0.9124
+     ],
+     "wer": 0.2905,
+     "wer_ci": [
+      0.2452,
+      0.3393
+     ],
+     "right_word_right_tag": 0.7412,
+     "right_word_right_tag_ci": [
+      0.7094,
+      0.7736
+     ],
+     "kkru_to_en_rate": 0.0194,
+     "kkru_to_en_rate_ci": [
+      0.0093,
+      0.0306
+     ],
+     "word_lang_acc_kk": 0.955,
+     "word_lang_acc_kk_ci": [
+      0.9313,
+      0.9764
+     ],
+     "word_lang_acc_ru": 0.814,
+     "word_lang_acc_ru_ci": [
+      0.7621,
+      0.8656
+     ]
+    },
+    "single/phone": {
+     "n_utts": 100,
+     "n_ref_words": 568,
+     "word_lang_acc": 0.8215,
+     "word_lang_acc_ci": [
+      0.7869,
+      0.8532
+     ],
+     "wer": 0.3715,
+     "wer_ci": [
+      0.3191,
+      0.4268
+     ],
+     "right_word_right_tag": 0.6602,
+     "right_word_right_tag_ci": [
+      0.6216,
+      0.7011
+     ],
+     "kkru_to_en_rate": 0.0246,
+     "kkru_to_en_rate_ci": [
+      0.0107,
+      0.0405
+     ],
+     "word_lang_acc_kk": 0.9167,
+     "word_lang_acc_kk_ci": [
+      0.8817,
+      0.9461
+     ],
+     "word_lang_acc_ru": 0.7165,
+     "word_lang_acc_ru_ci": [
+      0.6591,
+      0.7731
+     ]
+    },
+    "spliced/clean": {
+     "n_utts": 120,
+     "n_ref_words": 669,
+     "word_lang_acc": 0.8831,
+     "word_lang_acc_ci": [
+      0.8565,
+      0.9094
+     ],
+     "wer": 0.1809,
+     "wer_ci": [
+      0.1437,
+      0.2175
+     ],
+     "right_word_right_tag": 0.8206,
+     "right_word_right_tag_ci": [
+      0.7852,
+      0.8554
+     ],
+     "en_recall": 0.2326,
+     "en_recall_ci": [
+      0.0731,
+      0.3966
+     ],
+     "kkru_to_en_rate": 0.0128,
+     "kkru_to_en_rate_ci": [
+      0.0048,
+      0.0214
+     ],
+     "word_lang_acc_kk": 0.9399,
+     "word_lang_acc_kk_ci": [
+      0.9144,
+      0.962
+     ],
+     "word_lang_acc_ru": 0.9051,
+     "word_lang_acc_ru_ci": [
+      0.87,
+      0.9397
+     ],
+     "word_lang_acc_en": 0.2564,
+     "word_lang_acc_en_ci": [
+      0.0833,
+      0.4359
+     ]
+    },
+    "spliced/phone": {
+     "n_utts": 120,
+     "n_ref_words": 669,
+     "word_lang_acc": 0.86,
+     "word_lang_acc_ci": [
+      0.8326,
+      0.8891
+     ],
+     "wer": 0.2511,
+     "wer_ci": [
+      0.2077,
+      0.2929
+     ],
+     "right_word_right_tag": 0.7698,
+     "right_word_right_tag_ci": [
+      0.7309,
+      0.8084
+     ],
+     "en_recall": 0.3256,
+     "en_recall_ci": [
+      0.2264,
+      0.45
+     ],
+     "kkru_to_en_rate": 0.0112,
+     "kkru_to_en_rate_ci": [
+      0.0046,
+      0.0195
+     ],
+     "word_lang_acc_kk": 0.8991,
+     "word_lang_acc_kk_ci": [
+      0.8659,
+      0.9302
+     ],
+     "word_lang_acc_ru": 0.8784,
+     "word_lang_acc_ru_ci": [
+      0.8339,
+      0.9221
+     ],
+     "word_lang_acc_en": 0.3784,
+     "word_lang_acc_en_ci": [
+      0.25,
+      0.5417
+     ]
+    }
+   }
+  },
+  "realtime": {
+   "shipped_live": {
+    "all": {
+     "n_words": 2576,
+     "latency_mean_s": 1.1014,
+     "latency_mean_s_ci": [
+      1.0761,
+      1.1271
+     ],
+     "first_shown_mean_s": 1.0644,
+     "first_shown_mean_s_ci": [
+      1.0457,
+      1.0843
+     ],
+     "flicker_per_word": 0.0679,
+     "flicker_per_word_ci": [
+      0.0524,
+      0.0847
+     ],
+     "share_words_flipped": 0.066,
+     "share_words_flipped_ci": [
+      0.0505,
+      0.0826
+     ],
+     "latency_p50_s": 1.14,
+     "latency_p90_s": 1.953,
+     "word_lang_acc": 0.5699,
+     "word_lang_acc_ci": [
+      0.5543,
+      0.5858
+     ],
+     "wer": 0.4228,
+     "en_recall": 0.0581,
+     "kkru_to_en_rate": 0.0008
+    },
+    "single/clean": {
+     "n_words": 600,
+     "latency_mean_s": 1.0894,
+     "latency_mean_s_ci": [
+      1.0381,
+      1.1402
+     ],
+     "first_shown_mean_s": 1.0559,
+     "first_shown_mean_s_ci": [
+      1.0131,
+      1.1002
+     ],
+     "flicker_per_word": 0.0533,
+     "flicker_per_word_ci": [
+      0.0228,
+      0.0946
+     ],
+     "share_words_flipped": 0.05,
+     "share_words_flipped_ci": [
+      0.0222,
+      0.0863
+     ],
+     "latency_p50_s": 1.14,
+     "latency_p90_s": 1.95,
+     "word_lang_acc": 0.575,
+     "word_lang_acc_ci": [
+      0.5483,
+      0.6054
+     ],
+     "wer": 0.3979,
+     "kkru_to_en_rate": 0.0
+    },
+    "single/phone": {
+     "n_words": 591,
+     "latency_mean_s": 1.0899,
+     "latency_mean_s_ci": [
+      1.0448,
+      1.1347
+     ],
+     "first_shown_mean_s": 1.0642,
+     "first_shown_mean_s_ci": [
+      1.0241,
+      1.1045
+     ],
+     "flicker_per_word": 0.044,
+     "flicker_per_word_ci": [
+      0.0198,
+      0.0738
+     ],
+     "share_words_flipped": 0.0423,
+     "share_words_flipped_ci": [
+      0.0192,
+      0.0695
+     ],
+     "latency_p50_s": 1.147,
+     "latency_p90_s": 1.95,
+     "word_lang_acc": 0.5529,
+     "word_lang_acc_ci": [
+      0.5223,
+      0.5832
+     ],
+     "wer": 0.456,
+     "kkru_to_en_rate": 0.0
+    },
+    "spliced/clean": {
+     "n_words": 707,
+     "latency_mean_s": 1.0971,
+     "latency_mean_s_ci": [
+      1.0481,
+      1.15
+     ],
+     "first_shown_mean_s": 1.0653,
+     "first_shown_mean_s_ci": [
+      1.0274,
+      1.1039
+     ],
+     "flicker_per_word": 0.0778,
+     "flicker_per_word_ci": [
+      0.0449,
+      0.1125
+     ],
+     "share_words_flipped": 0.0764,
+     "share_words_flipped_ci": [
+      0.0435,
+      0.1107
+     ],
+     "latency_p50_s": 1.145,
+     "latency_p90_s": 1.95,
+     "word_lang_acc": 0.5741,
+     "word_lang_acc_ci": [
+      0.5416,
+      0.6032
+     ],
+     "wer": 0.4036,
+     "en_recall": 0.0,
+     "kkru_to_en_rate": 0.0
+    },
+    "spliced/phone": {
+     "n_words": 678,
+     "latency_mean_s": 1.1265,
+     "latency_mean_s_ci": [
+      1.075,
+      1.1845
+     ],
+     "first_shown_mean_s": 1.071,
+     "first_shown_mean_s_ci": [
+      1.0363,
+      1.1055
+     ],
+     "flicker_per_word": 0.0914,
+     "flicker_per_word_ci": [
+      0.0592,
+      0.1256
+     ],
+     "share_words_flipped": 0.09,
+     "share_words_flipped_ci": [
+      0.0585,
+      0.1232
+     ],
+     "latency_p50_s": 1.12,
+     "latency_p90_s": 1.987,
+     "word_lang_acc": 0.5757,
+     "word_lang_acc_ci": [
+      0.5449,
+      0.6026
+     ],
+     "wer": 0.435,
+     "en_recall": 0.1163,
+     "kkru_to_en_rate": 0.0032
+    }
+   },
+   "raw_span_maxconf_live": {
+    "all": {
+     "n_words": 2679,
+     "latency_mean_s": 1.0794,
+     "latency_mean_s_ci": [
+      1.0586,
+      1.1023
+     ],
+     "first_shown_mean_s": 1.017,
+     "first_shown_mean_s_ci": [
+      1.0013,
+      1.0333
+     ],
+     "flicker_per_word": 0.1415,
+     "flicker_per_word_ci": [
+      0.1229,
+      0.1597
+     ],
+     "share_words_flipped": 0.1258,
+     "share_words_flipped_ci": [
+      0.1105,
+      0.1415
+     ],
+     "latency_p50_s": 1.14,
+     "latency_p90_s": 1.92,
+     "word_lang_acc": 0.6378,
+     "word_lang_acc_ci": [
+      0.6175,
+      0.6577
+     ],
+     "wer": 0.3682,
+     "en_recall": 0.5349,
+     "kkru_to_en_rate": 0.0758
+    },
+    "single/clean": {
+     "n_words": 612,
+     "latency_mean_s": 1.0721,
+     "latency_mean_s_ci": [
+      1.0277,
+      1.1242
+     ],
+     "first_shown_mean_s": 1.009,
+     "first_shown_mean_s_ci": [
+      0.9774,
+      1.046
+     ],
+     "flicker_per_word": 0.1258,
+     "flicker_per_word_ci": [
+      0.0919,
+      0.1624
+     ],
+     "share_words_flipped": 0.1127,
+     "share_words_flipped_ci": [
+      0.0844,
+      0.1422
+     ],
+     "latency_p50_s": 1.145,
+     "latency_p90_s": 1.92,
+     "word_lang_acc": 0.6391,
+     "word_lang_acc_ci": [
+      0.6025,
+      0.6759
+     ],
+     "wer": 0.3451,
+     "kkru_to_en_rate": 0.0775
+    },
+    "single/phone": {
+     "n_words": 636,
+     "latency_mean_s": 1.1128,
+     "latency_mean_s_ci": [
+      1.0611,
+      1.168
+     ],
+     "first_shown_mean_s": 1.0254,
+     "first_shown_mean_s_ci": [
+      0.9902,
+      1.063
+     ],
+     "flicker_per_word": 0.1887,
+     "flicker_per_word_ci": [
+      0.1394,
+      0.2371
+     ],
+     "share_words_flipped": 0.1604,
+     "share_words_flipped_ci": [
+      0.1225,
+      0.1982
+     ],
+     "latency_p50_s": 1.174,
+     "latency_p90_s": 1.98,
+     "word_lang_acc": 0.6051,
+     "word_lang_acc_ci": [
+      0.562,
+      0.6477
+     ],
+     "wer": 0.4859,
+     "kkru_to_en_rate": 0.1144
+    },
+    "spliced/clean": {
+     "n_words": 708,
+     "latency_mean_s": 1.0527,
+     "latency_mean_s_ci": [
+      1.0159,
+      1.0905
+     ],
+     "first_shown_mean_s": 1.0041,
+     "first_shown_mean_s_ci": [
+      0.9748,
+      1.0321
+     ],
+     "flicker_per_word": 0.1144,
+     "flicker_per_word_ci": [
+      0.0873,
+      0.1407
+     ],
+     "share_words_flipped": 0.1059,
+     "share_words_flipped_ci": [
+      0.0819,
+      0.1288
+     ],
+     "latency_p50_s": 1.103,
+     "latency_p90_s": 1.86,
+     "word_lang_acc": 0.6261,
+     "word_lang_acc_ci": [
+      0.5898,
+      0.6637
+     ],
+     "wer": 0.3019,
+     "en_recall": 0.4651,
+     "kkru_to_en_rate": 0.0463
+    },
+    "spliced/phone": {
+     "n_words": 723,
+     "latency_mean_s": 1.0823,
+     "latency_mean_s_ci": [
+      1.0403,
+      1.125
+     ],
+     "first_shown_mean_s": 1.0289,
+     "first_shown_mean_s_ci": [
+      0.9972,
+      1.0604
+     ],
+     "flicker_per_word": 0.1397,
+     "flicker_per_word_ci": [
+      0.1035,
+      0.1749
+     ],
+     "share_words_flipped": 0.1259,
+     "share_words_flipped_ci": [
+      0.0963,
+      0.1548
+     ],
+     "latency_p50_s": 1.125,
+     "latency_p90_s": 1.92,
+     "word_lang_acc": 0.6758,
+     "word_lang_acc_ci": [
+      0.6372,
+      0.7143
+     ],
+     "wer": 0.3543,
+     "en_recall": 0.6047,
+     "kkru_to_en_rate": 0.0687
+    }
+   },
+   "span_vote_live": {
+    "all": {
+     "n_words": 2519,
+     "latency_mean_s": 1.0491,
+     "latency_mean_s_ci": [
+      1.0304,
+      1.0684
+     ],
+     "first_shown_mean_s": 1.0032,
+     "first_shown_mean_s_ci": [
+      0.9888,
+      1.0187
+     ],
+     "flicker_per_word": 0.11,
+     "flicker_per_word_ci": [
+      0.0942,
+      0.1271
+     ],
+     "share_words_flipped": 0.0977,
+     "share_words_flipped_ci": [
+      0.0845,
+      0.1116
+     ],
+     "latency_p50_s": 1.115,
+     "latency_p90_s": 1.86,
+     "word_lang_acc": 0.8732,
+     "word_lang_acc_ci": [
+      0.8589,
+      0.8872
+     ],
+     "wer": 0.2595,
+     "en_recall": 0.2907,
+     "kkru_to_en_rate": 0.0067
+    },
+    "single/clean": {
+     "n_words": 588,
+     "latency_mean_s": 1.0365,
+     "latency_mean_s_ci": [
+      0.9966,
+      1.0798
+     ],
+     "first_shown_mean_s": 0.9865,
+     "first_shown_mean_s_ci": [
+      0.9538,
+      1.0203
+     ],
+     "flicker_per_word": 0.1071,
+     "flicker_per_word_ci": [
+      0.0761,
+      0.1396
+     ],
+     "share_words_flipped": 0.0969,
+     "share_words_flipped_ci": [
+      0.0699,
+      0.1248
+     ],
+     "latency_p50_s": 1.113,
+     "latency_p90_s": 1.861,
+     "word_lang_acc": 0.8857,
+     "word_lang_acc_ci": [
+      0.8597,
+      0.9094
+     ],
+     "wer": 0.2799,
+     "kkru_to_en_rate": 0.0088
+    },
+    "single/phone": {
+     "n_words": 589,
+     "latency_mean_s": 1.0778,
+     "latency_mean_s_ci": [
+      1.0301,
+      1.1271
+     ],
+     "first_shown_mean_s": 1.0198,
+     "first_shown_mean_s_ci": [
+      0.9859,
+      1.0548
+     ],
+     "flicker_per_word": 0.1358,
+     "flicker_per_word_ci": [
+      0.0948,
+      0.1797
+     ],
+     "share_words_flipped": 0.1188,
+     "share_words_flipped_ci": [
+      0.0859,
+      0.1524
+     ],
+     "latency_p50_s": 1.16,
+     "latency_p90_s": 1.89,
+     "word_lang_acc": 0.8324,
+     "word_lang_acc_ci": [
+      0.8003,
+      0.8624
+     ],
+     "wer": 0.3715,
+     "kkru_to_en_rate": 0.0123
+    },
+    "spliced/clean": {
+     "n_words": 670,
+     "latency_mean_s": 1.0325,
+     "latency_mean_s_ci": [
+      0.9994,
+      1.0661
+     ],
+     "first_shown_mean_s": 0.9935,
+     "first_shown_mean_s_ci": [
+      0.9669,
+      1.0208
+     ],
+     "flicker_per_word": 0.0985,
+     "flicker_per_word_ci": [
+      0.0697,
+      0.1286
+     ],
+     "share_words_flipped": 0.0881,
+     "share_words_flipped_ci": [
+      0.0642,
+      0.1128
+     ],
+     "latency_p50_s": 1.098,
+     "latency_p90_s": 1.845,
+     "word_lang_acc": 0.8913,
+     "word_lang_acc_ci": [
+      0.8648,
+      0.9177
+     ],
+     "wer": 0.1749,
+     "en_recall": 0.2558,
+     "kkru_to_en_rate": 0.0032
+    },
+    "spliced/phone": {
+     "n_words": 672,
+     "latency_mean_s": 1.0515,
+     "latency_mean_s_ci": [
+      1.0179,
+      1.0876
+     ],
+     "first_shown_mean_s": 1.0128,
+     "first_shown_mean_s_ci": [
+      0.9848,
+      1.0419
+     ],
+     "flicker_per_word": 0.1012,
+     "flicker_per_word_ci": [
+      0.0732,
+      0.1308
+     ],
+     "share_words_flipped": 0.0893,
+     "share_words_flipped_ci": [
+      0.0664,
+      0.1124
+     ],
+     "latency_p50_s": 1.097,
+     "latency_p90_s": 1.874,
+     "word_lang_acc": 0.8788,
+     "word_lang_acc_ci": [
+      0.8501,
+      0.9075
+     ],
+     "wer": 0.2317,
+     "en_recall": 0.3256,
+     "kkru_to_en_rate": 0.0032
+    }
+   },
+   "span_vote_live_freeze_1.0": {
+    "all": {
+     "n_words": 2519,
+     "latency_mean_s": 1.043,
+     "latency_mean_s_ci": [
+      1.0256,
+      1.0615
+     ],
+     "first_shown_mean_s": 1.0035,
+     "first_shown_mean_s_ci": [
+      0.9894,
+      1.0197
+     ],
+     "flicker_per_word": 0.0988,
+     "flicker_per_word_ci": [
+      0.0845,
+      0.1143
+     ],
+     "share_words_flipped": 0.0909,
+     "share_words_flipped_ci": [
+      0.0786,
+      0.104
+     ],
+     "latency_p50_s": 1.115,
+     "latency_p90_s": 1.86,
+     "word_lang_acc": 0.8719,
+     "word_lang_acc_ci": [
+      0.8573,
+      0.8861
+     ],
+     "wer": 0.2619,
+     "en_recall": 0.2907,
+     "kkru_to_en_rate": 0.0092
+    },
+    "single/clean": {
+     "n_words": 588,
+     "latency_mean_s": 1.0297,
+     "latency_mean_s_ci": [
+      0.992,
+      1.0705
+     ],
+     "first_shown_mean_s": 0.9869,
+     "first_shown_mean_s_ci": [
+      0.9546,
+      1.0205
+     ],
+     "flicker_per_word": 0.0986,
+     "flicker_per_word_ci": [
+      0.0711,
+      0.1299
+     ],
+     "share_words_flipped": 0.0901,
+     "share_words_flipped_ci": [
+      0.0656,
+      0.1149
+     ],
+     "latency_p50_s": 1.113,
+     "latency_p90_s": 1.86,
+     "word_lang_acc": 0.8784,
+     "word_lang_acc_ci": [
+      0.8525,
+      0.9027
+     ],
+     "wer": 0.287,
+     "kkru_to_en_rate": 0.0123
+    },
+    "single/phone": {
+     "n_words": 591,
+     "latency_mean_s": 1.0708,
+     "latency_mean_s_ci": [
+      1.0257,
+      1.1177
+     ],
+     "first_shown_mean_s": 1.0215,
+     "first_shown_mean_s_ci": [
+      0.9865,
+      1.056
+     ],
+     "flicker_per_word": 0.1201,
+     "flicker_per_word_ci": [
+      0.0854,
+      0.1588
+     ],
+     "share_words_flipped": 0.11,
+     "share_words_flipped_ci": [
+      0.0789,
+      0.1414
+     ],
+     "latency_p50_s": 1.16,
+     "latency_p90_s": 1.89,
+     "word_lang_acc": 0.8342,
+     "word_lang_acc_ci": [
+      0.8014,
+      0.8639
+     ],
+     "wer": 0.375,
+     "kkru_to_en_rate": 0.0141
+    },
+    "spliced/clean": {
+     "n_words": 668,
+     "latency_mean_s": 1.0246,
+     "latency_mean_s_ci": [
+      0.993,
+      1.0571
+     ],
+     "first_shown_mean_s": 0.9918,
+     "first_shown_mean_s_ci": [
+      0.9647,
+      1.0189
+     ],
+     "flicker_per_word": 0.0868,
+     "flicker_per_word_ci": [
+      0.0624,
+      0.1129
+     ],
+     "share_words_flipped": 0.0823,
+     "share_words_flipped_ci": [
+      0.0593,
+      0.106
+     ],
+     "latency_p50_s": 1.095,
+     "latency_p90_s": 1.83,
+     "word_lang_acc": 0.8913,
+     "word_lang_acc_ci": [
+      0.8652,
+      0.9182
+     ],
+     "wer": 0.1734,
+     "en_recall": 0.2558,
+     "kkru_to_en_rate": 0.0032
+    },
+    "spliced/phone": {
+     "n_words": 672,
+     "latency_mean_s": 1.0484,
+     "latency_mean_s_ci": [
+      1.0135,
+      1.0836
+     ],
+     "first_shown_mean_s": 1.0139,
+     "first_shown_mean_s_ci": [
+      0.9833,
+      1.0441
+     ],
+     "flicker_per_word": 0.0923,
+     "flicker_per_word_ci": [
+      0.0658,
+      0.12
+     ],
+     "share_words_flipped": 0.0833,
+     "share_words_flipped_ci": [
+      0.061,
+      0.1076
+     ],
+     "latency_p50_s": 1.097,
+     "latency_p90_s": 1.862,
+     "word_lang_acc": 0.8786,
+     "word_lang_acc_ci": [
+      0.8496,
+      0.9061
+     ],
+     "wer": 0.2332,
+     "en_recall": 0.3256,
+     "kkru_to_en_rate": 0.008
+    }
+   }
+  }
+ },
+ "seconds": 1406.2
+}

@@ -17,6 +17,7 @@ from qorgan.data.build_corpus import (
     split_dialogues,
 )
 from qorgan.data.schema import Dialogue, Label, TacticTag, Utterance, spans_from_phrases
+from qorgan.data.scrub import SCRUBBER_VERSION
 
 
 def _dialogue(did, texts, *, tags=(), phrases=(), risk=0.9, hard_negative=False, language="ru"):
@@ -100,6 +101,17 @@ def test_scrub_dialogue_drops_span_whose_text_had_pii():
     )
     scrubbed = scrub_dialogue(d)
     assert scrubbed.label.trigger_spans == ()  # dropped, not left dangling
+
+
+def test_scrub_dialogue_keeps_a_span_that_carried_a_name_in_masked_form():
+    # ADR D66: the impersonation evidence survives; only the self-introduced name goes.
+    d = _dialogue(
+        "a",
+        ["Меня зовут Асет, я из службы безопасности банка"],
+        phrases=["Меня зовут Асет, я из службы безопасности банка"],
+    )
+    scrubbed = scrub_dialogue(d)
+    assert [s.text for s in scrubbed.label.trigger_spans] == ["Меня зовут [NAME], я из службы безопасности банка"]
 
 
 def test_scrub_dialogue_preserves_id_language_and_flags():
@@ -209,6 +221,8 @@ def test_build_manifest_counts_and_metadata():
     assert manifest["total"] == 5
     assert manifest["fractions"] == {"train": 0.7, "val": 0.15, "test": pytest.approx(0.15)}
     assert len(manifest["content_hash"]) == 64
+    # ADR D66: which scrubber made the text, so a stricter one is detectable as "rebuild pending"
+    assert manifest["scrubber_version"] == SCRUBBER_VERSION
     # per-language breakdown present
     assert "by_language" in manifest["counts"]["val"]
 
@@ -400,3 +414,46 @@ def test_build_corpus_cleans_augment_rows_too_and_refuses_a_corrupted_anchor(tmp
 
     with pytest.raises(ValueError, match="anchor"):
         build_corpus(dialogues=synthetic, anchor_dialogues=[_dialogue("anc_bad", ["S\ntyzba?"], risk=0.05, hard_negative=True)], processed_dir=tmp_path / "p2", seed=42, train_fraction=0.7, val_fraction=0.15, asr_style_fraction=0.0)
+
+
+# --- taxonomy v2 fold-in (ADR D63 phase 2) ------------------------------------------------
+
+
+def test_v2_build_folds_generated_rows_into_train_val_only_and_writes_provenance(tmp_path):
+    synthetic = [_dialogue(f"syn_{i}", [f"Это служба безопасности банка, звонок {i}"], tags=("impersonation_bank",)) for i in range(30)]
+    synthetic += [_dialogue(f"neg_{i}", [f"обычный разговор {i}"], risk=0.02, hard_negative=True) for i in range(30)]
+    generated = [_dialogue(f"p2_{i:04d}", [f"Сәлеметсіз бе, сәлемдеме {i}"], tags=("refund_request",)) for i in range(40)]
+    generated += [_dialogue(f"p2_{i:04d}", [f"Курьер, код из приложения {i}"], risk=0.02, hard_negative=True) for i in range(40, 80)]
+    processed = tmp_path / "processed"
+    manifest = build_corpus(
+        dialogues=synthetic, anchor_dialogues=[], processed_dir=processed, seed=42,
+        train_fraction=0.7, val_fraction=0.15, asr_style_fraction=1.0,
+        gen_dialogues=generated, label_space="v2", review_decisions={"syn_0": {"imp": [], "reason": "t"}},
+    )
+
+    def rows(name):
+        return [json.loads(line) for line in (processed / f"{name}.jsonl").read_text(encoding="utf-8").splitlines()]
+
+    test_ids = {r["id"] for r in rows("test")}
+    assert not any(i.startswith("p2_") for i in test_ids)
+    train_ids = {r["id"] for r in rows("train")}
+    val_ids = {r["id"] for r in rows("val")}
+    gen_ids = {d.id for d in generated}
+    assert gen_ids <= {i.removesuffix("-asr") for i in train_ids | val_ids}
+    assert any(i.startswith("p2_") and i.endswith("-asr") for i in train_ids)
+    tags = {r["id"]: [t["id"] for t in r["label"]["tactic_tags"]] for name in ("train", "val", "test") for r in rows(name)}
+    assert not any("impersonation_bank" in t for t in tags.values())  # migrated
+    assert tags.get("syn_0", tags.get("syn_0-asr", [])) == []  # the review dropped it
+    provenance = json.loads((processed / "provenance.json").read_text(encoding="utf-8"))
+    assert provenance["label_space"] == "v2"
+    assert all(provenance["generator"][i] == "claude" for i in train_ids | val_ids if i.startswith("p2_"))
+    assert all(provenance["generator"][i] == "gemini" for i in train_ids | val_ids if not i.startswith("p2_"))
+    assert set(manifest["generator_balance"]["train"]) == {"claude", "gemini"}
+    assert 0.0 < manifest["generator_balance"]["train"]["claude"]["p_scam"] < 1.0
+
+
+def test_v1_build_writes_no_provenance(tmp_path):
+    synthetic = [_dialogue(f"syn_{i}", [f"текст {i}"]) for i in range(10)]
+    processed = tmp_path / "processed"
+    build_corpus(dialogues=synthetic, anchor_dialogues=[], processed_dir=processed, seed=42, train_fraction=0.7, val_fraction=0.15)
+    assert not (processed / "provenance.json").exists()

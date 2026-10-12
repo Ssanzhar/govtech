@@ -26,7 +26,7 @@ from sklearn.linear_model import LogisticRegression
 from qorgan.classifier import embed, labels
 from qorgan.classifier.cue_match import MATCHER_VERSION
 from qorgan.classifier.multilabel import MultiLabelHead, out_of_fold_proba  # MultiLabelHead re-exported: keep import path stable
-from qorgan.config import get_config
+from qorgan.config import V2_MIN_OOF_POSITIVES, V2_NEW_TACTICS, get_config
 from qorgan.data.schema import SCAM_RISK_THRESHOLD, Dialogue
 
 __all__ = ["MultiLabelHead", "LinearBundle", "train_linear", "train_and_export", "load_linear", "export_linear"]
@@ -120,6 +120,8 @@ def train_linear(
     reassurance_patterns: Any = None,
     tuning_dialogues: Sequence[Dialogue] | None = None,
     sample_weights: Sequence[float] | None = None,
+    label_mask: np.ndarray | None = None,
+    tuning_mask: np.ndarray | None = None,
 ) -> LinearBundle:
     """Embed transcripts, fit the calibrated risk head + multi-label tactic head; with
     `tuning_dialogues` (the `val` split) also tune per-tactic decision thresholds on out-of-fold
@@ -130,6 +132,9 @@ def train_linear(
     `[embedding | cue features | reassurance]` (the tactic head stays embedding-only), and the
     resolved lexicon/patterns + content hashes are stored on the bundle. `hard_signal=False`
     (default) preserves the original embedding-only path for backward compatibility.
+
+    `label_mask` / `tuning_mask` (`(n, L)` bool, True = labelled; ADR D63 phase 2) keep rows
+    written for an older label space out of the heads of tactics that space did not have.
     """
     if not train_dialogues:
         raise ValueError("train_dialogues must not be empty")
@@ -144,10 +149,11 @@ def train_linear(
     if not hard_signal:
         features = embed.embed_texts(texts, embedder=embedder, model_name=model_name)
         risk_clf = _fit_risk_head(features, y_risk, sample_weight=weights)
-        tactic_clf = MultiLabelHead(label_space).fit(features, tactic_matrix, sample_weight=weights)
+        tactic_clf = MultiLabelHead(label_space).fit(features, tactic_matrix, sample_weight=weights, **_mask_kwargs(label_mask))
         thresholds = _tune_thresholds(
             tactic_clf, label_space, tuning_dialogues, tactic_threshold,
             train_features=features, train_targets=tactic_matrix, train_weights=weights, embedder=embedder, model_name=model_name,
+            train_mask=label_mask, tuning_mask=tuning_mask,
         )
         return LinearBundle(
             risk_clf, tactic_clf, tuple(label_space), embed_model, tactic_threshold, embed_backend=cfg.embed_backend,
@@ -165,10 +171,11 @@ def train_linear(
         texts, embedder=embedder, model_name=model_name, lexicon=lex, reassurance_patterns=patterns
     )
     risk_clf = _fit_risk_head(feat.hybrid_matrix(blocks), y_risk, sample_weight=weights)
-    tactic_clf = MultiLabelHead(label_space).fit(blocks.embedding, tactic_matrix, sample_weight=weights)
+    tactic_clf = MultiLabelHead(label_space).fit(blocks.embedding, tactic_matrix, sample_weight=weights, **_mask_kwargs(label_mask))
     thresholds = _tune_thresholds(
         tactic_clf, label_space, tuning_dialogues, tactic_threshold,
         train_features=blocks.embedding, train_targets=tactic_matrix, train_weights=weights, embedder=embedder, model_name=model_name,
+        train_mask=label_mask, tuning_mask=tuning_mask,
     )
     return LinearBundle(
         risk_clf,
@@ -189,6 +196,7 @@ def train_linear(
 def _tune_thresholds(
     tactic_clf: MultiLabelHead, label_space: Sequence[str], tuning: Sequence[Dialogue] | None, default: float,
     *, train_features: np.ndarray, train_targets: np.ndarray, train_weights: np.ndarray | None, embedder: Any, model_name: str | None,
+    train_mask: np.ndarray | None = None, tuning_mask: np.ndarray | None = None,
 ) -> dict[str, float]:
     """Per-tactic thresholds (ADR D30) from fit-independent probabilities: out-of-fold
     probabilities on the training rows (seeded K-fold of the same head) concatenated with the
@@ -201,11 +209,51 @@ def _tune_thresholds(
     tuning_features = embed.embed_texts([d.transcript() for d in tuning], embedder=embedder, model_name=model_name)
     _, tuning_targets = _targets(tuning, label_space)
     probs = np.vstack([
-        out_of_fold_proba(train_features, train_targets, label_space, folds=_TUNING_FOLDS, seed=_TUNING_SEED, sample_weight=train_weights),
+        out_of_fold_proba(train_features, train_targets, label_space, folds=_TUNING_FOLDS, seed=_TUNING_SEED,
+                          sample_weight=train_weights, **_mask_kwargs(train_mask)),
         tactic_clf.predict_proba(tuning_features),
     ])
     truth = np.vstack([train_targets, tuning_targets]).astype(int)
-    return tune_tactic_thresholds(probs.tolist(), truth.tolist(), label_space, default=default)
+    mask = None
+    if train_mask is not None or tuning_mask is not None:
+        mask = np.vstack([
+            train_mask if train_mask is not None else np.ones_like(train_targets, dtype=bool),
+            tuning_mask if tuning_mask is not None else np.ones_like(tuning_targets, dtype=bool),
+        ]).tolist()
+    return tune_tactic_thresholds(probs.tolist(), truth.tolist(), label_space, default=default, mask=mask)
+
+
+def _mask_kwargs(mask: np.ndarray | None) -> dict:
+    """Pass a label mask only when there is one (keeps the v1 call path byte-identical)."""
+    return {} if mask is None else {"label_mask": mask}
+
+
+def provenance_mask(
+    dialogues: Sequence[Dialogue], label_space: Sequence[str], generator: dict[str, str], *, new_tactics: Sequence[str], labelled_by: str,
+) -> np.ndarray:
+    """`(n, L)` bool, True = labelled. A row whose generator is not `labelled_by` (it was written
+    for the v1 space) is unlabelled for `new_tactics` (ADR D63 label masking, approved
+    2026-10-09). Rows missing from `generator` count as v1 rows."""
+    mask = np.ones((len(dialogues), len(label_space)), dtype=bool)
+    columns = [j for j, t in enumerate(label_space) if t in set(new_tactics)]
+    for i, dialogue in enumerate(dialogues):
+        if generator.get(dialogue.id) != labelled_by:
+            mask[i, columns] = False
+    return mask
+
+
+def labelled_positives(dialogues: Sequence[Dialogue], label_space: Sequence[str], mask: np.ndarray | None = None) -> dict[str, int]:
+    """Positives per tactic over labelled rows only."""
+    _, targets = _targets(dialogues, label_space)
+    if mask is not None:
+        targets = targets * mask
+    return {t: int(targets[:, j].sum()) for j, t in enumerate(label_space)}
+
+
+def thin_heads(train_positives: dict[str, int], tuning_positives: dict[str, int], *, minimum: int) -> tuple[str, ...]:
+    """Tactics with fewer than `minimum` out-of-fold positives (train OOF + val): dropped from
+    the space rather than shipped at an untuned 0.5 (ADR D63 "thin heads", approved)."""
+    return tuple(t for t in train_positives if train_positives[t] + tuning_positives.get(t, 0) < minimum)
 
 
 def export_linear(bundle: LinearBundle, out_dir: Path) -> dict:
@@ -324,6 +372,8 @@ def train_and_export(
     hard_signal: bool = False,
     tuning_dialogues: Sequence[Dialogue] | None = None,
     sample_weights: Sequence[float] | None = None,
+    label_mask: np.ndarray | None = None,
+    tuning_mask: np.ndarray | None = None,
 ) -> dict:
     """Train then export; return the metadata."""
     bundle = train_linear(
@@ -335,6 +385,8 @@ def train_and_export(
         hard_signal=hard_signal,
         tuning_dialogues=tuning_dialogues,
         sample_weights=sample_weights,
+        label_mask=label_mask,
+        tuning_mask=tuning_mask,
     )
     return export_linear(bundle, out_dir)
 
@@ -355,16 +407,44 @@ def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - CLI (
     args = parser.parse_args(argv)
 
     train = load_split(args.processed_dir, "train")
+    val = load_split(args.processed_dir, "val")
+    label_space = labels.default_label_space()
+    train_mask = val_mask = None
+    report: dict = {}
+    provenance_path = args.processed_dir / "provenance.json"
+    if provenance_path.exists() and set(V2_NEW_TACTICS) & set(label_space):
+        # Taxonomy v2 (ADR D63 phase 2): mask v1 rows out of the new heads, drop thin heads.
+        from qorgan.data.gen.fold import GENERATOR_CLAUDE
+
+        generator = json.loads(provenance_path.read_text(encoding="utf-8"))["generator"]
+
+        def masks(space):
+            return (provenance_mask(train, space, generator, new_tactics=V2_NEW_TACTICS, labelled_by=GENERATOR_CLAUDE),
+                    provenance_mask(val, space, generator, new_tactics=V2_NEW_TACTICS, labelled_by=GENERATOR_CLAUDE))
+
+        train_mask, val_mask = masks(label_space)
+        positives = (labelled_positives(train, label_space, train_mask), labelled_positives(val, label_space, val_mask))
+        dropped = thin_heads(*positives, minimum=V2_MIN_OOF_POSITIVES)
+        label_space = tuple(t for t in label_space if t not in dropped)
+        train_mask, val_mask = masks(label_space)
+        report = {"label_masking": {"new_tactics": list(V2_NEW_TACTICS), "masked_train_rows": int((~train_mask).any(axis=1).sum())},
+                  "oof_positives": {t: positives[0][t] + positives[1][t] for t in positives[0]},
+                  "dropped_thin_heads": list(dropped), "min_oof_positives": V2_MIN_OOF_POSITIVES}
     metadata = train_and_export(
         train,
-        label_space=labels.default_label_space(),
+        label_space=label_space,
         out_dir=args.out_dir,
         model_name=args.model_name,
         hard_signal=not args.no_hard_signal,
-        tuning_dialogues=load_split(args.processed_dir, "val"),  # per-tactic thresholds (ADR D30)
+        tuning_dialogues=val,  # per-tactic thresholds (ADR D30)
         # No sample weights: the ASR-styled copies count as full rows. Pair-weighting (0.5 + 0.5)
         # was measured and rejected -- it halves the clean register's evidence too (ADR D31).
+        label_mask=train_mask,
+        tuning_mask=val_mask,
     )
+    if report:
+        (args.out_dir / "v2_training_report.json").write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8")
+        print(json.dumps(report, indent=1))
     print(json.dumps(metadata, indent=2))
     print(f"exported -> {args.out_dir}")
 

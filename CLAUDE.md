@@ -3,7 +3,7 @@
 > Brief for agents and new contributors. It replaces the July 2026 selection-sprint brief
 > (still readable with `git show e26f91e:CLAUDE.md`), whose XLM-R / Streamlit-first plan is
 > history. **Where the truth is, in order:** `docs/STATUS.md` (current state) →
-> `docs/PLAN_2026-09.md` (post-review plan, open items) → `docs/DECISIONS.md` (ADRs; read the
+> `docs/PLAN_2026-10.md` (the working plan to demo day; `docs/PLAN_2026-09.md` is its predecessor) → `docs/DECISIONS.md` (ADRs; read the
 > newest first) → `docs/eval_report.md` (every number, with intervals). The external review the
 > September plan answers is `qorgan-council-verdict.md` (RU) — read it before proposing scope,
 > Level 2 or privacy changes. `DOCUMENTATION.md` is the long-range vision, not the current state.

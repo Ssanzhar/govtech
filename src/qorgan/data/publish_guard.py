@@ -14,8 +14,9 @@ and drops any span that *was* the PII -- a split must never ship a highlight poi
 
 from __future__ import annotations
 
+import fnmatch
 import json
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -33,6 +34,38 @@ PUBLISHED_SPLITS: tuple[str, ...] = (
     "shift.jsonl",
 )
 
+# What `scripts/hf_upload.py` uploads from data/processed -- one explicit allow list.
+DATASET_ALLOW_PATTERNS: tuple[str, ...] = (*PUBLISHED_SPLITS, "manifest.json", "shift.manifest.json")
+
+# Held-out splits that must NEVER reach the Hub (ADR D65). `shift_local` is the independent
+# held-out written by a local model: once public, the next training generator or a crawler
+# can see it, and it stops being independent. Kept in data/processed only for the harness.
+NEVER_PUBLISHED: tuple[str, ...] = ("shift_local.jsonl", "shift_local.manifest.json")
+
+
+class PublishRefused(ValueError):
+    """An upload pattern would publish a never-published held-out file."""
+
+
+def assert_publishable(patterns: Sequence[str]) -> None:
+    """Raise `PublishRefused` if any allow pattern matches a `NEVER_PUBLISHED` file."""
+    blocked = sorted({name for pattern in patterns for name in NEVER_PUBLISHED if fnmatch.fnmatch(name, pattern)})
+    if blocked:
+        raise PublishRefused(f"refusing to publish never-published held-out file(s): {blocked} (ADR D65)")
+
+
+# Real court-verdict quotes (ADR D68) are local-only: the Hub is a public, cross-border
+# distribution channel (PD Law Arts. 7(3), 7(6), 16; docs/DATA_SOURCES.md SS4.4), and the legal
+# basis for redistributing them is unsettled. No allow pattern may ever name them.
+_NEVER_PUBLISH_MARKERS: tuple[str, ...] = ("court_quotes",)
+
+
+def assert_not_publishing_court_quotes(names: Iterable[str]) -> None:
+    """Exit (refuse the upload) if any path or allow pattern names the court_quotes split."""
+    offending = [str(name) for name in names if any(marker in str(name) for marker in _NEVER_PUBLISH_MARKERS)]
+    if offending:
+        raise SystemExit(f"refusing to publish court_quotes (ADR D68, local-only): {offending}")
+
 
 @dataclass(frozen=True)
 class Finding:
@@ -41,6 +74,13 @@ class Finding:
     file: str
     dialogue_id: str
     utterance_index: int
+
+
+def corpus_scrubber_version(manifest_path: Path) -> int:
+    """The scrubber version the corpus at `manifest_path` was built with (absent = 1, ADR D66)."""
+    if not manifest_path.exists():
+        return 1
+    return int(json.loads(manifest_path.read_text(encoding="utf-8")).get("scrubber_version", 1))
 
 
 def find_unscrubbed(paths: Iterable[Path]) -> list[Finding]:

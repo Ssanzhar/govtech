@@ -27,16 +27,21 @@ class MultiLabelHead:
         self.models: dict[str, Any] = {}
 
     def fit(
-        self, features: np.ndarray, target_matrix: np.ndarray, sample_weight: np.ndarray | None = None
+        self, features: np.ndarray, target_matrix: np.ndarray, sample_weight: np.ndarray | None = None,
+        label_mask: np.ndarray | None = None,
     ) -> "MultiLabelHead":
         """`sample_weight` (optional, per row) lets an augmented copy share one unit with its
-        source instead of counting as new evidence (ADR D31)."""
+        source instead of counting as new evidence (ADR D31). `label_mask` (optional `(n, L)`
+        bool, True = labelled) fits each column only on its labelled rows: a row written for an
+        older label space is unlabelled for the newer tactics, not negative (ADR D63)."""
         for column, tactic_id in enumerate(self.label_space):
-            column_targets = target_matrix[:, column].astype(int)
+            rows = np.ones(features.shape[0], dtype=bool) if label_mask is None else label_mask[:, column].astype(bool)
+            column_targets = target_matrix[rows, column].astype(int)
             if len(set(column_targets.tolist())) >= 2:
+                weights = None if sample_weight is None else sample_weight[rows]
                 self.models[tactic_id] = LogisticRegression(
                     class_weight="balanced", max_iter=_LR_MAX_ITER
-                ).fit(features, column_targets, sample_weight=sample_weight)
+                ).fit(features[rows], column_targets, sample_weight=weights)
             else:
                 self.models[tactic_id] = None
         return self
@@ -52,7 +57,7 @@ class MultiLabelHead:
 
 def out_of_fold_proba(
     features: np.ndarray, target_matrix: np.ndarray, label_space: Sequence[str], *, folds: int, seed: int,
-    sample_weight: np.ndarray | None = None,
+    sample_weight: np.ndarray | None = None, label_mask: np.ndarray | None = None,
 ) -> np.ndarray:
     """`(n, L)` probabilities where every row comes from a head fitted WITHOUT that row
     (seeded K-fold). These are the fit-independent probabilities per-tactic thresholds are
@@ -66,6 +71,7 @@ def out_of_fold_proba(
     for held_out in np.array_split(order, folds):
         fitted_on = np.setdiff1d(order, held_out)
         fold_weight = None if sample_weight is None else sample_weight[fitted_on]
-        head = MultiLabelHead(label_space).fit(features[fitted_on], target_matrix[fitted_on], sample_weight=fold_weight)
+        extra = {} if label_mask is None else {"label_mask": label_mask[fitted_on]}
+        head = MultiLabelHead(label_space).fit(features[fitted_on], target_matrix[fitted_on], sample_weight=fold_weight, **extra)
         out[held_out] = head.predict_proba(features[held_out])
     return out

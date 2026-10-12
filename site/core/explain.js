@@ -1,6 +1,8 @@
 /* Grounded, localized explanation -- port of `qorgan/explain/explainer.py` + `templates.py`.
    Every highlight is re-validated as a verbatim slice of the transcript. */
 
+import { roleClaim } from "./role.js";
+
 export class ExplainerError extends Error {}
 
 export function explain(result, transcript, locale, config) {
@@ -17,6 +19,7 @@ export function explain(result, transcript, locale, config) {
   const reason = renderReason(t, names, highlights.map((s) => s.text));
   const calibrated = config.scoring.calibrated_backends.includes(result.backend);
   return {
+    ...roleClaim(transcript, locale, config), // Layer 2 role slot (ADR D63), display only
     reason,
     highlights,
     tags: result.tags,

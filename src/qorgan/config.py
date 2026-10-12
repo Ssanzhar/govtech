@@ -37,7 +37,12 @@ _DEFAULT_VOSK_MODEL_RU = "vosk-model-small-ru-0.22"
 # It ranks in the vote with (confidence - handicap): on kk/ru speech the English model returns
 # confident-looking garbage, and a plain vote handed it 12.9 % of kk/ru utterances.
 _DEFAULT_VOSK_MODEL_EN = "vosk-model-small-en-us-0.15"
-_DEFAULT_ASR_EN_HANDICAP = 0.15
+# 0.15 (D62) gave English only 0.545 of real (FLEURS) English utterances; 0.05 gives 0.910 with
+# 0 false wins on real kk/ru speech (ADR D64). The per-utterance vote is now the fallback.
+_DEFAULT_ASR_EN_HANDICAP = 0.05
+# The endpoint pass (ADR D64): GigaAM-Multilingual 220M CTC int8 decodes each utterance once in
+# the browser (sherpa-onnx WASM) and replaces the Vosk text; "" = off (Vosk vote only).
+_DEFAULT_ASR_ENDPOINT_MODEL = "gigaam-multilingual-220m-ctc-int8"
 _DEFAULT_ASR_SAMPLE_RATE = 16000
 _DEFAULT_EMBED_MODEL_NAME = "intfloat/multilingual-e5-base"
 # "sentence-transformers" (fp32 PyTorch) or "onnx" (the int8 graph the browser ships;
@@ -81,6 +86,11 @@ _CLOUD_TIER_VALUES = {"off": False, "on": True}
 _DEFAULT_PARTNER_QUOTA_WINDOW_HOURS = 24
 # Audit-chain HMAC key (tamper-evident audit log): a guessable key protects nothing.
 MIN_AUDIT_CHAIN_KEY_CHARS = 32
+# The audit log is kept at least three years (ADR D66, legal gap M4; LEGAL_ASSESSMENT §5.2(5)) and
+# is never purged with the reports: no deletion path touches it (tests/test_audit_retention.py).
+# Older entries may only be archived by the operator, outside the server (docs/DEPLOY.md §4).
+MIN_AUDIT_RETENTION_DAYS = 3 * 365 + 1  # three years, one of them a leap year
+_DEFAULT_AUDIT_RETENTION_DAYS = MIN_AUDIT_RETENTION_DAYS
 _DEFAULT_RISK_THRESHOLD_ENTER = 0.59
 _DEFAULT_RISK_THRESHOLD_EXIT = 0.49
 # Live suspicion-meter smoothing (design spec §08): the displayed 0-100 score follows an
@@ -106,6 +116,26 @@ _DEFAULT_SPLIT_TRAIN_FRACTION = 0.7
 # Share of train rows that also get an ASR-styled copy at corpus build (PLAN A10, ADR D31).
 _DEFAULT_ASR_STYLE_TRAIN_FRACTION = 1.0
 _DEFAULT_SPLIT_VAL_FRACTION = 0.15
+
+# --- Taxonomy v2, phase 2 (ADR D63) ---------------------------------------------------------
+# A generated chunk is accepted when at least this share of its rows pass every row-level QC
+# gate (schema, scrub fixed point, near-duplicate, ROUGE-L); otherwise it is rewritten.
+GEN_CHUNK_MIN_VALID_SHARE = 0.8
+# A v2 tactic ships only with at least this many out-of-fold positives (train OOF + val); a
+# head below it is dropped from the v2 space rather than shipped at an untuned 0.5 (D63
+# "thin heads", approved 2026-10-09). Same number as D30's tuning floor.
+V2_MIN_OOF_POSITIVES = 8
+# The five v2 tactics that did not exist in v1. Rows written for the v1 label space are
+# UNLABELLED for these (not negative): the trainer masks them out of these heads (approved).
+V2_NEW_TACTICS: tuple[str, ...] = (
+    "loan_inducement", "cash_courier_handoff", "refund_request", "task_advance_fee", "callback_instruction",
+)
+# Share of generated (Claude) rows that go to `val` instead of `train`, by seeded id hash. They
+# never go to `test`: the held-out for Claude-era models is built separately (ADR D63 §3.2).
+GEN_VAL_FRACTION = 0.15
+# Layer-2 role slot: tokens allowed between a self-introduction marker and an organisation name
+# («это Асель из Kaspi», "this is John from Beeline"). Display-only; exported to site/core/role.js.
+ROLE_INTRO_WINDOW = 4
 
 ClassifierBackend = Literal["linear", "llm", "xlmr", "mock"]
 
@@ -138,10 +168,18 @@ class Config(BaseModel):
     data_dir: Path
     model_dir: Path
     taxonomy_path: Path
+    # QORGAN_LABEL_SPACE (ADR D63 phase 2): run with a label space other than the yaml's
+    # `active_label_space` -- the v2 dry-run retrain trains on "v2" while the shipped weights
+    # (and so the committed yaml) stay on "v1". None = the yaml decides.
+    label_space_override: str | None = None
     cache_dir: Path
     corpus_config_path: Path
     cue_lexicon_path: Path
     reassurance_patterns_path: Path
+    # Taxonomy v2 (ADR D63): the display-only role lexicon (Layer 2) and the scheme rules
+    # (Layer 3). Neither is a model input.
+    role_lexicon_path: Path
+    schemes_path: Path
     # Ids of authored_heldout anchors read during feature engineering (PLAN_2026-09 A2).
     inspection_ledger_path: Path
 
@@ -153,6 +191,11 @@ class Config(BaseModel):
     vosk_model_en: str = ""
     asr_en_handicap: float = Field(default=_DEFAULT_ASR_EN_HANDICAP, ge=0.0, le=1.0)
     asr_sample_rate: int = Field(gt=0)
+    # The GigaAM endpoint pass (ADR D64); "" = off. Its sherpa-onnx browser runtime comes from a
+    # local build (scripts/sherpa_wasm/build.sh) or a mirror of it, hash-checked either way.
+    asr_endpoint_model: str = _DEFAULT_ASR_ENDPOINT_MODEL
+    sherpa_wasm_build_dir: str = ""
+    sherpa_wasm_url: str = ""
     # Language locking (ADR D40): after this many voted utterances only the winning recogniser
     # is fed; 0 = off (the shipped default -- the code-switch cost needs real bilingual audio).
     asr_lock_after: int = Field(ge=0)
@@ -206,6 +249,8 @@ class Config(BaseModel):
     analyst_credentials: tuple[AnalystCredential, ...]
     # HMAC key chaining the audit log (`audit.py`); None means every audited API is closed.
     audit_chain_key: SecretBytes | None
+    # Minimum time audit entries are kept (days); the server never deletes them (ADR D66).
+    audit_retention_days: int = Field(ge=MIN_AUDIT_RETENTION_DAYS)
     # `QORGAN_ADMIN_OPEN_ACCESS`: None (default) = a key is required; otherwise the role a
     # keyless request gets as `public-demo` (ADR D59). Still audited; still needs the audit key.
     admin_open_access: Literal["analyst", "investigator"] | None = None
@@ -398,6 +443,11 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             reassurance_patterns_path=_read_path(
                 source, "QORGAN_REASSURANCE_PATTERNS_PATH", data_dir / "lexicon" / "reassurance_patterns.yaml"
             ),
+            # Reviewed, committed assets (like the explanation templates): anchored at the repo,
+            # not at QORGAN_DATA_DIR, so a relocated data dir never loses the explanation layer.
+            label_space_override=(source.get("QORGAN_LABEL_SPACE") or "").strip() or None,
+            role_lexicon_path=_read_path(source, "QORGAN_ROLE_LEXICON_PATH", _REPO_ROOT / "data" / "lexicon" / "roles.yaml"),
+            schemes_path=_read_path(source, "QORGAN_SCHEMES_PATH", _REPO_ROOT / "data" / "taxonomy" / "schemes.yaml"),
             inspection_ledger_path=_read_path(
                 source, "QORGAN_INSPECTION_LEDGER_PATH", data_dir / "anchors" / "inspection_ledger.yaml"
             ),
@@ -409,6 +459,9 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             vosk_model_en=source.get("QORGAN_VOSK_MODEL_EN", _DEFAULT_VOSK_MODEL_EN).strip(),
             asr_en_handicap=_read_float(source, "QORGAN_ASR_EN_HANDICAP", _DEFAULT_ASR_EN_HANDICAP),
             asr_sample_rate=_read_int(source, "QORGAN_ASR_SAMPLE_RATE", _DEFAULT_ASR_SAMPLE_RATE),
+            asr_endpoint_model=source.get("QORGAN_ASR_ENDPOINT_MODEL", _DEFAULT_ASR_ENDPOINT_MODEL).strip(),
+            sherpa_wasm_build_dir=source.get("QORGAN_SHERPA_WASM_BUILD_DIR", "").strip(),
+            sherpa_wasm_url=source.get("QORGAN_SHERPA_WASM_URL", "").strip(),
             asr_lock_after=_read_int(source, "QORGAN_ASR_LOCK_AFTER", 0),
             asr_lock_conf_floor=_read_float(source, "QORGAN_ASR_LOCK_CONF_FLOOR", 0.80),
             xlmr_model_dir=_read_path(
@@ -470,6 +523,9 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             ),
             analyst_credentials=parse_analyst_credentials(source.get("QORGAN_ANALYST_KEYS", "")),
             audit_chain_key=_read_secret_bytes(source, "QORGAN_AUDIT_CHAIN_KEY"),
+            audit_retention_days=_read_int(
+                source, "QORGAN_AUDIT_RETENTION_DAYS", _DEFAULT_AUDIT_RETENTION_DAYS
+            ),
             admin_open_access=_read_open_access(source),
             supported_locales=_read_csv_tuple(
                 source, "QORGAN_SUPPORTED_LOCALES", _DEFAULT_SUPPORTED_LOCALES
