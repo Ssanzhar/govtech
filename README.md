@@ -247,9 +247,10 @@ proposition, продумал product narrative. Сатжан провёл ау�
 | Документ | О чём |
 |---|---|
 | [`docs/STATUS.md`](docs/STATUS.md) | Текущее состояние и передача дел — читать первым |
-| [`docs/DECISIONS.md`](docs/DECISIONS.md) | 59 решений, номера D1–D62 (D11, D15, D16 пропущены), с датами и измерениями |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Решения D1–D68 (D11, D15, D16 пропущены), с датами и измерениями |
 | [`docs/eval_report.md`](docs/eval_report.md) | Все числа с интервалами, источник истины |
 | [`docs/LEGAL_ASSESSMENT.md`](docs/LEGAL_ASSESSMENT.md) | Правовая оценка по законодательству РК |
+| [`docs/PLAN_2026-10.md`](docs/PLAN_2026-10.md) | **Рабочий план до демо-дня (октябрь 2026): что сделано, честные числа, стратегия, задачи команды** |
 | [`docs/PLAN_2026-09.md`](docs/PLAN_2026-09.md) | План после вердикта совета |
 | [`qorgan-council-verdict.md`](qorgan-council-verdict.md) | Вердикт независимого совета |
 | [`data/README.md`](data/README.md) | Происхождение данных (ТЗ §9) |

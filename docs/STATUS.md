@@ -1,9 +1,15 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: **2026-10-01**. Current-state doc for anyone picking the project up. Read this,
-then `docs/PLAN_2026-09.md` (the post-verdict plan and what is open), `docs/DECISIONS.md`
-(ADRs D11–D54), `docs/eval_report.md` (numbers, with intervals). The July sprint log below is
-kept as history._
+_Last updated: **2026-10-12**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
+day (what is shipped, the honest numbers, the strategy, who does what). Then read this file
+(the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D68) and `docs/eval_report.md`
+(numbers, with intervals). The July sprint log below is kept as history._
+
+- **2026-10-12 — v2 not shipped; v1 stays.** The taxonomy-v2 retrain improved `shift_local`
+  recall 0.548 → 0.661 at equal FPR (3/64) but added 5 held-out false alarms (test 2/60, ood
+  3/74). Two of them are ordinary family money requests, which failed the user's pre-stated
+  check. All v2 infrastructure is merged with `active_label_space: v1`. Next: v2.1
+  (`docs/PLAN_2026-10.md` §4 track A).
 
 ## October 2026 — taxonomy v2, phase 1 (ADR D63, branch `feat/taxonomy-v2-datagen`)
 - `tactics.yaml` v2 holds two label spaces. **`v1` is still active** (the shipped heads), and `v2`
