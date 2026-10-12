@@ -18,7 +18,7 @@ import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
-from qorgan.config import get_config
+from qorgan.config import GEN_VAL_FRACTION, get_config
 from qorgan.data.anchors import build_anchor_dialogues
 from qorgan.data.asr_style import asr_style_augment
 from qorgan.data.clean import clean_dialogue
@@ -196,6 +196,9 @@ def build_corpus(
     train_fraction: float | None = None,
     val_fraction: float | None = None,
     asr_style_fraction: float | None = None,
+    gen_dialogues: Sequence[Dialogue] = (),
+    label_space: str = "v1",
+    review_decisions: Mapping[str, dict] | None = None,
 ) -> dict:
     """Assemble, clean, split, and persist the corpus; return the manifest.
 
@@ -207,6 +210,12 @@ def build_corpus(
     and added to **train only** -- never val/test/authored_heldout, so the eval sets stay a clean
     held-out signal. `asr_style_fraction` of the final train rows also get an ASR-styled copy
     (`data.asr_style`, PLAN A10) so the heads see the recogniser's register; eval sets stay clean.
+
+    Taxonomy v2 (ADR D63 phase 2): `gen_dialogues` (QC-accepted Claude rows, `data.gen.fold`)
+    are repaired, scrubbed and split into train / val only -- never test -- before ASR styling.
+    `label_space="v2"` migrates every v1-labelled row (`migrate_v2`, plus the human
+    `review_decisions`) and writes `provenance.json`: the generator of every train/val row, which
+    the trainer uses to mask v1 rows out of the five new heads and the reports split by.
     """
     cfg = get_config()
     active_seed = cfg.default_seed if seed is None else seed
@@ -228,12 +237,27 @@ def build_corpus(
         deduped, seed=active_seed, train_fraction=active_train, val_fraction=active_val
     )
 
+    generated_ids: set[str] = set()
+    if gen_dialogues:
+        from qorgan.data.gen.fold import split_generated
+
+        cleaned_gen = [(d.id, clean_dialogue(d)) for d in gen_dialogues]
+        dropped_corrupted += [dialogue_id for dialogue_id, d in cleaned_gen if d is None]
+        scrubbed_gen = [scrub_dialogue(d) for _, d in cleaned_gen if d is not None]
+        gen_splits = split_generated(scrubbed_gen, seed=active_seed, val_fraction=GEN_VAL_FRACTION)
+        generated_ids = {d.id for d in scrubbed_gen}
+        splits = {**splits, "train": deduplicate(splits["train"] + gen_splits["train"]),
+                  "val": deduplicate(splits["val"] + gen_splits["val"])}
+
     cleaned_augment = [(d.id, clean_dialogue(d)) for d in (augment_dialogues or ())]
     dropped_corrupted += [dialogue_id for dialogue_id, d in cleaned_augment if d is None]
     scrubbed_augment = tuple(scrub_dialogue(d) for _, d in cleaned_augment if d is not None)
     if scrubbed_augment:
         splits = {**splits, "train": deduplicate(splits["train"] + scrubbed_augment)}
-    asr_styled = asr_style_augment(splits["train"], fraction=active_asr_fraction, seed=active_seed)
+    # Scrubbed AFTER styling (found while folding taxonomy-v2 rows, ADR D63 phase 2): styling
+    # lower-cases a "[NAME]" placeholder into "name", which scrubber v2 (D66) masks again, so an
+    # unscrubbed copy would not be the scrub fixed point every published row must be (D45).
+    asr_styled = tuple(scrub_dialogue(d) for d in asr_style_augment(splits["train"], fraction=active_asr_fraction, seed=active_seed))
     if asr_styled:
         splits = {**splits, "train": deduplicate(splits["train"] + asr_styled)}
     cleaned_anchors = [(d.id, clean_dialogue(d)) for d in anchors]
@@ -241,6 +265,9 @@ def build_corpus(
     if corrupted_anchors:  # hand-written data is fixed at the source, never silently dropped
         raise ValueError(f"corrupted anchor dialogue(s): {corrupted_anchors}")
     authored_heldout = tuple(scrub_dialogue(d) for _, d in cleaned_anchors)
+
+    if label_space != "v1":
+        splits, authored_heldout = _migrate_splits(splits, authored_heldout, label_space, review_decisions or {})
 
     for name in _SPLIT_NAMES:
         _write_jsonl(splits[name], active_processed / f"{name}.jsonl")
@@ -254,10 +281,53 @@ def build_corpus(
     manifest["dropped_corrupted"] = dropped_corrupted  # ADR D34: unrecoverable generation artefacts
     manifest["asr_style_fraction"] = active_asr_fraction
     manifest["adversarial_count"] = _copy_adversarial(cfg.data_dir / "adversarial", active_processed)
+    if label_space != "v1" or generated_ids:
+        provenance = build_provenance(splits, generated_ids, label_space)
+        (active_processed / PROVENANCE_FILE).write_text(json.dumps(provenance, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        manifest["label_space"] = label_space
+        manifest["generator_balance"] = provenance["balance"]
     (active_processed / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     return manifest
+
+
+PROVENANCE_FILE = "provenance.json"
+_ASR_SUFFIX = "-asr"
+
+
+def build_provenance(splits: Mapping[str, Sequence[Dialogue]], generated_ids: set[str], label_space: str) -> dict:
+    """Generator per train/val row (an `-asr` copy inherits its source's) and P(scam | generator)
+    per split -- the style-confound check (ADR D63 phase 2). Ids only, no text."""
+    from qorgan.data.gen.fold import GENERATOR_CLAUDE, GENERATOR_GEMINI
+
+    generator: dict[str, str] = {}
+    balance: dict[str, dict] = {}
+    for name in ("train", "val"):
+        counts: dict[str, dict[str, int]] = {}
+        for d in splits.get(name, ()):
+            source = GENERATOR_CLAUDE if d.id.removesuffix(_ASR_SUFFIX) in generated_ids else GENERATOR_GEMINI
+            generator[d.id] = source
+            bucket = counts.setdefault(source, {"rows": 0, "scam": 0})
+            bucket["rows"] += 1
+            bucket["scam"] += int(d.label.is_scam)
+        balance[name] = {g: {**c, "p_scam": round(c["scam"] / c["rows"], 4)} for g, c in sorted(counts.items())}
+    return {"label_space": label_space, "balance": balance, "generator": generator}
+
+
+def _migrate_splits(splits, authored_heldout, label_space: str, decisions: Mapping[str, dict]):
+    """v1 tags -> `label_space` tags for every row (generated rows already carry v2 tags and
+    pass through unchanged). Review decisions exist only for train/val ids (held-out review rows
+    are never opened, ADR D35/D43)."""
+    from qorgan.data.migrate_v2 import apply_review, migrate_dialogue
+
+    if label_space != "v2":
+        raise ValueError(f"no migration to label space {label_space!r}")
+
+    def migrate(rows):
+        return tuple(apply_review(migrate_dialogue(d)[0], dict(decisions)) for d in rows)
+
+    return {name: migrate(rows) for name, rows in splits.items()}, migrate(authored_heldout)
 
 
 def _copy_adversarial(source_dir: Path, processed_dir: Path) -> int:
@@ -295,14 +365,33 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument(
         "--augment-dir", type=Path, default=None, help="Dir of *.jsonl train-augmentation dialogues"
     )
+    parser.add_argument("--processed-dir", type=Path, default=None, help="Output dir (default data/processed)")
+    parser.add_argument("--gen-run", action="append", default=[], help="QC'd generation run to fold in (repeatable, ADR D63)")
+    parser.add_argument("--label-space", default="v1", choices=("v1", "v2"), help="Label space of the written corpus")
     args = parser.parse_args(argv)
 
     corpus_cfg = load_corpus_config(args.config)
     augment_dir = args.augment_dir or (get_config().data_dir / "augment")
+    gen_dialogues: list[Dialogue] = []
+    if args.gen_run:
+        from qorgan.data.gen.__main__ import run_dir
+        from qorgan.data.gen.fold import accepted_dialogues
+
+        for run in args.gen_run:
+            gen_dialogues += accepted_dialogues(run_dir(run))
+    decisions = None
+    if args.label_space == "v2":
+        from qorgan.data.migrate_v2 import load_review_decisions
+
+        decisions = load_review_decisions(get_config().repo_root / "data" / "taxonomy" / "migration_v2_review.json")
     manifest = build_corpus(
         synthetic_path=corpus_cfg.output_path,
         augment_dialogues=_read_augment_dir(augment_dir),
         seed=args.seed,
+        processed_dir=args.processed_dir,
+        gen_dialogues=gen_dialogues,
+        label_space=args.label_space,
+        review_decisions=decisions,
     )
     print(json.dumps(manifest, ensure_ascii=False, indent=2))
 

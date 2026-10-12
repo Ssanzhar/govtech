@@ -276,3 +276,16 @@ def test_hard_negative_style_call_stays_low():
 
     assert band(state.score) == "low"
     assert state.latched is False
+
+
+def test_hard_signal_floor_follows_the_enter_threshold():
+    """ADR D63 phase 2: a single hard signal still latches when the operating point moves."""
+    from qorgan.config import load_config
+    from qorgan.live.meter import hard_signal_floors, initial_state, update
+
+    assert hard_signal_floors(load_config({})) == (61.0, 81.0)  # shipped 0.59: the band edges
+    moved = load_config({"QORGAN_RISK_THRESHOLD_ENTER": "0.85", "QORGAN_RISK_THRESHOLD_EXIT": "0.75", "QORGAN_RISK_THRESHOLD": "0.85"})
+    single, double = hard_signal_floors(moved)
+    assert single == 87.0 and double == 87.0
+    state = update(initial_state(), risk=0.1, asr_confidence=1.0, hard_signals={"otp_request": 0.95}, config=moved)
+    assert state.latched and state.score == single

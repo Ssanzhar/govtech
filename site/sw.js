@@ -7,7 +7,7 @@
    - /api/ and anything cross-origin: never cached, never intercepted -- the only network
      traffic with call content is the explicit report submit, and it must stay live. */
 
-const SHELL_CACHE = "qorgan-shell-v10"; // v10: WebView-safe light voice mode (D67) + scrubber v2 modules (D66); v9: word-level voice mode + GigaAM endpoint pass (D64); v8: large binaries bypass the worker (D61); v7: reload pages a cache-first worker rendered; v6: network-first shell (no mixed versions after a deploy); v5: landing in kk/ru/en (landing.js, i18n-dom.js); v4: live page in kk/ru/en; v3: report review (D44); v2: COOP/COEP (B9)
+const SHELL_CACHE = "qorgan-shell-v11"; // v11: role slot precache (core/role.js, D63) + light voice mode (D67) + scrubber v2 modules (D66); v10: D67/D66 alone, or D63 + D64; v9: word-level voice mode + GigaAM endpoint pass (D64); v8: large binaries bypass the worker (D61); v7: reload pages a cache-first worker rendered; v6: network-first shell (no mixed versions after a deploy); v5: landing in kk/ru/en (landing.js, i18n-dom.js); v4: live page in kk/ru/en; v3: report review (D44); v2: COOP/COEP (B9)
 // v2: the ONNX model is no longer kept here (transformers.js caches it itself); bumping the name
 // deletes the v1 copy (~278 MB) on activation.
 const MODEL_CACHE = "qorgan-models-v2";
@@ -18,6 +18,7 @@ const SHELL = [
   "/core/explain.js", "/core/recommend.js", "/core/meter.js", "/core/session.js",
   "/core/embedder.js", "/core/embed-worker.js", "/core/qorgan-config.json", "/core/device.js",
   "/core/summary.js", "/core/asr.js", "/core/scenarios.json", "/core/cue-match.js", "/core/report.js",
+  "/core/role.js",
   "/core/word-lid.js", "/core/span-vote.js", "/core/asr-wordlevel.json", "/core/endpoint.js",
   "/core/endpoint-runtime.js", "/core/audio-ring.js", "/core/gigaam.js", "/core/gigaam-worker.js", "/core/word-runs.js",
   "/core/vad.js", "/core/voice-light.js", "/core/capture-worklet.js",

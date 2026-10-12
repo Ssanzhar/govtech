@@ -289,7 +289,7 @@ def generate_batch(
                     )
                 )
 
-    for category_id in sorted(taxonomy.negative_ids()):
+    for category_id in sorted(taxonomy.negative_ids("v1")):  # v1 generator (ADR D63)
         for language in cfg.languages:
             for i in range(cfg.hard_negatives_per_category):
                 dialogue_id = f"neg_{category_id}_{language}_{i}"

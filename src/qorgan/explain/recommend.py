@@ -127,7 +127,7 @@ def recommend(
 
     templates = _advice_for(locale)
     taxonomy = get_taxonomy()
-    known = [tag for tag in tags if tag.id in set(taxonomy.tactic_ids())]
+    known = [tag for tag in tags if tag.id in set(taxonomy.all_tactic_ids())]  # v1 + v2 (ADR D63)
     hard_ids = set(taxonomy.hard_signal_ids())
 
     # Hard-signal advice first, then by descending tactic weight; stable within ties.
@@ -158,7 +158,7 @@ def _advice_for(locale: str) -> AdviceTemplates:
     """Cached advice loader that also enforces the taxonomy-coverage invariant."""
     if locale not in _ADVICE_CACHE:
         templates = load_advice(locale)
-        missing = set(get_taxonomy().tactic_ids()) - set(templates.tactic_advice)
+        missing = set(get_taxonomy().all_tactic_ids()) - set(templates.tactic_advice)
         if missing:
             raise AdviceError(
                 f"advice_{locale}.yaml is missing advice for tactic(s): {sorted(missing)}"

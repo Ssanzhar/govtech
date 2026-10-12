@@ -20,6 +20,7 @@ from qorgan.explain.templates import (
     render_caveat,
     render_reason,
 )
+from qorgan.explain.roles import detect_role, get_role_lexicon, render_role_line, role_name
 from qorgan.taxonomy import get_taxonomy
 
 # Backends whose `raw_confidence` is calibrated (temperature scaling for xlmr; sigmoid
@@ -58,8 +59,10 @@ def explain(result: ScoreResult, transcript: str, locale: str) -> Explanation:
     caveat = render_caveat(
         templates, backend=result.backend, is_calibrated=result.backend in _CALIBRATED_BACKENDS
     )
+    role = _role_claim(transcript, templates, locale)
 
     return Explanation(
+        **role,
         reason=reason,
         highlights=highlights,
         tags=result.tags,
@@ -68,6 +71,17 @@ def explain(result: ScoreResult, transcript: str, locale: str) -> Explanation:
         caveat=caveat,
         human_note=templates.human_note,
     )
+
+
+def _role_claim(transcript: str, templates: ExplanationTemplates, locale: str) -> dict:
+    """Layer 2 (ADR D63): the first role the transcript claims, as id + verbatim span + the
+    reviewed line. Empty when no claim is found. Never affects risk, tags or the reason."""
+    lexicon = get_role_lexicon()
+    claim = detect_role(transcript, lexicon)
+    if claim is None:
+        return {}
+    line = render_role_line(templates.role_template, role_name(claim.role_id, locale, lexicon), claim.span.text)
+    return {"role_id": claim.role_id, "role_span": claim.span, "role_line": line}
 
 
 def _templates_for(locale: str) -> ExplanationTemplates:

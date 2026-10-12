@@ -131,19 +131,24 @@ def tune_tactic_thresholds(
     default: float = 0.5,
     grid: Sequence[float] = TACTIC_THRESHOLD_GRID,
     min_positives: int = TACTIC_THRESHOLD_MIN_POSITIVES,
+    mask: Sequence[Sequence[bool]] | None = None,
 ) -> dict[str, float]:
     """`{tactic_id: threshold}` maximising per-tactic F1 over `grid` on a tuning set
     (`probs`/`truth` are `(n, L)`, columns in `label_space` order). Ties go to the LOWEST
     threshold (keep recall); a tactic with fewer than `min_positives` positives, or one
-    where no threshold beats the default's F1, keeps `default`. Raises `ValueError` on
-    shape mismatch."""
+    where no threshold beats the default's F1, keeps `default`. `mask` (optional, `(n, L)`,
+    True = labelled) leaves unlabelled cells out of their column (ADR D63 label masking).
+    Raises `ValueError` on shape mismatch."""
     rows = [list(r) for r in probs]
     labels = [list(r) for r in truth]
     if len(rows) != len(labels) or any(len(r) != len(label_space) for r in rows) or any(len(r) != len(label_space) for r in labels):
         raise ValueError("probs and truth must be (n, len(label_space))")
+    keep = [list(r) for r in mask] if mask is not None else [[True] * len(label_space) for _ in rows]
+    if len(keep) != len(rows) or any(len(r) != len(label_space) for r in keep):
+        raise ValueError("mask must be (n, len(label_space))")
     chosen: dict[str, float] = {}
     for j, tactic_id in enumerate(label_space):
-        column = [(r[j], l[j]) for r, l in zip(rows, labels)]
+        column = [(r[j], l[j]) for r, l, k in zip(rows, labels, keep) if k[j]]
         if sum(t for _, t in column) < min_positives:
             chosen[tactic_id] = default
             continue

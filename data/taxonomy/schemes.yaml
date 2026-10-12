@@ -1,0 +1,338 @@
+# Layer 3 of taxonomy v2 (ADR D63): the call-level SCHEME, derived by hand-written rules over
+# the Layer-1 tactic tags (v2 ids) and the Layer-2 role. No learning: adding a scheme is a rule
+# plus reviewed advice (advice_{ru,kk,en}.yaml::scheme_advice), never a retrain -- unless it
+# needs a new tactic. Evaluated top to bottom; the FIRST scheme whose rule holds is the call's
+# scheme (so the most specific / most dangerous schemes come first). No match = no scheme; the
+# per-tactic advice still applies.
+#
+# Rule language (qorgan.explain.schemes, 1:1 portable): a node is exactly one of
+#   {all: [node, ...]}   every child holds
+#   {any: [node, ...]}   at least one child holds
+#   {tactic: id}         the tactic is among the call's tags
+#   {any_tactic: [ids]}  at least one of them is among the tags
+#   {role: [ids]}        the Layer-2 role is one of them
+#
+# `generation` is NOT part of the rule: it is what the data generator (qorgan.data.gen) asks
+# for when it writes a scam of this scheme -- the tactics every such dialogue must show
+# (`core`), the ones a cell may add (`optional`), the roles the caller may claim, and the
+# legitimate twin class written in the same registers as its FPR guardrail.
+#
+# Sources: docs/research/2026-10/model_taxonomy.md Part B (B1 scenario list, sourced phrases).
+
+version: 1
+schemes:
+  - id: mirror_loan
+    names:
+      ru: «Зеркальный / защитный кредит»
+      kk: «Айналы / қорғаныш несие»
+      en: '"Mirror / protective loan"'
+    description: The victim is told a fraudulent loan application exists and must take a "mirror" or "protective" loan and move it to a safe account.
+    rule: {tactic: loan_inducement}
+    generation:
+      core: [loan_inducement]
+      optional: [imp_bank, imp_regulator, safe_account, remote_access, fear_threat, urgency, secrecy, callback_instruction]
+      roles: [bank_security, regulator, antifraud_service, police]
+      twin: legit_bank_call
+
+  - id: cash_declaration_courier
+    names:
+      ru: «Задекларировать наличные» — курьер за деньгами
+      kk: «Қолма-қол ақшаны декларациялау» — ақшаға курьер келеді
+      en: '"Declare your cash" — a courier collects it'
+    description: The victim is told to withdraw savings to "declare", "insure" or "protect" them and hand the cash to a courier or "bank representative".
+    rule: {tactic: cash_courier_handoff}
+    generation:
+      core: [cash_courier_handoff]
+      optional: [imp_law_enforcement, imp_bank, imp_regulator, fear_threat, secrecy, urgency, safe_account]
+      roles: [police, knb, bank_security, regulator]
+      twin: legit_bank_call
+
+  - id: two_stage_escalation
+    names:
+      ru: 'Двухэтапная схема: «код» → «спецслужбы»'
+      kk: 'Екі кезеңді схема: «код» → «арнайы қызмет»'
+      en: 'Two-stage scheme: a "code" call, then "the authorities"'
+    description: An administrative pretext (parcel, eGov, clinic, operator) extracts a code; then a second voice from the police, KNB or regulator accuses the victim and pushes a safe account.
+    rule:
+      all:
+        - {any_tactic: [imp_gov_service, imp_telecom_delivery_utility]}
+        - {any_tactic: [imp_law_enforcement, imp_regulator]}
+    generation:
+      core: [imp_telecom_delivery_utility, otp_request, imp_law_enforcement, fear_threat]
+      optional: [safe_account, secrecy, urgency, callback_instruction, imp_gov_service, imp_regulator]
+      roles: [courier_post, egov_con, clinic, telecom_operator]
+      twin: legit_delivery_code
+
+  - id: erroneous_transfer
+    names:
+      ru: «Ошибочный перевод — верните»
+      kk: «Қате аударым — қайтарыңыз»
+      en: '"I sent it by mistake — send it back"'
+    description: A stranger says money was sent to the victim by mistake and asks for it back, to a different card or number.
+    rule: {tactic: refund_request}
+    generation:
+      core: [refund_request]
+      optional: [urgency, payment_redirect, fear_threat]
+      roles: []
+      twin: legit_refund_request
+
+  - id: job_task_advance_fee
+    names:
+      ru: Подработка с заданиями и взносом
+      kk: Жарнасы бар тапсырмалы жұмыс
+      en: Task job with an advance fee
+    description: Easy remote work (likes, reviews, buying out goods) pays a little, then requires a deposit to "unlock" earnings.
+    rule: {tactic: task_advance_fee}
+    generation:
+      core: [task_advance_fee]
+      optional: [payment_redirect, urgency, mule_recruitment]
+      roles: [employer]
+      twin: legit_employer_request
+
+  - id: egov_eds_renewal
+    names:
+      ru: «Продлите ЭЦП» от имени eGov / ЦОН
+      kk: eGov / ХҚКО атынан «ЭЦҚ мерзімін ұзартыңыз»
+      en: '"Renew your digital signature" in eGov''s name'
+    description: A caller from eGov / ЦОН / НУЦ says the victim's digital signature is expiring and asks for a code, a key press or credentials.
+    rule:
+      all:
+        - {any: [{role: [egov_con]}, {tactic: imp_gov_service}]}
+        - {any_tactic: [otp_request, credentials_request, verification_ploy, callback_instruction, remote_access]}
+        - {any: [{role: [egov_con]}, {any_tactic: [callback_instruction]}]}
+    generation:
+      core: [imp_gov_service, verification_ploy]
+      optional: [otp_request, callback_instruction, credentials_request, urgency, remote_access]
+      roles: [egov_con]
+      twin: legit_gov_service
+
+  - id: tax_kgd_business
+    names:
+      ru: '«Налоговая (КГД): деятельность приостановят»'
+      kk: '«Салық (МКК): қызметіңіз тоқтатылады»'
+      en: '"Tax committee: your business will be suspended"'
+    description: A caller from the tax committee threatens to suspend a sole trader's business unless they install an app or confirm credentials.
+    rule:
+      all:
+        - {role: [tax_kgd]}
+        - {any_tactic: [remote_access, credentials_request, fear_threat, otp_request, verification_ploy]}
+    generation:
+      core: [imp_gov_service, fear_threat]
+      optional: [remote_access, credentials_request, urgency, verification_ploy]
+      roles: [tax_kgd]
+      twin: legit_gov_service
+
+  - id: benefits_recalc_and_clinic
+    names:
+      ru: «Перерасчёт выплат / запись в поликлинику» — код из SMS
+      kk: «Төлемді қайта есептеу / емханаға жазылу» — SMS-код
+      en: '"Benefit recalculation / clinic booking" — the SMS code'
+    description: A calm administrative call (pension recalculation, screening appointment) that only asks for the code that "has just arrived".
+    rule:
+      all:
+        - {role: [pension_social, clinic]}
+        - {any_tactic: [otp_request, verification_ploy, credentials_request, prize_lottery]}
+    generation:
+      core: [imp_gov_service, otp_request]
+      optional: [verification_ploy, prize_lottery, urgency]
+      roles: [clinic, pension_social]
+      twin: legit_clinic_appointment
+
+  - id: parcel_code
+    names:
+      ru: «Вам посылка» — код для доставки
+      kk: «Сізге сәлемдеме» — жеткізу коды
+      en: '"You have a parcel" — the delivery code'
+    description: A courier, Kazpost or a marketplace says a parcel is waiting and asks for the code from an SMS to "confirm delivery".
+    rule:
+      all:
+        - {role: [courier_post]}
+        - {any_tactic: [otp_request, verification_ploy, credentials_request, payment_redirect]}
+    generation:
+      core: [imp_telecom_delivery_utility, otp_request]
+      optional: [urgency, payment_redirect, callback_instruction, verification_ploy]
+      roles: [courier_post]
+      twin: legit_delivery_code
+
+  - id: telecom_contract_expiry
+    names:
+      ru: «Договор со связью истекает»
+      kk: «Байланыс шартының мерзімі бітті»
+      en: '"Your phone contract is expiring"'
+    description: The "operator" says the SIM contract or tariff is expiring and the number will be cut off unless the victim gives a code or installs an app.
+    rule:
+      all:
+        - {role: [telecom_operator]}
+        - {any_tactic: [remote_access, otp_request, verification_ploy, credentials_request]}
+    generation:
+      core: [imp_telecom_delivery_utility, verification_ploy]
+      optional: [otp_request, remote_access, urgency, fear_threat, callback_instruction]
+      roles: [telecom_operator]
+      twin: legit_telecom_offer
+
+  - id: utility_code
+    names:
+      ru: «Счётчики / домофон» — код из SMS
+      kk: «Есептегіш / домофон» — SMS-код
+      en: '"Meters / intercom" — the SMS code'
+    description: A utility, heat-meter or intercom service needs a code "to register the meter" or "to open the door without a key".
+    rule:
+      all:
+        - {role: [utility]}
+        - {any_tactic: [otp_request, verification_ploy, credentials_request, payment_redirect]}
+    generation:
+      core: [imp_telecom_delivery_utility, otp_request]
+      optional: [verification_ploy, urgency, payment_redirect]
+      roles: [utility]
+      twin: legit_utility_notice
+
+  - id: marketplace_seller_phish
+    names:
+      ru: «Оплата через OLX» — покупатель просит данные карты
+      kk: «OLX арқылы төлем» — сатып алушы карта деректерін сұрайды
+      en: '"Pay through OLX" — a buyer asks for card details'
+    description: A "buyer" of the victim's listing wants to pay "through the platform" and asks for card details, a code or a link visit.
+    rule:
+      all:
+        - {role: [marketplace_buyer]}
+        - {any_tactic: [credentials_request, payment_redirect, otp_request]}
+    generation:
+      core: [credentials_request]
+      optional: [payment_redirect, otp_request, urgency]
+      roles: [marketplace_buyer]
+      twin: general_conversation
+
+  - id: fake_boss
+    names:
+      ru: «Звонит руководитель» (поддельный начальник)
+      kk: «Басшы хабарласып тұр» (жалған басшы)
+      en: '"Your boss is calling" (fake boss)'
+    description: A cloned voice or new number of the victim's boss asks for an urgent, secret transfer or hands them over to a "KNB curator".
+    rule:
+      all:
+        - {role: [employer]}
+        - {any_tactic: [imp_personal, urgency, secrecy, payment_redirect, callback_instruction]}
+    generation:
+      core: [imp_personal, urgency, secrecy]
+      optional: [payment_redirect, callback_instruction, imp_law_enforcement]
+      roles: [employer]
+      twin: legit_employer_request
+
+  - id: relative_in_trouble
+    names:
+      ru: «Родственник в беде» (возможен клон голоса)
+      kk: «Туысқан қиын жағдайда» (дауыс клоны болуы мүмкін)
+      en: '"A relative in trouble" (possibly a cloned voice)'
+    description: A "relative" on a new number (or a cloned voice) needs money urgently and secretly.
+    rule:
+      all:
+        - {any: [{role: [relative_friend]}, {tactic: imp_personal}]}
+        - {any_tactic: [urgency, secrecy, payment_redirect, fear_threat]}
+    generation:
+      core: [imp_personal, urgency, payment_redirect]
+      optional: [secrecy, fear_threat]
+      roles: [relative_friend]
+      twin: family_money_request
+
+  - id: regulator_impersonation
+    names:
+      ru: Звонок «от Нацбанка / регулятора»
+      kk: «Ұлттық банк / реттеуші атынан» қоңырау
+      en: A call "from the National Bank / regulator"
+    description: The National Bank, its Antifraud Centre or the financial regulator "protects" the victim's money from thieves.
+    rule:
+      all:
+        - {any: [{role: [regulator, antifraud_service]}, {tactic: imp_regulator}]}
+        - {any_tactic: [safe_account, fear_threat, credentials_request, otp_request, remote_access, verification_ploy]}
+    generation:
+      core: [imp_regulator, fear_threat]
+      optional: [safe_account, otp_request, credentials_request, secrecy, remote_access, urgency]
+      roles: [regulator, antifraud_service]
+      twin: legit_bank_call
+
+  - id: law_enforcement_threat
+    names:
+      ru: Звонок «из полиции / КНБ» с угрозами
+      kk: «Полиция / ҰҚК атынан» қорқыту
+      en: A threatening call "from the police / KNB"
+    description: An "investigator", KNB officer or prosecutor accuses the victim (data leak, complicity, a case) and demands secrecy, data or money.
+    rule:
+      all:
+        - {any: [{role: [police, prosecutor, knb, antikor]}, {tactic: imp_law_enforcement}]}
+        - {any_tactic: [fear_threat, safe_account, secrecy, credentials_request, payment_redirect]}
+    generation:
+      core: [imp_law_enforcement, fear_threat]
+      optional: [secrecy, safe_account, credentials_request, urgency, callback_instruction]
+      roles: [police, prosecutor, knb, antikor]
+      twin: legit_gov_service
+
+  - id: bank_safe_account
+    names:
+      ru: '«Служба безопасности банка»: перевод на «безопасный счёт»'
+      kk: '«Банк қауіпсіздік қызметі»: «қауіпсіз шотқа» аудару'
+      en: '"Bank security": move the money to a "safe account"'
+    description: A "bank security" caller says the account is under attack and the money must be moved to a safe account.
+    rule:
+      all:
+        - {any: [{role: [bank_security]}, {tactic: imp_bank}]}
+        - {tactic: safe_account}
+    generation:
+      core: [imp_bank, safe_account, fear_threat]
+      optional: [urgency, secrecy, remote_access]
+      roles: [bank_security]
+      twin: legit_bank_call
+
+  - id: bank_card_phish
+    names:
+      ru: '«Служба безопасности банка»: код, карта, приложение'
+      kk: '«Банк қауіпсіздік қызметі»: код, карта, қосымша'
+      en: '"Bank security": the code, the card, an app'
+    description: A "bank security" caller asks for the SMS code, card details or to install an app to "cancel a suspicious operation".
+    rule:
+      all:
+        - {any: [{role: [bank_security]}, {tactic: imp_bank}]}
+        - {any_tactic: [otp_request, credentials_request, verification_ploy, remote_access]}
+    generation:
+      core: [imp_bank, verification_ploy]
+      optional: [otp_request, credentials_request, urgency, fear_threat, remote_access]
+      roles: [bank_security]
+      twin: legit_bank_call
+
+  - id: investment_broker
+    names:
+      ru: «Брокер / инвестплатформа» с гарантированным доходом
+      kk: Кепілді табысы бар «брокер / инвестиция платформасы»
+      en: A "broker / investment platform" with guaranteed returns
+    description: A "broker" or "analyst" promises guaranteed returns and asks for deposits or remote access.
+    rule: {tactic: investment_scam}
+    generation:
+      core: [investment_scam]
+      optional: [urgency, payment_redirect, remote_access]
+      roles: [broker]
+      twin: general_conversation
+
+  - id: prize_compensation
+    names:
+      ru: «Выигрыш / компенсация» за плату
+      kk: Ақылы «ұтыс / өтемақы»
+      en: A "prize / compensation" that costs money
+    description: The victim "won" a prize or is "owed" compensation and must pay a fee or confirm card data to receive it.
+    rule: {tactic: prize_lottery}
+    generation:
+      core: [prize_lottery]
+      optional: [payment_redirect, credentials_request, otp_request, urgency]
+      roles: []
+      twin: legit_gov_service
+
+  - id: mule_recruitment
+    names:
+      ru: Вербовка в «дропперы»
+      kk: «Дропперге» тарту
+      en: Money-mule recruitment
+    description: The victim is offered money to receive and forward transfers or to open cards in their name.
+    rule: {tactic: mule_recruitment}
+    generation:
+      core: [mule_recruitment]
+      optional: [urgency, payment_redirect, secrecy]
+      roles: []
+      twin: legit_employer_request

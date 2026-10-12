@@ -5,6 +5,9 @@
 reason_template: "Обнаружены признаки мошенничества: {tags}. Триггерные фразы в разговоре: {spans}."
 no_signal_reason: "Явных признаков мошенничества не обнаружено."
 spans_placeholder: "—"
+# Layer 2 role slot (ADR D63): {role} = the role name from data/lexicon/roles.yaml (instrumental
+# case), {span} = the caller's own words. Rendered only when the role lexicon found a claim.
+role_template: "Звонящий представился {role}: «{span}»."
 caveat: >-
   Модель может ошибаться, особенно на нетипичных, коротких или прерванных звонках.
   Оценивайте риск вместе с другими признаками.

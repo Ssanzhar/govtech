@@ -1609,6 +1609,422 @@ browser, served weights):
 utterances still go to kk/ru (the handicap's price). English classification keeps its D54
 false-alarm rate on sales calls. "Test mode" in the UI says so.
 
+
+### D63 (taxonomy v2) — Three-layer taxonomy and a Claude-written generation grid; phase 1 ships the code, the pilot and the plan, not a retrain (2026-10-08)
+_Number note: written on branch `feat/taxonomy-v2-datagen`. If another D63 lands first, renumber
+this one at merge. Code comments cite "ADR D63"._
+_Proposal status: the choices marked **(approve)** need the maintainers' sign-off before phase 2._
+
+**Why.** On `shift`, recall is 0.455, and the cause is the low-arousal pretexts the 15 tactics cannot
+name: parcel, clinic and utility "codes", eGov EDS renewal, KGD tax, telecom contract expiry, the mirror
+loan, cash couriers, erroneous transfers, task jobs and voice-cloned relatives or bosses
+(`docs/RESEARCH_2026-10.md` §2.3, `docs/research/2026-10/model_taxonomy.md` Part B). Nineteen
+observed caller roles do not fit three `impersonation_*` ids. The team has no LLM API budget, so new
+data is written by Claude. The pilot (below) puts a number on the gap: the shipped model catches
+**0 / 27** low-arousal pilot scams.
+
+**Layer 1 — tactics (what the heads learn).**
+- `data/taxonomy/tactics.yaml` becomes **version 2**. It holds two label spaces in one file:
+  - `v1` is the 15 shipped ids.
+  - `v2` keeps the 12 non-impersonation ids, replaces the three `impersonation_*` with `imp_bank`,
+    `imp_law_enforcement`, `imp_gov_service`, `imp_regulator`, `imp_telecom_delivery_utility` and
+    `imp_personal`, and adds `loan_inducement`, `cash_courier_handoff`, `refund_request`,
+    `task_advance_fee` and `callback_instruction`. That makes **23 heads**.
+- `active_label_space: v1` stays until the phase-2 retrain. `Taxonomy.tactic_ids()`, `hard_signal_ids()`
+  and `active_tactics()` describe the active space, so training, decoding, evaluation, the mock heuristic
+  and the LLM prompt are byte-identical today. A test pins `weights.json::label_space ==
+  tactic_ids()`.
+- Display names, advice and report/partner/intake validation run over `all_tactic_ids()`, so v2 tags
+  already render and validate. The retrain flips one line.
+- **(approve)** No v2 tactic is a hard signal. The cue block stays at 5 columns; promoting, say,
+  `cash_courier_handoff` would be its own ADR with a retrain.
+
+**Negatives.** Six new hard-negative classes, each the legitimate twin of a new scheme:
+`legit_delivery_code`, `legit_refund_request`, `legit_employer_request`, `legit_clinic_appointment`,
+`legit_telecom_offer` and `legit_utility_notice`. Negatives carry `label_spaces` too, so the v1 Gemini
+generator (`generate.py`) still writes only the five v1 classes and a full regeneration of the existing
+corpus stays reproducible (D54).
+
+**Layer 2 — role slot.**
+- `data/lexicon/roles.yaml` lists 19 roles. Each has an `imp_tactic`, reviewed RU (instrumental) / KK
+  (nominative) / EN names and claim-shaped cues.
+- Matching uses the same `find_cue` as the hard-signal cues, in both runtimes. The first cue per role
+  wins, a longer overlapping span beats a shorter one, and the earliest claim wins.
+- `explain()` gains `role_id`, `role_span` (verbatim) and `role_line`, rendered from the reviewed
+  `role_template` («Звонящий представился {role}: «{span}».» / «Қоңырау шалушы өзін {role} деп
+  таныстырды: …» / "The caller claimed to be {role}: …"). The reason string is unchanged.
+- `site/core/role.js` is the 1:1 port. It is pinned by `tests_js/fixtures/roles.json`
+  (`scripts/export_role_fixture.py`, 62 cases) and drift-checked from Python.
+- **This lexicon is display-only. It is not a feature, not in the bundle hash
+  (`weights.json::lexicon` = cue + reassurance only — tested) and editing it does NOT trigger the
+  "lexicon edit forces a retrain" rule.** Its only other consumers are the scheme rules and the
+  one-time label migration, whose output is frozen into the corpus.
+
+**Layer 3 — schemes.**
+- `data/taxonomy/schemes.yaml` defines 21 rule-derived schemes in priority order, in a five-operator
+  rule language (`all` / `any` / `tactic` / `any_tactic` / `role`) evaluated by `qorgan.explain.schemes`.
+  The first match wins.
+- Advice is keyed by scheme (`advice_{ru,kk,en}.yaml::scheme_advice`, 21 × 3 reviewed lines). Eleven
+  new per-tactic lines are added for each locale.
+- The shipped v1 tags are read through the migration below, so the layer works before the retrain.
+- A test proves every scheme's generation spec derives back to itself. It caught three ordering
+  bugs while writing: prize vs benefits, mule vs fake boss, and egov vs clinic.
+- **(approve)** It is not yet in the UI or the JS core. Without v2 heads its input is v1 tags. Phase 2
+  ports it with fixtures once the heads exist.
+
+**Migration of existing labels — (approve).**
+- `qorgan.data.migrate_v2` is deterministic. Each `impersonation_*` maps to the successors whose
+  family matches a role the transcript claims. Otherwise it maps to the first successor (bank →
+  `imp_bank`, gov_police → `imp_law_enforcement`, telecom_delivery → `imp_telecom_delivery_utility`)
+  and the row goes on a review list (ids, reasons and roles only, no text).
+- Dry run on train: 686 rows carry an impersonation tag. Transitions: bank → imp_bank 404,
+  → imp_regulator 44, → both 2; gov_police → law 116, → regulator 6; telecom → telecom 110, → gov 4.
+- **246 rows go to review**: 146 bank and 72 gov_police with no role found, 10 role outside the family,
+  18 telecom with no role.
+- Val: 49 rows with an impersonation tag, 11 to review.
+- The list is `data/taxonomy/migration_v2_review.json`. A human pass over it (or a sampled audit) comes
+  before phase-2 training.
+- Held-out splits are migrated by the same function with **aggregate counts only**; their review rows
+  are never opened.
+- **The five new tactics are not inferred on old rows.** An old row is *unlabelled* for them, not
+  negative. The phase-2 trainer masks v1-sourced rows out of those five heads ("label masking")
+  instead of guessing.
+
+**Thin heads — (approve).** D30 stays as written: a tactic with < 8 tuning positives keeps 0.5. Phase-2
+acceptance additionally requires ≥ 8 out-of-fold positives for **every** v2 id. A head that still
+misses that is dropped from the v2 space (a yaml edit plus a note here) rather than shipped at an
+untuned 0.5. No untuned head reaches users.
+
+**Generation pipeline (`python -m qorgan.data.gen`).**
+- `configs/gen_grid.yaml` defines a seeded, quota-exact grid over:
+  - scheme or negative class, and role;
+  - register: kk 30 %, ru 30 %, mixed 25 %, en 15 %; negatives ≥ 35 %;
+  - persona (age band, region, occupation), outcome, channel, stage and an explicit length target;
+  - direct vs indirect phrasing, and confusable negatives.
+- Scam tactics are the scheme's core plus 0–2 optional, kept only if the rules still derive the cell's
+  scheme.
+- Chunk specs carry instructions, the JSON schema and an English glossary of names and descriptions.
+  They never carry example phrases or cue lists, and no Russian or Kazakh lexicon phrase reaches the
+  writer (tested). English definitions unavoidably share a few words with English cues.
+- Rows are the existing `Dialogue` plus per-utterance `stage` and verbatim `{id, phrase}` tactic spans.
+- QC gates, all automated (`qc.py`):
+  1. schema and cell agreement;
+  2. scrub fixed point;
+  3. e5 near-duplicate, with the threshold calibrated so that no train pair exceeds it;
+  4. ROUGE-L < 0.7, computed with a bit-parallel LCS;
+  5. disjointness from all eight processed splits, by hash only;
+  6. lexicon-leak share per scheme;
+  7. a generator-fingerprint LR (char n-grams and e5), also restricted to v1 topics.
+- No new dependency is needed (numpy and sklearn are already in), so no `tooling` extra was added.
+  semhash is unnecessary at this size.
+
+**Pilot (120 dialogues, 3 sub-agents; full report `docs/gen_pilot_qc_2026-10.md`).**
+- Gates 1–5: 120/120 valid, 0 scrub, 0 near-duplicates (threshold 0.974; the 0.92 starting point is
+  meaningless for e5 because train's own median nearest neighbour is 0.937), 0 ROUGE-L flags (max
+  0.307), 0 eval overlaps.
+- Cue-free scams 64/72 = 0.889. Scheme agreement 72/72. Role-slot recall 0.42.
+- **Fingerprint AUC 0.975 (char) / 0.948 (e5); on shared v1 topics, 0.91 / 0.91.** The style leak is
+  real, so §3.2's held-out redesign is mandatory, not optional.
+- Shipped v1 model on the pilot (diagnostic): recall **0.208 [0.122, 0.320]**, 0/27 on the low-arousal
+  schemes, FPR 1/48.
+
+**Not done, on purpose.** Nothing is added to the corpus and nothing is retrained. `parity.json`,
+`runtime_gate*` and weights are untouched (they regenerate after the retrain). The scheme layer is not
+in the UI. `live.js` and `asr.js` are untouched.
+
+**Phase 2 (after review).**
+1. Fix the three grid issues (persona coherence, role-consistent optional `imp_*`, stage vs core).
+2. Freeze `shift` as `shift_v1` (validation). Build `shift_local` (KazLLM, offline) and `court_authored`
+   as the honest held-outs **before** training on Claude rows.
+3. Generate about 1,600–2,000 rows: about 70 chunks of 25, written by sub-agents in batches of ≤ 16.
+   About 60 % scams over 21 schemes (≥ 40 per new tactic, ≥ 8 OOF positives per head) and about 40 %
+   negatives (≥ 60 per v2 guardrail class, the reassurance counter-signal in ~40 %, D42).
+4. QC every chunk. Human-review the migration list.
+5. Build the corpus with v2 labels and masking, flip `active_label_space`, retrain on device
+   embeddings, export, and regenerate fixtures and the browser gate.
+6. Gates: FPR first on test / authored / ood / styled / browser, plus the new held-outs.
+7. Port the scheme layer to JS with fixtures. Add any v2 cue additions only from train, paired with
+   negatives, in a separate measured step.
+
+**Rejected.**
+- Renaming the ids in place with a flag day. It would break the shipped weights' label space and every
+  stored report.
+- Inferring the 5 new tactics on old rows by keyword. That writes the lexicon into the labels.
+- Making the role a learned head. It would add FPR exposure for a display string.
+#### D63 phase 2 — generation, corpus fold-in and a dry-run retrain (2026-10-09/10)
+_Approved by the user on 2026-10-09: the six phase-1 "(approve)" items, all as proposed. No
+held-out split was evaluated; nothing shipped; `site/models/weights.json` is unchanged._
+
+**Grid v2** (`configs/gen_grid.yaml`). Four changes:
+- age band is drawn first, then an occupation that fits it;
+- an optional `imp_*` tactic is drawn only when it is the role's own `imp_tactic`;
+- `hook_only` is allowed only when every tactic of the cell is hook-compatible;
+- the scam share is 0.48, the train base rate (896/1880 = 0.477). The pilot used 0.60.
+
+A new field, `lookalike_of`, gives 80 % of the negatives the pretext of a scheme in proportion to
+that scheme's scam count. Each such negative is that scheme's `twin` class, with the scheme's role
+when that role can call legitimately (police yes; regulator and antifraud never).
+
+**Role slot.** Self-introduction by organisation. Python and `role.js` are 1:1, and the fixture
+was regenerated. Each role gets `orgs`, plus intro markers and Kazakh ablative affixes. A claim is
+an organisation with a marker within `ROLE_INTRO_WINDOW` = 4 tokens on the same line, or a
+line-opening ablative. The longest organisation wins. Personal names are never matched. The lexicon
+stays display-only.
+
+| | role recall | fires on role-less rows | wrong role |
+|---|---|---|---|
+| pilot, before → after (designed on it) | 43/102 (0.42) → 75/102 (0.735) | 1/18 → 1/18 | 9 → 4 |
+| phase-2 batch, before → after (**not** designed on it) | 399/1136 (0.351) → 749/1136 (0.659) | 31/189 → 47/189 | 70 → 63 |
+
+**Migration review (user item 3).** I read every phase-1 review row: 123 train sources plus their
+-asr copies, and 11 val rows. I also read every row whose automatic mapping moved with the
+widened role lexicon, 141 sources in all. Each decision has a one-line reason in
+`data/taxonomy/migration_v2_review.json`:
+- imp_bank 75, imp_law_enforcement 41, imp_telecom_delivery_utility 8, imp_regulator 7,
+  imp_gov_service 6;
+- 4 rows dropped: a private "investment/financial firm" caller impersonates no institution.
+
+10 of the 141 differ from the automatic mapping. `apply_review` applies the decision per source id.
+
+**Generation.** Run `p2`: 1,800 cells, 72 interleaved chunks of 25, written by writer sub-agents.
+Each writer saw only its own chunk specs, and resume state comes from disk
+(`python -m qorgan.data.gen status`). Usage limits and network drops killed several writers, so
+**19 chunks were skipped** at the coordinator's instruction ("stop at ≥ ~1,400"):
+chunk_31, 34, 38, 41, 42, 45, 46, 58, 61–71. Chunks are interleaved samples of the grid, so the
+balance holds.
+- Written: 53 chunks = 1,325 rows. With the pilot that is **1,445 QC-accepted dialogues**; no row
+  was rejected.
+- Whole-run QC (`qc --run p2`):
+  - schema 1325/1325; 0 eval-split hash overlaps; 0 near-duplicates (threshold 0.9749);
+  - ROUGE-L max 0.382;
+  - cue-free scams 0.871, no scheme under 0.30;
+  - scheme rules 636/636;
+  - 46 of 689 negatives fire a hard-signal cue (confusables, as designed).
+- Language split, scam/legit: kk 213/223, ru 228/238, mixed 161/164, en 106/112.
+- **Fingerprint: char AUC 0.9999, e5 0.990. On v1 topics only: 0.9998 / 0.986.** Claude style
+  remains perfectly separable from Gemini style. That is why the label balance below matters.
+- Every v2 tactic clears the ≥ 40 generation floor:
+  - the five new tactics: loan 47, cash courier 42, refund 46, task fee 40, callback 54;
+  - imp_personal 57.
+- A scrub change is no longer a rejection. Scrubber v2 (D66) masks self-introduced names, and
+  the fold scrubs every row. 126 rows changed.
+
+**Corpus fold-in.**
+- `build_corpus --gen-run pilot --gen-run p2 --label-space v2 --processed-dir …`:
+  - generated rows go to train/val only, never test (`GEN_VAL_FRACTION` = 0.15, seeded id hash);
+  - they get ASR-styled copies like any train row;
+  - v1 rows are migrated, with the review applied;
+  - `provenance.json` records each row's generator.
+- Rebuilt first under scrubber v2 (`publish_guard --fix`). ASR copies are now scrubbed after
+  styling: styling turned "[NAME]" into "name", which v2 re-masks.
+- **P(scam | generator):**
+
+  | split | Claude | Gemini |
+  |---|---|---|
+  | train (incl. ASR copies) | 1204/2454 = 0.491 | 896/1880 = 0.477 |
+  | val | 106/218 = 0.486 | 58/135 = 0.430 |
+
+- `QORGAN_LABEL_SPACE=v2` switches the space for a process. **The yaml stays `v1`**: flipping it
+  without new weights would break the shipped model. It flips together with an export.
+
+**Trainer.**
+- Label masking: Gemini rows are unlabelled for the five new tactics in fit, OOF and threshold
+  tuning (1,880 train rows masked).
+- Thin heads: `V2_MIN_OOF_POSITIVES` = 8 (config.py), counted on train + val labelled
+  positives. No head was dropped; the smallest are callback 54 and cash courier 42.
+
+**Dry run** (validation only, risk 0.59). Embeddings come from the **ONNX server proxy, not the
+device bridge**: inside the agent sandbox, headless Chromium cannot reach its loopback server
+(ERR_SOCKET_NOT_CONNECTED), and running it unsandboxed was refused.
+- 23 heads, `models/linear_v2_dryrun/web/weights.json`, sha256 `7f1c4299…f0b610`.
+
+| val, threshold 0.59 | FPR [95 % CP] | recall [95 % CP] |
+|---|---|---|
+| shipped v1, all | 4/189 = 0.021 [0.006, 0.053] | 84/164 = 0.512 [0.433, 0.591] |
+| shipped v1, Claude rows | 3/112 = 0.027 [0.006, 0.076] | 26/106 = 0.245 [0.167, 0.338] |
+| shipped v1, Gemini rows | 1/77 = 0.013 [0.000, 0.070] | 58/58 = 1.000 [0.938, 1.000] |
+| **v2 dry run, all** | **16/189 = 0.085 [0.049, 0.134]** | 145/164 = 0.884 [0.825, 0.929] |
+| v2 dry run, Claude rows | 10/112 = 0.089 [0.044, 0.158] | 88/106 = 0.830 [0.745, 0.896] |
+| v2 dry run, Gemini rows | 6/77 = 0.078 [0.029, 0.162] | 57/58 = 0.983 [0.908, 1.000] |
+
+Validation threshold sweep for the dry-run model (validation only; nothing is chosen yet):
+
+| threshold | 0.59 | 0.70 | 0.80 | 0.85 | 0.90 |
+|---|---|---|---|---|---|
+| FPR | 16/189 | 9/189 | 6/189 | 1/189 | 0/189 |
+| recall | 145/164 | 136/164 | 121/164 | 110/164 | 100/164 |
+
+**Verdict: not sane to ship at 0.59.** Recall on the new pretexts rises a lot, but validation FPR
+quadruples, including on the Gemini rows (1/77 → 6/77). The model would need either a new
+operating point, for which 0.85 is where validation FPR returns to baseline, or a fix of the
+cause. That choice belongs to the user. Per the protocol, no held-out split was run.
+
+#### D63 phase 2 — diagnosis and PRE-REGISTRATION of the held-out run (2026-10-11)
+_Written and committed before any held-out split was evaluated. Everything below was chosen on
+train / validation only._
+
+**Device embeddings.** The model is retrained on the browser's own vectors (the device bridge,
+transformers.js 3.8.1 / ORT-web wasm). On validation they tell the same story as the ONNX proxy.
+
+**Diagnosis 1: ranking.** v2 ranks better than the shipped model, so the regression is an
+operating-point shift.
+
+| validation ROC-AUC / PR-AUC | shipped v1 | v2 (device) |
+|---|---|---|
+| overall | 0.872 / 0.881 | **0.956 / 0.963** |
+| Claude rows | 0.759 / 0.763 | **0.919 / 0.933** |
+| Gemini rows | 1.000 / 1.000 | 0.9996 / 0.9994 |
+
+**Diagnosis 2: the 13 validation false positives of v2 at 0.59.**
+- 11 are Claude rows and 2 are Gemini rows (one legit_gov_service, one delivery_notification).
+- 9 of the 11 Claude false positives are Russian.
+- 9 of the 11 are twin / look-alike negatives:
+  - legit_delivery_code ×2;
+  - one each of legit_refund_request, legit_employer_request, legit_telecom_offer and
+    legit_gov_service (eGov);
+  - legit_bank_call ×2;
+  - general_conversation look-alike of investment_broker ×2.
+- 2 of the 13 fire a hard-signal cue.
+- The top heads are the pretext's own: imp_telecom_delivery_utility, otp_request,
+  refund_request, task_advance_fee, imp_gov_service, investment_scam.
+
+So v2 learned the pretexts. At 0.59 their legitimate twins cross the line.
+
+**Operating-point rule (stated by the orchestrator before computing it).** enter is the lowest
+threshold on a 0.01 grid at which v2's validation false positives are ≤ the shipped model's
+(4/189), on device embeddings. This gives:
+- **enter = 0.78, exit = 0.68**; the single-shot `risk_threshold` is also 0.78;
+- **single hard-signal floor = enter + 2 = 80**; double floor = max(81, single) = **81**.
+  These come from `meter.hard_signal_floors`; JS reads the same numbers from the config;
+- shipped stays at 0.59 / 0.49 with floors 61 / 81.
+
+| validation (device) | FPR | recall |
+|---|---|---|
+| shipped v1 @ 0.59 | 4/189 = 0.021 [0.006, 0.053] | 86/164 = 0.524 [0.445, 0.603] |
+| v2 @ 0.59 | 13/189 = 0.069 [0.037, 0.115] | 146/164 = 0.890 [0.832, 0.934] |
+| **v2 @ 0.78 (rule)** | **4/189 = 0.021 [0.006, 0.053]** | **132/164 = 0.805 [0.736, 0.863]** |
+| v2 @ 0.78, Claude rows | 3/112 | 75/106 |
+| v2 @ 0.78, Gemini rows | 1/77 | 57/58 |
+
+**Live meter on validation** (`eval.stream`, ONNX proxy for both models, each at its own point):
+- shipped @ 0.59/0.49: false-latch **0.085 [0.049, 0.134]** (16/189), alert-hit 0.573;
+- v2 @ 0.78/0.68: false-latch **0.138 [0.092, 0.195]** (26/189), alert-hit 0.848.
+
+**The streaming false-latch rate is worse for v2 on validation even at the rule point.** This is
+recorded here before the held-out run. The ship criteria below are the orchestrator's and do not
+include it; it goes to the user as a known risk.
+
+**Frozen model** (`models/linear_v2_device`):
+- 23 heads; no thin head dropped. The minimum out-of-fold positive count is ≥ 8 for all; the
+  smallest are cash_courier_handoff 42 and callback_instruction 54;
+- `_RISK_C` = 4.0 (unchanged); label masking on; per-tactic thresholds re-fit by D30 (OOF +
+  val), 0.55–0.70;
+- embed_backend `device`;
+- `web/weights.json` sha256 **7fc405ac52057d3ed4188a748884b6f1a8ffb17d5bf57917674c9c4e22b2bf92**;
+- meter settings otherwise unchanged (alpha 0.5/0.12, min turns to arm 3).
+
+0 of the 1,445 generated rows hash-collide with `shift_local`.
+
+**Ship criteria (the orchestrator's, fixed before looking):**
+1. FPR does not rise on test / authored_heldout / ood / ASR-styled / the browser gate.
+2. shift_local FPR stays within the baseline's 0.062 (4/64) plus one false positive.
+3. shift_local recall improves on the baseline's 0.548.
+
+If any fails: report and stop, no iteration.
+
+**Role line, extra fires on role-less rows (31 → 47/189 on the batch).** Of the 16 new fires,
+14 are wrong:
+- Kaspi named as a channel, not as the caller: "Kaspi support", a line-opening «Kaspi-ден»
+  transfer, «Kaspi-ге»;
+- these sit in erroneous_transfer ×7, legit_refund_request ×5, prize ×1 and
+  general_conversation ×1 rows.
+
+The other 2 are OLX buyers who name the listing site; that is factual. The lexicon is
+display-only, so these only mislabel the role line. Dropping the markers "support" / "here" and
+requiring a marker for the ablative is a later display-only fix, re-measured on a new batch.
+
+#### D63 phase 2 — the one-shot held-out result (2026-10-12): the ship criteria FAIL, so v2 is not shipped
+_The run used the frozen model and operating point of the pre-registration commit (f038cde).
+Shipped v1 ran at 0.59/0.49 and v2 at 0.78/0.68, in the same harness, on device embeddings.
+The streams ran on the ONNX server proxy for both models: on the device bridge, v1's streams
+alone took more than 10 h. Numbers are pasted from `data/synthetic/gen/_heldout/*.log`._
+
+| split | shipped v1: FPR · recall | v2: FPR · recall |
+|---|---|---|
+| test | 0.000 [0.000, 0.060] · 1.000 | **0.033 [0.004, 0.115]** · 0.976 |
+| authored_heldout | 0.000 [0.000, 0.142] · 0.889 | 0.000 [0.000, 0.142] · 0.944 |
+| ood | 0.000 [0.000, 0.049] · 0.932 | **0.041 [0.008, 0.114]** · 0.909 |
+| adversarial (all scams) | recall 0.936 | recall 0.945 |
+| adversarial_legit (legit-sounding scams) | recall 0.862 | recall **0.716** |
+| shift_v1 (contaminated, validation only) | 0.000 · 0.455 | 0.000 · 0.727 |
+| **shift_local** (headline) | 0.047 [0.010, 0.131] · 0.548 [0.417, 0.675] | 0.047 [0.010, 0.131] · **0.661 [0.530, 0.777]** |
+| styled test / authored / ood, FPR | 0.000 / 0.000 / 0.014 | 0.000 / 0.000 / 0.000 |
+| stream test, false-latch · alert-hit | 0.050 · 0.988 | 0.050 · 1.000 |
+| stream authored, false-latch · alert-hit | 0.125 · 0.889 | 0.000 · 0.833 |
+| stream shift_local, false-latch · alert-hit | 0.125 (8/64) · 0.694 | 0.094 (6/64) · 0.774 |
+| court_quotes, risk ≥ threshold / latched@1 | 29/47 / 1/47 | 41/47 / 7/47 |
+| court_quotes pseudo-calls, latched | 4/7 | 5/7 |
+
+**Criteria verdict:**
+
+| criterion | result |
+|---|---|
+| 1. FPR does not rise on test / authored / ood / styled / browser gate | **FAILS** |
+| 2. shift_local FPR within 0.062 + one false positive | passes (3/64 both) |
+| 3. shift_local recall improves | passes (0.548 → 0.661) |
+
+- Criterion 1 fails on two splits: **test** (0/60 → 2/60) and **ood** (0/74 → 3/74). Authored and
+  styled hold.
+- The browser gate was not run: it is a parity check of exported weights, and the criteria had
+  already failed.
+- Per protocol: no export, no re-tuning, no data edits aimed at these rows. `weights.json`,
+  config defaults and fixtures are unchanged. The user decides.
+
+#### D63 phase 2 — USER DECISION (2026-10-12): ship v2 under an ADR exception if, and only if, three pre-stated checks pass
+_Copied verbatim from the decision and committed before any of the checks was run. If any check fails: stop, keep v1, report._
+
+CHECK 1, the nature of the 5 new held-out FPs (test 2, ood 3). Read only those 5 rows, add them to data/anchors/inspection_ledger.yaml, and classify each.
+- PASS for a row if it is a legitimate call whose pretext matches a scam pretext: a bank / courier / delivery / telecom / utility / government / employer contact that mentions codes, payments, transfers, accounts, cards, verification, security or personal data.
+- FAIL for a row if it is an ordinary call with no such pretext (appointment, family, casual, generic sales without money/credential talk).
+- Check 1 passes if ≥ 4 of 5 rows pass AND none is a plain everyday call.
+- Report each row's one-line gist (no PII), v1 and v2 risk, and which heads fired. Do not change anything based on what you read.
+
+CHECK 2, export and the browser gate.
+- Export v2: export_parity_fixtures + client_config, active_label_space → v2, the new floors/thresholds into qorgan-config.json, sw.js SHELL_CACHE → v11.
+- Run the existing int8 browser runtime gate on device embeddings via the bridge (http://127.0.0.1:8765; restart it with `--pages 4` if it is down). It passes under that test's existing assertion; do not loosen it.
+- Full `pytest -q` and `npm test` green.
+
+CHECK 3, the demo scenes in Chromium (live.html replay, the three shipped scenes + the code-switch scene).
+- RU scam and KK scam must reach the alert band.
+- The real bank call must stay LOW (below the new exit threshold, no alert).
+- New tactic names, reasons and advice must render in kk/ru/en (no missing i18n/YAML keys).
+- Screenshots go to docs/research/2026-10/taxonomy_v2/.
+
+**Check 1 result (2026-10-12): FAIL, so stop and keep v1.** Only these 5 rows were read, and
+all 5 are in the inspection ledger. Risk is v1 → v2; scoring is whole-transcript on device
+embeddings.
+
+| row | gist | v1 → v2 risk | v2 tactic heads over threshold | verdict |
+|---|---|---|---|---|
+| test `neg_general_conversation_mixed_21` | ex-colleague now at a bank; an unpaid card bonus; sends a link to confirm identity and pick a card for the transfer | 0.538 → 0.949 | none | PASS (bank contact: card, verification, transfer) |
+| test `aug_neg_family_money_request_ru_1` | relative "in hospital" asks for 40k tenge by Kaspi today | 0.015 → 0.860 | imp_personal 0.75 | **FAIL** (family call) |
+| ood `ood_neg_family_money_request_mixed_0` | acquaintance asks for 50k by Kaspi to cover a stuck supplier payment | 0.058 → 0.805 | payment_redirect 0.63 | **FAIL** (family/friend call) |
+| ood `ood_neg_general_conversation_ru_1` | Kaspi support confirms a large transfer to the callee's mother; no asks | 0.073 → 0.814 | none | PASS (bank contact: transfer, security) |
+| ood `ood_neg_general_conversation_ru_3` | Kaspi asks to confirm a transaction with an in-app push | 0.508 → 0.798 | none | PASS (bank contact: verification) |
+
+- 3 of 5 rows pass, below the required ≥ 4.
+- Two rows are family money requests. Under the check's own wording ("appointment, **family**,
+  casual"), those are everyday calls.
+
+Per the decision: checks 2 and 3 were not run, there is no export, and v1 stays shipped. The
+role-line fix was conditional on all three checks passing, so it was not made.
+
+Observation (not acted on): the two family false positives are the cost of the new
+relative-in-trouble / payment-redirect heads (imp_personal). Legitimate relatives asking for
+money by Kaspi now score like the scam. They were in the v1 guardrail class
+`family_money_request`, and the generated batch had only 46 family negatives against 35
+relative_in_trouble scams.
+
 ### D64 — Word-level voice mode: live per-word language chips + a GigaAM pass per phrase (2026-10-08)
 The voice mode tagged a whole utterance with one language (the per-utterance Vosk vote, D62), so a
 code-switched sentence was transcribed by one monolingual model, and English was the weakest leg.
