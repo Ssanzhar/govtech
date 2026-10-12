@@ -81,3 +81,20 @@ entries:
   - id: sl_ru_legit_05
     inspected_on: 2026-10-10
     reason: label-validity sample for shift_local (ADR D65); the call matches its brief's label. Not used for tuning
+  # The five new held-out false positives of taxonomy-v2 (ADR D63 phase 2, check 1 of the user's
+  # ship decision, 2026-10-12): read to classify them, nothing was changed because of them.
+  - id: neg_general_conversation_mixed_21
+    inspected_on: 2026-10-12
+    reason: v2 false positive (test, 0.949); D63 phase-2 check 1 -- ex-colleague now at a bank, card bonus, identity-confirmation link (pretext matches)
+  - id: aug_neg_family_money_request_ru_1
+    inspected_on: 2026-10-12
+    reason: v2 false positive (test, 0.860); D63 phase-2 check 1 -- relative in hospital asks for money by Kaspi (family call, no institutional pretext)
+  - id: ood_neg_family_money_request_mixed_0
+    inspected_on: 2026-10-12
+    reason: v2 false positive (ood, 0.805); D63 phase-2 check 1 -- acquaintance asks to cover a stuck supplier payment by Kaspi (family/friend call, no institutional pretext)
+  - id: ood_neg_general_conversation_ru_1
+    inspected_on: 2026-10-12
+    reason: v2 false positive (ood, 0.814); D63 phase-2 check 1 -- Kaspi support confirms a transfer, no asks (pretext matches)
+  - id: ood_neg_general_conversation_ru_3
+    inspected_on: 2026-10-12
+    reason: v2 false positive (ood, 0.798); D63 phase-2 check 1 -- Kaspi asks to confirm a transaction by in-app push (pretext matches)

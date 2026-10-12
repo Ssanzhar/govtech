@@ -2000,6 +2000,31 @@ CHECK 3, the demo scenes in Chromium (live.html replay, the three shipped scenes
 - New tactic names, reasons and advice must render in kk/ru/en (no missing i18n/YAML keys).
 - Screenshots go to docs/research/2026-10/taxonomy_v2/.
 
+**Check 1 result (2026-10-12): FAIL, so stop and keep v1.** Only these 5 rows were read, and
+all 5 are in the inspection ledger. Risk is v1 → v2; scoring is whole-transcript on device
+embeddings.
+
+| row | gist | v1 → v2 risk | v2 tactic heads over threshold | verdict |
+|---|---|---|---|---|
+| test `neg_general_conversation_mixed_21` | ex-colleague now at a bank; an unpaid card bonus; sends a link to confirm identity and pick a card for the transfer | 0.538 → 0.949 | none | PASS (bank contact: card, verification, transfer) |
+| test `aug_neg_family_money_request_ru_1` | relative "in hospital" asks for 40k tenge by Kaspi today | 0.015 → 0.860 | imp_personal 0.75 | **FAIL** (family call) |
+| ood `ood_neg_family_money_request_mixed_0` | acquaintance asks for 50k by Kaspi to cover a stuck supplier payment | 0.058 → 0.805 | payment_redirect 0.63 | **FAIL** (family/friend call) |
+| ood `ood_neg_general_conversation_ru_1` | Kaspi support confirms a large transfer to the callee's mother; no asks | 0.073 → 0.814 | none | PASS (bank contact: transfer, security) |
+| ood `ood_neg_general_conversation_ru_3` | Kaspi asks to confirm a transaction with an in-app push | 0.508 → 0.798 | none | PASS (bank contact: verification) |
+
+- 3 of 5 rows pass, below the required ≥ 4.
+- Two rows are family money requests. Under the check's own wording ("appointment, **family**,
+  casual"), those are everyday calls.
+
+Per the decision: checks 2 and 3 were not run, there is no export, and v1 stays shipped. The
+role-line fix was conditional on all three checks passing, so it was not made.
+
+Observation (not acted on): the two family false positives are the cost of the new
+relative-in-trouble / payment-redirect heads (imp_personal). Legitimate relatives asking for
+money by Kaspi now score like the scam. They were in the v1 guardrail class
+`family_money_request`, and the generated batch had only 46 family negatives against 35
+relative_in_trouble scams.
+
 ### D64 — Word-level voice mode: live per-word language chips + a GigaAM pass per phrase (2026-10-08)
 The voice mode tagged a whole utterance with one language (the per-utterance Vosk vote, D62), so a
 code-switched sentence was transcribed by one monolingual model, and English was the weakest leg.
