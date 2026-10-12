@@ -1980,6 +1980,26 @@ alone took more than 10 h. Numbers are pasted from `data/synthetic/gen/_heldout/
 - Per protocol: no export, no re-tuning, no data edits aimed at these rows. `weights.json`,
   config defaults and fixtures are unchanged. The user decides.
 
+#### D63 phase 2 — USER DECISION (2026-10-12): ship v2 under an ADR exception if, and only if, three pre-stated checks pass
+_Copied verbatim from the decision and committed before any of the checks was run. If any check fails: stop, keep v1, report._
+
+CHECK 1, the nature of the 5 new held-out FPs (test 2, ood 3). Read only those 5 rows, add them to data/anchors/inspection_ledger.yaml, and classify each.
+- PASS for a row if it is a legitimate call whose pretext matches a scam pretext: a bank / courier / delivery / telecom / utility / government / employer contact that mentions codes, payments, transfers, accounts, cards, verification, security or personal data.
+- FAIL for a row if it is an ordinary call with no such pretext (appointment, family, casual, generic sales without money/credential talk).
+- Check 1 passes if ≥ 4 of 5 rows pass AND none is a plain everyday call.
+- Report each row's one-line gist (no PII), v1 and v2 risk, and which heads fired. Do not change anything based on what you read.
+
+CHECK 2, export and the browser gate.
+- Export v2: export_parity_fixtures + client_config, active_label_space → v2, the new floors/thresholds into qorgan-config.json, sw.js SHELL_CACHE → v11.
+- Run the existing int8 browser runtime gate on device embeddings via the bridge (http://127.0.0.1:8765; restart it with `--pages 4` if it is down). It passes under that test's existing assertion; do not loosen it.
+- Full `pytest -q` and `npm test` green.
+
+CHECK 3, the demo scenes in Chromium (live.html replay, the three shipped scenes + the code-switch scene).
+- RU scam and KK scam must reach the alert band.
+- The real bank call must stay LOW (below the new exit threshold, no alert).
+- New tactic names, reasons and advice must render in kk/ru/en (no missing i18n/YAML keys).
+- Screenshots go to docs/research/2026-10/taxonomy_v2/.
+
 ### D64 — Word-level voice mode: live per-word language chips + a GigaAM pass per phrase (2026-10-08)
 The voice mode tagged a whole utterance with one language (the per-utterance Vosk vote, D62), so a
 code-switched sentence was transcribed by one monolingual model, and English was the weakest leg.
