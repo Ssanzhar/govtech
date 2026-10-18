@@ -2486,3 +2486,111 @@ row was read at curation), which the manifest's `excluded_by_review` records.
 2. Volume: sudact's own search would give far more than web-search discovery (6 of 135 fetched pages
    gave a kept row); ask the operator for permission, or for an export.
 3. A human spot-check of the 47 rows and a KZ advocate's line on the "local-only" boundary.
+
+### D69 — UI refresh: "the call, drawn as a blueprint" for all three pages (2026-10-18)
+The September pages used an editorial look: cream paper, Fraunces / PT Serif and a dark console
+panel. For demo day the user asked for a modern redesign modelled on heronaiapp.com, whose look is
+a light technical drawing: drafting paper, hairline cells, uppercase grotesk type, mono readouts
+and red markers pinned onto a floor plan. Heron flags code violations on a plan. Qorğan flags
+manipulation tactics on a call, so the citizen's call itself becomes the drawing.
+It was built on branch `design/ui-refresh` by a multi-agent loop: designer, UX analyst, reference
+scout, three page coders, a design critic and QA.
+
+**Decisions**
+- **One design system** in `site/styles.css`, used by all three pages:
+  - drafting-paper canvas, hairline cells with registration crosses, a sheet header and a
+    title-block footer with an outlined wordmark;
+  - buttons carry the arrow in its own cell, and callouts have a dark title bar;
+  - numbered red markers with leader lines point at evidence;
+  - the 0–100 suspicion meter is drawn as a drafting ruler. Its zones stay neutral at rest; only
+    the fill from 0 to the score takes the band colour.
+- **Colour has meaning.**
+  - Red means only the model's alarm (cue markers, high/critical band, alert), plus the landing
+    CTA and the analyst sign-in button.
+  - There is **no green "safe" state**. The low band is neutral ink, so the UI never implies a
+    guarantee.
+  - Amber is the medium band only. Form errors are ink. Focus is a drafter's blue (`#2544D0`).
+- **Fonts: IBM Plex Sans** (variable, `wdth` 85 for the uppercase statements) **+ IBM Plex Mono**.
+  - Both load from Google Fonts, the host the pages already used, so there is no new third party.
+  - Kazakh coverage was measured in Chrome by comparing each glyph's canvas width against two
+    fallbacks. Plex Sans and Plex Mono have all 18 Kazakh letters.
+  - Rejected for Kazakh gaps: Golos Text (draws ğ without its breve), IBM Plex Sans Condensed,
+    JetBrains Mono, Manrope, Wix Madefor and Archivo.
+- **Landing figure (РИС. 1).** The demo call is drawn as a sheet from **real output** of the shipped
+  v1 runtime, recorded on 2026-10-17:
+  - RU scam: meter 49.7 → 98.4, with three cue spans;
+  - real bank call: 37.1 → 25.7, with no markers;
+  - KK scam: reaches 96.8.
+
+  The values are baked into `main.js`. Tactic names and advice are read at runtime from
+  `core/qorgan-config.json` (model content is never copied). There is one ≤ 4 s build-up, and
+  reduced motion shows the final state. Every number on the landing for that call comes from the
+  same probe.
+- **Citizen page.**
+  - Desktop: a call sheet plus a sticky instrument (score, ruler, verdict, advice, tags).
+  - Phones: a sticky gauge keeps the score, verdict and advice on screen. Start is in the first
+    390×844 screen, and the setup folds into a status strip while a check runs.
+  - The report review is a GOV.UK-style form: hints, an error summary, and a reason why Send is
+    disabled.
+  - Voice failures show plain text, with the details in the console.
+- **Analyst console.**
+  - Sheet layout and a KPI row; the queue as a spec table with at least 10 rows on the first
+    screen at 1440×900; a drill-down drawing sheet.
+  - **One visible language control.** The `adm-loc` radios stay in the DOM for the wiring and are
+    driven by the header switch.
+  - The console UI itself stays English; a ru/kk translation is a follow-up.
+
+**Unchanged:**
+- `site/core/*.js` and scoring;
+- every metric;
+- the CSP, COOP/COEP and the privacy invariants;
+- every DOM hook the scripts and tests use;
+- the `pages.test` regex blocks.
+
+`sw.js` moves to `qorgan-shell-v12`.
+
+The JS changes are presentation-only:
+- `main.js`: replaced; it is now the figure.
+- `live.js`: cue marks carry `data-kind`/`data-n`; tags link to markers through `core/lexicon.js`
+  `matchCues`, used read-only; heading levels; two scroll nudges.
+- `try.js`: verdict and cue marks.
+- `admin.js`: templates.
+- `admin-lang.js`: footer localization, and the header switch drives the content radios.
+
+**Evidence (2026-10-18)**
+
+| Gate | Result |
+|---|---|
+| `npm test` | 146/146 |
+| pytest (api_limits, routing, architecture, consent_versions) | 48 passed |
+| `e2e_live_i18n` | scene A passes; scene B fails only at line 212, a stale `#lvModeNote` expectation since D67 |
+| `e2e_report_review` | passes |
+| `e2e_voice_unavailable` | passes, with installed Chrome |
+| `e2e_admin_auth` | fails only at step 2, the keyless session probe of D59; with that line patched every later step passes |
+
+QA also found:
+- no horizontal overflow at 320–1440 in kk, ru or en;
+- contrast passes AA except on disabled controls;
+- meter, alert and `aria-pressed` semantics correct;
+- reduced motion respected;
+- no console errors across 18 replays.
+
+The round-1 critic scored landing 6–8, admin 6–9 and live 7–9, and its findings were fixed.
+Round 2 was skipped at the user's request.
+
+**Open**
+1. Native review of the new and changed Kazakh strings:
+   - `footer.api`, `code`, `tb_*`;
+   - `landing.plate_*`, `detail_*`, `path_chip`, `tw_samples_label`, `try_note`;
+   - `call.waiting`, `key_cue`, `key_line`;
+   - `replay.script_hint`;
+   - `report.text_hint`, `tactics_hint`, `hint_consent`, `hint_text`;
+   - `mic.start_failed`, `light_unavailable`.
+2. Translate the analyst console UI into ru and kk.
+3. Update the two stale e2e assertions.
+4. Mic-mode cue markers are only unit-checked, because there was no microphone. A real Android
+   phone run is still owed (PLAN C2).
+5. Small items:
+   - at ≥ 1280 px the hero toggle follows the CTAs in tab order (deliberate);
+   - the kk scenario `<select>` truncates;
+   - the tap targets in the desktop admin tables are small.

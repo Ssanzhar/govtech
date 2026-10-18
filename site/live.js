@@ -15,6 +15,7 @@
 import { CONSENT_VERSION, DEFAULT_LOCALE, LOCALES, contentLocale, escapeHtml as esc, hasKey, pickLocale, t } from "./i18n.js";
 import { browserLanguages, localize as localizeIn, readStoredLocale, renderEl as renderElIn, storeLocale } from "./i18n-dom.js";
 import { displayName, renderReason } from "./core/explain.js";
+import { matchCues } from "./core/lexicon.js";
 import { recommend } from "./core/recommend.js";
 import { alignTokens, evidenceRanges, overlaps, runsOf } from "./core/word-runs.js";
 
@@ -248,6 +249,17 @@ const setBand = (band) => {
   dot.className = band === "low" ? "p-dot tone-moss" : "p-dot";
 };
 
+/** A tactic's transcript marker ("2") when its verbatim cue is marked in the call, else null. */
+const markerOf = (id) => transcriptEl.querySelector(`mark[data-n][data-tactic="${CSS.escape(id)}"]`)?.dataset.n ?? null;
+
+/** Tactic chips: the ones tied to a marked cue come first, in marker order, with the same number. */
+const tagsHtml = (items) =>
+  items
+    .map((item) => ({ ...item, n: markerOf(item.id) }))
+    .sort((a, b) => Number(a.n ?? Infinity) - Number(b.n ?? Infinity))
+    .map(({ name, n }) => `<span class="tw-tag" role="listitem"${n ? ` data-n="${esc(n)}"` : ""}>${esc(name)}</span>`)
+    .join("");
+
 const renderCall = () => {
   if (!call) return;
   const score = call.score.toFixed(0);
@@ -258,7 +270,7 @@ const renderCall = () => {
   meterEl.setAttribute("aria-valuetext", tr("call.meter_valuetext", { score, band: { $: `band.${call.band}` } }));
   setBand(call.band);
   tagsEl.lang = cl();
-  tagsEl.innerHTML = call.tags.map((tag) => `<span class="tw-tag" role="listitem">${esc(tacticName(tag.id))}</span>`).join("");
+  tagsEl.innerHTML = tagsHtml(call.tags.map((tag) => ({ id: tag.id, name: tacticName(tag.id) })));
   if (call.advice && config) {
     // The same pure `recommend` the session ran, re-run in the current language.
     const [first] = recommend(call.advice.tags, cl(), call.advice.confidence, config).advices;
@@ -270,16 +282,26 @@ const renderCall = () => {
   }
 };
 
+/** A cue mark: numbered (`n`, if any) and tied to its hard-signal tactic (if known). */
+const cueMark = (n, tactic) => `<mark data-kind="cue"${n ? ` data-n="${n}"` : ""}${tactic ? ` data-tactic="${esc(tactic)}"` : ""}>`;
+
 // `evidence` is plain phrase text (verbatim substrings of `line`, per the API contract --
-// no character offsets), so highlighting is a straight escaped-substring replace.
-const highlightLine = (line, evidence) => {
-  let html = esc(line);
+// no character offsets), so highlighting is a straight substring wrap. The whole line is the
+// quiet tint; a shorter phrase is a verbatim cue: the red marker, numbered from `n` on, with
+// `tacticOf(phrase)`. The wraps stay private-use sentinels (a cue's carries its index) until the
+// text is escaped, so a phrase never matches markup.
+const highlightLine = (line, evidence, n = 1, tacticOf = () => null) => {
+  const cues = [];
+  let text = line;
   for (const phrase of evidence) {
-    if (!phrase) continue;
-    const escaped = esc(phrase);
-    if (html.includes(escaped)) html = html.replace(escaped, `<mark>${escaped}</mark>`);
+    if (!phrase || !text.includes(phrase)) continue;
+    const open = phrase === line ? "\uE000" : `\uE001${String.fromCharCode(0xe100 + cues.push(phrase) - 1)}`;
+    text = text.replace(phrase, (m) => `${open}${m}\uE002`);
   }
-  return html;
+  return esc(text)
+    .replaceAll("\uE000", "<mark>")
+    .replace(/\uE001([\uE100-\uE1FF])/g, (_, i) => cueMark(n++, tacticOf(cues[i.charCodeAt(0) - 0xe100])))
+    .replaceAll("\uE002", "</mark>");
 };
 
 /** Words grouped into same-language runs, each run led by a language chip (ADR D64).
@@ -295,17 +317,39 @@ const runsHtml = (items, token, cls = () => "") =>
 
 /** The transcript line: per-word language runs when the words line up with the text, the
     evidence phrases highlighted either way. */
-const lineHtml = (line, evidence, words) => {
+const lineHtml = (line, evidence, words, n = 1, tacticOf = () => null) => {
   const tokens = words?.length ? alignTokens(line, words) : null;
-  if (!tokens) return highlightLine(line, evidence);
+  if (!tokens) return highlightLine(line, evidence, n, tacticOf);
   const ranges = evidenceRanges(line, evidence);
-  return runsHtml(tokens, (t) => (overlaps(t, ranges) ? `<mark>${esc(t.text)}</mark>` : esc(t.text)));
+  // Word by word, as in highlightLine: a word of a cue phrase gets the cue marker, numbered on its first word.
+  const cues = evidence.filter((phrase) => phrase !== line)
+    .map((phrase) => [phrase, evidenceRanges(line, [phrase])[0]])
+    .filter(([, range]) => range);
+  const numbered = new Set();
+  return runsHtml(tokens, (t) => {
+    if (!overlaps(t, ranges)) return esc(t.text);
+    const cue = cues.findIndex(([, range]) => overlaps(t, [range]));
+    if (cue < 0) return `<mark>${esc(t.text)}</mark>`;
+    const first = !numbered.has(cue);
+    numbered.add(cue);
+    return `${first ? cueMark(n++, tacticOf(cues[cue][0])) : cueMark(null, null)}${esc(t.text)}</mark>`;
+  });
 };
 
-const appendLine = (line, evidence, meta = null) => {
+/** Which hard-signal tactic each verbatim cue of `update` belongs to: the same pure matcher the
+    scorer ran on the same window (core/lexicon.js), re-run for display only. */
+const cueTactics = (update) => {
+  const cues = runtime?.weights?.lexicon?.cues;
+  if (!cues || !config) return () => null;
+  const matches = matchCues(update.window_text, cues, config.taxonomy.hard_signal_ids);
+  return (phrase) => matches.find((m) => m.span.text === phrase)?.tacticId ?? null;
+};
+
+const appendLine = (line, evidence, meta = null, tacticOf = () => null) => {
   const div = document.createElement("div");
   div.className = "lv-line";
-  div.innerHTML = lineHtml(line, evidence, meta?.words);
+  // Cue markers are numbered through the whole call: 1, 2, 3 in the order they appear.
+  div.innerHTML = lineHtml(line, evidence, meta?.words, transcriptEl.querySelectorAll("mark[data-n]").length + 1, tacticOf);
   if (meta) {
     div.lang = meta.language;
     div.dataset.source = meta.source || "vosk";
@@ -356,7 +400,7 @@ const applyUpdate = (update, state, lineText, meta = null) => {
     tags: state.tags,
     advice: latchedAdvice ? { tags: state.tags, confidence: update.result.raw_confidence } : call?.advice ?? null,
   };
-  appendLine(lineText, update.new_evidence.map((span) => span.text), meta);
+  appendLine(lineText, update.new_evidence.map((span) => span.text), meta, cueTactics(update));
   renderCall();
 };
 
@@ -373,6 +417,12 @@ const resetCallUi = () => {
   renderCall();
   callWrap.hidden = false;
   renderFallbackNotes();
+  // The setup folds to its status strip while a check runs (live.css). When the call would start
+  // too low to show the whole gauge (score, verdict, advice: up to ~560 px), bring the strip to
+  // the top so the gauge sits right under it. Presentation only.
+  requestAnimationFrame(() => {
+    if (callWrap.getBoundingClientRect().top > window.innerHeight - 560) (mode() === "mic" ? setupMic : setupReplay).scrollIntoView({ block: "start" });
+  });
 };
 
 // ── post-call summary (rendered from `lastState`) ─────────────────────────────
@@ -383,31 +433,36 @@ const renderSummaryContent = () => {
   const summary = runtime.summarize({ ...lastState, locale: content });
   const templates = config.templates[content];
   const reason = renderReason(templates, summary.tactic_names, lastState.seen_evidence.slice(0, MAX_REASON_PHRASES));
-  const chips = summary.tactic_names.length
-    ? summary.tactic_names.map((n) => `<span class="tw-tag" role="listitem">${esc(n)}</span>`).join("")
-    : `<span class="tw-dim">${esc(tr("summary.none"))}</span>`;
+  // The tactics summarize() names (same ids, same order), so a cue's transcript marker follows them.
+  const tactics = lastState.tags.map((t) => ({ id: t.id, name: displayName(t.id, content, config) })).filter((x) => x.name);
+  const chips = tactics.length ? tagsHtml(tactics) : `<span class="tw-dim">${esc(tr("summary.none"))}</span>`;
   const actions = summary.recommended_actions.length
     ? `<ul class="lv-summary-actions" lang="${content}">${summary.recommended_actions.map((a) => `<li>${esc(a)}</li>`).join("")}</ul>`
     : `<p class="lv-summary-tip">${esc(tr("summary.safe_tip"))}</p>`;
   summaryContent.innerHTML =
-    `<p class="eyebrow inverse lv-summary-eyebrow">${esc(tr("summary.eyebrow"))}</p>` +
+    `<h2 class="lv-summary-eyebrow">${esc(tr("summary.eyebrow"))}</h2>` +
     `<div class="lv-summary-head"><span class="lv-summary-score">${summary.final_score.toFixed(0)} / 100</span></div>` +
     `<span class="lv-band-pill mono lv-summary-band band-${esc(summary.band)}">${esc(tr("band.pill", bandParams(summary.band)))}</span>` +
-    `<p class="lv-summary-label mono">${esc(tr("summary.signs"))}</p>` +
-    `<div class="lv-tags lv-summary-tags mono" role="list" lang="${content}">${chips}</div>` +
-    `<p class="lv-summary-label mono">${esc(tr("summary.why"))}</p>` +
-    `<p class="lv-summary-reason" lang="${content}">${esc(reason)}</p>` +
-    `<p class="lv-summary-label mono">${esc(tr("summary.actions"))}</p>` +
+    // What to do comes first after the verdict; then the signs; the templated reason last.
+    `<h3 class="lv-summary-label">${esc(tr("summary.actions"))}</h3>` +
     actions +
+    `<h3 class="lv-summary-label">${esc(tr("summary.signs"))}</h3>` +
+    `<div class="lv-tags lv-summary-tags mono" role="list" lang="${content}">${chips}</div>` +
+    `<h3 class="lv-summary-label">${esc(tr("summary.why"))}</h3>` +
+    `<p class="lv-summary-reason" lang="${content}">${esc(reason)}</p>` +
     (locale === content ? "" : `<p class="lv-fallback mono">${esc(tr("call.content_fallback"))}</p>`) +
     `<p class="lv-summary-note" lang="${content}">${esc(summary.human_note)} ${esc(templates.caveat)}</p>`;
 };
 
 const showSummary = () => {
+  // The setup above unfolds as the call ends (live.css folds it while a check runs): keep the
+  // call where the citizen is looking. Presentation only.
+  const callTop = callWrap.getBoundingClientRect().top;
+  requestAnimationFrame(() => window.scrollBy({ top: callWrap.getBoundingClientRect().top - callTop, behavior: "instant" }));
   summaryWrap.hidden = false;
   renderSummaryContent();
   reportEl.innerHTML =
-    `<p class="lv-report-title" data-i18n="report.title"></p>` +
+    `<h2 class="lv-report-title" data-i18n="report.title"></h2>` +
     `<p class="lv-report-note" data-i18n="report.intro"></p>` +
     `<button type="button" id="lvReportOpen" class="btn btn-ghost" data-i18n="report.open"></button>` +
     `<div id="lvReportForm" class="lv-report-form" hidden></div>`;
@@ -441,19 +496,23 @@ const openReportReview = async () => {
     .join("");
   form.innerHTML =
     `<label class="lv-report-label" for="lvReportText" data-i18n="report.text_label"></label>` +
-    `<textarea id="lvReportText" class="lv-script lv-report-text mono" rows="6" spellcheck="false"></textarea>` +
+    `<p class="lv-report-help lv-report-hint" id="lvReportTextHelp" data-i18n="report.text_hint"></p>` +
+    `<textarea id="lvReportText" class="lv-script lv-report-text mono" rows="6" spellcheck="false" required aria-describedby="lvReportTextHelp"></textarea>` +
     `<p class="lv-report-label" id="lvReportPreviewLabel" data-i18n="report.preview_label"></p>` +
     `<pre id="lvReportPreview" class="lv-stored mono" aria-labelledby="lvReportPreviewLabel" aria-live="polite"></pre>` +
     (tacticChips
-      ? `<fieldset class="lv-report-fieldset"><legend class="lv-report-label" data-i18n="report.tactics_label"></legend>` +
+      ? `<fieldset class="lv-report-fieldset" aria-describedby="lvReportTacticsHelp"><legend class="lv-report-label" data-i18n="report.tactics_label"></legend>` +
+        `<p class="lv-report-help lv-report-hint" id="lvReportTacticsHelp" data-i18n="report.tactics_hint"></p>` +
         `<div class="lv-report-tactics">${tacticChips}</div></fieldset>`
       : "") +
     `<label class="lv-report-label" for="lvReportPhone" data-i18n="report.phone_label"></label>` +
     `<div class="lv-report-row"><input id="lvReportPhone" class="lv-report-phone mono" type="tel" inputmode="tel" ` +
     `autocomplete="off" maxlength="32" aria-describedby="lvReportPhoneHelp"></div>` +
     `<p class="lv-report-help" id="lvReportPhoneHelp" data-i18n="report.phone_help"></p>` +
-    `<label class="lv-report-consent"><input type="checkbox" id="lvReportConsent"> <span data-i18n="report.consent"></span></label>` +
-    `<div class="lv-report-row"><button type="button" id="lvReportSend" class="btn btn-paper" disabled data-i18n="report.send"></button></div>` +
+    `<label class="lv-report-consent"><input type="checkbox" id="lvReportConsent" required> <span data-i18n="report.consent"></span></label>` +
+    `<div class="lv-report-row"><button type="button" id="lvReportSend" class="btn btn-paper" disabled aria-describedby="lvReportSendHint" data-i18n="report.send"></button></div>` +
+    // Why Send is still disabled; live.css shows the line that applies (consent unticked / text empty).
+    `<div class="lv-send-hint" id="lvReportSendHint"><p data-i18n="report.hint_consent"></p><p data-i18n="report.hint_text"></p></div>` +
     `<div class="lv-report-note" id="lvReportNote" role="status"></div>`;
   localize(form);
   renderTactics(form);
@@ -749,7 +808,8 @@ const createLightRecogniser = async (rt) => {
     });
   } catch (e) {
     endpointNote.hidden = true; // its "loading" line is stale now
-    disableVoice("mic.light_unavailable", { error: errText(e) }, true);
+    console.warn("Qorğan: the light voice mode could not start:", e); // the detail is for support, not the citizen
+    disableVoice("mic.light_unavailable", null, true);
     return null;
   }
 };
@@ -806,7 +866,8 @@ const startMic = async () => {
   } catch (e) {
     running = false;
     micStartBtn.disabled = false;
-    setNote(micNote, "mic.start_failed", { error: errText(e) }, true);
+    console.warn("Qorğan: the microphone could not start:", e); // the detail is for support, not the citizen
+    setNote(micNote, "mic.start_failed", null, true);
     stopTracks();
   }
 };

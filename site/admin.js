@@ -127,22 +127,109 @@
 
   const locale = () => document.querySelector('input[name="adm-loc"]:checked')?.value || "ru";
 
+  // Model content in the page language: full tactic names and the reason template come from the
+  // shared model config (the citizen page and try.js read the same file). Until it has loaded, or
+  // if it cannot, the API's own short names stand.
+  let modelConfig = null;
+  fetch("/core/qorgan-config.json")
+    .then((res) => (res.ok ? res.json() : null))
+    .then((body) => { modelConfig = body; })
+    .catch(() => { /* keep the API's names */ });
+  const tacticName = (id, fallback) =>
+    modelConfig?.taxonomy?.tactics?.find((t) => t.id === id)?.names?.[locale()] || fallback;
+  // Before a case is opened, the templated reason can end in an empty phrase clause
+  // ("… Trigger phrases from the call: —."). Only that clause is dropped; the withheld note under
+  // the reason says why there is nothing to quote yet.
+  const reasonText = (reason) => {
+    const t = modelConfig?.templates?.[locale()];
+    const tail = t?.reason_template?.split("{tags}")[1];
+    if (!tail || !t.spans_placeholder) return reason;
+    const empty = tail.slice(1).replace("{spans}", t.spans_placeholder);
+    return reason.endsWith(empty) ? reason.slice(0, -empty.length) : reason;
+  };
+  // Names that are raw ids (seeded families such as "bank_security") are set in mono, as ids.
+  const idLike = (name) => /^[a-z0-9_]+$/.test(name || "");
+
   const showEmpty = (target, html) => {
     target.className = "data-empty";
     target.innerHTML = html;
   };
 
-  // Offset-based span highlighting (spans are validated verbatim server-side).
+  // Offset-based span highlighting (spans are validated verbatim server-side). Trigger phrases
+  // come in two sizes: whole utterances the model weighed most, and verbatim cue phrases (hard
+  // signals) inside or beside them. As on the citizen page, an utterance gets the neutral wash
+  // (<mark>) and a cue phrase the red mark with its marker number (data-kind="cue" data-n);
+  // numbers follow reading order. Partial overlaps are skipped.
+  const spanLayout = (text, spans) => {
+    const isLine = (s) =>
+      (s.start === 0 || text[s.start - 1] === "\n") && (s.end === text.length || text[s.end] === "\n");
+    const outer = [];
+    for (const s of [...spans].sort((a, b) => a.start - b.start || b.end - a.end)) {
+      if (s.start < 0 || s.end > text.length || s.end <= s.start) continue;
+      const last = outer[outer.length - 1];
+      if (last && s.start < last.end) {
+        const prev = last.inner[last.inner.length - 1];
+        if (s.end <= last.end && (!prev || s.start >= prev.end)) last.inner.push({ ...s });
+        continue;
+      }
+      outer.push({ ...s, inner: [] });
+    }
+    let n = 0;
+    for (const o of outer) {
+      o.wash = o.inner.length > 0 || isLine(o);
+      if (!o.wash) o.n = ++n;
+      for (const c of o.inner) c.n = ++n;
+    }
+    return outer;
+  };
+  const cueMark = (text, s) => `<mark data-kind="cue" data-n="${s.n}">${esc(text.slice(s.start, s.end))}</mark>`;
   const highlightSpans = (text, spans) => {
-    const sorted = [...spans].sort((a, b) => a.start - b.start);
     let html = "";
     let cur = 0;
-    for (const s of sorted) {
-      if (s.start < cur || s.end > text.length) continue;
-      html += esc(text.slice(cur, s.start)) + "<mark>" + esc(text.slice(s.start, s.end)) + "</mark>";
-      cur = s.end;
+    for (const o of spanLayout(text, spans)) {
+      html += esc(text.slice(cur, o.start));
+      if (o.wash) {
+        let at = o.start;
+        html += "<mark>";
+        for (const c of o.inner) {
+          html += esc(text.slice(at, c.start)) + cueMark(text, c);
+          at = c.end;
+        }
+        html += esc(text.slice(at, o.end)) + "</mark>";
+      } else {
+        html += cueMark(text, o);
+      }
+      cur = o.end;
     }
     return html + esc(text.slice(cur));
+  };
+  // The phrase list under an excerpt: the numbered cue phrases only, with the same numbers (the
+  // shaded lines are already in the excerpt above it).
+  const spanList = (text, spans) =>
+    spanLayout(text, spans)
+      .flatMap((o) => [o, ...o.inner])
+      .filter((s) => s.n)
+      .map((s) => cueMark(text, s))
+      .join(" ");
+
+  // A transcript as numbered utterance lines: the shared transcript sheet (.q-transcript >
+  // .q-line). The input is esc() / highlightSpans() output, whose only tags are <mark …> and
+  // </mark>: marks still open at a line break are closed there and reopened, unnumbered, on the
+  // next line.
+  const asLines = (html) => {
+    const open = [];
+    return html
+      .split("\n")
+      .map((segment) => {
+        const head = open.map((tag) => tag.replace(/ data-n="\d+"/, "")).join("");
+        for (const [tag] of segment.matchAll(/<mark[^>]*>|<\/mark>/g)) {
+          if (tag === "</mark>") open.pop();
+          else open.push(tag);
+        }
+        if (!segment.trim()) return "";
+        return `<div class="q-line">${head}${segment}${"</mark>".repeat(open.length)}</div>`;
+      })
+      .join("");
   };
 
   const sortedBy = (items, columns, sort) => {
@@ -195,10 +282,11 @@
 
   // ── KPI row + novel banner ───────────────────────────────────────────────────
 
+  // data-kpi / data-value let the sheet mark a non-zero "new schemes" (red) or "pending reports".
   const renderKpis = (kpis) => {
     kpisEl.innerHTML = KPI_LABELS.map(
       ([key, label]) =>
-        `<div class="kpi-card"><div class="kpi-value">${esc(kpis[key])}</div>` +
+        `<div class="kpi-card" data-kpi="${key}" data-value="${esc(kpis[key])}"><div class="kpi-value">${esc(kpis[key])}</div>` +
         `<div class="kpi-label">${esc(label)}</div></div>`
     ).join("");
   };
@@ -253,9 +341,10 @@
     const rows = visible
       .map(
         (o) => `<tr data-org="${esc(o.id)}" class="${o.id === selectedId ? "is-selected" : ""}">` +
-          `<td><button type="button" class="adm-rowbtn" data-open-org="${esc(o.id)}">${esc(o.name)}</button>` +
-          `${o.is_novel ? '<span class="queue-badge">NEW</span>' : ""}${feedbackBadge(o.feedback)}</td>` +
-          `<td>${o.priority.toFixed(2)}</td>` +
+          `<td><button type="button" class="adm-rowbtn${idLike(o.name) ? " is-id" : ""}" data-open-org="${esc(o.id)}">${esc(o.name)}</button>` +
+          `${o.is_novel ? '<span class="queue-badge">NEW</span>' : ""}${feedbackBadge(o.feedback)}` +
+          `<span class="queue-id">${esc(o.id)}</span></td>` +
+          `<td><span class="queue-prio" style="--p:${(o.priority * 100).toFixed(1)}%" aria-hidden="true"></span>${o.priority.toFixed(2)}</td>` +
           `<td>${o.incidents}</td>` +
           `<td>${o.numbers.length}</td>` +
           `<td>${esc(o.last_activity || "—")}</td></tr>`
@@ -311,17 +400,37 @@
 
   const renderDrilldown = () => {
     const badge = detail.is_novel ? '<span class="queue-badge">NEW SCHEME</span>' : "";
+    const summary = orgs.find((o) => o.id === detail.id); // the queue row: incidents, last activity
+    // The sheet's title block: the organization's facts, one cell each.
+    const fact = (label, value) =>
+      `<div class="dd-fact"><span class="dd-fact-label">${label}</span><span class="dd-fact-value">${value}</span></div>`;
+    const facts =
+      fact("priority", detail.priority.toFixed(2)) +
+      (summary ? fact("incidents", summary.incidents) : "") +
+      fact("linked numbers", detail.numbers.length) +
+      (summary ? fact("last activity", esc(summary.last_activity || "—")) : "");
+    // The number graph, drawn: the organization node, a trunk, one branch per linked number
+    // (HMAC digests; the raw numbers are never stored).
     const numbers = detail.numbers.length
-      ? detail.numbers.map((n) => `<span class="tw-tag">${esc(n)}</span>`).join("")
-      : '<span class="tw-dim">none linked</span>';
+      ? `<div class="dd-graph"><div class="dd-graph-org"><b>${esc(detail.id)}</b>` +
+        (summary ? `<span>${summary.incidents} incidents</span>` : "") +
+        `</div><div class="dd-chips dd-graph-numbers">` +
+        detail.numbers.map((n) => `<span class="tw-tag">${esc(n)}</span>`).join("") +
+        `</div></div>`
+      : '<div class="dd-chips"><span class="tw-dim dd-empty">No linked number: these reports came without a caller number.</span></div>';
+    // The tactic profile as dimensioned rows: count, and a bar against the most frequent tactic.
+    const maxCount = Math.max(...detail.tactics.map((t) => t.count), 1);
     const tactics = detail.tactics.length
-      ? detail.tactics
-          .map((t) => `<span class="tw-tag" lang="${locale()}">${esc(t.name)}&nbsp;&middot;&nbsp;${t.count}</span>`)
-          .join("")
-      : '<span class="tw-dim">none</span>';
+      ? `<div class="dd-chips dd-profile">` +
+        detail.tactics
+          .map((t) => `<span class="tw-tag" style="--w:${((t.count / maxCount) * 100).toFixed(0)}%">` +
+            `<span class="dd-tactic" lang="${locale()}">${esc(tacticName(t.id, t.name))}</span><span class="dd-count">${t.count}</span></span>`)
+          .join("") +
+        `</div>`
+      : '<div class="dd-chips"><span class="tw-dim dd-empty">No tactic profile yet: none of these reports carry tactic tags. Select a call below to score it with the model.</span></div>';
     const script = detail.representative_script
-      ? `<div class="dd-section-label mono">representative script</div>` +
-        `<div class="dd-script">${esc(detail.representative_script)}</div>`
+      ? `<div class="dd-block"><div class="dd-section-label mono">representative script</div>` +
+        `<div class="dd-script q-transcript">${asLines(esc(detail.representative_script))}</div></div>`
       : "";
 
     const others = orgs.filter((o) => o.id !== detail.id);
@@ -341,19 +450,21 @@
     modalTitle.textContent = `organization · ${detail.id}`;
     modalDot.className = `p-dot${detail.is_novel ? "" : " tone-moss"}`;
     ddEl.innerHTML =
-      `<div class="dd-title">${esc(detail.name)} ${badge}${feedbackBadge(detail.feedback)}</div>` +
-      `<div class="dd-meta mono">priority ${detail.priority.toFixed(2)}</div>` +
+      `<div class="dd-head"><div class="dd-title${idLike(detail.name) ? " is-id" : ""}">${esc(detail.name)} ${badge}${feedbackBadge(detail.feedback)}</div>` +
+      `<div class="dd-meta mono">${facts}</div></div>` +
       feedback +
-      `<div class="dd-section-label mono">linked numbers</div><div class="dd-chips">${numbers}</div>` +
-      `<div class="dd-section-label mono">tactic profile</div><div class="dd-chips">${tactics}</div>` +
+      `<div class="dd-pair">` +
+      `<div class="dd-block dd-graph-block"><div class="dd-section-label mono">linked numbers</div>${numbers}</div>` +
+      `<div class="dd-block"><div class="dd-section-label mono">tactic profile</div>${tactics}</div>` +
+      `</div>` +
       script +
-      `<div class="dd-section-label mono">calls</div>` +
+      `<div class="dd-block"><div class="dd-section-label mono">calls</div>` +
       `<div class="dd-call-tools mono">` +
       `<input id="ddCallSearch" class="dd-call-search" type="search" ` +
-      `placeholder="search excerpt or number…" aria-label="Search calls" value="${esc(callQuery)}">` +
+      `placeholder="Search excerpt, date or number" aria-label="Search calls" value="${esc(callQuery)}">` +
       `<span class="dd-call-note" id="ddCallNote"></span>` +
       `</div>` +
-      `<div id="ddCalls"></div>`;
+      `<div id="ddCalls"></div></div>`;
     ddEl.querySelectorAll("button[data-fb]").forEach((btn) => {
       btn.addEventListener("click", () => sendFeedback(detail.id, btn.dataset.fb));
     });
@@ -382,7 +493,7 @@
     if (!cached) {
       inner = `<div class="dd-loading">scoring with the model&hellip;</div>`;
     } else if (cached.error) {
-      inner = `<div class="dd-loading">could not analyze — ${esc(cached.error)}</div>`;
+      inner = `<div class="dd-loading is-error">could not analyze — ${esc(cached.error)}. Select the call again to retry.</div>`;
     } else {
       const a = cached;
       const maxWeight = Math.max(...a.tags.map((t) => t.weight), 0.0001);
@@ -390,7 +501,7 @@
         ? a.tags
             .map(
               (t) =>
-                `<div class="ec-row dd-rank-row"><span class="ec-name" lang="${locale()}">${esc(t.name)}</span>` +
+                `<div class="ec-row dd-rank-row"><span class="ec-name" lang="${locale()}">${esc(tacticName(t.id, t.name))}</span>` +
                 `<span class="ec-bar"><i style="--w:${((t.weight / maxWeight) * 100).toFixed(0)}%"></i></span>` +
                 `<span class="ec-val">${t.weight.toFixed(2)}</span></div>`
             )
@@ -399,23 +510,41 @@
       const verdict = a.flagged
         ? '<span class="tone-oxide">"scam_risk"</span>'
         : '<span class="tone-moss">"clear"</span>';
+      // The risk drawn on a 0–1 scale with the alert threshold (the readout above has the values).
+      const pct = (v) => `${(Math.min(Math.max(v, 0), 1) * 100).toFixed(1)}%`;
+      const scale =
+        `<div class="dd-riskscale${a.flagged ? " is-flagged" : ""}" style="--risk:${pct(a.risk)};--thr:${pct(a.threshold)}" aria-hidden="true">` +
+        `<span class="dd-rs-end">0</span><span class="dd-rs-thr">${a.threshold.toFixed(2)}</span><span class="dd-rs-end is-max">1</span></div>`;
+      // A key for the marks in the text below: which kinds it actually shows.
+      const marks = spanLayout(a.transcript || a.excerpt, a.spans);
+      const hasWash = marks.some((o) => o.wash);
+      const hasCue = marks.some((o) => o.n || o.inner.length);
+      const key = hasWash || hasCue
+        ? `<p class="dd-key">${hasWash ? '<span class="dd-key-wash">shaded: the lines the model weighed most</span>' : ""}` +
+          `${hasCue ? '<span class="dd-key-cue">numbered: exact cue phrases</span>' : ""}</p>`
+        : "";
+      const cues = a.transcript ? "" : spanList(a.excerpt, a.spans);
       inner =
         `<div class="dd-analysis-head mono">model verdict ${verdict}` +
         `&nbsp;&middot;&nbsp;risk ${a.risk.toFixed(2)} / threshold ${a.threshold.toFixed(2)}` +
         `&nbsp;&middot;&nbsp;backend ${esc(a.backend)}${a.fallback ? " (fallback)" : ""}</div>` +
+        scale +
         `<div class="dd-rank">${rank}</div>` +
+        `<p class="dd-analysis-reason">${esc(reasonText(a.reason))}</p>` +
+        (!a.transcript && a.withheld_spans
+          ? `<p class="dd-withheld mono">${a.withheld_spans} more trigger phrase${a.withheld_spans > 1 ? "s" : ""} beyond the excerpt &mdash; counted, not quoted, until the case is opened</p>`
+          : "") +
         (a.transcript
           ? `<div class="dd-section-label mono">full transcript &middot; trigger phrases &middot; ` +
             `<span class="tone-moss">opened by ${esc(a.opened_by || "")} &middot; ${esc(a.opened_for || "")} &middot; logged</span></div>` +
-            `<div class="dd-script dd-analysis-script">${highlightSpans(a.transcript, a.spans)}</div>`
+            `<div class="dd-script dd-analysis-script q-transcript">${asLines(highlightSpans(a.transcript, a.spans))}</div>` +
+            key
           : `<div class="dd-section-label mono">excerpt &middot; trigger phrases</div>` +
-            `<div class="dd-script dd-analysis-script">${esc(a.excerpt)}</div>` +
-            `<div class="dd-spans">${a.spans.map((sp) => `<mark>${esc(sp.text)}</mark>`).join(" ") || '<span class="tw-dim">no trigger phrases in the excerpt</span>'}</div>` +
-            (a.withheld_spans
-              ? `<p class="dd-withheld mono">${a.withheld_spans} more trigger phrase${a.withheld_spans > 1 ? "s" : ""} beyond the excerpt &mdash; counted, not quoted, until the case is opened</p>`
-              : "") +
+            `<div class="dd-script dd-analysis-script q-transcript">${asLines(highlightSpans(a.excerpt, a.spans))}</div>` +
+            key +
+            (cues ? `<div class="dd-spans">${cues}</div>` : "") +
+            (marks.length ? "" : '<div class="dd-spans"><span class="tw-dim">no trigger phrases in the excerpt</span></div>') +
             openControls(a.incident_id)) +
-        `<p class="dd-analysis-reason">${esc(a.reason)}</p>` +
         `<p class="dd-analysis-caveat mono">${esc(a.caveat)}</p>`;
     }
     return `<tr class="dd-analysis-tr"><td colspan="4"><div class="dd-analysis">${inner}</div></td></tr>`;
@@ -457,11 +586,14 @@
     if (!callsEl) return;
     const total = detail.sample_incidents.length;
     const visible = visibleCalls();
+    // The drill-down lists at most the first 60 member calls: say so when the queue counts more.
+    const orgTotal = orgs.find((o) => o.id === detail.id)?.incidents || total;
+    const listed = orgTotal > total ? `${total} of ${orgTotal} calls listed` : `${total} calls`;
     noteEl.textContent =
-      (visible.length === total ? `${total} calls` : `${visible.length} of ${total} calls`) +
+      (visible.length === total ? listed : `${visible.length} match · ${listed}`) +
       " · select a call for the model analysis";
     if (!visible.length) {
-      callsEl.innerHTML = '<p class="tw-dim mono">no calls match</p>';
+      callsEl.innerHTML = '<p class="data-empty">No calls match — clear the call search.</p>';
       return;
     }
     const focused = focusedControl(callsEl);
@@ -474,7 +606,7 @@
           `<tr data-incident="${esc(c.id)}" data-has-transcript="${c.has_transcript === false ? "0" : "1"}" class="${expanded ? "is-expanded" : ""}">` +
           `<td>${c.has_transcript === false ? date : `<button type="button" class="adm-rowbtn" data-expand="${esc(c.id)}" aria-expanded="${expanded}">${date}</button>`}</td>` +
           `<td>${esc(c.number || "—")}</td>` +
-          `<td>${(c.risk * 100).toFixed(0)}%</td><td>${c.has_transcript === false ? '<span class="tw-dim">signals only — partner report without a transcript</span>' : esc(c.excerpt)}</td></tr>` +
+          `<td>${c.risk.toFixed(2)}</td><td>${c.has_transcript === false ? '<span class="tw-dim">signals only — partner report without a transcript</span>' : `<span class="dd-excerpt">${esc(c.excerpt)}</span>`}</td></tr>` +
           (expanded ? analysisBlock(c.id) : "")
         );
       })
@@ -582,7 +714,7 @@
       selectOrg(shown.id);
     } catch (e) {
       if (e instanceof AuthError) return;
-      ddEl.insertAdjacentHTML("afterbegin", `<div class="dd-loading">feedback failed — ${esc(e.message || e)}</div>`);
+      ddEl.insertAdjacentHTML("afterbegin", `<div class="dd-loading is-error">The verdict was not saved — ${esc(e.message || e)}. Try again.</div>`);
     }
   };
 
@@ -610,7 +742,7 @@
     } catch (e) {
       if (e instanceof AuthError) return;
       ddEl.innerHTML =
-        `<div class="dd-loading">Could not load this organization — ${esc(e.message || e)}</div>`;
+        `<div class="dd-loading is-error">Could not load this organization — ${esc(e.message || e)}. Close this sheet and select it again.</div>`;
     }
   };
 
@@ -775,7 +907,7 @@
   const runIngest = async () => {
     if (!ingestBtn) return;
     ingestBtn.disabled = true;
-    ingestBtn.textContent = "ingesting…";
+    ingestBtn.textContent = "Ingesting…";
     ingestNote.className = "adm-note";
     ingestNote.textContent = "embedding new reports…";
     try {
@@ -798,7 +930,7 @@
       ingestNote.textContent = `ingest failed — ${e.message || e}`;
     } finally {
       ingestBtn.disabled = false;
-      ingestBtn.textContent = "ingest reports";
+      ingestBtn.textContent = "Ingest reports";
     }
   };
 

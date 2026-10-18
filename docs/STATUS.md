@@ -1,10 +1,21 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: **2026-10-12**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
+_Last updated: **2026-10-18**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
 day (what is shipped, the honest numbers, the strategy, who does what). Then read this file
-(the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D68) and `docs/eval_report.md`
+(the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D69) and `docs/eval_report.md`
 (numbers, with intervals). The July sprint log below is kept as history._
 
+- **2026-10-18 — UI refresh (ADR D69), branch `design/ui-refresh`.** All three pages are redesigned with one
+  "call drawn as a blueprint" system, modelled on heronaiapp.com.
+  - **Look:** drafting-paper canvas, hairline cells, IBM Plex Sans/Mono (Kazakh glyphs verified), red only
+    for the model's alarm, no green "safe" state.
+  - **Landing:** РИС. 1 is the demo call drawn from real v1 output (98/100 scam, 26/100 real bank call).
+  - **Citizen page:** a sticky gauge keeps the score, verdict and advice in view on phones, and the report
+    form is GOV.UK-style.
+  - **Admin:** a dense sheet layout with one language control.
+  - **Gates:** npm 146/146, pytest 48; e2e live/report/voice pass. The only failures are the two stale
+    assertions that already failed before the redesign (D69).
+  - **Open:** native review of the new kk strings, and ru/kk for the admin UI.
 - **2026-10-12 — v2 not shipped; v1 stays.** The taxonomy-v2 retrain improved `shift_local`
   recall 0.548 → 0.661 at equal FPR (3/64) but added 5 held-out false alarms (test 2/60, ood
   3/74). Two of them are ordinary family money requests, which failed the user's pre-stated

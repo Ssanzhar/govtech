@@ -1,289 +1,580 @@
-/* Qorğan analyst console — page-specific rules only, loaded after styles.css. */
+/* Qorğan analyst console: page rules on top of styles.css (the shared blueprint system).
+   Analysts read dense data, so the type steps down (body 15 px) on the same tokens. Red stays the
+   model's alarm: a new scheme, a flagged verdict, a verbatim cue phrase. The one exception is this
+   page's single red action, the sign-in button. No green, no amber: confirmed, ingested and clear
+   are ink.
 
-.adm-hero{padding-top:clamp(3rem,7vh,5.5rem)}
-.adm-toolbar{display:flex;align-items:center;gap:.9rem;margin-top:1.8rem}
-.adm-toolbar-label{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
-.adm-toolbar .tw-loc{margin-left:0}
-.adm-toolbar .tw-chip,.adm-queue-tools .tw-chip{color:var(--ink-soft);border-color:var(--hairline)}
-.adm-toolbar .tw-chip:hover,.adm-queue-tools .tw-chip:hover{color:var(--ink);border-color:var(--ink-soft)}
-.adm-toolbar .tw-radio:has(input:checked),
-.adm-queue-tools .tw-radio:has(input:checked){color:var(--oxide);border-color:var(--oxide)}
+   Contents: 1 density · 2 title row · 3 sign-in sheet · 4 session + toolbar · 5 notes, empty and
+   loading states · 6 KPI row + new-scheme strip · 7 board: queue + statistics · 8 priority queue
+   table · 9 statistics · 10 the drill-down sheet (modal) · 11 number graph + tactic profile ·
+   12 calls table + call analysis · 13 audited actions · 14 responsive. */
 
-/* ── queue tools: search + filter ── */
-.adm-queue-tools{display:flex;align-items:center;gap:.9rem;flex-wrap:wrap;margin:1.2rem 0 .2rem}
-.adm-search{
-  font-family:var(--mono);font-size:.78rem;padding:.5rem .9rem;border-radius:999px;
-  border:1px solid var(--hairline);background:var(--paper);color:var(--ink);min-width:15rem;
+/* ── 1. density ──────────────────────────────────────────────────────────────────────────── */
+:root{
+  --fs-body:.9375rem;                           /* 15 px analyst body */
+  --fs-small:.875rem;                           /* 14 */
+  --fs-h1:clamp(2rem,1.3rem + 1.9vw,3.25rem);   /* 32 → 52: the console's statement */
+  --cell-pad:clamp(16px,1.5vw,24px);
+  /* "logged": a ledger glyph on every audited action (ink square, three paper rules) */
+  --ledger:
+    linear-gradient(var(--paper),var(--paper)) 3px 4px/8px 1px no-repeat,
+    linear-gradient(var(--paper),var(--paper)) 3px 7px/8px 1px no-repeat,
+    linear-gradient(var(--paper),var(--paper)) 3px 10px/5px 1px no-repeat,
+    var(--ink);
 }
-.adm-search::placeholder{color:var(--ink-soft)}
 
-/* ── sortable table headers: a real button fills each sortable header ── */
-th.sortable{cursor:pointer;user-select:none}
-.adm-sortbtn{
-  all:unset;cursor:pointer;display:inline-flex;align-items:center;
-  font:inherit;letter-spacing:inherit;color:inherit;text-transform:inherit;
+/* shared small pieces of the console's voice */
+.adm-h2{
+  font:var(--w-heading) var(--fs-h4)/1.05 var(--sans);font-stretch:var(--wdth-heading);
+  letter-spacing:var(--tr-h3);text-transform:uppercase;color:var(--ink);
 }
-.adm-sortbtn:focus-visible{outline:2px solid var(--oxide);outline-offset:3px;border-radius:3px}
-.queue-table th.sortable:hover{color:var(--ink)}
-.dd-samples th.sortable:hover{color:var(--paper)}
-.sort-ind{margin-left:.3rem;font-size:.6rem;opacity:0;transition:opacity .12s ease}
-th.sortable:hover .sort-ind,.adm-sortbtn:focus-visible .sort-ind{opacity:.5}
-th.is-sorted .sort-ind{opacity:1}
+.adm-btn-sm{min-height:40px;padding:0 16px;font-size:.875rem}
+.adm-seg .tw-radio{min-height:36px;padding:0 12px;font:var(--w-ui) var(--fs-readout)/1 var(--mono);letter-spacing:.06em;text-transform:uppercase}
 
-/* ── row buttons: the organization name / call date is the keyboard target of its row ── */
-.adm-rowbtn{
-  all:unset;cursor:pointer;font:inherit;color:inherit;
-  text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 35%,transparent);
-  text-underline-offset:.2em;
+/* ── 2. title row: the statement | the sign-in sheet, or the session and its controls ───────── */
+.adm-head{border-top:0}                       /* the header's rule is this row's rule; the crosses sit on it */
+.adm-head-title{
+  grid-column:span 7;display:flex;flex-direction:column;justify-content:flex-start;gap:var(--s-4);
+  padding-top:clamp(28px,4vw,56px);
 }
-.adm-rowbtn:hover{text-decoration-color:currentColor}
-.adm-rowbtn:focus-visible{outline:2px solid var(--oxide);outline-offset:3px;border-radius:3px}
-/* the queue and the calls keep readable columns and scroll inside their box on a phone */
-.queue-table{min-width:34rem}
-.dd-samples{min-width:30rem}
-.adm-note{font-size:.76rem;color:var(--ink-soft);line-height:1.5}
-.adm-note.is-success{color:var(--moss)}
-.adm-note.is-error{color:var(--oxide)}
-@media (max-width:61rem){.adm-toolbar{flex-wrap:wrap}}
+.adm-title{font-size:var(--fs-h1);line-height:.94;text-transform:uppercase;max-width:12em;text-wrap:balance}
+/* signed out, the row is the console's cover sheet: the statement grows toward display size */
+.adm-head:has(.adm-signin:not([hidden])) .adm-title{font-size:clamp(2rem,1.2rem + 4vw,5rem);line-height:.92;letter-spacing:var(--tr-display)}
+.adm-lede{max-width:38em;font-size:1.0625rem;line-height:1.5;color:var(--ink-2);text-wrap:pretty}
+/* signed in, the row is a compact sheet head: the queue starts high on the first screen */
+.adm-head:has(.adm-session:not([hidden])) > .q-cell{padding-top:18px;padding-bottom:14px}
+.adm-head:has(.adm-session:not([hidden])) .adm-head-title{gap:6px}
+.adm-head:has(.adm-session:not([hidden])) > .adm-head-title,
+.adm-head:has(.adm-session:not([hidden])) > .adm-head-side{grid-column:span 6}
+.adm-head:has(.adm-session:not([hidden])) .adm-title{font-size:var(--fs-h3);line-height:1.05;max-width:none}
+.adm-head:has(.adm-session:not([hidden])) .adm-lede{max-width:none;font-size:var(--fs-small)}
+.adm-head-side{
+  grid-column:span 5;display:grid;grid-template-columns:minmax(0,1fr) auto;align-content:start;align-items:start;
+  column-gap:var(--s-4);container-type:inline-size;
+}
+.adm-head-side > .adm-signin{grid-column:1 / -1}
+.adm-head-side:not(:has(> :not([hidden]))){display:none}   /* the first instant: nothing decided yet */
 
-/* ── KPI row ── */
-.adm-kpis{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:1.1rem;
-  margin-top:2.6rem;
+/* ── 3. sign-in: one sheet, a title bar, the key, the red action, the legend as title block ── */
+.adm-signin{width:100%}
+.adm-sheet{background:var(--sheet);border:var(--hair) solid var(--ink);border-bottom-width:var(--rule-base)}
+.adm-sheet-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);
+  min-height:36px;padding:8px 14px;background:var(--ink);color:var(--paper);
+}
+.adm-sheet-title{font:600 var(--fs-annot)/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.adm-sheet-tag{font:var(--w-ui) var(--fs-annot)/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:color-mix(in srgb,var(--paper) 74%,transparent)}
+.adm-sheet-body{display:flex;flex-direction:column;gap:8px;padding:var(--cell-pad)}
+.adm-sheet-body .q-hint{max-width:none}
+.adm-sheet-body .adm-key{margin-top:6px;font-family:var(--mono);font-size:1rem;letter-spacing:.06em}
+.adm-sheet-body .q-btn-row{margin-top:8px}
+.adm-sheet-body .adm-note:not(:empty){margin-top:6px}
+.adm-legend{border-top:var(--hair) solid var(--ink)}
+.adm-legend-row{display:grid;grid-template-columns:6rem minmax(0,1fr);gap:var(--s-4);padding:12px var(--cell-pad)}
+.adm-legend-row + .adm-legend-row{border-top:var(--hair) dashed var(--construction)}
+.adm-legend dt{padding-top:2px}
+.adm-legend dt{color:var(--ink)}
+.adm-legend dd{font-size:var(--fs-small);line-height:1.5;color:var(--ink-2)}
+@container (max-width:24rem){
+  .adm-legend-row{grid-template-columns:minmax(0,1fr);gap:6px}
+}
+@container (max-width:26rem){                     /* a narrow side cell: the buttons go under the session */
+  .adm-session,.adm-tool{grid-column:1 / -1}
+  .adm-tool{grid-row:auto;margin-top:10px}
+}
+
+/* ── 4. session + toolbar ────────────────────────────────────────────────────────────────── */
+.adm-session{grid-column:1;grid-row:1;display:flex;flex-wrap:wrap;align-items:flex-start;gap:var(--s-2) var(--s-3);min-width:0}
+.adm-who{flex:1 1 14rem;min-width:0;font-size:var(--fs-small);line-height:1.6;color:var(--ink-2)}
+.adm-who b{font:600 var(--fs-readout)/1 var(--mono);color:var(--ink)}
+.adm-role{
+  display:inline-block;margin-left:6px;padding:3px 7px 2px;vertical-align:1px;
+  font:600 var(--fs-annot)/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink);border:var(--hair) solid var(--ink);
+}
+.adm-who-note{display:block;margin-top:2px;font-size:.8125rem;line-height:1.5;color:var(--ink-3)}
+.adm-toolbar{display:contents}                   /* its parts join the side cell's grid */
+.adm-tool{grid-column:2;grid-row:1;display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-2)}
+/* D-5: one language control (the header); this says what it changes */
+.adm-langnote{grid-column:1 / -1;margin-top:8px;font:var(--w-body) .8125rem/1.5 var(--sans);color:var(--ink-2)}
+/* the ingest result: a system toast, anchored under the button that caused it */
+.adm-toolbar .adm-note{grid-column:1 / -1}
+.adm-toolbar .adm-note:not(:empty){
+  margin-top:8px;padding:9px 12px;background:var(--sheet);
+  border:var(--hair) solid var(--ink);border-bottom-width:var(--rule-base);
+}
+
+/* ── 5. notes, empty and loading states ──────────────────────────────────────────────────── */
+.adm-note{display:flex;gap:10px;align-items:baseline;font:var(--w-body) var(--fs-small)/1.5 var(--sans);color:var(--ink-2)}
+.adm-note:not(:empty)::before{content:"";flex:0 0 auto;width:7px;height:7px;background:var(--ink-3);transform:translateY(-2px)}
+.adm-note.is-error{color:var(--ink);font-weight:var(--w-strong)}
+.adm-note.is-success{color:var(--ink)}
+.adm-note.is-success:not(:empty)::before{width:16px;height:16px;background:var(--ink) var(--tick) center/12px no-repeat;transform:translateY(3px)}
+/* errors are ink, never red: a failed request is not a scam alarm */
+.adm-note.is-error:not(:empty)::before,.dd-loading.is-error::before,.dd-open-msg.is-error::before{
+  content:"!";display:inline-grid;place-items:center;flex:0 0 auto;width:18px;height:18px;
+  background:var(--ink);color:var(--paper);font:700 .75rem/1 var(--mono);transform:none;
+}
+/* "nothing here": the drafting symbol for a void (a box with its diagonals), then what to do */
+.adm-board .data-empty,.adm-modal .data-empty{position:relative;min-height:84px;padding:20px 20px 20px 84px}
+.adm-board .data-empty::before,.adm-modal .data-empty::before{
+  content:"";position:absolute;left:20px;top:20px;width:44px;height:44px;border:var(--hair) solid var(--ink-2);
+  background:
+    linear-gradient(to top right,transparent calc(50% - .7px),var(--ink-2) calc(50% - .7px) calc(50% + .7px),transparent calc(50% + .7px)),
+    linear-gradient(to bottom right,transparent calc(50% - .7px),var(--ink-2) calc(50% - .7px) calc(50% + .7px),transparent calc(50% + .7px));
+}
+.adm-modal .data-empty{min-height:64px;padding:12px 12px 12px 64px}
+.adm-modal .data-empty::before{left:12px;top:12px;width:36px;height:36px}
+/* waiting on the server: a short bar that draws itself (static under reduced motion) */
+.dd-loading{display:flex;gap:10px;align-items:center;padding:12px 14px;font:var(--w-body) var(--fs-small)/1.5 var(--sans);color:var(--ink-2)}
+.dd-loading:not(.is-error)::before{
+  content:"";flex:0 0 36px;height:8px;border:var(--hair) solid var(--ink);
+  background:linear-gradient(var(--ink),var(--ink)) 0 0/0% 100% no-repeat;animation:adm-draw 1.2s var(--ease-draw) infinite;
+}
+@keyframes adm-draw{to{background-size:100% 100%}}
+@media (prefers-reduced-motion:reduce){ .dd-loading:not(.is-error)::before{animation:none;background-size:50% 100%} }
+.dd-loading.is-error{align-items:baseline;font:var(--w-strong) var(--fs-small)/1.5 var(--sans);color:var(--ink)}
+
+/* ── 6. KPI row (mono numerals, label above) + the new-scheme strip ──────────────────────── */
+.adm-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.adm-kpis:empty{display:none}
+.adm-kpis[aria-busy="true"]:empty{                  /* first load: the row is drawn, the values are not */
+  display:block;min-height:80px;
+  background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--construction) 55%,transparent) 0 1px,transparent 1px 8px);
 }
 .kpi-card{
-  border:1px solid var(--hairline);border-radius:10px;background:#FAF8F2;
-  padding:1.2rem 1.3rem;box-shadow:0 20px 50px -34px rgba(24,20,16,.25);
+  position:relative;display:flex;flex-direction:column-reverse;justify-content:space-between;gap:8px;
+  min-width:0;padding:8px var(--cell-pad) 10px;
 }
-.kpi-value{font-family:var(--serif);font-size:2.1rem;font-weight:560;letter-spacing:-.01em}
-.kpi-label{
-  font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;
-  color:var(--ink-soft);margin-top:.35rem;text-transform:uppercase;
+.kpi-card + .kpi-card{border-left:var(--hair) solid var(--construction)}
+.kpi-label{padding-right:22px;font:var(--w-ui) var(--fs-annot)/1.35 var(--mono);letter-spacing:var(--tr-annot);text-transform:uppercase;color:var(--ink-3)}
+.kpi-value{font:500 2.25rem/.9 var(--mono);letter-spacing:-.04em;color:var(--ink);font-variant-numeric:tabular-nums}
+/* a mark only when it means something: a new scheme to review (red), reports waiting to be ingested (ink) */
+.kpi-card[data-kpi="novel_schemes"]:not([data-value="0"])::after,
+.kpi-card[data-kpi="pending_reports"]:not([data-value="0"])::after{
+  content:"";position:absolute;top:10px;right:var(--cell-pad);width:10px;height:10px;background:var(--ink);
 }
+.kpi-card[data-kpi="novel_schemes"]:not([data-value="0"])::after{background:var(--signal)}
+.adm-novel:not(:empty){border-top:var(--hair) solid var(--construction);padding:var(--s-4) var(--cell-pad)}
+.novel-banner{display:flex;flex-wrap:wrap;align-items:stretch;background:var(--sheet);border:var(--hair) solid var(--ink);border-bottom-width:var(--rule-base)}
+.novel-banner b{
+  display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--ink);color:var(--paper);
+  font:600 var(--fs-annot)/1.3 var(--mono);letter-spacing:.08em;
+}
+.novel-banner b::before{content:"";flex:0 0 auto;width:10px;height:10px;background:var(--signal)}
+.novel-banner ul{display:flex;flex-wrap:wrap;align-items:center;gap:6px 28px;padding:8px 14px;list-style:none;font:var(--w-ui) var(--fs-readout)/1.4 var(--mono);color:var(--ink)}
 
-/* ── new-scheme banner ── */
-.novel-banner{
-  margin-top:2.2rem;border:1px solid color-mix(in srgb,var(--oxide) 45%,var(--hairline));
-  border-radius:10px;background:color-mix(in srgb,var(--oxide) 6%,#FAF8F2);
-  padding:1.1rem 1.3rem;font-size:.86rem;color:var(--ink);
-}
-.novel-banner b{color:var(--oxide);letter-spacing:.05em}
-.novel-banner ul{list-style:none;margin-top:.6rem;display:flex;flex-direction:column;gap:.4rem}
+/* ── 7. board: the priority queue (8 columns) beside the statistics (4) ───────────────────── */
+.adm-board > .q-cell{padding-top:var(--s-4)}
+.adm-queue{grid-column:span 8}
+.adm-stats{grid-column:span 4;display:flex;flex-direction:column;gap:var(--s-3)}
+.adm-board:has(> .adm-stats[hidden]) > .adm-queue{grid-column:1 / -1}
+.adm-queue-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--s-2) var(--s-5);margin-bottom:var(--s-3)}
+/* D-3: the last row before the footer runs down to its rule; the space under the content is the
+   cells' own padding, never a margin between rows */
+.adm-main{display:flex;flex-direction:column}
+.adm-console{display:flex;flex-direction:column;flex:1 0 auto}
+.adm-console > .adm-board{flex:1 0 auto}
+.adm-main:has(> .adm-console[hidden]) > .adm-head{flex:1 0 auto}
+.adm-main:has(> .adm-console[hidden]) > .adm-head > .q-cell,
+.adm-board > .q-cell{padding-bottom:calc(var(--cell-pad) + var(--section-y))}
+.adm-queue-tools{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-2) var(--s-3)}
+.adm-search{width:clamp(16rem,22vw,20rem);min-height:40px;padding:8px 12px;font:var(--w-body) var(--fs-small)/1.4 var(--sans)}
+.adm-queue-tools .adm-seg .tw-radio{font:var(--w-ui) var(--fs-small)/1 var(--sans);letter-spacing:0;text-transform:none}
+.adm-count{font:var(--w-ui) var(--fs-readout)/1.4 var(--mono);color:var(--ink-2)}
 
-/* ── priority queue table (extends .eval-table) ── */
-.queue-table{max-width:none;width:100%}
-.queue-table tbody tr{cursor:pointer;transition:background .12s ease}
-.queue-table tbody tr:hover{background:color-mix(in srgb,var(--amber) 12%,transparent)}
-.queue-table tbody tr.is-selected{background:color-mix(in srgb,var(--amber) 18%,transparent)}
+/* ── 8. priority queue: a spec sheet (numbers right-aligned, ids in mono) ─────────────────── */
+.queue-table{min-width:40rem}
+.queue-table thead th{padding:9px 12px}
+.queue-table td{padding:8px 12px;vertical-align:middle;font-size:var(--fs-readout)}
+.queue-table th:not(:first-child),.queue-table td:not(:first-child){text-align:right}
+.queue-table td:first-child{white-space:normal;min-width:15rem}
+.queue-table tbody tr{cursor:pointer;transition:background-color var(--dur-fast) linear}
+.queue-table tbody tr:hover{background:color-mix(in srgb,var(--paper-2) 75%,transparent)}
+.queue-table tbody tr.is-selected{background:var(--paper-2)}
+.queue-table tbody tr.is-selected > td:first-child{box-shadow:inset 3px 0 0 var(--ink)}
+.queue-table tbody tr:has(.fb-dismissed) > td{color:var(--ink-3)}       /* dismissed: still listed, at 20 % priority */
+.queue-table .adm-rowbtn{font:var(--w-ui) var(--fs-body)/1.35 var(--sans);font-stretch:100%;color:var(--ink)}
+.queue-table tbody tr:has(.fb-dismissed) .adm-rowbtn{color:var(--ink-2)}
+.queue-id{display:inline;margin-left:10px;font:var(--w-body) var(--fs-annot)/1.3 var(--mono);letter-spacing:.02em;color:var(--ink-3);white-space:nowrap}
+.queue-table .adm-rowbtn.is-id{font:var(--w-ui) var(--fs-readout)/1.35 var(--mono)}   /* raw ids read as ids */
+/* priority drawn on its 0–1 scale beside the value */
+.queue-prio{
+  display:inline-block;width:48px;height:9px;margin-right:12px;vertical-align:-1px;
+  background:
+    linear-gradient(currentColor,currentColor) 0 50%/var(--p) 3px no-repeat,
+    linear-gradient(var(--construction),var(--construction)) 0 50%/100% 1px no-repeat,
+    linear-gradient(var(--hairline-strong),var(--hairline-strong)) 0 0/1px 100% no-repeat,
+    linear-gradient(var(--hairline-strong),var(--hairline-strong)) 100% 0/1px 100% no-repeat;
+}
+/* marks: NEW = a small red square (a scheme not seen before); analyst verdicts are ink stamps */
 .queue-badge{
-  margin-left:.4rem;font-size:.66rem;letter-spacing:.06em;color:var(--oxide);
-  border:1px solid color-mix(in srgb,var(--oxide) 50%,transparent);
-  border-radius:999px;padding:.1rem .5rem;
+  display:inline-flex;align-items:center;gap:6px;margin-left:8px;padding:2px 6px;vertical-align:1px;white-space:nowrap;
+  font:600 var(--fs-annot)/1.3 var(--mono);font-stretch:100%;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);
 }
+.queue-badge:not([class*="fb-"]){padding-left:0}
+.queue-badge:not([class*="fb-"])::before{content:"";flex:0 0 auto;width:8px;height:8px;background:var(--signal)}
+.queue-badge.fb-confirmed{background:var(--ink);color:var(--paper)}
+.queue-badge.fb-dismissed{border:var(--hair) dashed var(--ink-2);color:var(--ink-2)}
+.queue-badge.fb-merged{border:var(--hair) solid var(--ink)}
+/* sortable headers: a real button; the active column shows its direction as a drawn triangle */
+th.sortable{cursor:pointer;user-select:none}
+.adm-sortbtn{
+  all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:7px;
+  font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;
+}
+.adm-sortbtn:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.queue-table th:not(:first-child) .adm-sortbtn,.dd-samples th:nth-child(3) .adm-sortbtn{flex-direction:row-reverse}
+.sort-ind{
+  display:inline-block;width:0;height:0;overflow:hidden;font-size:0;line-height:0;
+  border:4px solid transparent;border-top:5px solid currentColor;border-bottom:0;
+  opacity:0;transition:opacity var(--dur-fast) linear;
+}
+th[aria-sort="ascending"] .sort-ind{border-top:0;border-bottom:5px solid currentColor}
+th.sortable:hover .sort-ind,.adm-sortbtn:focus-visible .sort-ind{opacity:.45}
+th.is-sorted .sort-ind{opacity:1}
+th.is-sorted{color:var(--ink)}
+/* row buttons: the organization name / call date is the keyboard target of its row */
+.adm-rowbtn{
+  all:unset;cursor:pointer;font:inherit;color:inherit;
+  text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.22em;
+  text-decoration-color:color-mix(in srgb,currentColor 32%,transparent);
+}
+.adm-rowbtn:hover{text-decoration-color:currentColor}
+.adm-rowbtn:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 
-/* ── drill-down panel (dark console card, mirrors .panel/.p-head) ── */
-.dd-panel .p-body{padding:1.3rem 1.4rem 1.6rem}
-/* focus rings that read on the night card (oxide is 3.4:1 there, amber 8:1) */
-.dd-panel :focus-visible,.dd-panel .adm-sortbtn:focus-visible,.dd-panel .adm-rowbtn:focus-visible{outline-color:var(--amber)}
-.adm-modal-close:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
-/* the light-theme oxide badge is unreadable on the night panel — brighten it there */
-.dd-panel .queue-badge{
-  color:#E06A4C;border-color:color-mix(in srgb,#E06A4C 50%,transparent);
-}
-.dd-title{font-family:var(--serif);font-size:1.55rem;font-weight:560;letter-spacing:-.01em;color:var(--amber)}
-.dd-meta{font-size:.8rem;color:color-mix(in srgb,var(--paper) 60%,transparent);margin-top:.3rem}
-.dd-section-label{
-  font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;
-  color:color-mix(in srgb,var(--paper) 55%,transparent);margin:1.15rem 0 .55rem;
-}
-.dd-chips{display:flex;flex-wrap:wrap;gap:.45rem}
-.dd-script{
-  margin:.2rem 0;padding:.9rem 1rem;border-radius:8px;white-space:pre-wrap;
-  background:color-mix(in srgb,var(--paper) 5%,transparent);
-  color:color-mix(in srgb,var(--paper) 78%,transparent);font-size:.85rem;line-height:1.7;
-}
-.dd-samples{width:100%;border-collapse:collapse;font-size:.78rem}
-.dd-samples th{
-  text-align:left;font-weight:500;letter-spacing:.06em;font-size:.66rem;
-  color:color-mix(in srgb,var(--paper) 55%,transparent);
-  padding:.5rem .5rem;border-bottom:1px solid var(--night-edge);
-}
-.dd-samples td{
-  padding:.55rem .5rem;border-bottom:1px solid var(--night-edge);
-  color:color-mix(in srgb,var(--paper) 82%,transparent);
-}
-
-/* ── calls table (drill-down) ── */
-.dd-call-tools{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;margin:.2rem 0 .6rem}
-.dd-call-search{
-  font-family:var(--mono);font-size:.76rem;padding:.45rem .9rem;border-radius:999px;
-  border:1px solid var(--night-edge);background:transparent;color:var(--paper);min-width:14rem;
-}
-.dd-call-search::placeholder{color:color-mix(in srgb,var(--paper) 50%,transparent)}
-.dd-call-search:focus-visible{outline:none;box-shadow:inset 0 0 0 1px var(--amber)}
-.dd-call-note{font-size:.7rem;color:color-mix(in srgb,var(--paper) 58%,transparent)}
-.dd-samples tbody tr[data-incident]{cursor:pointer;transition:background .12s ease}
-.dd-samples tbody tr[data-incident]:hover{background:color-mix(in srgb,var(--paper) 6%,transparent)}
-.dd-samples tbody tr.is-expanded{background:color-mix(in srgb,var(--amber) 14%,transparent)}
-
-/* ── per-call model analysis (the rank graph) ── */
-.dd-analysis-tr>td{padding:.6rem .5rem 1rem;border-bottom:1px solid var(--night-edge)}
-.dd-analysis{
-  border:1px solid var(--night-edge);border-radius:10px;padding:1rem 1.1rem;
-  background:color-mix(in srgb,var(--night) 55%,#000);
-}
-.dd-analysis-head{font-size:.74rem;letter-spacing:.03em;color:color-mix(in srgb,var(--paper) 70%,transparent)}
-.dd-analysis-head .tone-oxide{color:#E06A4C}
-.dd-analysis-head .tone-moss{color:#67B98C}
-.dd-rank{margin-top:.7rem}
-.dd-rank-row{padding:.34rem 0}
-.dd-rank .ec-name{color:color-mix(in srgb,var(--paper) 85%,transparent)}
-.dd-rank .ec-bar{background:color-mix(in srgb,var(--paper) 14%,transparent)}
-.dd-rank .ec-val{color:color-mix(in srgb,var(--paper) 55%,transparent)}
-.dd-analysis-script{max-height:14rem;overflow-y:auto}
-.dd-script mark{
-  background:color-mix(in srgb,var(--amber) 30%,transparent);
-  color:var(--paper);padding:.05em .15em;border-radius:3px;
-}
-.dd-spans{margin-top:.5rem;display:flex;flex-wrap:wrap;gap:.35rem}
-.dd-spans mark{background:color-mix(in srgb,#E06A4C 25%,transparent);color:var(--paper);padding:.1rem .35rem;border-radius:3px;font-size:.8rem}
-.dd-open-btn{margin-top:.7rem;font-size:.78rem;padding:.4rem .8rem;border:1px solid color-mix(in srgb,var(--paper) 35%,transparent);background:transparent;color:var(--paper);cursor:pointer}
-.dd-open-btn:hover{background:color-mix(in srgb,var(--paper) 10%,transparent)}
-.dd-analysis-reason{margin-top:.8rem;font-size:.9rem;line-height:1.6;color:color-mix(in srgb,var(--paper) 85%,transparent)}
-.dd-analysis-caveat{margin-top:.5rem;font-size:.7rem;color:color-mix(in srgb,var(--paper) 58%,transparent)}
-.dd-loading{padding:.4rem 0;font-size:.78rem;color:color-mix(in srgb,var(--paper) 55%,transparent)}
-
-/* ── results / statistics — one data hue (oxide); status fills always labeled ── */
-.st-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.1rem;margin-top:1.4rem}
-.st-card{
-  border:1px solid var(--hairline);border-radius:10px;background:#FAF8F2;
-  padding:1.2rem 1.3rem;box-shadow:0 20px 50px -34px rgba(24,20,16,.25);
-}
-.st-card--wide{grid-column:1/-1}
+/* ── 9. statistics (ink bars; pending is hatched, never amber) ────────────────────────────── */
+.st-grid{display:grid;grid-template-columns:minmax(0,1fr)}
+.st-card{min-width:0;padding:var(--s-4) 0 var(--s-5);border-top:var(--hair) solid var(--construction)}
+.st-card:first-child{border-top-color:var(--ink)}
 .st-card-head{
-  display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
-  font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);
+  display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px var(--s-4);
+  font:var(--w-ui) var(--fs-annot)/1.4 var(--mono);letter-spacing:var(--tr-annot);text-transform:uppercase;color:var(--ink-3);
 }
-.st-delta{white-space:nowrap;text-transform:none}
+.st-delta{white-space:nowrap;text-transform:none;letter-spacing:0;color:var(--ink-2)}
 .st-bars{
-  display:flex;align-items:flex-end;gap:2px;height:110px;margin-top:1.1rem;
-  border-bottom:1px solid var(--hairline);
+  display:flex;align-items:flex-end;gap:2px;height:96px;margin-top:var(--s-4);border-bottom:var(--hair) solid var(--ink);
+  background:repeating-linear-gradient(to top,color-mix(in srgb,var(--construction) 50%,transparent) 0 1px,transparent 1px 24px);
 }
-.st-bar-slot{flex:1 1 auto;height:100%;display:flex;align-items:flex-end;cursor:default}
-.st-bar-slot:hover .st-bar{opacity:.72}
-.st-bar{width:100%;background:var(--oxide);border-radius:3px 3px 0 0;transition:opacity .12s ease}
-.st-axis{display:flex;justify-content:space-between;font-size:.68rem;color:var(--ink-soft);margin-top:.5rem}
+.st-bar-slot{flex:1 1 0;height:100%;display:flex;align-items:flex-end;justify-content:center;cursor:default;
+  background:linear-gradient(var(--hairline-strong),var(--hairline-strong)) 50% 100%/1px 4px no-repeat}  /* one tick per day */
+.st-bar{width:max(3px,56%);background:var(--ink)}
+.st-bar-slot:hover .st-bar{background:var(--ink-2)}
+.st-axis{display:flex;justify-content:space-between;margin-top:6px;font:var(--w-ui) var(--fs-annot)/1.3 var(--mono);color:var(--ink-3)}
 .st-tip{
-  position:fixed;z-index:90;background:var(--night);color:var(--paper);
-  font-size:.7rem;padding:.35rem .6rem;border-radius:6px;pointer-events:none;white-space:nowrap;
+  position:fixed;z-index:var(--z-toast);padding:5px 8px;pointer-events:none;white-space:nowrap;
+  background:var(--ink);color:var(--paper);font:var(--w-ui) var(--fs-annot)/1.3 var(--mono);
 }
-.st-hero{font-family:var(--serif);font-size:2.6rem;font-weight:560;letter-spacing:-.01em;margin-top:.8rem}
-.st-hero-sub{font-family:var(--mono);font-size:.74rem;font-weight:400;color:var(--ink-soft);letter-spacing:.03em}
-.st-strip{display:flex;gap:2px;height:10px;border-radius:999px;overflow:hidden;margin-top:1rem}
+.st-hero{display:flex;flex-wrap:wrap;align-items:baseline;margin-top:var(--s-3);font:500 2.5rem/1 var(--mono);letter-spacing:-.04em;color:var(--ink)}
+.st-hero-sub{font:var(--w-ui) var(--fs-readout)/1.3 var(--mono);letter-spacing:0;color:var(--ink-2)}
+.st-strip{display:flex;gap:2px;height:12px;margin-top:var(--s-3);padding:1px;border:var(--hair) solid var(--ink)}
 .st-seg{display:block}
-.st-seg--done{background:var(--moss)}
-.st-seg--pending{background:var(--amber)}
-.st-legend{display:flex;gap:1.4rem;font-size:.72rem;color:var(--ink-soft);margin-top:.6rem}
-.st-dot{display:inline-block;width:.55rem;height:.55rem;border-radius:50%;margin-right:.4rem}
-.st-dot--done{background:var(--moss)}
-.st-dot--pending{background:var(--amber)}
-.st-empty{font-size:.74rem;color:var(--ink-soft);margin-top:1rem}
-.st-orgs{margin-top:1rem}
+.st-seg--done{background:var(--ink)}
+.st-seg--pending{background:repeating-linear-gradient(135deg,var(--ink) 0 1px,transparent 1px 4px)}
+.st-legend{display:flex;flex-wrap:wrap;gap:6px var(--s-5);margin-top:var(--s-2);font:var(--w-ui) var(--fs-annot)/1.4 var(--mono);color:var(--ink-2)}
+.st-dot{display:inline-block;width:9px;height:9px;margin-right:7px;vertical-align:-1px;border:var(--hair) solid var(--ink)}
+.st-dot--done{background:var(--ink)}
+.st-dot--pending{background:repeating-linear-gradient(135deg,var(--ink) 0 1px,transparent 1px 3px)}
+.st-empty{margin-top:var(--s-3);font:var(--w-body) var(--fs-small)/1.5 var(--sans);color:var(--ink-2)}
+.st-orgs{margin-top:var(--s-3)}
 .st-org-row{
-  display:grid;grid-template-columns:minmax(8em,14em) 1fr 2.6em;gap:1em;align-items:center;
-  padding:.42rem 0;font-size:.78rem;font-family:var(--mono);
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(3rem,34%) 2.8em;gap:var(--s-3);align-items:center;
+  padding:5px 0;font:var(--w-ui) var(--fs-readout)/1.4 var(--mono);
 }
-.st-org-name{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.st-org-bar{height:6px;border-radius:3px;background:color-mix(in srgb,var(--hairline) 55%,transparent);overflow:hidden}
-.st-org-bar i{display:block;height:100%;width:var(--w);border-radius:3px;background:var(--oxide)}
-.st-org-val{text-align:right;color:var(--ink-soft)}
+.st-org-row + .st-org-row{border-top:var(--hair) dashed var(--construction)}
+.st-org-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+.st-org-bar{height:6px;background:var(--paper-2);box-shadow:inset 0 0 0 1px var(--construction)}
+.st-org-bar i{display:block;height:100%;width:var(--w);background:var(--ink)}
+.st-org-val{text-align:right;color:var(--ink-2)}
 
-/* ── drill-down modal ── */
-.adm-modal{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:1.25rem}
-.adm-modal[hidden]{display:none}
+/* ── 10. the drill-down: a drawing sheet over the hatched-out page ─────────────────────────── */
+.adm-modal{
+  position:fixed;inset:0;z-index:var(--z-modal);display:flex;align-items:flex-start;justify-content:center;
+  padding:clamp(12px,3.5vh,40px) clamp(12px,2.5vw,32px);
+}
 .adm-modal-backdrop{
   position:absolute;inset:0;
-  background:color-mix(in srgb,var(--night) 55%,transparent);
-  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  background:
+    repeating-linear-gradient(135deg,color-mix(in srgb,var(--ink) 10%,transparent) 0 1px,transparent 1px 7px),
+    color-mix(in srgb,var(--paper) 82%,transparent);
 }
 .adm-modal-card{
-  position:relative;z-index:1;width:min(62rem,100%);
-  max-height:min(88vh,64rem);display:flex;flex-direction:column;
+  position:relative;z-index:1;display:flex;flex-direction:column;width:min(78rem,100%);
+  max-height:calc(100dvh - 2 * clamp(12px,3.5vh,40px));
+  background:var(--sheet);border:var(--hair) solid var(--ink);border-bottom-width:var(--rule-base);
 }
-.adm-modal-card .p-body{overflow-y:auto}
+.adm-modal-head{display:flex;align-items:stretch;flex:0 0 auto;min-height:44px;background:var(--ink);color:var(--paper)}
+.adm-modal .p-dot{               /* JS rewrites its class (p-dot / p-dot tone-moss): drawn here, red only for a new scheme */
+  flex:0 0 auto;align-self:center;width:10px;height:10px;margin-left:14px;
+  background:transparent;border:var(--hair) solid color-mix(in srgb,var(--paper) 70%,transparent);
+}
+.adm-modal:has(.dd-title .queue-badge:not([class*="fb-"])) .p-dot{background:var(--signal);border-color:var(--signal)}
+.adm-modal-title{
+  flex:1 1 auto;display:flex;align-items:center;min-width:0;padding:6px 14px;
+  font:var(--w-ui) var(--fs-readout)/1.3 var(--mono);letter-spacing:.04em;overflow-wrap:anywhere;
+}
 .adm-modal-close{
-  margin-left:auto;background:none;border:0;cursor:pointer;
-  color:color-mix(in srgb,var(--paper) 60%,transparent);
-  font-size:.85rem;padding:.1rem .35rem;transition:color .15s ease;
+  flex:0 0 48px;display:grid;place-items:center;padding:0;cursor:pointer;
+  color:var(--paper);background:transparent;border:0;border-left:var(--hair) dashed color-mix(in srgb,var(--paper) 45%,transparent);
 }
-.adm-modal-close:hover{color:var(--paper)}
+.adm-modal-close svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6}
+.adm-modal-close:hover{background:color-mix(in srgb,var(--paper) 14%,transparent)}
+.adm-modal-close:focus-visible{outline:2px solid var(--paper);outline-offset:-6px;box-shadow:inset 0 0 0 2px var(--focus)}
+.adm-modal-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:var(--cell-pad)}
+/* the sheet's head: the organization's name, then its title block of facts */
+.dd-head{display:grid;gap:var(--s-4);padding-bottom:var(--s-4)}
+.dd-title{
+  font:var(--w-heading) var(--fs-h3)/1.1 var(--sans);font-stretch:var(--wdth-heading);
+  letter-spacing:var(--tr-h3);color:var(--ink);overflow-wrap:anywhere;
+}
+.dd-title.is-id{font:500 1.375rem/1.2 var(--mono);font-stretch:100%;letter-spacing:-.01em}
+.dd-title .queue-badge{margin-left:10px;vertical-align:5px}
+.dd-meta{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(7.5rem,1fr));
+  border-top:var(--hair) solid var(--ink);border-left:var(--hair) solid var(--construction);
+}
+.dd-fact{
+  display:grid;align-content:start;gap:6px;min-width:0;padding:9px 12px 10px;
+  border-right:var(--hair) solid var(--construction);border-bottom:var(--hair) solid var(--construction);
+}
+.dd-fact-label{font:var(--w-ui) var(--fs-annot)/1.3 var(--mono);letter-spacing:var(--tr-annot);text-transform:uppercase;color:var(--ink-3)}
+.dd-fact-value{font:500 1.0625rem/1.2 var(--mono);color:var(--ink);overflow-wrap:anywhere}
+/* blocks of the sheet, each under a mono annotation */
+.dd-block{min-width:0;padding:var(--s-4) 0}
+.adm-modal-body > .dd-block + .dd-block{border-top:var(--hair) solid var(--construction)}
+.dd-section-label{font:var(--w-ui) var(--fs-annot)/1.4 var(--mono);letter-spacing:var(--tr-annot);text-transform:uppercase;color:var(--ink-3)}
+.dd-block > .dd-section-label{margin-bottom:var(--s-3)}
+.dd-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border-bottom:var(--hair) solid var(--construction)}
+.dd-pair > .dd-block:first-child{padding-right:var(--cell-pad)}
+.dd-pair > .dd-block + .dd-block{padding-left:var(--cell-pad);border-left:var(--hair) solid var(--construction)}
+/* the analyst verdict: Confirm · Dismiss · Merge, and what gets logged */
+.dd-feedback{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-2) var(--s-3);padding:var(--s-3) 0;border-top:var(--hair) solid var(--construction);border-bottom:var(--hair) solid var(--construction)}
+.dd-feedback-label{margin-right:var(--s-2);font:var(--w-ui) var(--fs-annot)/1.4 var(--mono);letter-spacing:var(--tr-annot);text-transform:uppercase;color:var(--ink-3)}
+.dd-feedback-label b{color:var(--ink);font-weight:600}
+.dd-fb-btn{min-height:40px;padding:0 16px;font-size:.875rem}
+.dd-fb-merge{display:inline-flex;flex-wrap:wrap;align-items:center;gap:var(--s-2);font:var(--w-body) var(--fs-small)/1.3 var(--sans);color:var(--ink-2)}
+.dd-fb-merge select{
+  min-height:40px;max-width:18rem;padding:6px 40px 6px 10px;cursor:pointer;
+  font:var(--w-body) var(--fs-small)/1.3 var(--sans);color:var(--ink);
+  background:var(--sheet) var(--chevron) right 12px center/12px 8px no-repeat;
+  border:var(--hair) solid var(--ink-2);border-radius:0;-webkit-appearance:none;appearance:none;
+}
+.dd-fb-merge select:focus-visible{outline:2px solid var(--focus);outline-offset:0;border-color:var(--ink)}
+.dd-fb-note{flex:1 1 100%;position:relative;padding-left:24px;font:var(--w-body) var(--fs-small)/1.5 var(--sans)}
+.dd-fb-note::before,.dd-open-fine::before{content:"";position:absolute;left:0;top:3px;width:14px;height:14px;background:var(--ledger)}
+.dd-analysis .dd-section-label .tone-moss::before{content:"";flex:0 0 auto;width:14px;height:14px;background:var(--ledger);transform:translateY(2px)}
 
-@media (max-width:61rem){
-  .adm-kpis{grid-template-columns:repeat(2,1fr)}
-  .st-grid{grid-template-columns:1fr}
-  .adm-modal{padding:.75rem}
+/* ── 11. the number graph (a drawing on graph paper) + the tactic profile ─────────────────── */
+.dd-graph{
+  display:flex;align-items:center;min-width:0;padding:var(--s-4);overflow-x:auto;
+  border:var(--hair) solid var(--construction);
+  background:
+    linear-gradient(to right,color-mix(in srgb,var(--construction) 40%,transparent) 1px,transparent 1px) 0 0/16px 16px,
+    linear-gradient(to bottom,color-mix(in srgb,var(--construction) 40%,transparent) 1px,transparent 1px) 0 0/16px 16px,
+    var(--sheet);
 }
-@media (max-width:38rem){
-  .adm-kpis{grid-template-columns:1fr}
+.dd-graph-org{
+  position:relative;flex:0 0 auto;display:grid;gap:3px;padding:8px 12px 9px;
+  background:var(--sheet);border:var(--hair) solid var(--ink);
+  font:var(--w-ui) var(--fs-readout)/1.3 var(--mono);color:var(--ink-2);
 }
+.dd-graph-org b{font-weight:600;color:var(--ink)}
+.dd-graph-org::after{content:"";position:absolute;left:100%;top:50%;width:28px;border-top:var(--hair) solid var(--ink)}
+.dd-graph-numbers{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0;padding-left:56px}
+.dd-graph-numbers::before{content:"";position:absolute;left:28px;top:16px;bottom:16px;border-left:var(--hair) solid var(--ink)}   /* trunk */
+.dd-graph-numbers::after{content:"";position:absolute;left:25px;top:calc(50% - 3px);width:7px;height:7px;border-radius:50%;background:var(--ink)}  /* junction */
+.dd-graph-numbers .tw-tag{
+  position:relative;align-items:center;height:32px;padding:0 10px;white-space:nowrap;overflow-wrap:normal;
+  font:var(--w-ui) var(--fs-readout)/1 var(--mono);letter-spacing:.02em;border-color:var(--ink);
+}
+.dd-graph-numbers .tw-tag::before{display:none}
+.dd-graph-numbers .tw-tag::after{content:"";position:absolute;right:calc(100% + 1px);top:50%;width:28px;border-top:var(--hair) solid var(--ink)}  /* branch */
+/* nothing to draw yet: the void symbol, then why and what to do (an empty state, not an error) */
+.dd-empty{
+  position:relative;display:block;min-height:50px;padding:10px 12px 10px 52px;
+  font:var(--w-body) var(--fs-small)/1.5 var(--sans);color:var(--ink-2);
+  border:var(--hair) dashed var(--hairline-strong);background:color-mix(in srgb,var(--sheet) 70%,transparent);
+}
+.dd-empty::before{
+  content:"";position:absolute;left:12px;top:10px;width:28px;height:28px;border:var(--hair) solid var(--ink-2);
+  background:
+    linear-gradient(to top right,transparent calc(50% - .6px),var(--ink-2) calc(50% - .6px) calc(50% + .6px),transparent calc(50% + .6px)),
+    linear-gradient(to bottom right,transparent calc(50% - .6px),var(--ink-2) calc(50% - .6px) calc(50% + .6px),transparent calc(50% + .6px));
+}
+.dd-profile{display:grid;border-top:var(--hair) solid var(--ink)}
+.dd-profile .tw-tag{
+  display:grid;grid-template-columns:8px minmax(0,1fr) minmax(3rem,32%) 2.2em;align-items:center;column-gap:10px;
+  width:100%;padding:7px 0;background:none;border:0;border-bottom:var(--hair) dashed var(--construction);
+}
+.dd-profile .tw-tag::before{transform:none}
+.dd-profile .dd-tactic{order:1;min-width:0}
+.dd-profile .tw-tag::after{
+  content:"";order:2;height:6px;
+  background:linear-gradient(var(--ink),var(--ink)) 0 0/var(--w) 100% no-repeat,var(--paper-2);
+  box-shadow:inset 0 0 0 1px var(--construction);
+}
+.dd-profile .dd-count{order:3;text-align:right;font:var(--w-ui) var(--fs-readout)/1 var(--mono);color:var(--ink-2)}
 
-/* analyst feedback (PLAN C6) */
-.dd-feedback{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:.6rem 0 .2rem;font-size:.74rem}
-.dd-feedback-label{color:color-mix(in srgb,var(--paper) 70%,transparent)}
-.dd-fb-btn{font-size:.74rem;padding:.3rem .7rem;border:1px solid color-mix(in srgb,var(--paper) 35%,transparent);background:transparent;color:var(--paper);cursor:pointer}
-.dd-fb-btn:hover{background:color-mix(in srgb,var(--paper) 10%,transparent)}
-.dd-fb-merge{display:inline-flex;align-items:center;gap:.4rem}
-.dd-fb-merge select{max-width:16rem;font:inherit;background:transparent;color:var(--paper);border:1px solid color-mix(in srgb,var(--paper) 35%,transparent);padding:.25rem}
-.dd-fb-note{flex-basis:100%;font-size:.68rem}
-.queue-badge.fb-confirmed{background:#67B98C;color:#0B0F0C}
-.queue-badge.fb-dismissed{background:color-mix(in srgb,var(--paper) 25%,transparent);color:var(--paper)}
-.queue-badge.fb-merged{background:#9BB4E0;color:#0B0F0C}
+/* ── 12. calls (a spec sheet) and the call analysis (a callout on a leader) ──────────────────── */
+.dd-call-tools{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-2) var(--s-4);margin-bottom:var(--s-3)}
+.dd-call-search{
+  width:min(20rem,100%);min-height:40px;padding:8px 12px;
+  font:var(--w-body) var(--fs-small)/1.4 var(--sans);color:var(--ink);background:var(--sheet);
+  border:var(--hair) solid var(--ink-2);border-radius:0;-webkit-appearance:none;appearance:none;
+}
+.dd-call-search::placeholder{color:var(--ink-3);opacity:1}
+.dd-call-search:focus-visible{outline:2px solid var(--focus);outline-offset:0;border-color:var(--ink)}
+.dd-call-note{font:var(--w-body) var(--fs-small)/1.4 var(--sans);color:var(--ink-2)}
+.dd-samples{width:100%;min-width:42rem;border-collapse:collapse;font:var(--w-body) var(--fs-readout)/1.45 var(--mono);font-variant-numeric:tabular-nums}
+.dd-samples thead th{
+  padding:9px 10px;text-align:left;vertical-align:bottom;background:var(--paper-2);border-bottom:var(--hair) solid var(--ink);
+  font:var(--w-ui) var(--fs-annot)/1.35 var(--mono);letter-spacing:var(--tr-annot);text-transform:uppercase;color:var(--ink-2);
+}
+.dd-samples td{padding:9px 10px;vertical-align:top;color:var(--ink);border-bottom:var(--hair) solid var(--construction)}
+.dd-samples tr[data-incident] > td:nth-child(-n+2){white-space:nowrap}
+.dd-samples tr[data-incident] > td:nth-child(3),.dd-samples thead th:nth-child(3){text-align:right;white-space:nowrap}
+.dd-samples tr[data-incident] > td:nth-child(4){width:100%;min-width:18rem}
+.dd-excerpt{
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;
+  font:var(--w-body) var(--fs-small)/1.45 var(--sans);color:var(--ink-2);
+}
+.dd-samples tbody tr[data-incident]{transition:background-color var(--dur-fast) linear}
+.dd-samples tbody tr[data-has-transcript="1"]{cursor:pointer}
+.dd-samples tbody tr[data-has-transcript="1"]:hover{background:color-mix(in srgb,var(--paper-2) 75%,transparent)}
+.dd-samples tbody tr[data-has-transcript="0"] > td{color:var(--ink-3)}
+.dd-samples tbody tr.is-expanded{background:var(--paper-2)}
+.dd-samples tbody tr.is-expanded > td{border-bottom-color:transparent}
+.dd-samples tbody tr.is-expanded > td:first-child{box-shadow:inset 3px 0 0 var(--ink)}
+.dd-samples tbody tr.is-expanded .dd-excerpt{-webkit-line-clamp:1}   /* the analysis below shows the excerpt */
+.dd-analysis-tr > td{padding:0 10px var(--s-4) 0;background:var(--paper-2);border-bottom:var(--hair) solid var(--ink)}
+.dd-analysis{
+  position:relative;margin-left:26px;white-space:normal;
+  background:var(--sheet);border:var(--hair) solid var(--ink);border-bottom-width:var(--rule-base);
+  font:var(--w-body) var(--fs-body)/1.5 var(--sans);color:var(--ink);
+}
+.dd-analysis::before{content:"";position:absolute;left:-15px;top:0;width:14px;height:18px;border-left:var(--hair) solid var(--ink);border-bottom:var(--hair) solid var(--ink)}  /* leader from the call row */
+.dd-analysis > :not(.dd-analysis-head):not(.dd-loading){margin-inline:14px}
+.dd-analysis > :last-child:not(.dd-loading){margin-bottom:14px}
+/* the verdict readout: the callout's dark bar; a red square only when the model flags the call */
+.dd-analysis-head{
+  display:flex;flex-wrap:wrap;align-items:center;gap:2px 0;min-height:34px;padding:7px 12px;
+  background:var(--ink);color:var(--paper);font:var(--w-ui) var(--fs-readout)/1.4 var(--mono);
+}
+.dd-analysis-head .tone-oxide,.dd-analysis-head .tone-moss{display:inline-flex;align-items:center;gap:7px;margin-left:7px;font-weight:600;color:var(--paper)}
+.dd-analysis-head .tone-oxide::before,.dd-analysis-head .tone-moss::before{content:"";flex:0 0 auto;width:9px;height:9px}
+.dd-analysis-head .tone-oxide::before{background:var(--signal)}
+.dd-analysis-head .tone-moss::before{box-shadow:inset 0 0 0 1px var(--paper)}
+/* the risk on its 0–1 scale: the fill takes red only for a flagged call; dashed ink = the threshold */
+.dd-riskscale{
+  position:relative;height:32px;margin-top:10px;
+  background:
+    linear-gradient(to right,var(--ink) 0 min(var(--risk),var(--thr)),var(--signal) min(var(--risk),var(--thr)) var(--risk),transparent var(--risk)) 0 21px/100% 3px no-repeat,
+    linear-gradient(var(--hairline-strong),var(--hairline-strong)) 0 22px/100% 1px no-repeat,
+    linear-gradient(var(--ink),var(--ink)) 0 17px/1px 10px no-repeat,
+    linear-gradient(var(--ink),var(--ink)) 100% 17px/1px 10px no-repeat;
+}
+.dd-riskscale.is-flagged{--band:var(--signal)}
+.dd-riskscale::before{content:"";position:absolute;left:var(--thr);top:13px;height:18px;border-left:1.5px dashed var(--ink)}
+.dd-riskscale::after{content:"";position:absolute;left:var(--risk);top:15px;width:3px;height:14px;margin-left:-1.5px;background:var(--band,var(--ink))}
+.dd-rs-thr{position:absolute;left:var(--thr);top:0;transform:translateX(-50%);font:600 var(--fs-annot)/1 var(--mono);color:var(--ink)}
+.dd-rs-end{position:absolute;left:0;top:0;font:var(--w-ui) var(--fs-annot)/1 var(--mono);color:var(--ink-3)}
+.dd-rs-end.is-max{left:auto;right:0}
+/* a key for the marks: the shaded line and the numbered cue, drawn as they appear in the text */
+.dd-key{display:flex;flex-wrap:wrap;gap:4px 20px;margin-top:8px;font:var(--w-body) .8125rem/1.5 var(--sans);color:var(--ink-2)}
+.dd-key span{display:inline-flex;align-items:center;gap:8px}
+.dd-key-wash::before{content:"";flex:0 0 auto;width:22px;height:12px;background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.dd-key-cue::before{
+  content:"1";display:inline-grid;place-items:center;flex:0 0 auto;width:16px;height:16px;
+  background:var(--signal);color:var(--ink);font:600 .6875rem/1 var(--mono);
+}
+.dd-rank{margin-top:var(--s-2)}
+.dd-rank .ec-row{grid-template-columns:minmax(0,24em) minmax(0,1fr) 3em;padding:5px 0;font-size:var(--fs-small)}
+.dd-rank .ec-row + .ec-row{border-top:var(--hair) dashed var(--construction)}
+.dd-rank .ec-val{font:var(--w-ui) var(--fs-readout)/1 var(--mono)}
+.dd-analysis-reason{margin-top:var(--s-3);max-width:76ch;line-height:1.55;color:var(--ink)}
+.dd-analysis .dd-section-label{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:var(--s-4);margin-bottom:var(--s-2)}
+/* opened case: the audit stamp (who, why, logged) */
+.dd-analysis .dd-section-label .tone-moss{
+  display:inline-flex;align-items:baseline;gap:8px;padding:3px 8px 3px 5px;
+  color:var(--ink);border:var(--hair) solid var(--ink);letter-spacing:.02em;text-transform:none;   /* ids keep their case */
+}
+/* the transcript sheet (shared .q-transcript > .q-line): denser, same evidence marks as the citizen page */
+.adm-modal .q-line{padding:7px 0 7px 44px;font-size:var(--fs-body);line-height:1.5}
+.adm-modal .q-line::before{top:7px;line-height:calc(var(--fs-body) * 1.5)}
+.dd-spans{display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--s-3)}
+.dd-spans mark{
+  display:inline-flex;align-items:baseline;gap:8px;max-width:100%;padding:5px 9px 6px;overflow-wrap:anywhere;
+  font:var(--w-ui) var(--fs-small)/1.35 var(--sans);color:var(--ink);background:var(--sheet);border:var(--hair) solid var(--hairline-strong);
+}
+.dd-spans mark[data-kind="cue"]{border-color:var(--ink)}
+.dd-spans mark[data-n]::before{
+  content:attr(data-n);display:inline-grid;place-items:center;width:18px;height:18px;
+  background:var(--signal);color:var(--ink);font:600 .6875rem/1 var(--mono);transform:translateY(3px);
+}
+.dd-withheld{display:flex;gap:10px;align-items:baseline;margin-top:var(--s-3);font:var(--w-body) var(--fs-small)/1.5 var(--sans);color:var(--ink-2)}
+.dd-withheld::before{content:"";flex:0 0 auto;width:14px;height:14px;border:var(--hair) dashed var(--ink);transform:translateY(2px)}   /* counted, not quoted */
+.dd-analysis-caveat{margin-top:var(--s-4);padding:2px 0 2px 12px;border-left:2px solid var(--construction);font:var(--w-body) var(--fs-small)/1.5 var(--sans);color:var(--ink-3)}
 
-/* ── analyst sign-in + session (the console is closed until a key is accepted) ── */
-.adm-toolbar[hidden],.adm-session[hidden]{display:none}
-.adm-session{display:flex;align-items:center;flex-wrap:wrap;gap:.7rem;margin-top:1.6rem;font-size:.76rem;color:var(--ink-soft)}
-.adm-session .tw-chip{color:var(--ink-soft);border-color:var(--hairline)}
-.adm-session .tw-chip:hover{color:var(--ink);border-color:var(--ink-soft)}
-.adm-who b{color:var(--ink);font-weight:500}
-.adm-role{
-  margin-left:.35rem;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;
-  border:1px solid var(--hairline);border-radius:999px;padding:.12rem .55rem;color:var(--ink-soft);
-}
-.adm-role--investigator{color:var(--oxide);border-color:color-mix(in srgb,var(--oxide) 50%,transparent)}
-.adm-who-note{margin-left:.5rem;font-size:.7rem}
-.adm-signin{margin-top:2.6rem}
-.adm-signin-card{
-  max-width:40rem;border:1px solid var(--hairline);border-radius:10px;background:#FAF8F2;
-  padding:1.6rem 1.7rem 1.4rem;box-shadow:0 20px 50px -34px rgba(24,20,16,.25);
-}
-.adm-signin-card .eyebrow{margin-bottom:1.2rem}
-.adm-signin-label{display:block;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.55rem}
-.adm-signin-row{display:flex;flex-wrap:wrap;gap:.7rem;align-items:center}
-.adm-key{
-  flex:1 1 15rem;min-width:0;font-size:.82rem;padding:.8rem 1.1rem;border-radius:999px;
-  border:1px solid var(--hairline);background:var(--paper);color:var(--ink);
-}
-.adm-key::placeholder{color:var(--ink-soft)}
-.adm-signin-card .adm-note{margin-top:.8rem;min-height:1.2em}
-.adm-signin-fine{margin-top:.9rem;font-size:.72rem;line-height:1.75;color:var(--ink-soft)}
-.adm-signin-fine b{color:var(--ink);font-weight:500}
-
-/* ── open-case control inside the dark drill-down: purpose first, investigator only ── */
-.dd-open{margin-top:.4rem}
-.dd-open-row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+/* ── 13. audited actions: opening a full transcript (investigator role, purpose first) ─────── */
+.dd-open{margin-top:var(--s-4);padding:12px 14px 14px;background:var(--paper);border:var(--hair) solid var(--ink);border-left-width:6px}
+.dd-open > .dd-section-label{margin:0 0 10px;font-weight:600;color:var(--ink)}
+.dd-open-row{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px}
 .dd-open-purpose,.dd-open-note{
-  font-size:.74rem;padding:.42rem .65rem;border-radius:6px;background:transparent;color:var(--paper);
-  border:1px solid color-mix(in srgb,var(--paper) 35%,transparent);
+  min-height:44px;padding:8px 12px;font:var(--w-body) var(--fs-small)/1.35 var(--sans);color:var(--ink);
+  background:var(--sheet);border:var(--hair) solid var(--ink-2);border-radius:0;-webkit-appearance:none;appearance:none;
 }
-.dd-open-purpose option{color:var(--ink);background:var(--paper)}
-.dd-open-note{flex:1 1 13rem;min-width:0}
-.dd-open-note::placeholder{color:color-mix(in srgb,var(--paper) 50%,transparent)}
-.dd-open-purpose:focus-visible,.dd-open-note:focus-visible{outline:none;box-shadow:inset 0 0 0 1px var(--amber)}
-.dd-open .dd-open-btn{margin-top:0}
-.dd-open .dd-open-btn:disabled{opacity:.38;cursor:not-allowed;background:transparent}
-.dd-open.is-locked .dd-open-purpose,.dd-open.is-locked .dd-open-note{opacity:.4;cursor:not-allowed}
-.dd-open-fine{margin-top:.55rem;font-size:.7rem;line-height:1.65;color:color-mix(in srgb,var(--paper) 55%,transparent)}
-.dd-open-fine b{color:var(--paper);font-weight:500}
-.dd-open-msg{margin-top:.4rem;font-size:.74rem;color:color-mix(in srgb,var(--paper) 80%,transparent)}
-.dd-open-msg.is-error{color:#E06A4C}
-.dd-withheld{margin-top:.5rem;font-size:.72rem;color:color-mix(in srgb,var(--paper) 60%,transparent)}
+.dd-open-purpose{flex:0 1 auto;max-width:100%;padding-right:40px;cursor:pointer;background:var(--sheet) var(--chevron) right 14px center/12px 8px no-repeat}
+.dd-open-note{flex:1 1 14rem;min-width:0}
+.dd-open-note::placeholder{color:var(--ink-3);opacity:1}
+.dd-open-purpose:focus-visible,.dd-open-note:focus-visible{outline:2px solid var(--focus);outline-offset:0;border-color:var(--ink)}
+.dd-open-purpose:disabled,.dd-open-note:disabled{cursor:not-allowed;opacity:.45;border-style:dashed}
+.dd-open .dd-open-btn{min-height:44px;padding:0 18px;font-size:.9375rem}
+.dd-open .dd-open-btn:not(:disabled){background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.dd-open .dd-open-btn:not(:disabled):hover{background:var(--ink-2);border-color:var(--ink-2)}
+.dd-open-fine{position:relative;margin-top:10px;padding-left:24px;font:var(--w-body) var(--fs-small)/1.5 var(--sans);color:var(--ink-2)}
+.dd-open-fine b{font-family:var(--mono);font-weight:600;color:var(--ink)}
+.dd-open-msg{display:flex;gap:10px;align-items:baseline;margin-top:8px;font:var(--w-strong) var(--fs-small)/1.5 var(--sans);color:var(--ink)}
+.dd-open.is-locked{border-color:var(--ink-3);background:repeating-linear-gradient(135deg,var(--paper-2) 0 4px,var(--sheet) 4px 8px)}
+
+/* ── 14. responsive ──────────────────────────────────────────────────────────────────────── */
+@media (max-width:1279px){
+  .adm-head-title,.adm-head-side{grid-column:span 6}
+}
+@media (max-width:1199px){
+  .adm-queue,.adm-stats{grid-column:1 / -1}
+  .adm-stats{border-left:0;border-top:var(--hair) solid var(--construction)}
+  .adm-board > .adm-queue{padding-bottom:var(--cell-pad)}     /* stacked: only the last cell carries the space */
+  .adm-board:has(> .adm-stats[hidden]) > .adm-queue{padding-bottom:calc(var(--cell-pad) + var(--section-y))}
+  .st-grid{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--cell-pad)}
+  .st-card--wide{grid-column:1 / -1}
+}
+@media (max-width:960px){
+  .adm-head-title,.adm-head-side{grid-column:1 / -1}
+  .adm-head-side{border-left:0;border-top:var(--hair) solid var(--construction)}
+  .adm-head-title,.adm-main:has(> .adm-console[hidden]) > .adm-head > .adm-head-title{padding-bottom:var(--cell-pad)}
+}
+@media (max-width:720px){
+  .adm-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpi-card:nth-child(3){border-left:0}
+  .kpi-card:nth-child(n+3){border-top:var(--hair) solid var(--construction)}
+  .st-grid{grid-template-columns:minmax(0,1fr)}
+  .dd-pair{grid-template-columns:minmax(0,1fr)}
+  .dd-pair > .dd-block:first-child{padding-right:0}
+  .dd-pair > .dd-block + .dd-block{padding-left:0;border-left:0;border-top:var(--hair) solid var(--construction)}
+}
+@media (max-width:640px){
+  .adm-btn-sm,.dd-fb-btn,.adm-seg .tw-radio,.adm-search,.dd-call-search,.dd-fb-merge select{min-height:var(--tap)}
+  .adm-search,.dd-call-search{width:100%}
+  .adm-queue-tools{width:100%}
+  .adm-modal{padding:4px}
+  .adm-modal-card{max-height:calc(100dvh - 8px)}
+  .dd-analysis{margin-left:0}
+  .dd-analysis::before{display:none}
+  /* the number graph stacks: organization on top, numbers hanging from a trunk */
+  .dd-graph{flex-direction:column;align-items:flex-start}
+  .dd-graph-org::after{left:14px;top:100%;width:0;height:12px;border-top:0;border-left:var(--hair) solid var(--ink)}
+  .dd-graph-numbers{padding:12px 0 0 32px}
+  .dd-graph-numbers::before{left:14px;top:0;bottom:16px}
+  .dd-graph-numbers::after{display:none}
+  .dd-graph-numbers .tw-tag::after{width:17px}
+}

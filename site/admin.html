@@ -9,29 +9,26 @@
 <meta name="referrer" content="no-referrer">
 <title>Qorğan — analyst console</title>
 <meta name="description" content="Qorğan analyst console — scam organizations clustered from consented reports, a priority queue, novelty flags. A human always decides.">
-<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%230E0C13"/><g fill="%23E29B2E"><rect x="7" y="13" width="2.6" height="6"/><rect x="11.4" y="9" width="2.6" height="14"/><rect x="15.8" y="5" width="2.6" height="22"/><rect x="20.2" y="10" width="2.6" height="12"/><rect x="24.6" y="14" width="2.6" height="4"/></g></svg>'>
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="%231C1B18"/><g fill="%23F3F2EC"><rect x="4" y="23" width="24" height="3"/><rect x="5.5" y="17" width="3" height="5"/><rect x="10.5" y="12" width="3" height="10"/><rect x="15.5" y="7" width="3" height="15"/><rect x="20.5" y="14" width="3" height="8"/><rect x="25.5" y="18" width="2" height="4"/></g></svg>'>
+<meta name="theme-color" content="#F3F2EC">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- PT Serif carries Cyrillic (Russian/Kazakh) content: Fraunces has none. -->
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:wght@400;500&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<!-- IBM Plex Sans (variable wdth 85–100) + IBM Plex Mono: both carry Ә Ғ Қ Ң Ө Ұ Ү Һ І. -->
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wdth,wght@85..100,400..700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="admin.css">
 </head>
 <body>
-<div class="rails" aria-hidden="true"></div>
+<div class="q-frame rails" aria-hidden="true"></div>
 
+<!-- Sheet header without a call-to-action cell: the sign-in button is this page's one red action.
+     admin-lang.js localizes the header and the footer; the console's own labels stay English. -->
 <header class="nav">
-  <a class="brand" href="index.html" aria-label="Qorğan — home">
-    <svg class="brand-glyph" viewBox="0 0 26 18" aria-hidden="true">
-      <rect x="0"  y="6.5" width="2.4" height="5"/>
-      <rect x="4.7" y="3.5" width="2.4" height="11"/>
-      <rect x="9.4" y="0.5" width="2.4" height="17"/>
-      <rect x="14.1" y="4.5" width="2.4" height="9"/>
-      <rect x="18.8" y="7"  width="2.4" height="4"/>
-    </svg>
-    <span class="brand-word">qorğan.</span>
+  <a class="brand" href="index.html" data-i18n-attr="aria-label:nav.home_aria" aria-label="Qorğan — home">
+    <svg class="brand-glyph" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="20" width="24" height="3"/><rect x="2.5" y="14" width="3" height="5"/><rect x="7.5" y="9" width="3" height="10"/><rect x="12.5" y="4" width="3" height="15"/><rect x="17.5" y="11" width="3" height="8"/><rect x="22.5" y="15" width="2" height="4"/></svg>
+    <span class="brand-word">Qorğan</span>
   </a>
-  <nav class="nav-links mono" data-i18n-attr="aria-label:nav.primary_aria" aria-label="Primary">
+  <nav class="nav-links" data-i18n-attr="aria-label:nav.primary_aria" aria-label="Primary">
     <a href="index.html#how" data-i18n="nav.how">How it works</a>
     <a href="admin.html" aria-current="page" data-i18n="nav.analyst">Analyst console</a>
     <a href="live.html" data-i18n="nav.live">Check a call</a>
@@ -45,94 +42,162 @@
 
 <main id="top" class="adm-main">
 
-  <section class="col-wide adm-hero">
-    <p class="eyebrow">Level 2 &middot; analyst console</p>
-    <h1 class="display-2">Scam <em>organizations</em>, ranked.</h1>
-    <p class="body-copy">Incidents from consented reports, clustered by phone-number co-occurrence and
-    tactic profile into a priority queue for the analyst &mdash; never an automatic
-    verdict. A human always decides.</p>
-    <div class="adm-session mono" id="admSession" hidden>
-      <span class="adm-who" id="admWho" aria-live="polite"></span>
-      <button type="button" id="admSignOut" class="tw-chip">sign out</button>
+  <!-- Title row: the console's statement | the sign-in sheet, or (once a key or the demo
+       server's open access is accepted) who is signed in and the console's controls. -->
+  <div class="q-row q-grid adm-head">
+    <div class="q-cell adm-head-title">
+      <h1 class="adm-title">Scam <em>organizations</em>, ranked.</h1>
+      <p class="adm-lede">Incidents from consented reports, clustered by phone-number co-occurrence and
+      tactic profile into a priority queue for the analyst &mdash; never an automatic verdict. A human
+      always decides.</p>
     </div>
-    <div class="adm-toolbar mono" id="admToolbar" hidden>
-      <span class="adm-toolbar-label" id="admLocLabel">content language</span>
-      <span class="tw-loc" role="radiogroup" aria-labelledby="admLocLabel">
-        <label class="tw-chip tw-radio" lang="ru"><input type="radio" name="adm-loc" value="ru" checked>ru</label>
-        <label class="tw-chip tw-radio" lang="kk"><input type="radio" name="adm-loc" value="kk">kk</label>
-        <label class="tw-chip tw-radio" lang="en"><input type="radio" name="adm-loc" value="en">en</label>
-      </span>
-      <button type="button" id="admRefresh" class="tw-chip">refresh</button>
-      <button type="button" id="admIngest" class="tw-chip">ingest reports</button>
-      <span id="admIngestNote" class="adm-note" role="status"></span>
-    </div>
-  </section>
 
-  <section class="col-wide adm-signin" id="admSignin" aria-labelledby="admSigninTitle" hidden>
-    <form class="adm-signin-card" id="admSigninForm" autocomplete="off" novalidate>
-      <p class="eyebrow" id="admSigninTitle">Analyst sign-in</p>
-      <label class="adm-signin-label mono" for="admKey">analyst key</label>
-      <div class="adm-signin-row">
-        <input id="admKey" class="adm-key mono" type="password" autocomplete="off" spellcheck="false"
-          placeholder="paste the key issued to you" aria-describedby="admSigninNote admSigninFine">
-        <button type="submit" class="btn btn-fill" id="admSigninBtn">Sign in</button>
+    <div class="q-cell adm-head-side">
+      <section class="adm-signin" id="admSignin" aria-labelledby="admSigninTitle" hidden>
+        <form class="adm-sheet" id="admSigninForm" autocomplete="off" novalidate>
+          <div class="adm-sheet-bar">
+            <h2 class="adm-sheet-title" id="admSigninTitle">Analyst sign-in</h2>
+            <span class="adm-sheet-tag">Level 2</span>
+          </div>
+          <div class="adm-sheet-body">
+            <label class="q-label" for="admKey">Analyst key</label>
+            <p class="q-hint" id="admSigninFine">Keys are issued per person by the server operator and
+            carry a role. The key stays in this tab only and is cleared when you sign out or close it.</p>
+            <input id="admKey" class="adm-key mono" type="password" autocomplete="off" spellcheck="false"
+              aria-describedby="admSigninNote admSigninFine">
+            <div class="q-btn-row">
+              <button type="submit" class="btn btn-fill btn-go" id="admSigninBtn">Sign in</button>
+            </div>
+            <p class="adm-note" id="admSigninNote" role="status"></p>
+          </div>
+          <dl class="adm-legend">
+            <div class="adm-legend-row">
+              <dt class="q-annot">Analyst</dt>
+              <dd>Aggregates, excerpts and verdicts.</dd>
+            </div>
+            <div class="adm-legend-row">
+              <dt class="q-annot">Investigator</dt>
+              <dd>Also opens a full transcript, with a stated purpose.</dd>
+            </div>
+            <div class="adm-legend-row">
+              <dt class="q-annot">Audit log</dt>
+              <dd>Sign-ins, refusals and every opened case are written to a tamper-evident audit log under your id.</dd>
+            </div>
+          </dl>
+        </form>
+      </section>
+
+      <div class="adm-session" id="admSession" hidden>
+        <span class="adm-who" id="admWho" aria-live="polite"></span>
+        <button type="button" id="admSignOut" class="btn btn-ghost adm-btn-sm">Sign out</button>
       </div>
-      <p class="adm-note" id="admSigninNote" role="status"></p>
-      <p class="adm-signin-fine mono" id="admSigninFine">Keys are issued per person by the server operator
-      and carry a role: <b>analyst</b> (aggregates, excerpts, verdicts) or <b>investigator</b> (also opens a
-      full transcript, with a stated purpose). The key stays in this tab only and is cleared when you sign
-      out or close it. Sign-ins, refusals and every opened case are written to a tamper-evident audit log
-      under your id.</p>
-    </form>
-  </section>
-
-  <div id="admConsole" hidden>
-  <section class="col-wide adm-kpis" id="admKpis" aria-label="Dashboard totals" aria-live="polite"></section>
-
-  <section class="col-wide" id="admNovelWrap" aria-live="polite"></section>
-
-  <section class="col-wide section" id="admStatsSection" hidden>
-    <p class="eyebrow">Results &middot; statistics</p>
-    <div class="st-grid" id="admStats"></div>
-  </section>
-
-  <section class="col-wide section" aria-labelledby="admQueueTitle">
-    <p class="eyebrow" id="admQueueTitle">Priority queue</p>
-    <div class="adm-queue-tools mono">
-      <input id="admSearch" class="adm-search" type="search"
-        placeholder="search name or number…" aria-label="Search organizations">
-      <span class="tw-loc" role="radiogroup" aria-label="Filter organizations">
-        <label class="tw-chip tw-radio"><input type="radio" name="adm-filter" value="all" checked>all</label>
-        <label class="tw-chip tw-radio"><input type="radio" name="adm-filter" value="novel">new schemes</label>
-      </span>
-      <span id="admQueueCount" class="adm-note" aria-live="polite"></span>
+      <div class="adm-toolbar" id="admToolbar" hidden>
+        <!-- One language control: the header switch. These radios stay out of view; admin-lang.js
+             sets them from the header and admin.js reads them as the content language. -->
+        <div class="adm-loc" hidden>
+          <span id="admLocLabel">content language</span>
+          <span role="radiogroup" aria-labelledby="admLocLabel">
+            <label lang="kk"><input type="radio" name="adm-loc" value="kk">kk</label>
+            <label lang="ru"><input type="radio" name="adm-loc" value="ru" checked>ru</label>
+            <label lang="en"><input type="radio" name="adm-loc" value="en">en</label>
+          </span>
+        </div>
+        <div class="adm-tool">
+          <button type="button" id="admRefresh" class="btn btn-ghost adm-btn-sm">Refresh</button>
+          <button type="button" id="admIngest" class="btn btn-line adm-btn-sm">Ingest reports</button>
+        </div>
+        <p class="adm-langnote">Tactic names and model reasons follow the header language; console labels stay in English.</p>
+        <p id="admIngestNote" class="adm-note" role="status"></p>
+      </div>
     </div>
-    <div id="admQueueWrap"></div>
-  </section>
+  </div>
+
+  <div id="admConsole" class="adm-console" hidden>
+    <section class="q-row adm-kpis" id="admKpis" aria-label="Dashboard totals" aria-live="polite"></section>
+
+    <section class="adm-novel" id="admNovelWrap" aria-live="polite"></section>
+
+    <div class="q-row q-grid adm-board">
+      <section class="q-cell adm-queue" aria-labelledby="admQueueTitle">
+        <div class="adm-queue-head">
+          <h2 class="adm-h2" id="admQueueTitle">Priority queue</h2>
+          <div class="adm-queue-tools">
+            <input id="admSearch" class="adm-search" type="search"
+              placeholder="Search name, id or linked number" aria-label="Search organizations">
+            <span class="q-seg adm-seg" role="radiogroup" aria-label="Filter organizations">
+              <label class="tw-chip tw-radio"><input type="radio" name="adm-filter" value="all" checked>All</label>
+              <label class="tw-chip tw-radio"><input type="radio" name="adm-filter" value="novel">New schemes</label>
+            </span>
+            <span id="admQueueCount" class="adm-count mono" aria-live="polite"></span>
+          </div>
+        </div>
+        <div id="admQueueWrap"></div>
+      </section>
+
+      <section class="q-cell adm-stats" id="admStatsSection" aria-labelledby="admStatsTitle" hidden>
+        <h2 class="adm-h2" id="admStatsTitle">Statistics</h2>
+        <div class="st-grid" id="admStats"></div>
+      </section>
+    </div>
   </div>
 
 </main>
 
+<!-- The drill-down: a drawing sheet over the hatched-out page. It stays a sibling of main,
+     header.nav and the footer, which admin.js makes inert while it is open. -->
 <div class="adm-modal" id="admModal" hidden>
   <div class="adm-modal-backdrop" id="admModalBackdrop"></div>
-  <div class="adm-modal-card panel dd-panel" role="dialog" aria-modal="true" aria-labelledby="admModalTitle">
-    <div class="p-head mono">
+  <div class="adm-modal-card" role="dialog" aria-modal="true" aria-labelledby="admModalTitle">
+    <div class="adm-modal-head">
       <span class="p-dot" id="admModalDot" aria-hidden="true"></span>
-      <span class="p-title" id="admModalTitle">organization</span>
-      <button type="button" class="adm-modal-close mono" id="admModalClose" aria-label="Close">&#10005;</button>
+      <span class="adm-modal-title mono" id="admModalTitle">organization</span>
+      <button type="button" class="adm-modal-close" id="admModalClose" aria-label="Close"><svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M1.5 1.5l11 11M12.5 1.5l-11 11"/></svg></button>
     </div>
-    <div class="p-body" id="admDrilldown"></div>
+    <div class="adm-modal-body" id="admDrilldown"></div>
   </div>
 </div>
 
-<footer class="footer">
-  <div class="col foot-row mono">
-    <span>Qorğan &mdash; phone-scam pattern detection &middot; kk &middot; ru</span>
-    <nav class="foot-links" aria-label="Footer">
-      <a href="index.html">Home</a>
-      <a href="live.html">Check a call</a>
-      <a href="index.html#eval">Evaluation</a>
+<!-- Title block: sheet 3 of the set. admin-lang.js localizes it with the header; the console's
+     own labels stay English. -->
+<footer class="q-foot">
+  <div class="q-titleblock q-row">
+    <div>
+      <p class="q-tb-title"><svg class="brand-glyph" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="20" width="24" height="3"/><rect x="2.5" y="14" width="3" height="5"/><rect x="7.5" y="9" width="3" height="10"/><rect x="12.5" y="4" width="3" height="15"/><rect x="17.5" y="11" width="3" height="8"/><rect x="22.5" y="15" width="2" height="4"/></svg><span data-i18n="footer.tagline">Qorğan &mdash; phone-scam pattern detection</span></p>
+    </div>
+    <nav data-i18n-attr="aria-label:footer.aria" aria-label="Footer">
+      <span class="q-annot q-tb-label" data-i18n="footer.tb_pages">Pages</span>
+      <ul class="q-tb-links">
+        <li><a href="index.html" data-i18n="footer.home">Home</a></li>
+        <li><a href="live.html" data-i18n="nav.live">Check a call</a></li>
+        <li><a href="admin.html" aria-current="page" data-i18n="nav.analyst">Analyst console</a></li>
+      </ul>
     </nav>
+    <div>
+      <span class="q-annot q-tb-label" data-i18n="footer.tb_resources">Resources</span>
+      <ul class="q-tb-links">
+        <li><a href="index.html#eval" data-i18n="footer.eval">Evaluation</a></li>
+        <li><a href="/docs" data-i18n="footer.api">API documentation</a></li>
+        <li><a href="https://github.com/Ssanzhar/govtech" data-i18n="footer.code">Source code (GitHub)</a></li>
+      </ul>
+    </div>
+    <div>
+      <span class="q-annot q-tb-label" data-i18n="footer.tb_langs">Languages</span>
+      <ul class="q-tb-list">
+        <li data-i18n="lang_name.kk">Kazakh</li>
+        <li data-i18n="lang_name.ru">Russian</li>
+        <li data-i18n="lang_name.en">English</li>
+      </ul>
+    </div>
+    <div>
+      <span class="q-annot q-tb-label" data-i18n="footer.tb_sheet">Sheet</span>
+      <p class="q-tb-sheet">3 / 3</p>
+    </div>
+  </div>
+  <div class="q-wordmark-row q-row">
+    <svg class="q-wordmark" viewBox="0 0 1400 440" aria-hidden="true" focusable="false">
+      <g class="q-wm-lines"><path d="M0 372H1400M0 135H1400" stroke-dasharray="2 6"/><path d="M28 24V424M1372 24V424"/></g>
+      <text x="700" y="372" text-anchor="middle" font-size="340">Qorğan</text>
+    </svg>
   </div>
 </footer>
 

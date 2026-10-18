@@ -6,30 +6,26 @@
 <meta name="color-scheme" content="only light">
 <title data-i18n="landing.meta_title">Qorğan — знайте, что задумал звонящий</title>
 <meta name="description" data-i18n-attr="content:landing.meta_description" content="Qorğan замечает приёмы телефонных мошенников в звонках на казахском и русском — прямо на вашем устройстве — и показывает фразы, на которых основана оценка. Решает всегда человек.">
-<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%230E0C13"/><g fill="%23E29B2E"><rect x="7" y="13" width="2.6" height="6"/><rect x="11.4" y="9" width="2.6" height="14"/><rect x="15.8" y="5" width="2.6" height="22"/><rect x="20.2" y="10" width="2.6" height="12"/><rect x="24.6" y="14" width="2.6" height="4"/></g></svg>'>
+<!-- The brand mark on an ink square (design v1): five samples of a call set on a wall. -->
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="%231C1B18"/><g fill="%23F3F2EC"><rect x="4" y="23" width="24" height="3"/><rect x="5.5" y="17" width="3" height="5"/><rect x="10.5" y="12" width="3" height="10"/><rect x="15.5" y="7" width="3" height="15"/><rect x="20.5" y="14" width="3" height="8"/><rect x="25.5" y="18" width="2" height="4"/></g></svg>'>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Fraunces has no Cyrillic: PT Serif (ParaType, covers Kazakh letters) carries the Russian/Kazakh text. -->
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:wght@400;500&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<!-- IBM Plex Sans (variable wdth 85–100) + IBM Plex Mono: both carry Ә Ғ Қ Ң Ө Ұ Ү Һ І. -->
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wdth,wght@85..100,400..700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#0E0C13">
+<meta name="theme-color" content="#F3F2EC">
 </head>
 <body>
-<div class="rails" aria-hidden="true"></div>
+<div class="q-frame rails" aria-hidden="true"></div>
 
 <header class="nav lp-nav">
   <a class="brand" href="#top" data-i18n-attr="aria-label:nav.home_aria" aria-label="Qorğan — на главную">
-    <svg class="brand-glyph" viewBox="0 0 26 18" aria-hidden="true">
-      <rect x="0"  y="6.5" width="2.4" height="5"/>
-      <rect x="4.7" y="3.5" width="2.4" height="11"/>
-      <rect x="9.4" y="0.5" width="2.4" height="17"/>
-      <rect x="14.1" y="4.5" width="2.4" height="9"/>
-      <rect x="18.8" y="7"  width="2.4" height="4"/>
-    </svg>
-    <span class="brand-word">qorğan.</span>
+    <!-- The mark: five samples of a call set on a wall; the wave becomes battlements. Ink only. -->
+    <svg class="brand-glyph" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="20" width="24" height="3"/><rect x="2.5" y="14" width="3" height="5"/><rect x="7.5" y="9" width="3" height="10"/><rect x="12.5" y="4" width="3" height="15"/><rect x="17.5" y="11" width="3" height="8"/><rect x="22.5" y="15" width="2" height="4"/></svg>
+    <span class="brand-word">Qorğan</span>
   </a>
-  <nav class="nav-links mono" data-i18n-attr="aria-label:nav.primary_aria" aria-label="Основное меню">
+  <nav class="nav-links" data-i18n-attr="aria-label:nav.primary_aria" aria-label="Основное меню">
     <a href="#how" data-i18n="nav.how">Как это работает</a>
     <a href="#eval" data-i18n="footer.eval">Оценка качества</a>
     <a href="admin.html" data-i18n="nav.analyst">Кабинет аналитика</a>
@@ -43,172 +39,234 @@
   <a class="btn btn-fill btn-nav" href="live.html" data-i18n="landing.cta_check">Проверить звонок</a>
 </header>
 
-<main id="top">
+<main id="top" class="lp">
 
-  <!-- ── Hero ─────────────────────────────────────────── -->
-  <section class="hero col">
-    <p class="eyebrow" data-i18n="landing.eyebrow">Приёмы мошенников в звонках · каз · рус</p>
-    <h1 class="display" data-i18n-html="landing.title_html">Знайте, <em>что задумал звонящий</em></h1>
-    <p class="lede" data-i18n="landing.lede">Qorğan следит за разговором по ходу звонка и отмечает приёмы мошенников — просьбу назвать код из СМС, «безопасный счёт», «никому не говорите» — на казахском и русском языках. Анализ идёт на вашем устройстве, и у каждой оценки видны точные фразы, на которых она основана.</p>
-    <div class="cta-row">
-      <a class="btn btn-fill" href="live.html" data-i18n="landing.cta_check">Проверить звонок</a>
-      <a class="btn btn-line" href="#try" data-i18n="landing.cta_try">Проверить текст разговора</a>
-    </div>
-    <p class="tagline mono" data-i18n="landing.tagline">открытые модели · интервалы, а не точечные оценки · работает на вашем устройстве</p>
-  </section>
-
-  <!-- ── Live analyzer (signature illustration; decorative, described by its caption) ── -->
-  <section class="analyzer" data-i18n-attr="aria-label:landing.fig_aria" aria-label="Иллюстрация: как анализ следит за звонком">
-    <figure class="a-wrap">
-      <div class="a-side a-log mono" id="aLog" aria-hidden="true"></div>
-
-      <div class="panel" id="panel" aria-hidden="true">
-        <div class="p-head mono">
-          <span class="p-dot" id="pDot"></span>
-          <span class="p-title" data-i18n="landing.fig_title">qorğan · звонок</span>
-          <span class="p-right" data-i18n="landing.fig_right">на устройстве</span>
-        </div>
-        <div class="p-body" id="pBody">
-          <canvas id="waveCv" class="cv-wave"></canvas>
-          <div class="p-divider"></div>
-          <canvas id="specCv" class="cv-spec"></canvas>
-          <div class="playhead" id="playhead"></div>
-        </div>
-        <div class="p-axis mono"><span data-i18n="landing.fig_turn">фраза 1</span><span>2</span><span>3</span><span>4+</span></div>
+  <!-- ── Hero: the statement, then FIG. 1 (on wide screens the plate is drawn above the statement;
+       the reading and focus order keep the heading first). main.js builds the plate. ── -->
+  <section class="lp-hero" aria-labelledby="lpTitle">
+    <div class="lp-statement q-row q-grid">
+      <div class="q-cell lp-statement-title">
+        <h1 class="q-display" id="lpTitle" data-i18n-html="landing.title_html">Знайте, <em>что задумал звонящий</em></h1>
       </div>
+      <div class="q-cell lp-statement-side">
+        <p class="q-lede" data-i18n="landing.lede">Qorğan следит за разговором по ходу звонка и отмечает приёмы мошенников на казахском и русском языках. Анализ идёт на вашем устройстве, и у каждой оценки видны точные фразы, на которых она основана.</p>
+        <div class="q-btn-row">
+          <a class="btn btn-fill" href="live.html" data-i18n="landing.cta_check">Проверить звонок</a>
+          <a class="btn btn-line" href="#try" data-i18n="landing.cta_try">Проверить текст разговора</a>
+        </div>
+      </div>
+    </div>
 
-      <div class="a-side a-verdict mono" id="aVerdict" aria-hidden="true"></div>
-
-      <figcaption class="a-caption mono" data-i18n="landing.fig_caption">рис. 1 — условная картина звонка · модель читает текст разговора, а не звук · оценка каждой фразы меньше чем за 1 с</figcaption>
+    <figure class="lp-plate q-row" id="plate" data-call="scam">
+      <div class="lp-plate-body">
+        <div class="lp-sheet">
+          <div class="lp-sheet-head"><p class="q-annot" data-i18n="landing.plate_label">Рис. 1</p><p class="q-annot" id="plateHead" data-i18n="call.head" data-i18n-params='{"n":6}'>Звонок · фраз: 6</p></div>
+          <ol class="q-transcript lp-lines" id="plateLines"></ol>
+          <svg class="lp-leaders" id="plateLeaders" aria-hidden="true" focusable="false"></svg>
+        </div>
+        <div class="lp-instrument">
+          <p class="q-ruler-label" id="plateMeterLabel" data-i18n="call.meter_label">Уровень подозрения</p>
+          <p class="q-score lp-score" id="plateScore" aria-hidden="true">0 / 100</p>
+          <div class="lp-ruler">
+            <div class="q-scale q-scale--top" aria-hidden="true"><span class="is-alert" style="left:59%">59</span><span class="is-floor" style="left:61%"></span><span class="is-floor" style="left:81%"></span></div>
+            <div class="q-ruler" id="plateMeter" role="meter" aria-labelledby="plateMeterLabel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="q-ruler__fill band-low" id="plateFill"></div></div>
+            <div class="q-scale" aria-hidden="true"><span style="left:0">0</span><span style="left:30%">30</span><span style="left:60%">60</span><span style="left:80%">80</span><span style="left:100%">100</span></div>
+          </div>
+          <p class="lp-band-row"><span class="q-band band-low" id="plateBand" data-i18n="band.pill" data-i18n-params='{"band":{"$":"band.low"},"desc":{"$":"band.low_desc"}}'>Низкий: явных признаков мошенничества нет</span></p>
+          <div class="q-advice lp-advice" id="plateAdvice" hidden>
+            <p class="q-advice__title" data-i18n="call.advice_title">Что делать</p>
+            <p class="q-advice__text" id="plateAdviceText"></p>
+          </div>
+          <div class="q-callout lp-tip" id="plateTip" hidden>
+            <p class="q-callout__bar" data-i18n="call.advice_title">Что делать</p>
+            <p class="q-callout__body" data-i18n="summary.safe_tip">Если сомневаетесь, положите трубку и сами перезвоните в организацию по официальному номеру.</p>
+          </div>
+        </div>
+      </div>
+      <!-- The three trigger-phrase callouts. main.js moves each one beside its phrase and writes the
+           tactic name (core/qorgan-config.json) into its body. -->
+      <div class="lp-callout-store" hidden>
+        <div class="q-callout q-callout--alert lp-callout" data-n="1"><p class="q-callout__bar"><span class="lp-callout-n" aria-hidden="true">1</span><span class="lp-callout-turn" data-i18n="landing.plate_phrase" data-i18n-params='{"n":4}'>Фраза 4</span><span class="lp-callout-w" aria-hidden="true">1.00</span></p><p class="q-callout__body lp-callout-name"></p></div>
+        <div class="q-callout q-callout--alert lp-callout" data-n="2"><p class="q-callout__bar"><span class="lp-callout-n" aria-hidden="true">2</span><span class="lp-callout-turn" data-i18n="landing.plate_phrase" data-i18n-params='{"n":5}'>Фраза 5</span><span class="lp-callout-w" aria-hidden="true">1.00</span></p><p class="q-callout__body lp-callout-name"></p></div>
+        <div class="q-callout q-callout--alert lp-callout" data-n="3"><p class="q-callout__bar"><span class="lp-callout-n" aria-hidden="true">3</span><span class="lp-callout-turn" data-i18n="landing.plate_phrase" data-i18n-params='{"n":6}'>Фраза 6</span><span class="lp-callout-w" aria-hidden="true">1.00</span></p><p class="q-callout__body lp-callout-name"></p></div>
+      </div>
+      <!-- Under the plate: which call to draw (each press replays the build). -->
+      <div class="lp-toggle" role="group" data-i18n-attr="aria-label:landing.plate_toggle_aria" aria-label="Какой звонок показать">
+        <button type="button" class="lp-toggle-btn" data-call="scam" aria-pressed="true" data-i18n="scenario.live_scam_bank_ru">Мошенник «из банка» (на русском)</button>
+        <button type="button" class="lp-toggle-btn" data-call="legit" aria-pressed="false" data-i18n="scenario.live_hard_negative_bank_ru">Настоящий звонок из банка (на русском)</button>
+      </div>
+      <figcaption class="lp-plate-caption" data-i18n="landing.plate_caption">Демонстрационный звонок, фраза за фразой. Оценка, фразы-триггеры и совет на рисунке — настоящий вывод модели v1, работающей на устройстве; записано 17.10.2026.</figcaption>
     </figure>
   </section>
 
-  <!-- ── How it works ─────────────────────────────────── -->
-  <section id="how" class="col section">
-    <p class="eyebrow" data-i18n="nav.how">Как это работает</p>
-    <h2 class="display-2" data-i18n-html="landing.how_title_html">Слова на входе, <em>оценка</em> на выходе.</h2>
-    <div class="steps">
-      <div class="step">
-        <span class="step-num mono">01</span>
-        <h3 data-i18n="landing.step1_title">Слушает</h3>
-        <p data-i18n="landing.step1_body">Включите громкую связь рядом с компьютером или воспроизведите либо вставьте текст разговора. Речь распознаётся в браузере, на казахском и русском; звук никогда не покидает устройство. Режим микрофона пока работает в Chrome на компьютере.</p>
-      </div>
-      <div class="step">
-        <span class="step-num mono">02</span>
-        <h3 data-i18n="landing.step2_title">Оценивает</h3>
-        <p data-i18n="landing.step2_body">Многоязычная модель смысла фраз (e5, int8, на устройстве) и шесть понятных признаков: просьба назвать код, «безопасный счёт», удалённый доступ, требование молчать, данные карты — и заверение, которое дают настоящие банки («мы никогда не спрашиваем код»).</p>
-      </div>
-      <div class="step">
-        <span class="step-num mono">03</span>
-        <h3 data-i18n="landing.step3_title">Подсказывает</h3>
-        <p data-i18n="landing.step3_body">Откалиброванная вероятность против явного порога (0,59), шкала 0–100 с гистерезисом во время звонка и дословные фразы, которые к ней привели. Решает всегда человек.</p>
-      </div>
+  <!-- ── How it works: three process bars; the red line is one flagged phrase on its way through ── -->
+  <section id="how" class="lp-how q-row" aria-labelledby="howTitle">
+    <div class="lp-sec-head">
+      <h2 class="q-h2" id="howTitle" data-i18n-html="landing.how_title_html">Слова на входе, <em>оценка</em> на выходе</h2>
     </div>
+    <ol class="lp-steps">
+      <li class="lp-step">
+        <h3 class="lp-step-bar"><span class="lp-step-n" aria-hidden="true">01</span><span data-i18n="landing.step1_title">Слушает</span></h3>
+        <p class="lp-step-path" aria-hidden="true"><mark class="q-cue" data-n="1" data-path="phrase">Никому не говорите</mark></p>
+        <p class="q-body" data-i18n="landing.step1_body">Включите громкую связь рядом с компьютером или воспроизведите либо вставьте текст разговора. Речь распознаётся в браузере, на казахском и русском; звук никогда не покидает устройство. Режим микрофона пока работает в Chrome на компьютере.</p>
+      </li>
+      <li class="lp-step">
+        <h3 class="lp-step-bar"><span class="lp-step-n" aria-hidden="true">02</span><span data-i18n="landing.step2_title">Оценивает</span></h3>
+        <p class="lp-step-path" aria-hidden="true"><span class="tw-tag" data-n="1" data-path="tactic" data-tactic="secrecy">secrecy</span></p>
+        <p class="q-body" data-i18n="landing.step2_body">Многоязычная модель смысла фраз (e5, int8, на устройстве) и шесть понятных признаков: просьба назвать код, «безопасный счёт», удалённый доступ, требование молчать, данные карты — и заверение, которое дают настоящие банки («мы никогда не спрашиваем код»).</p>
+      </li>
+      <li class="lp-step">
+        <h3 class="lp-step-bar"><span class="lp-step-n" aria-hidden="true">03</span><span data-i18n="landing.step3_title">Подсказывает</span></h3>
+        <p class="lp-step-path" aria-hidden="true"><span class="q-band band-critical" data-path="band" data-i18n="landing.path_chip" data-i18n-params='{"n":4,"score":"94","band":{"$":"band.critical"}}'>Фраза 4 · 94 / 100 · Очень высокий</span></p>
+        <p class="q-body" data-i18n="landing.step3_body">Откалиброванная вероятность против явного порога (0,59), шкала 0–100 с гистерезисом во время звонка и дословные фразы, которые к ней привели. Решает всегда человек.</p>
+      </li>
+    </ol>
   </section>
 
-  <!-- ── Evidence ─────────────────────────────────────── -->
-  <section id="evidence" class="col-wide section">
-    <div class="split">
-      <div class="split-copy">
-        <p class="eyebrow" data-i18n="landing.ev_eyebrow">Объяснения</p>
-        <h2 class="display-2" data-i18n-html="landing.ev_title_html">Оценка, с которой <em>можно поспорить</em>.</h2>
-        <p class="body-copy" data-i18n="landing.ev_body1">Оценкам, которые не могут себя объяснить, либо не верят, либо — что хуже — верят слепо. Qorğan показывает доказательства по каждому звонку: какие приёмы найдены и какие именно фразы за ними стоят, — чтобы человек мог согласиться или возразить.</p>
-        <p class="body-copy" data-i18n="landing.ev_body2">Каждая выделенная фраза — дословный фрагмент разговора, привязанный к названному приёму. Языковая модель ничего не пересказывает своими словами.</p>
-      </div>
-      <!-- A machine readout (tactic ids, verbatim Russian phrases); its label is localised. -->
-      <div class="evidence-card mono" role="img" data-i18n-attr="aria-label:landing.ev_card_aria" aria-label="Пример объяснения: приёмы и фразы, на которых основана оценка «мошенничество»">
-        <div class="ec-head"><span>evidence&nbsp;·&nbsp;live_scam_bank_ru</span><span class="ec-tag">"scam_risk"&nbsp;@&nbsp;0.93</span></div>
-        <div class="ec-row"><span class="ec-name">otp_request&nbsp;«Продиктуйте код из SMS»</span><span class="ec-bar"><i style="--w:100%"></i></span><span class="ec-val">1.00</span></div>
-        <div class="ec-row"><span class="ec-name">secrecy&nbsp;«Никому не говорите»</span><span class="ec-bar"><i style="--w:100%"></i></span><span class="ec-val">1.00</span></div>
-        <div class="ec-row"><span class="ec-name">safe_account&nbsp;«на безопасный счёт»</span><span class="ec-bar"><i style="--w:100%"></i></span><span class="ec-val">1.00</span></div>
-        <div class="ec-row"><span class="ec-name">urgency&nbsp;«только пять минут»</span><span class="ec-bar"><i style="--w:72%"></i></span><span class="ec-val">0.72</span></div>
-        <div class="ec-row"><span class="ec-name">impersonation_bank</span><span class="ec-bar"><i style="--w:64%"></i></span><span class="ec-val">0.64</span></div>
-        <div class="ec-foot" data-i18n="landing.ev_card_foot">// веса приёмов — от модели, фразы — дословно · решает человек</div>
-      </div>
+  <!-- ── Detail A: the evidence behind FIG. 1's verdict, from the same probe data ── -->
+  <section id="evidence" class="lp-detail q-row q-grid" aria-labelledby="evTitle">
+    <div class="q-cell lp-detail-copy">
+      <h2 class="q-h2" id="evTitle" data-i18n-html="landing.ev_title_html">Оценка, с которой <em>можно поспорить</em></h2>
+      <p class="q-body" data-i18n="landing.ev_body1">Оценкам, которые не могут себя объяснить, либо не верят, либо — что хуже — верят слепо. Qorğan показывает доказательства по каждому звонку: какие приёмы найдены и какие именно фразы за ними стоят, — чтобы человек мог согласиться или возразить.</p>
+      <p class="q-body" data-i18n="landing.ev_body2">Каждая выделенная фраза — дословный фрагмент разговора, привязанный к названному приёму. Языковая модель ничего не пересказывает своими словами.</p>
+    </div>
+    <div class="q-cell lp-detail-cell">
+      <figure class="lp-detail-sheet" data-i18n-attr="aria-label:landing.ev_card_aria" aria-label="Пример объяснения: приёмы и фразы, на которых основана оценка «мошенничество»">
+        <p class="q-callout__bar"><span data-i18n="landing.detail_label">Деталь А</span><span class="lp-detail-ref" id="detailRef">live_scam_bank_ru · Фраза 6 · 98 / 100</span></p>
+        <!-- The last turn of FIG. 1's call (probe rt_ru_scam.json turn 6; kk: rt_kk_scam.json turn 5):
+             the trigger phrases, numbered as on the plate, then the tactics inferred from the whole
+             call window, with the model's weights. main.js re-renders it in the page's call. -->
+        <div class="lp-ev" id="detailRows" lang="ru">
+          <div class="lp-ev-row"><span class="q-marker q-marker--sm" aria-hidden="true">1</span><span class="lp-ev-phrase"><mark class="q-cue">Никому не говорите</mark></span><span class="lp-ev-tactic"><span class="lp-ev-name" data-tactic="secrecy">secrecy</span><span class="lp-ev-id">secrecy</span></span><span class="ec-bar"><i style="--w:100%"></i></span><span class="ec-val">1.00</span></div>
+          <div class="lp-ev-row"><span class="q-marker q-marker--sm" aria-hidden="true">2</span><span class="lp-ev-phrase"><mark class="q-cue">Продиктуйте код из SMS</mark></span><span class="lp-ev-tactic"><span class="lp-ev-name" data-tactic="otp_request">otp_request</span><span class="lp-ev-id">otp_request</span></span><span class="ec-bar"><i style="--w:100%"></i></span><span class="ec-val">1.00</span></div>
+          <div class="lp-ev-row"><span class="q-marker q-marker--sm" aria-hidden="true">3</span><span class="lp-ev-phrase"><mark class="q-cue">на безопасный счёт</mark></span><span class="lp-ev-tactic"><span class="lp-ev-name" data-tactic="safe_account">safe_account</span><span class="lp-ev-id">safe_account</span></span><span class="ec-bar"><i style="--w:100%"></i></span><span class="ec-val">1.00</span></div>
+          <div class="lp-ev-row"><span class="lp-ev-nomark" aria-hidden="true"></span><span class="lp-ev-phrase"><span class="lp-ev-none" data-i18n="landing.detail_window">по всему окну звонка</span></span><span class="lp-ev-tactic"><span class="lp-ev-name" data-tactic="impersonation_bank">impersonation_bank</span><span class="lp-ev-id">impersonation_bank</span></span><span class="ec-bar"><i style="--w:92%"></i></span><span class="ec-val">0.92</span></div>
+          <div class="lp-ev-row"><span class="lp-ev-nomark" aria-hidden="true"></span><span class="lp-ev-phrase"><span class="lp-ev-none" data-i18n="landing.detail_window">по всему окну звонка</span></span><span class="lp-ev-tactic"><span class="lp-ev-name" data-tactic="urgency">urgency</span><span class="lp-ev-id">urgency</span></span><span class="ec-bar"><i style="--w:88%"></i></span><span class="ec-val">0.88</span></div>
+          <div class="lp-ev-row"><span class="lp-ev-nomark" aria-hidden="true"></span><span class="lp-ev-phrase"><span class="lp-ev-none" data-i18n="landing.detail_window">по всему окну звонка</span></span><span class="lp-ev-tactic"><span class="lp-ev-name" data-tactic="fear_threat">fear_threat</span><span class="lp-ev-id">fear_threat</span></span><span class="ec-bar"><i style="--w:88%"></i></span><span class="ec-val">0.88</span></div>
+          <div class="lp-ev-row"><span class="lp-ev-nomark" aria-hidden="true"></span><span class="lp-ev-phrase"><span class="lp-ev-none" data-i18n="landing.detail_window">по всему окну звонка</span></span><span class="lp-ev-tactic"><span class="lp-ev-name" data-tactic="verification_ploy">verification_ploy</span><span class="lp-ev-id">verification_ploy</span></span><span class="ec-bar"><i style="--w:76%"></i></span><span class="ec-val">0.76</span></div>
+        </div>
+        <figcaption class="table-note" data-i18n="landing.ev_card_foot">Веса приёмов — от модели, фразы — дословно. Решает человек.</figcaption>
+      </figure>
     </div>
   </section>
 
   <!-- ── Evaluation ─────────────────────────────────────
        Pasted from harness output: docs/eval_report.md, addendum 2026-09-28 (ADR D54), device
-       backend, threshold 0.59. Update from the next harness run, never by hand. -->
-  <section id="eval" class="col section">
-    <p class="eyebrow" data-i18n="footer.eval">Оценка качества</p>
-    <h2 class="display-2" data-i18n-html="landing.eval_title_html">Ложные тревоги — <em>в первую очередь</em>.</h2>
-    <p class="body-copy narrow" data-i18n="landing.eval_body">Детектор, который часто поднимает ложную тревогу, отключают. Qorğan настроен прежде всего на минимум ложных тревог, и у каждого числа есть 95-процентный интервал: 0,000 на маленькой выборке — ещё не ноль. Настоящих звонков здесь пока нет: наборы синтетические или написаны командой. Самое честное число — в последней строке: звонки от второго, независимого генератора.</p>
-    <div class="table-scroll" tabindex="0" role="region" data-i18n-attr="aria-label:landing.eval_caption" aria-label="Качество модели на устройстве при пороге 0,59">
-      <table class="eval-table mono">
-        <caption class="sr-only" data-i18n="landing.eval_caption">Качество модели на устройстве при пороге 0,59</caption>
-        <thead>
-          <tr><th scope="col" data-i18n="landing.eval_col_split">набор</th><th scope="col" data-i18n="landing.eval_col_fpr">ложные тревоги ↓ [95% ди]</th><th scope="col" data-i18n="landing.eval_col_recall">полнота [95% ди]</th></tr>
-        </thead>
-        <tbody>
-          <tr><th scope="row" data-i18n="landing.eval_row_test">test (синтетика, n=143)</th><td class="hot">0.000&nbsp;[0.000, 0.060]</td><td>1.000&nbsp;[0.957, 1.000]</td></tr>
-          <tr><th scope="row" data-i18n="landing.eval_row_authored">authored_heldout (написан вручную, n=42)</th><td class="hot">0.000&nbsp;[0.000, 0.142]</td><td>0.889&nbsp;[0.653, 0.986]</td></tr>
-          <tr><th scope="row" data-i18n="landing.eval_row_ood">ood (шум распознавания, n=118)</th><td class="hot">0.000&nbsp;[0.000, 0.049]</td><td>0.932&nbsp;[0.813, 0.986]</td></tr>
-          <tr class="eval-honest"><th scope="row" data-i18n="landing.eval_row_shift">shift (второй генератор, n=66)</th><td class="hot">0.030&nbsp;[0.001, 0.158]</td><td>0.455&nbsp;[0.281, 0.636]</td></tr>
-        </tbody>
-      </table>
+       backend, threshold 0.59. Update from the next harness run, never by hand. The dimension
+       lines are drawn by main.js from these very cell strings. -->
+  <section id="eval" class="lp-eval q-row q-grid" aria-labelledby="evalTitle">
+    <div class="q-cell lp-eval-copy">
+      <h2 class="q-h2" id="evalTitle" data-i18n-html="landing.eval_title_html">Ложные тревоги — <em>в первую очередь</em></h2>
+      <p class="q-body" data-i18n="landing.eval_body">Детектор, который часто поднимает ложную тревогу, отключают. Qorğan настроен прежде всего на минимум ложных тревог, и у каждого числа есть 95-процентный интервал: 0,000 на маленькой выборке — ещё не ноль. Настоящих звонков здесь пока нет: наборы синтетические или написаны командой. Самое честное число — в последней строке: звонки от второго, независимого генератора.</p>
     </div>
-    <p class="table-note mono"><span data-i18n="landing.eval_note">порог 0,59 · откалибровано · точные интервалы Клоппера — Пирсона · модель на устройстве, 28.09.2026 (ADR D54) · пересчёт:</span> <code>python -m qorgan.eval.run</code></p>
-  </section>
-
-  <!-- ── Bilingual ────────────────────────────────────── -->
-  <section class="bilingual section">
-    <div class="col">
-      <p class="eyebrow centered" data-i18n="landing.bi_eyebrow">Два языка, одна модель</p>
-      <p class="bi-line" lang="kk"><span class="bi-tag mono">kk</span><em>«Әуелі тексер, сосын сен.»</em></p>
-      <p class="bi-line" lang="ru"><span class="bi-tag mono">ru</span><em>«Верить или проверить?»</em></p>
-      <p class="bi-note" data-i18n="landing.bi_note">Одна модель для казахского, русского и всего, что между ними, — включая смешанную речь. Звонки на английском тоже разбираются, но хуже: пока не на уровне казахского и русского.</p>
-    </div>
-  </section>
-
-  <!-- ── Try / CTA ────────────────────────────────────── -->
-  <section id="try" class="tryp section">
-    <div class="try-panel">
-      <p class="eyebrow inverse" data-i18n="landing.try_eyebrow">Попробуйте</p>
-      <h2 class="display-2 inverse" data-i18n-html="landing.try_title_html">Проверьте <em>текст разговора</em>.</h2>
-
-      <div class="try-widget">
-        <div class="tw-head mono"><span class="p-dot" aria-hidden="true"></span><span data-i18n="landing.tw_title">qorğan · один текст</span><span class="tw-right" id="twWhere">анализ на этом устройстве</span></div>
-        <textarea id="twInput" class="tw-input mono" rows="4" spellcheck="false"
-          data-i18n-attr="placeholder:landing.tw_placeholder;aria-label:call.transcript_label"
-          aria-label="Текст разговора"
-          placeholder="Вставьте текст разговора (на казахском или русском) — получите оценку и её объяснение…"></textarea>
-        <div class="tw-controls">
-          <div class="tw-samples mono">
-            <button type="button" class="tw-chip" data-sample="scam_ru" data-i18n="landing.tw_sample_scam_ru">пример: мошенник · рус</button>
-            <button type="button" class="tw-chip" data-sample="scam_kk" data-i18n="landing.tw_sample_scam_kk">пример: мошенник · каз</button>
-            <button type="button" class="tw-chip" data-sample="legit_ru" data-i18n="landing.tw_sample_legit_ru">пример: настоящий банк · рус</button>
-            <label class="tw-chip tw-radio" data-i18n-attr="title:landing.tw_server_title" title="Выключено: анализ в этом браузере. Включено: один запрос к серверу, который ничего не сохраняет."><input type="checkbox" id="twServer"><span data-i18n="landing.tw_server">оценить на сервере</span></label>
-          </div>
-          <button type="button" id="twGo" class="btn btn-paper">Проверить</button>
-        </div>
-        <div id="twResult" class="tw-result mono" aria-live="polite" hidden></div>
+    <div class="q-cell lp-eval-sheet">
+      <div class="table-scroll" tabindex="0" role="region" data-i18n-attr="aria-label:landing.eval_caption" aria-label="Качество модели на устройстве при пороге 0,59">
+        <table class="eval-table lp-ci-table">
+          <caption class="sr-only" data-i18n="landing.eval_caption">Качество модели на устройстве при пороге 0,59</caption>
+          <thead>
+            <tr><th scope="col" data-i18n="landing.eval_col_split">набор</th><th scope="col" data-i18n="landing.eval_col_fpr">ложные тревоги ↓ [95% ди]</th><th scope="col" data-i18n="landing.eval_col_recall">полнота [95% ди]</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row" data-i18n="landing.eval_row_test">test (синтетика, n=143)</th><td class="hot">0.000&nbsp;[0.000, 0.060]</td><td>1.000&nbsp;[0.957, 1.000]</td></tr>
+            <tr><th scope="row" data-i18n="landing.eval_row_authored">authored_heldout (написан вручную, n=42)</th><td class="hot">0.000&nbsp;[0.000, 0.142]</td><td>0.889&nbsp;[0.653, 0.986]</td></tr>
+            <tr><th scope="row" data-i18n="landing.eval_row_ood">ood (шум распознавания, n=118)</th><td class="hot">0.000&nbsp;[0.000, 0.049]</td><td>0.932&nbsp;[0.813, 0.986]</td></tr>
+            <tr class="eval-honest"><th scope="row" data-i18n="landing.eval_row_shift">shift (второй генератор, n=66)</th><td class="hot">0.030&nbsp;[0.001, 0.158]</td><td>0.455&nbsp;[0.281, 0.636]</td></tr>
+          </tbody>
+        </table>
       </div>
+      <p class="table-note"><span data-i18n="landing.eval_note">порог 0,59 · откалибровано · точные интервалы Клоппера — Пирсона · модель на устройстве, 28.09.2026 (ADR D54) · пересчёт:</span> <code>python -m qorgan.eval.run</code></p>
+    </div>
+  </section>
 
-      <div class="cta-row">
+  <!-- ── Two languages: the proverbs as one centred statement ── -->
+  <section class="lp-bi q-row" aria-labelledby="biTitle">
+    <h2 class="sr-only" id="biTitle" data-i18n="landing.bi_eyebrow">Два языка, одна модель</h2>
+    <p class="lp-bi-line" lang="kk"><span class="lp-bi-tag" aria-hidden="true">kk</span>«Әуелі тексер, сосын сен.»</p>
+    <p class="lp-bi-line" lang="ru"><span class="lp-bi-tag" aria-hidden="true">ru</span>«Верить или проверить?»</p>
+    <p class="q-body lp-bi-note" data-i18n="landing.bi_note">Одна модель для казахского, русского и всего, что между ними, — включая смешанную речь. Звонки на английском тоже разбираются, но хуже: пока не на уровне казахского и русского.</p>
+  </section>
+
+  <!-- ── Try: one transcript on a paste-text sheet (try.js; analysed on this device) ── -->
+  <section id="try" class="lp-try q-row q-grid" aria-labelledby="tryTitle">
+    <div class="q-cell lp-try-copy">
+      <h2 class="q-h2" id="tryTitle" data-i18n-html="landing.try_title_html">Проверьте <em>текст разговора</em></h2>
+      <p class="q-small" data-i18n="landing.try_note">Работает в этом браузере: модель около 300 МБ, загружается один раз. На сервере — только если вы отметите. Решает всегда человек.</p>
+      <div class="q-btn-row">
         <a class="btn btn-paper" href="live.html" data-i18n="landing.cta_check">Проверить звонок</a>
         <a class="btn btn-ghost" href="/docs" data-i18n="landing.try_api">Документация API</a>
       </div>
-      <p class="try-note mono" data-i18n="landing.try_note">работает в этом браузере (модель около 300 МБ, загружается один раз) · на сервере — только если вы отметите · решает всегда человек</p>
+    </div>
+    <div class="q-cell lp-try-cell">
+      <div class="lp-try-sheet">
+        <p class="q-callout__bar"><span data-i18n="landing.tw_title">qorğan · один текст</span><span id="twWhere">анализ на этом устройстве</span></p>
+        <textarea id="twInput" class="tw-input" rows="5" spellcheck="false"
+          data-i18n-attr="placeholder:landing.tw_placeholder;aria-label:call.transcript_label"
+          aria-label="Текст разговора"
+          placeholder="Вставьте текст разговора (на казахском или русском) — получите оценку и её объяснение…"></textarea>
+        <div class="lp-try-controls">
+          <div class="lp-try-samples" role="group" aria-labelledby="twSamplesLabel">
+            <span class="q-annot lp-try-samples-label" id="twSamplesLabel" data-i18n="landing.tw_samples_label">Примеры</span>
+            <button type="button" class="tw-chip" data-sample="scam_ru" data-i18n="landing.tw_sample_scam_ru">мошенник (рус.)</button>
+            <button type="button" class="tw-chip" data-sample="scam_kk" data-i18n="landing.tw_sample_scam_kk">мошенник (каз.)</button>
+            <button type="button" class="tw-chip" data-sample="legit_ru" data-i18n="landing.tw_sample_legit_ru">настоящий банк (рус.)</button>
+          </div>
+          <div class="lp-try-run">
+            <label class="q-check lp-try-server" data-i18n-attr="title:landing.tw_server_title" title="Выключено: анализ в этом браузере. Включено: один запрос к серверу, который ничего не сохраняет."><input type="checkbox" id="twServer"><span data-i18n="landing.tw_server">оценить на сервере</span></label>
+            <button type="button" id="twGo" class="btn btn-paper btn-go">Проверить</button>
+          </div>
+        </div>
+        <div id="twResult" class="lp-try-result" aria-live="polite" hidden></div>
+      </div>
     </div>
   </section>
 
 </main>
 
-<footer class="footer">
-  <div class="col foot-row mono">
-    <span data-i18n="footer.tagline">Qorğan — распознавание приёмов телефонных мошенников · қаз · рус</span>
-    <nav class="foot-links" data-i18n-attr="aria-label:footer.aria" aria-label="Нижнее меню">
-      <a href="live.html" data-i18n="nav.live">Проверка звонка</a>
-      <a href="admin.html" data-i18n="nav.analyst">Кабинет аналитика</a>
-      <a href="/docs">API</a>
-      <a href="https://github.com/Ssanzhar/govtech">GitHub</a>
+<!-- Title block: the site is a set of three drawing sheets; this is sheet 1. -->
+<footer class="q-foot">
+  <div class="q-titleblock q-row">
+    <div>
+      <p class="q-tb-title"><svg class="brand-glyph" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="20" width="24" height="3"/><rect x="2.5" y="14" width="3" height="5"/><rect x="7.5" y="9" width="3" height="10"/><rect x="12.5" y="4" width="3" height="15"/><rect x="17.5" y="11" width="3" height="8"/><rect x="22.5" y="15" width="2" height="4"/></svg><span data-i18n="footer.tagline">Qorğan — распознавание приёмов телефонных мошенников</span></p>
+    </div>
+    <nav data-i18n-attr="aria-label:footer.aria" aria-label="Нижнее меню">
+      <span class="q-annot q-tb-label" data-i18n="footer.tb_pages">Страницы</span>
+      <ul class="q-tb-links">
+        <li><a href="#top" aria-current="page" data-i18n="footer.home">Главная</a></li>
+        <li><a href="live.html" data-i18n="nav.live">Проверка звонка</a></li>
+        <li><a href="admin.html" data-i18n="nav.analyst">Кабинет аналитика</a></li>
+      </ul>
     </nav>
+    <div>
+      <span class="q-annot q-tb-label" data-i18n="footer.tb_resources">Материалы</span>
+      <ul class="q-tb-links">
+        <li><a href="#eval" data-i18n="footer.eval">Оценка качества</a></li>
+        <li><a href="/docs" data-i18n="footer.api">Документация API</a></li>
+        <li><a href="https://github.com/Ssanzhar/govtech" data-i18n="footer.code">Исходный код (GitHub)</a></li>
+      </ul>
+    </div>
+    <div>
+      <span class="q-annot q-tb-label" data-i18n="footer.tb_langs">Языки</span>
+      <ul class="q-tb-list">
+        <li data-i18n="lang_name.kk">казахский</li>
+        <li data-i18n="lang_name.ru">русский</li>
+        <li data-i18n="lang_name.en">английский</li>
+      </ul>
+    </div>
+    <div>
+      <span class="q-annot q-tb-label" data-i18n="footer.tb_sheet">Лист</span>
+      <p class="q-tb-sheet">1 / 3</p>
+    </div>
+  </div>
+  <div class="q-wordmark-row q-row">
+    <svg class="q-wordmark" viewBox="0 0 1400 440" aria-hidden="true" focusable="false">
+      <g class="q-wm-lines"><path d="M0 372H1400M0 135H1400" stroke-dasharray="2 6"/><path d="M28 24V424M1372 24V424"/></g>
+      <text x="700" y="372" text-anchor="middle" font-size="340">Qorğan</text>
+    </svg>
   </div>
 </footer>
 
-<script src="main.js"></script>
+<!-- main.js (the figures) first: it hears the qorgan:locale event landing.js fires on load. -->
+<script type="module" src="main.js"></script>
 <script type="module" src="landing.js"></script>
 <script type="module" src="try.js"></script>
 </body>
