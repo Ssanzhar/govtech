@@ -26,9 +26,11 @@
 version: 1
 
 # Self-introduction by organisation (ADR D63 phase 2; matcher in `qorgan.explain.roles`).
-# A role's `orgs` are organisation names; one becomes a claim when it carries a Kazakh ablative
-# affix («Kaspi-ден», «емханасынан») or an introduction marker below sits within
-# `ROLE_INTRO_WINDOW` (config.py) tokens of it on the same line. Tokens: a trailing `*` makes
+# A role's `orgs` are organisation names; one becomes a claim only when an introduction marker
+# below sits within `ROLE_INTRO_WINDOW` (config.py) tokens of it in the same sentence of the
+# same line (D63 v2.1: a bare Kazakh ablative «Kaspi-ден» is no longer enough; precision over
+# recall). `channel` vetoes an organisation used as a payment channel or a help desk.
+# Tokens: a trailing `*` makes
 # that word a prefix; otherwise it matches exactly or with one affix glued on. Personal names
 # are never matched. Sources: the 59 role misses of the phase-1 pilot (future TRAIN data, never
 # a held-out split) and general knowledge of KZ brands; measured again on the phase-2 batch,
@@ -75,17 +77,26 @@ intro:
     - it is
     - my name is
     - calling
-    - here
     - team
     - department
     - customer care
     - customer service
-    - support
     - courier
     - delivery
     - speaking
     - on behalf of
   affixes: [дан, ден, тан, тен, нан, нен]
+  # D63 v2.1 (display-only fix): an organisation is NOT the caller's role when it is named as a
+  # channel or a help desk. Sources: the 14 wrong role lines on role-less rows of the phase-2
+  # batch (train data; D63 "Role line, extra fires"). `before`: the token right before the
+  # organisation; `after`: the token right after it; `affixes`: a separate non-ablative case
+  # ending right after it («Kaspi-ге», «Kaspi-дің»); `blockers`: a negation between the marker
+  # and the organisation. A sentence end (. ! ?) between them is a wall too.
+  channel:
+    before: [на, через, по, в, во, via, through, on, to, into, in, by, with, using]
+    after: [support, поддержк*, қолдау*, арқылы, app, application, приложени*, қосымша*]
+    affixes: [ге, ке, ға, қа, да, де, та, те, дың, дің, тың, тің, ның, нің, ды, ді, ты, ті, ны, ні]
+    blockers: [не, not, ни, no]
 
 roles:
   - id: bank_security

@@ -135,10 +135,11 @@ def test_get_role_lexicon_reads_the_configured_path():
         ("Алло, это Асель из Kaspi, удобно говорить?", "bank_security", "это Асель из Kaspi"),
         ("Сәлеметсіз бе, Halyk банктен Ерлан.", "bank_security", "Halyk банктен"),
         ("Hello, this is John from Beeline, quick question.", "telecom_operator", "this is John from Beeline"),
-        ("Алло, Tele2-ден звоним снова.", "telecom_operator", "Tele2-ден"),
+        ("Алло, Tele2-ден звоним снова.", "telecom_operator", "Tele2-ден звоним"),
+        ("Сәлеметсіз бе, Kaspi-ден хабарласып тұрмын.", "bank_security", "Kaspi-ден хабарласып"),
         ("Добрый день, курьер Kaspi доставки, Нурлан.", "courier_post", "курьер Kaspi доставки"),
-        ("Қарағандының №3 емханасынан, мейірбике Ақмарал.", "clinic", "емханасынан"),
-        ("Hello, Beeline customer care here.", "telecom_operator", "Beeline customer care"),
+        ("Қарағандының №3 емханасынан хабарласып тұрмын.", "clinic", "емханасынан хабарласып"),
+        ("Hello, Beeline customer care, how can I help?", "telecom_operator", "Beeline customer care"),
     ],
 )
 def test_self_introduction_by_organisation(transcript, role, span):
@@ -183,3 +184,28 @@ def test_lexicon_without_intro_section_still_loads(tmp_path):
 def test_an_ablative_mid_sentence_is_a_transfer_not_an_introduction():
     lexicon = load_role_lexicon(REAL)
     assert detect_role("Ертең кешке дейін сол ақшаны бір досыңның атынан Jusan-нан аударасың.", lexicon) is None
+
+
+# ---------------------------------------------------------------- role-line display fix (D63 v2.1): precision over recall
+
+
+@pytest.mark.parametrize(
+    "transcript",
+    [
+        "Қарағандының №3 емханасынан, мейірбике Ақмарал.",  # ablative with no intro marker
+        "Иә, Kaspi-ден бір нәрсе келді. Ал не?",
+        "So I talked to Kaspi support, and they said there's a return button.",  # support = channel
+        "Then I'll ask Kaspi support to handle it.",
+        "Жоқ, мен алдымен Kaspi қолдауына хабарласып көрейін.",
+        "Hello, Beeline here.",  # "here" is not an introduction marker
+        "Менің атым Әсел. Бүгін таңертең Kaspi арқылы қателесіп сізге он бес мың жіберіп қойдым.",
+        "Сізге кеше кешке елу бес мың түсті ғой, Kaspi-ге. Это мой, қате болып кетті.",
+        "Қараңыз, мен қазір Kaspi-дің өз нөміріне қоңырау шалып, сұраймын.",
+        "Hello, sorry to disturb you. I sent you a message on Kaspi an hour ago. My name is Aigerim.",
+        "Мам, это я, переведи на Kaspi пять тысяч.",
+        "Зять уговорил вложить через Halyk Invest, сам в приложении. Говорит, двенадцать процентов.",
+        "Это не Kaspi, это мой знакомый.",
+    ],
+)
+def test_an_organisation_named_as_a_channel_is_not_the_callers_role(transcript):
+    assert detect_role(transcript, load_role_lexicon(REAL)) is None

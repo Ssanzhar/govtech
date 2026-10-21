@@ -2629,3 +2629,17 @@ step 1 if:
   evaluation headlines and the voice mode.
 - **No re-tuning after the look.** Whatever the result, `shift_local` is not used again for this
   question.
+
+**Step 1 result (2026-10-22, `qorgan.eval.run --split val --by-language`, device embeddings).**
+Both arms score FPR 0.000 and recall 1.000 on kk (n=30), mixed (38) and ru (44): validation is
+saturated (same generator as train), so step 1 passes without telling the arms apart. Per-tactic F1
+moves both ways by small amounts (e.g. kk credentials_request 0.000 → 0.333; mixed urgency 0.706 →
+0.667).
+
+**Weights frozen before step 2 (sha256):**
+- A: `risk_clf.joblib` a1eeee6eac1c53cb4308dfa1bc80a733ead7cbc9d70f6ba5daa06de4b221ab3b ·
+  `tactic_clf.joblib` 480b5f589a6b87c2b33f091396a0fd70d9cb62c0e46b2ea6c99f3da0c48a685f ·
+  `web/weights.json` 285db215747a0e4d67b8ca8b6252e5b61661f04a081cbe78be0b3d3224e38adc
+- B: `risk_clf.joblib` 863cf52559cebe014c47eac7320b6f45635d07c5d1931a8cf551f0259ceae5b2 ·
+  `tactic_clf.joblib` 5c63e2426f0d3cf558e014e666354935f805a38e3e275491064691a0bde134e1 ·
+  `web/weights.json` aaa1fd4f765c7ec46dda8507ea4df1f3debeb5a230b6872537c999b534ff56a2
