@@ -1,9 +1,10 @@
 /* Display helpers for per-word language tags (ADR D64). Pure; the page renders the result.
 
    `alignTokens(text, words)` pairs each whitespace token of the transcript with its tagged
-   word (`{word, lang}` from word-lid.js), keeping the token's character offsets so evidence
-   highlighting still works on the verbatim text; null when the two do not line up (then the
-   page shows the line without word tags rather than guessing).
+   words (`{word, lang}` from word-lid.js; a hyphenated token takes several, a punctuation-only
+   token none), keeping the token's character offsets so evidence highlighting still works on the
+   verbatim text; null when the two do not line up (then the page shows the line without word
+   tags rather than guessing).
    `runsOf(items)` groups consecutive items of one language: a language chip is drawn per run,
    not per word. */
 
@@ -14,13 +15,29 @@ export function alignTokens(text, words) {
   const re = /\S+/g;
   let m;
   while ((m = re.exec(text)) !== null) tokens.push({ text: m[0], start: m.index, end: m.index + m[0].length });
-  if (tokens.length !== words.length) return null;
-  for (let i = 0; i < tokens.length; i++) {
-    const pieces = normalizeWords(tokens[i].text);
-    if (pieces.length !== 1 || pieces[0] !== words[i].word) return null;
-    tokens[i].lang = words[i].lang;
-  }
-  return tokens;
+  let next = 0;
+  const out = tokens.map((token) => {
+    const pieces = normalizeWords(token.text);
+    const taken = words.slice(next, next + pieces.length);
+    if (taken.length !== pieces.length || pieces.some((p, i) => p !== taken[i].word)) return null;
+    next += pieces.length;
+    return { ...token, lang: pieceLanguage(taken) };
+  });
+  if (!words.length || next !== words.length || out.some((t) => t === null)) return null;
+  // a punctuation-only token ("—") has no word: it takes the previous token's language, or the next one's
+  const neighbour = (i) => out.slice(0, i).reverse().find((t) => t.lang)?.lang ?? out.slice(i + 1).find((t) => t.lang).lang;
+  return out.map((t, i) => (t.lang ? t : { ...t, lang: neighbour(i) }));
+}
+
+/** The language of a token made of several words ("из-за", "Kaspi-ге"): the majority, ties to the
+    last piece (a Kazakh case ending decides a loanword); null for a token with no word. */
+function pieceLanguage(pieces) {
+  if (!pieces.length) return null;
+  const counts = {};
+  for (const p of pieces) counts[p.lang] = (counts[p.lang] ?? 0) + 1;
+  const best = Math.max(...Object.values(counts));
+  for (let i = pieces.length - 1; i >= 0; i--) if (counts[pieces[i].lang] === best) return pieces[i].lang;
+  return null;
 }
 
 export function runsOf(items) {

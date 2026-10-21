@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import re
 import sys
 import unicodedata
@@ -17,7 +18,9 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[3]
 sys.path.insert(0, str(HERE.parent))
 
-LANGS = ("kk", "ru", "en")
+# The recognisers' languages. kk/ru only since ADR D70 (stakeholders: no English call language);
+# SPANVOTE_LANGS=kk,ru,en reproduces the three-model D64 run.
+LANGS = tuple(os.environ.get("SPANVOTE_LANGS", "kk,ru").split(","))
 KAZAKH_ONLY = set("әғқңөұүһі")
 MANIFESTS = {"dev": REPO / "data/asr_capture/spanvote_dev_set.jsonl", "test": REPO / "data/asr_capture/cs_set.jsonl"}
 DECODE_GLOBS = {"dev": "data/asr_capture/spanvote_dev_decodes.*.jsonl", "test": "data/asr_capture/spanvote_test_decodes.*.jsonl"}

@@ -1,4 +1,5 @@
-/* Live per-word kk/ru/en tags from the three Vosk recognisers: the calibrated span vote (ADR D64).
+/* Live per-word kk/ru tags from the two Vosk recognisers: the calibrated span vote (ADR D64; kk/ru
+   only since ADR D70).
 
    A 1:1 port of `scripts/spikes/asr_wordlevel/spanvote/{common,vote,realtime}.py`, pinned by
    tests_js/fixtures/span_vote.json (`scripts/export_asr_wordlevel.py`):
@@ -6,14 +7,14 @@
       rivals' confidence over the same audio, the kk−ru char-trigram score...) and a logistic
       calibrator turns them into P(word is right AND in the right language);
    2. the timeline is cut at every word boundary; in each elementary span a language scores
-      duration × logit(p) (a fixed `missing_logit` where it has no word); a 3-state Viterbi with a
+      duration × logit(p) (a fixed `missing_logit` where it has no word); a Viterbi over kk/ru with a
       switch penalty picks one language per span; each language's words whose midpoint lies in its
       spans are emitted once, in time order;
    3. a span more than `freeze_s` behind the newest decoded word is frozen (its language locked
       for every later pass) so the display stops flickering.
-   Rerun on every partial/result event. Measured (spike REPORT): word-language accuracy 0.873
-   on the code-switch TEST set, but live English recall only 0.29 -- English words stay provisional
-   until the endpoint pass replaces the utterance. Pure, no I/O. */
+   Rerun on every partial/result event. Measured on the kk/ru code-switch TEST set (ADR D70,
+   data/asr_capture/spanvote_results_kkru.json): word-language accuracy 0.874 (kk 0.931, ru 0.873)
+   with the 0.5 s freeze. Pure, no I/O. */
 
 import { LANGS, normalizeWords } from "./word-lid.js";
 
@@ -75,7 +76,7 @@ function wordFeatures(word, hyp, othersMean, others, lid, clip, minDur) {
   return feats;
 }
 
-/** Feature rows per language for cleaned hypotheses `{kk, ru, en}` (missing = []). */
+/** Feature rows per language for cleaned hypotheses `{kk, ru}` (missing = []). */
 export function hypFeatures(hyps, lid, { clip = 1e-3, minDur = 0.03 } = {}) {
   const means = Object.fromEntries(LANGS.map((l) => [l, hyps[l]?.length ? mean(hyps[l].map((x) => x[3])) : 0]));
   const out = {};

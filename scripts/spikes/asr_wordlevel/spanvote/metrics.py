@@ -4,16 +4,17 @@ from __future__ import annotations
 
 import numpy as np
 
-from common import LANGS, align
+from common import align
 
+REF_LANGS = ("kk", "ru", "en")  # reference languages, whatever the recognisers are
 BOOTSTRAP = 1000
 SEED = 20261008
 KEYS = ("ref", "err", "tag_ok", "aligned", "good", "en_ref", "en_as_en", "kkru_ref", "kkru_as_en",
-        *(f"tag_ok_{l}" for l in LANGS), *(f"aligned_{l}" for l in LANGS))
+        *(f"tag_ok_{l}" for l in REF_LANGS), *(f"aligned_{l}" for l in REF_LANGS))
 RATIOS = {
     "word_lang_acc": ("tag_ok", "aligned"), "wer": ("err", "ref"), "right_word_right_tag": ("good", "ref"),
     "en_recall": ("en_as_en", "en_ref"), "kkru_to_en_rate": ("kkru_as_en", "kkru_ref"),
-    **{f"word_lang_acc_{l}": (f"tag_ok_{l}", f"aligned_{l}") for l in LANGS},
+    **{f"word_lang_acc_{l}": (f"tag_ok_{l}", f"aligned_{l}") for l in REF_LANGS},
 }
 
 

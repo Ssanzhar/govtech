@@ -1,0 +1,263 @@
+{
+ "dev": {
+  "rows": 800,
+  "lid_only": {
+   "n_utts": 800,
+   "n_ref_words": 4564,
+   "word_lang_acc": 0.9194,
+   "wer": 0.2496,
+   "right_word_right_tag": 0.7518,
+   "kkru_to_en_rate": 0.0,
+   "word_lang_acc_kk": 0.924,
+   "word_lang_acc_ru": 0.9152
+  },
+  "grid": {
+   "0.34/1.0": {
+    "word_lang_acc": 0.9217,
+    "flips": 0.0711
+   },
+   "0.34/2.0": {
+    "word_lang_acc": 0.9242,
+    "flips": 0.0672
+   },
+   "0.34/4.0": {
+    "word_lang_acc": 0.9286,
+    "flips": 0.0525
+   },
+   "0.34/8.0": {
+    "word_lang_acc": 0.9289,
+    "flips": 0.0392
+   },
+   "0.34/16.0": {
+    "word_lang_acc": 0.93,
+    "flips": 0.0238
+   },
+   "0.34/32.0": {
+    "word_lang_acc": 0.918,
+    "flips": 0.0097
+   },
+   "0.5/1.0": {
+    "word_lang_acc": 0.9208,
+    "flips": 0.0711
+   },
+   "0.5/2.0": {
+    "word_lang_acc": 0.9229,
+    "flips": 0.0672
+   },
+   "0.5/4.0": {
+    "word_lang_acc": 0.9277,
+    "flips": 0.0525
+   },
+   "0.5/8.0": {
+    "word_lang_acc": 0.9279,
+    "flips": 0.0392
+   },
+   "0.5/16.0": {
+    "word_lang_acc": 0.93,
+    "flips": 0.024
+   },
+   "0.5/32.0": {
+    "word_lang_acc": 0.9194,
+    "flips": 0.0097
+   },
+   "0.67/1.0": {
+    "word_lang_acc": 0.9201,
+    "flips": 0.0734
+   },
+   "0.67/2.0": {
+    "word_lang_acc": 0.9203,
+    "flips": 0.0716
+   },
+   "0.67/4.0": {
+    "word_lang_acc": 0.921,
+    "flips": 0.0633
+   },
+   "0.67/8.0": {
+    "word_lang_acc": 0.9189,
+    "flips": 0.0578
+   },
+   "0.67/16.0": {
+    "word_lang_acc": 0.9171,
+    "flips": 0.0523
+   },
+   "0.67/32.0": {
+    "word_lang_acc": 0.9125,
+    "flips": 0.0455
+   }
+  },
+  "chosen": {
+   "min_sim": 0.34,
+   "weight": 16.0
+  }
+ },
+ "test": {
+  "rows": 440,
+  "gigaam_lid_only": {
+   "all": {
+    "n_utts": 440,
+    "n_ref_words": 2474,
+    "word_lang_acc": 0.8902,
+    "word_lang_acc_ci": [
+     0.874,
+     0.9047
+    ],
+    "wer": 0.1993,
+    "wer_ci": [
+     0.1776,
+     0.2204
+    ],
+    "right_word_right_tag": 0.7805,
+    "right_word_right_tag_ci": [
+     0.7586,
+     0.8016
+    ],
+    "en_recall": 0.0,
+    "en_recall_ci": [
+     0.0,
+     0.0
+    ],
+    "kkru_to_en_rate": 0.0,
+    "kkru_to_en_rate_ci": [
+     0.0,
+     0.0
+    ],
+    "word_lang_acc_kk": 0.9446,
+    "word_lang_acc_kk_ci": [
+     0.9299,
+     0.9596
+    ],
+    "word_lang_acc_ru": 0.8982,
+    "word_lang_acc_ru_ci": [
+     0.8784,
+     0.9183
+    ],
+    "word_lang_acc_en": 0.0,
+    "word_lang_acc_en_ci": [
+     0.0,
+     0.0
+    ]
+   },
+   "no_en": {
+    "n_utts": 400,
+    "n_ref_words": 2272,
+    "word_lang_acc": 0.9202,
+    "word_lang_acc_ci": [
+     0.9096,
+     0.9313
+    ],
+    "wer": 0.1717,
+    "wer_ci": [
+     0.1546,
+     0.1912
+    ],
+    "right_word_right_tag": 0.805,
+    "right_word_right_tag_ci": [
+     0.786,
+     0.823
+    ],
+    "kkru_to_en_rate": 0.0,
+    "kkru_to_en_rate_ci": [
+     0.0,
+     0.0
+    ],
+    "word_lang_acc_kk": 0.9457,
+    "word_lang_acc_kk_ci": [
+     0.9307,
+     0.9587
+    ],
+    "word_lang_acc_ru": 0.892,
+    "word_lang_acc_ru_ci": [
+     0.872,
+     0.9127
+    ]
+   },
+   "endpoint_flip_rate": 0.0777
+  },
+  "gigaam_inherit": {
+   "all": {
+    "n_utts": 440,
+    "n_ref_words": 2474,
+    "word_lang_acc": 0.9002,
+    "word_lang_acc_ci": [
+     0.8835,
+     0.9157
+    ],
+    "wer": 0.1993,
+    "wer_ci": [
+     0.1776,
+     0.2204
+    ],
+    "right_word_right_tag": 0.7833,
+    "right_word_right_tag_ci": [
+     0.7616,
+     0.8047
+    ],
+    "en_recall": 0.0,
+    "en_recall_ci": [
+     0.0,
+     0.0
+    ],
+    "kkru_to_en_rate": 0.0,
+    "kkru_to_en_rate_ci": [
+     0.0,
+     0.0
+    ],
+    "word_lang_acc_kk": 0.9587,
+    "word_lang_acc_kk_ci": [
+     0.9463,
+     0.9698
+    ],
+    "word_lang_acc_ru": 0.9045,
+    "word_lang_acc_ru_ci": [
+     0.8845,
+     0.9244
+    ],
+    "word_lang_acc_en": 0.0,
+    "word_lang_acc_en_ci": [
+     0.0,
+     0.0
+    ]
+   },
+   "no_en": {
+    "n_utts": 400,
+    "n_ref_words": 2272,
+    "word_lang_acc": 0.9305,
+    "word_lang_acc_ci": [
+     0.9198,
+     0.9411
+    ],
+    "wer": 0.1717,
+    "wer_ci": [
+     0.1546,
+     0.1912
+    ],
+    "right_word_right_tag": 0.8081,
+    "right_word_right_tag_ci": [
+     0.7897,
+     0.8271
+    ],
+    "kkru_to_en_rate": 0.0,
+    "kkru_to_en_rate_ci": [
+     0.0,
+     0.0
+    ],
+    "word_lang_acc_kk": 0.9595,
+    "word_lang_acc_kk_ci": [
+     0.9463,
+     0.9706
+    ],
+    "word_lang_acc_ru": 0.8987,
+    "word_lang_acc_ru_ci": [
+     0.8787,
+     0.9193
+    ]
+   },
+   "endpoint_flip_rate": 0.0161
+  }
+ },
+ "js_port": {
+  "min_sim": 0.34,
+  "weight": 16.0
+ },
+ "seconds": 8.7
+}

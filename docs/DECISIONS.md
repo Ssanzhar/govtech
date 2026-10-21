@@ -2486,3 +2486,111 @@ row was read at curation), which the manifest's `excluded_by_review` records.
 2. Volume: sudact's own search would give far more than web-search discovery (6 of 135 fetched pages
    gave a kept row); ask the operator for permission, or for an export.
 3. A human spot-check of the 47 rows and a KZ advocate's line on the "local-only" boundary.
+
+### D70 — Kazakh and Russian only; the live per-word tags survive the endpoint (2026-10-21)
+**Context.**
+- **Stakeholders (call of 2026-10-21):** Qorğan stays a kk/ru system for Kazakhstan, with no English
+  model, to gain accuracy and focus. English is no longer a **call language**. The page's `en`
+  **UI locale** stays (judges, foreign residents); it costs the model nothing.
+- **User report:** in a live call each word gets a language chip while it is spoken. When the
+  phrase ends, the whole line flips to one or two classes and re-labels words that were right.
+
+**Root cause (the bug).** At commit, `asr.js` emitted only the winning recogniser's whole text, so
+the live span-vote tags (D64) were thrown away. `endpoint.js` then re-tagged that text from scratch.
+- Deployments run the **fallback**: the GigaAM runtime is not hosted yet (PLAN C1). There the text
+  is one monolingual Vosk model's output (the RU model cannot write Kazakh letters), so the line
+  collapses to one or two runs.
+- On the GigaAM path the word LID re-tags GigaAM's text and changes 7.8 % of the words the person
+  had already seen.
+- D64 intended the replacement. The loss of the live tags was never decided.
+
+**Decisions**
+1. **The committed utterance carries the span vote's final words** (`asr.js committedWords`). The
+   fallback emits those words and their tags unchanged (`endpoint.js fallbackUtterance`). Their text
+   is what the meter scores, because it is the better transcript: WER 0.274 against the vote's
+   0.424. Without word-level models nothing changes.
+2. **GigaAM's words inherit the live tags** (`site/core/word-align.js`; reference
+   `scripts/spikes/asr_wordlevel/spanvote/inherit.py`).
+   - Words are aligned by a word edit distance whose substitution cost is 1 − normalised-Levenshtein
+     similarity.
+   - The word LID's Viterbi then runs with a hint: a paired word (similarity ≥ `min_sim`) costs
+     `weight` nats in any language but its live tag.
+   - Kazakh-only letters still decide. Unpaired words follow the LID.
+   - `min_sim` 0.34 and `weight` 16 were chosen on **DEV**. To make that possible, DEV got GigaAM
+     decodes for the first time (`decode_dev_gigaam.py`). TEST was then scored once.
+3. **English leaves the voice pipeline.**
+   - Gone: the D62 Vosk-EN recogniser, its handicap and its `optional` slot (`config.py`,
+     `client_config.py`, `deploy_bootstrap.py`, `.env.example`).
+   - The word LID and span vote have two states. A Latin word ("sms", "kaspi") is neutral and
+     follows its neighbours.
+   - The span-vote calibrators were refit and the vote retuned on DEV rows without English speech
+     (`SPANVOTE_LANGS`, default `kk,ru`; `kk,ru,en` reproduces D64, whose
+     `spanvote_results.json` is kept). Output: `spanvote_results_kkru.json`.
+4. **Word-LID tuning uses the one-standard-error rule.** The spliced synthetic dev set switches
+   language every few words, far more often than a call does. So among settings within 1 SE of the
+   best, the smoothest is taken. The refit on the current `train` (D66 changed it) otherwise chose
+   switch penalty 1.0, with 0.9693 against 0.9668–0.9680 for its neighbours (SE ≈ 0.0026).
+   - This was noticed because a unit test («назовите код из смс» tagged «код» kk) failed, not from
+     held-out data.
+   - «код» occurs 128× in Kazakh and 130× in Russian training text.
+   - Chosen: switch 3.0, lexicon weight 2.0.
+5. Display:
+   - `alignTokens` now lets a hyphenated token take several words and a punctuation token take its
+     neighbour's language. Before, one such token removed every chip from the line.
+   - English chips are no longer provisional by language, and the page copy says "two" Vosk models.
+   - `sw.js` → `qorgan-shell-v12`, adding `core/word-align.js`. **The ui-refresh branch (D69) also
+     claims v12; whichever merges second takes v13.**
+
+**Evidence.** The TEST set is `cs_set` (440 code-switched rows, macOS TTS, clean + phone channel),
+scored once after DEV tuning, with 1,000 bootstrap resamples.
+
+| Final word tags, TEST | word-language acc | kk / ru | WER |
+|---|---|---|---|
+| fallback as D64 shipped it (vote text, re-tagged by the LID) | 0.786 [0.766, 0.804] | 0.820 / 0.798 | 0.424 |
+| D64 three-model span vote (for reference) | 0.873 [0.859, 0.887] | 0.943 / 0.833 | 0.260 |
+| **kk/ru span vote = new fallback** (offline) | **0.875** [0.858, 0.890] | 0.943 / 0.859 | 0.265 |
+| kk/ru span vote, live replay with the 0.5 s freeze (what commits) | 0.874 [0.858, 0.889] | 0.931 / 0.873 | 0.274 |
+
+- On kk/ru-only speech (the `no_en` subset) the span vote scores 0.902 [0.888, 0.914], against
+  0.803 for the D64 fallback.
+- Live flicker: 0.046 tag changes per word with the 0.5 s freeze, against 0.099 in D64 (1.0 s
+  freeze, spike REPORT).
+
+| GigaAM path, TEST | word-language acc (kk/ru speech) | live tags changed at the endpoint |
+|---|---|---|
+| word LID only (D64) | 0.920 [0.910, 0.931] | 7.8 % |
+| inherit live tags | 0.931 [0.920, 0.941] | **1.6 %** |
+
+The accuracy intervals overlap, so the accuracy gain is not shown. The result is the 5× drop in
+re-labelled words. The DEV `live` words come from calibrators fit on that same DEV, so `weight` 16
+may be slightly optimistic.
+
+- **Browser check:** the real page in Chrome with a fake microphone, the same 7 TEST WAVs, no
+  GigaAM, so the deployed fallback (`docs/research/2026-10/voice_d70/`).
+  - Before: one kk/ru phrase was won by the English model and shown all-`en` («both security team
+    says the a committee seems»), and one phrase was committed twice.
+  - After: no English, no duplicate, and the lines keep their kk/ru runs.
+  - The final meter differs (97.5 vs 82.5, both critical) because the text differs. This is a
+    collage, not a labelled call.
+  - With the GigaAM runtime installed locally (the hash-pinned D64 build; nothing published), all
+    six lines came from GigaAM and kept mixed kk/ru runs (`after-cs_mix_gigaam.json`). That run
+    did not measure endpoint latency.
+- **Tests:** `npm test` 158/158. pytest 1652 passed, 3 skipped. The new parity fixture is
+  `tests_js/fixtures/word_align.json`. `word_lid.json` and `span_vote.json` were regenerated.
+
+**What this does not show.**
+- The classifier gates (test / authored / ood / styled / browser) are untouched: they score text,
+  not ASR. Decision 1 changes the *text* that reaches the meter in voice mode. It is a better
+  transcript, but no labelled-call audio exists to measure the meter on real speech (B1 `real_asr`).
+  This is recorded as an exception to "FPR first". It must be re-checked when `real_asr` exists.
+- All audio is TTS, and DEV and TEST share voices. English speech now gets kk/ru tags by design.
+- Known limits (code review, all low):
+  - A line made only of Latin words («kaspi gold») has no neighbour to follow. It ties to `kk`.
+  - The span vote keeps the first piece of a hyphenated Vosk word («из-за» → «из»), and that text
+    now reaches the meter in the fallback.
+  - The empty `handicap` plumbing stays, generic.
+  - A deployment that still sets `QORGAN_VOSK_MODEL_EN` has it silently ignored.
+
+**Not decided here.** Whether the classifier's English **training** rows (238 in `train`) stay is
+a separate, pre-registered ablation (PLAN_2026-10 §4 A0). D54 saw `shift` improve when English was
+added, without isolating the effect, so dropping it untested could cost kk/ru recall.

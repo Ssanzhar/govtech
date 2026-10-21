@@ -117,7 +117,7 @@ export async function createLightAsr({ endpoint, wordLevel, onUtterance, onDropp
   let source = null;
 
   return {
-    languages: lid ? ["kk", "ru", "en"] : [],
+    languages: lid ? ["kk", "ru"] : [],
     get segments() { return pass.segments; },
     async start(stream) {
       ctx = new AudioContext();

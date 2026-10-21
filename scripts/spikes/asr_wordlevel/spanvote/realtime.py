@@ -17,7 +17,7 @@ from calibrate import predict
 from common import LANGS, clean_words, hyp_features, hypothesis_at
 from vote import Params, span_vote, state_at, utterance_output
 
-SHIPPED_PREFERENCE = ("kk", "ru", "en")  # initialAsrState(languages): first language is preferred
+SHIPPED_PREFERENCE = LANGS  # initialAsrState(languages): first language is preferred
 
 
 def arrival_times(row: dict) -> list[float]:

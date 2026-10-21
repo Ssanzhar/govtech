@@ -18,6 +18,7 @@
 
 import { createEndpointPass } from "./endpoint-runtime.js";
 import { createSpanVoter } from "./span-vote.js";
+import { createInheritingTagger } from "./word-align.js";
 import { createWordLid } from "./word-lid.js";
 
 // Self-hosted and hash-pinned by deploy_bootstrap (asr/web_models.py): this script sees the
@@ -86,8 +87,8 @@ export function kazakhLetterShare(text) {
     within `TIE_EPSILON` are a tie: for the kk/ru pair the script decides (the RU model
     cannot emit Kazakh letters; a KK hypothesis with almost none means Russian speech),
     otherwise the tie goes to `preferred`. `handicap` (`{language: number}`) is subtracted
-    before ranking (ADR D62: the English model's confident garbage on kk/ru speech); the
-    winner still reports its real confidence. */
+    before ranking (ADR D62 used it for English; empty since ADR D70); the winner still
+    reports its real confidence. */
 export function voteFinal(hypotheses, preferred = null, handicap = {}) {
   const candidates = Object.entries(hypotheses)
     .filter(([, hyp]) => hyp && hyp.text)
@@ -148,6 +149,14 @@ function voteLive(live, voter) {
   return { live: { ...live, freeze: labelled.freeze }, emits: [{ type: "live", words }] };
 }
 
+/** The span vote's final words for the utterance being committed (ADR D70): the same tags the
+    person saw while speaking, so the endpoint can keep them instead of re-tagging one model's
+    text. Null without a voter. */
+function committedWords(live, voter) {
+  if (!voter) return null;
+  return voter.label(liveHypotheses(live), live.freeze).words.map(([word, start, end, lang]) => ({ word, start, end, lang }));
+}
+
 /** `[start, end]` (audio seconds) covered by the open utterance's words, or null. */
 function liveSpan(live) {
   let start = Infinity;
@@ -161,7 +170,8 @@ function liveSpan(live) {
 /** Pure state machine over recognizer events. `event` is `{type: "result"|"partial"|
     "tick", language?, detail?}`, `now` a timestamp (ms). Returns `{state, emits}` where
     emits are `{type: "partial", language, text}` and `{type: "utterance", language,
-    text, confidence}`. Inputs are never mutated. */
+    text, confidence, start?, end?, words?}` (`words`: the span vote's tagged words, with a
+    voter only). Inputs are never mutated. */
 export function reduceAsrEvent(state, event, now, { alignWindowMs = ALIGN_WINDOW_MS, suppressMs = DUPLICATE_SUPPRESS_MS, lock = null, handicap = null, voter = null } = {}) {
   const options = { alignWindowMs, suppressMs, lock, handicap, voter };
   const live = state.live ?? initialLive();
@@ -184,7 +194,7 @@ export function reduceAsrEvent(state, event, now, { alignWindowMs = ALIGN_WINDOW
     if (state.pending[event.language] !== undefined) {
       // This language endpointed twice before the other fired: commit the open window first
       // (voting against the other language's partial), then open a new one -- never overwrite.
-      const closed = commit(state, now, suppressMs, lock, handicap);
+      const closed = commit(state, now, suppressMs, lock, handicap, voter);
       const reopened = reduceAsrEvent(closed.state, event, now, options);
       return { state: reopened.state, emits: [...closed.emits, ...reopened.emits] };
     }
@@ -203,12 +213,12 @@ export function reduceAsrEvent(state, event, now, { alignWindowMs = ALIGN_WINDOW
     };
     const everyLanguageFired = state.languages.every((l) => next.pending[l] !== undefined);
     if (!everyLanguageFired) return { state: next, emits: voted.emits };
-    const committed = commit(next, now, suppressMs, lock, handicap);
+    const committed = commit(next, now, suppressMs, lock, handicap, voter);
     return { state: committed.state, emits: [...voted.emits, ...committed.emits] };
   }
   if (event.type === "tick") {
     const pruned = pruneSuppressions(state, now);
-    if (pruned.windowOpenedAt !== null && now - pruned.windowOpenedAt >= alignWindowMs) return commit(pruned, now, suppressMs, lock, handicap);
+    if (pruned.windowOpenedAt !== null && now - pruned.windowOpenedAt >= alignWindowMs) return commit(pruned, now, suppressMs, lock, handicap, voter);
     return { state: pruned, emits: [] };
   }
   throw new Error(`unknown asr event type: ${event.type}`);
@@ -217,7 +227,7 @@ export function reduceAsrEvent(state, event, now, { alignWindowMs = ALIGN_WINDOW
 /** Vote on what is pending; a language that has not fired contributes its current
     partial (like `FinalResult()` at the other's boundary in the Python design) and its
     next `result` is suppressed as a duplicate. */
-function commit(state, now, suppressMs, lock = null, handicap = null) {
+function commit(state, now, suppressMs, lock = null, handicap = null, voter = null) {
   const hypotheses = {};
   const suppressUntil = { ...state.suppressUntil };
   for (const language of state.languages) {
@@ -244,7 +254,8 @@ function commit(state, now, suppressMs, lock = null, handicap = null) {
     live: initialLive(span ? span[1] : state.live?.after ?? 0),
   }, winner, lock);
   const timing = span ? { start: span[0], end: span[1] } : {};
-  return { state: next, emits: winner ? [{ type: "utterance", ...winner, ...timing }] : [] };
+  const words = winner ? committedWords(state.live ?? initialLive(), voter) : null;
+  return { state: next, emits: winner ? [{ type: "utterance", ...winner, ...timing, ...(words ? { words } : {}) }] : [] };
 }
 
 /** Narrow `languages` to the settled winner, or widen it back when the locked recognizer
@@ -358,7 +369,7 @@ export function loadVoskletScript(url = VOSKLET_SCRIPT_URL, doc = globalThis.doc
 
     ADR D64, both optional: with `wordLevel` (site/core/asr-wordlevel.json) and `onLive`, the
     span vote reruns on every recogniser event and `onLive(words)` gets provisional words
-    tagged kk/ru/en; with `endpoint` (qorgan-config.json `asr.endpoint`), GigaAM re-decodes each
+    tagged kk/ru (each committed utterance carries the final ones, ADR D70); with `endpoint` (qorgan-config.json `asr.endpoint`), GigaAM re-decodes each
     committed utterance and its text replaces the Vosk text before `onUtterance` -- if GigaAM
     is loading or unavailable the Vosk vote is passed on, marked `source: "vosk"` with a
     `fallback` reason. `onEndpointStatus({status, ...})` reports the endpoint pass. */
@@ -375,7 +386,7 @@ export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus
       loaded[language] = await module.createModel(models[language].url, storagePathFor(language, models[language].id), models[language].id);
       modules[language] = module;
     } catch (err) {
-      // An optional language (English, ADR D62) that cannot load is left out; kk/ru are required.
+      // An optional language that cannot load is left out; kk and ru are both required (ADR D70).
       try { await module.cleanUp(); } catch {}
       if (!optional.includes(language)) throw err;
       onStatus(`the ${language.toUpperCase()} speech model is unavailable; continuing without it`, { code: "model_skipped", language });
@@ -387,7 +398,8 @@ export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus
   const voter = lid && onLive ? createSpanVoter(wordLevel.span_vote, lid) : null;
   const pass = createEndpointPass({
     endpoint,
-    tagText: lid?.tagText,
+    // GigaAM's words inherit the live tags where they align (ADR D70); plain word LID otherwise.
+    tagText: lid ? createInheritingTagger(lid, wordLevel.inherit ?? null) : undefined,
     onUtterance: (final, info) => onUtterance(final, info),
     onStatus: onEndpointStatus,
     ...(createEndpointClient ? { createClient: createEndpointClient } : {}),

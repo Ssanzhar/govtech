@@ -79,5 +79,5 @@ test("the live page builds its recognisers in the configured vote order", () => 
   const specs = js.match(/const modelSpecs = \(cfg\) => \{[\s\S]*?\n\};\n/)?.[0] || "";
   assert.match(specs, /cfg\.asr\?\.order/);
   const config = JSON.parse(read("core/qorgan-config.json"));
-  assert.deepEqual(config.asr.order, ["kk", "ru", "en"]);
+  assert.deepEqual(config.asr.order, ["kk", "ru"]); // kk/ru only (ADR D70)
 });

@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { REPO } from "./helpers.mjs";
-import { createWordLid } from "../site/core/word-lid.js";
+import { createWordLid, LANGS } from "../site/core/word-lid.js";
 import { cleanWords, createSpanVoter, initialFreeze, spanVote } from "../site/core/span-vote.js";
 
 const bundle = JSON.parse(readFileSync(join(REPO, "site", "core", "asr-wordlevel.json"), "utf8"));
@@ -21,14 +21,18 @@ const closeSpans = (got, want, label) => {
   });
 };
 
-test("fixture sanity: the measured parameters and English in the replay", () => {
+// ADR D70: kk/ru recognisers only, refit and retuned on DEV (spanvote_results_kkru.json).
+test("fixture sanity: the measured kk/ru parameters and both languages in the replay", () => {
   assert.equal(bundle.span_vote.switch_penalty, 0.25);
-  assert.equal(bundle.span_vote.missing_logit, -2.0);
-  assert.equal(bundle.span_vote.freeze_s, 1.0);
+  assert.equal(bundle.span_vote.missing_logit, -1.0);
+  assert.equal(bundle.span_vote.pause_reset_s, 0.15);
+  assert.equal(bundle.span_vote.freeze_s, 0.5);
   assert.equal(bundle.span_vote.features.length, 13);
+  assert.deepEqual(Object.keys(bundle.span_vote.calibrators).sort(), ["kk", "ru"]);
+  assert.deepEqual([...LANGS], ["kk", "ru"]);
   assert.ok(fixture.rows.length >= 30);
   const langs = new Set(fixture.rows.flatMap((r) => r.steps.flatMap((s) => s.words.map((w) => w[3]))));
-  for (const l of ["kk", "ru", "en"]) assert.ok(langs.has(l), `no ${l} word in the replay`);
+  assert.deepEqual([...langs].sort(), ["kk", "ru"]);
 });
 
 test("every live step matches Python: probabilities, words, spans and the freeze", () => {
@@ -37,7 +41,7 @@ test("every live step matches Python: probabilities, words, spans and the freeze
     for (const step of row.steps) {
       const label = `${row.id}/${row.condition}/${row.channel}@${step.t}`;
       const out = voter.label(step.hyps, freeze);
-      for (const l of ["kk", "ru", "en"]) {
+      for (const l of LANGS) {
         assert.equal(out.probs[l].length, step.probs[l].length, `${label}: ${l} word count`);
         out.probs[l].forEach((p, i) => assert.ok(Math.abs(p - step.probs[l][i]) < TOL, `${label}: ${l}[${i}] p ${p} vs ${step.probs[l][i]}`));
       }
@@ -50,8 +54,8 @@ test("every live step matches Python: probabilities, words, spans and the freeze
 });
 
 test("spanVote: nothing decoded -> nothing shown; inputs are not mutated", () => {
-  assert.deepEqual(spanVote({ kk: [], ru: [], en: [] }, { kk: [], ru: [], en: [] }, { switch: 0.25, missing: -2 }), { words: [], labelled: [] });
-  const hyps = { kk: [["сәлем", 0, 0.5, 0.9]], ru: [], en: [] };
+  assert.deepEqual(spanVote({ kk: [], ru: [] }, { kk: [], ru: [] }, { switch: 0.25, missing: -1 }), { words: [], labelled: [] });
+  const hyps = { kk: [["сәлем", 0, 0.5, 0.9]], ru: [] };
   const copy = JSON.parse(JSON.stringify(hyps));
   voter.label(hyps);
   assert.deepEqual(hyps, copy);

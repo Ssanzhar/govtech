@@ -33,13 +33,7 @@ _DEFAULT_WHISPER_MODEL_SIZE = "small"
 # vote per utterance. Names resolve via vosk's model auto-download (~/.cache/vosk).
 _DEFAULT_VOSK_MODEL_KK = "vosk-model-small-kz-0.42"
 _DEFAULT_VOSK_MODEL_RU = "vosk-model-small-ru-0.22"
-# English joins the browser's voice mode as a third recogniser (ADR D62); "" switches it off.
-# It ranks in the vote with (confidence - handicap): on kk/ru speech the English model returns
-# confident-looking garbage, and a plain vote handed it 12.9 % of kk/ru utterances.
-_DEFAULT_VOSK_MODEL_EN = "vosk-model-small-en-us-0.15"
-# 0.15 (D62) gave English only 0.545 of real (FLEURS) English utterances; 0.05 gives 0.910 with
-# 0 false wins on real kk/ru speech (ADR D64). The per-utterance vote is now the fallback.
-_DEFAULT_ASR_EN_HANDICAP = 0.05
+# kk/ru are the only call languages (ADR D70): the D62 English recogniser is gone.
 # The endpoint pass (ADR D64): GigaAM-Multilingual 220M CTC int8 decodes each utterance once in
 # the browser (sherpa-onnx WASM) and replaces the Vosk text; "" = off (Vosk vote only).
 _DEFAULT_ASR_ENDPOINT_MODEL = "gigaam-multilingual-220m-ctc-int8"
@@ -187,9 +181,6 @@ class Config(BaseModel):
     whisper_model_size: str
     vosk_model_kk: str
     vosk_model_ru: str
-    # "" = no English recogniser in the voice mode.
-    vosk_model_en: str = ""
-    asr_en_handicap: float = Field(default=_DEFAULT_ASR_EN_HANDICAP, ge=0.0, le=1.0)
     asr_sample_rate: int = Field(gt=0)
     # The GigaAM endpoint pass (ADR D64); "" = off. Its sherpa-onnx browser runtime comes from a
     # local build (scripts/sherpa_wasm/build.sh) or a mirror of it, hash-checked either way.
@@ -456,8 +447,6 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             ),
             vosk_model_kk=_read_str(source, "QORGAN_VOSK_MODEL_KK", _DEFAULT_VOSK_MODEL_KK),
             vosk_model_ru=_read_str(source, "QORGAN_VOSK_MODEL_RU", _DEFAULT_VOSK_MODEL_RU),
-            vosk_model_en=source.get("QORGAN_VOSK_MODEL_EN", _DEFAULT_VOSK_MODEL_EN).strip(),
-            asr_en_handicap=_read_float(source, "QORGAN_ASR_EN_HANDICAP", _DEFAULT_ASR_EN_HANDICAP),
             asr_sample_rate=_read_int(source, "QORGAN_ASR_SAMPLE_RATE", _DEFAULT_ASR_SAMPLE_RATE),
             asr_endpoint_model=source.get("QORGAN_ASR_ENDPOINT_MODEL", _DEFAULT_ASR_ENDPOINT_MODEL).strip(),
             sherpa_wasm_build_dir=source.get("QORGAN_SHERPA_WASM_BUILD_DIR", "").strip(),

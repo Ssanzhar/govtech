@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import random
 import re
 import unicodedata
@@ -27,7 +28,8 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[3]
 TRAIN = REPO / "data/processed/train.jsonl"
-LANGS = ("kk", "ru", "en")
+# kk/ru only since ADR D70; SPANVOTE_LANGS=kk,ru,en reproduces the D64 three-language tagger.
+LANGS = tuple(os.environ.get("SPANVOTE_LANGS", "kk,ru").split(","))
 CYRILLIC_LANGS = ("kk", "ru")
 KAZAKH_ONLY = set("әғқңөұүһі")
 ORDER = 3
@@ -89,6 +91,8 @@ class WordLID:
 
     def emission(self, word: str, lang: str) -> float:
         decided = letter_language(word)
+        if decided == "en" and "en" not in LANGS:
+            return 0.0  # a Latin word ("sms", "kaspi") is neutral: it follows its neighbours
         if decided:
             return 0.0 if decided == lang else -HARD
         if lang == "en":
@@ -159,7 +163,14 @@ def fitted(tune: bool = True) -> WordLID:
         return model
     rows = synthetic_dev(dev)
     grid = [(s, w) for s in (0.0, 1.0, 2.0, 3.0, 4.0, 6.0, 8.0) for w in (0.0, 0.5, 1.0, 2.0)]
-    best = max(grid, key=lambda p: accuracy(model.with_params(*p), rows))
+    scores = {p: accuracy(model.with_params(*p), rows) for p in grid}
+    # One-standard-error rule (ADR D70): the spliced dev switches language every few words, far
+    # more often than a call does, so among settings within 1 SE of the best take the smoothest
+    # (largest switch penalty, then largest lexicon weight).
+    n_words = sum(len(words) for words, _ in rows)
+    top = max(scores.values())
+    se = math.sqrt(top * (1 - top) / n_words)
+    best = max((p for p, acc in scores.items() if acc >= top - se), key=lambda p: (p[0], p[1]))
     return model.with_params(*best)
 
 
