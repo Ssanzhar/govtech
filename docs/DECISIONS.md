@@ -2594,3 +2594,38 @@ may be slightly optimistic.
 **Not decided here.** Whether the classifier's English **training** rows (238 in `train`) stay is
 a separate, pre-registered ablation (PLAN_2026-10 §4 A0). D54 saw `shift` improve when English was
 added, without isolating the effect, so dropping it untested could cost kk/ru recall.
+
+### D71 — A0: do the English training rows help Kazakh and Russian? Pre-registration (2026-10-22)
+**Context.** Since D70 English is not a call language. The current `train` split holds 238 English
+dialogues (172 scam, 66 legit) of 1,880, and `val` holds 23 of 135. D54 saw `shift` improve when
+English arrived, but three things changed together, so whether these rows help kk/ru recall is
+unknown. This entry is committed **before** any run, per PLAN_2026-10 rule 3.
+
+**Arms.** Same code, same corpus build, device embeddings (`QORGAN_EMBED_BACKEND=device`, the
+browser bridge, D33), same seeds:
+- **B (baseline):** `linear_train` on today's `train` + `val`, all rows.
+- **A (ablation):** the same with every `language == "en"` row removed from `train` and `val`.
+
+The shipped v1 `site/models/weights.json` is reported for reference only. It was trained on an older
+corpus build, so it is not an arm.
+
+**Step 1: validation only.** Score both arms on the `val` rows in kk / ru / mixed (112 dialogues).
+Metrics: FPR and recall at the shipped alert threshold 0.59, ROC-AUC, per language. A passes
+step 1 if:
+- (a) A's FPR ≤ B's FPR; and
+- (b) A's recall ≥ B's recall − 0.03.
+
+**Step 2: one held-out look, only if step 1 passes.**
+- Before running it, record the sha256 of both arms' weights in this entry.
+- Then score both arms once on the kk + ru rows of `shift_local` (97 calls; English rows
+  excluded). A passes step 2 if:
+  - (a) A's false alarms ≤ B's false alarms (counts); and
+  - (b) A's caught scams ≥ B's − 1.
+
+**Decision, fixed now.**
+- **Steps 1 and 2 both pass:** English rows leave the training corpus (corpus config). v2.1 (A2–A6)
+  is built without them.
+- **Otherwise:** they stay as training-only rows. English remains absent from the product, the
+  evaluation headlines and the voice mode.
+- **No re-tuning after the look.** Whatever the result, `shift_local` is not used again for this
+  question.
