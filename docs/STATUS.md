@@ -1,10 +1,32 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: **2026-10-12**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
+_Last updated: **2026-10-21**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
 day (what is shipped, the honest numbers, the strategy, who does what). Then read this file
-(the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D68) and `docs/eval_report.md`
+(the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D70) and `docs/eval_report.md`
 (numbers, with intervals). The July sprint log below is kept as history._
 
+- **2026-10-21 — kk/ru only; live word tags survive the endpoint (ADR D70), branch `feat/kkru-voice`.**
+  - **Decision:** stakeholders keep Qorğan Kazakh/Russian only. English leaves the voice pipeline
+    (Vosk-EN, handicap, 3-state LID). The `en` UI locale stays.
+  - **Bug fixed:** at a phrase end the live per-word tags were thrown away and the line was re-tagged
+    from one model's text. Now the committed utterance carries the span vote's words.
+    - Fallback, the deployed path: tag accuracy 0.786 → 0.874, WER 0.424 → 0.274.
+    - GigaAM path: its words inherit the live tags; tags changed at the endpoint 7.8 % → 1.6 %,
+      accuracy 0.920 → 0.931.
+  - **Gates:** npm 158/158, pytest 1652 passed.
+  - **Open:** the meter on real voice text needs `real_asr` (B1). The English *training-data*
+    ablation (A0) has not run. The ui-refresh branch (D69) also bumps `sw.js` to v12.
+- **2026-10-21 — Android for NITEC (`android/`, see `android/CORE_SPIKE.md`; never run on a phone).**
+  - **WebView shell:** the shell builds a debug APK. The start URL is set at build time (https or
+    localhost only), and the microphone is granted to that origin only.
+  - **TWA:** still blocked. It needs a production host, a signing key, assetlinks and Bubblewrap.
+  - **Kotlin text core (`:core` JVM + `:aar`):** scrubber, cue matcher, DJL tokenizer +
+    onnxruntime-android 1.21, heads and meter. JUnit 16/16 passes against the existing JS fixtures,
+    and the runtime gate is 0/200 flips against Python.
+  - **Risk (needs an ADR before native scoring):** the heads were trained on *browser* embeddings,
+    and native ORT flips 4/200 decisions against them, including one legitimate OOD bank call
+    scored 0.138 → 0.710. So it is either WebView scoring or heads retrained on native embeddings.
+  - **Sizes:** AAR 341 KB, plus 27 MB of arm64 native libraries and 266 MB of model files.
 - **2026-10-12 — v2 not shipped; v1 stays.** The taxonomy-v2 retrain improved `shift_local`
   recall 0.548 → 0.661 at equal FPR (3/64) but added 5 held-out false alarms (test 2/60, ood
   3/74). Two of them are ordinary family money requests, which failed the user's pre-stated

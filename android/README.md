@@ -9,10 +9,31 @@ Two containers for the citizen page, for two different questions.
 | Voice mode the page picks | full on desktop-class devices; on a phone, **light** until the B9 phone bench passes (D25), `?voice=full` to force | **light** (GigaAM-only + energy VAD) |
 | Signed with | your upload key (never in this repo) | the SDK's local debug key (debug builds only) |
 
-Nothing here was built or run on this machine (2026-10-09): the download link was ~40 KB/s, so
-a JDK, the Android SDK and a system image (several GB) would have taken many hours. The
-browser evidence for the light mode is from desktop Chromium with isolation off
-(`docs/research/2026-10/voice_d67/`). The steps below are what a functional emulator run needs.
+**Status (2026-10-21):** JDK 17 (`brew install openjdk@17`), the Android SDK (platform-tools,
+`platforms;android-35`, `build-tools;35.0.0`, no system images) and a Gradle 8.11.1 wrapper are set
+up on the dev Mac. `webview-shell/` **builds** (`./gradlew assembleDebug`, 15 KB debug APK). It has
+not been installed on a phone yet. The TWA is **not built**: see "Placeholders" below. The native
+text core spike is in `qorgan-core/`. For what it does and its parity numbers, see
+[CORE_SPIKE.md](CORE_SPIKE.md).
+
+```bash
+export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home
+export ANDROID_HOME=$HOME/Library/Android/sdk
+cd android/webview-shell && echo "sdk.dir=$ANDROID_HOME" > local.properties
+./gradlew assembleDebug                                              # start URL http://localhost:8000/live.html
+./gradlew assembleDebug -PqorganUrl=https://<host>/live.html         # any https:// URL (or http://localhost)
+```
+
+**On a USB-connected phone** (USB debugging on):
+```bash
+python -m qorgan.api &                       # the Mac serves site/ on :8000
+adb reverse tcp:8000 tcp:8000                # the phone's localhost:8000 -> the Mac (a secure context: mic allowed)
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb shell am start -n kz.qorgan.webviewshell/.MainActivity   # debug builds: add --es url <url> to override
+```
+The shell allows cleartext only to `localhost` / `127.0.0.1`. It stays on the configured origin
+and grants the page the microphone only: audio capture, that origin, and only after the
+`RECORD_AUDIO` runtime permission. Debug builds enable WebView remote debugging (see below).
 
 ## Placeholders to fill in
 
@@ -27,6 +48,13 @@ browser evidence for the light mode is from desktop Chromium with isolation off
   the repo.
 
 ## TWA (Bubblewrap)
+
+Not built. What is missing: (1) a public **HTTPS host** serving `site/` with the production
+headers, to replace `qorgan.example.kz` (Bubblewrap fetches the web manifest and icons from it);
+(2) an **upload keystore** created and kept outside git; (3) its SHA-256 in
+`site/.well-known/assetlinks.json`, deployed. Without (3) the app still runs, as a Custom Tab with
+a URL bar. `@bubblewrap/cli` itself is not installed (it is a global npm package). The JDK and SDK it
+needs are now present: when `bubblewrap` asks, give it the JDK and SDK paths above.
 
 ```bash
 npm i -g @bubblewrap/cli@1.25.0            # needs JDK 17 + Android SDK; bubblewrap offers to install both
@@ -56,7 +84,7 @@ adb reverse tcp:8411 tcp:8411 && adb reverse tcp:8410 tcp:8410      # emulator l
 - **Chrome / TWA:** open `http://localhost:8411/live.html?debug=asr`. Expect
   `crossOriginIsolated === true` and the light mode (phone gate), or the full mode with
   `&voice=full`. A TWA built for `localhost` is never verified, so it shows as a Custom Tab.
-- **WebView:** build `webview-shell/` in Android Studio (debug), then
+- **WebView:** build `webview-shell/` (`./gradlew assembleDebug`), then
   `adb shell am start -n kz.qorgan.webviewshell/.MainActivity --es url http://localhost:8410/live.html?debug=asr`.
   Expect `crossOriginIsolated === false`, the light-mode note, and GigaAM loading.
 - **Driving it:** debug builds enable WebView debugging, so
