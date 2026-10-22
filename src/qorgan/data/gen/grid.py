@@ -64,8 +64,12 @@ class GridCell(BaseModel):
     confusable: bool | None = None
     # Negatives only: the scheme whose pretext this legitimate call shares (none of its asks).
     lookalike_of: str | None = None
-    # Negatives only (v2.1): an English brief of the concrete situation, from `negative_scenarios`.
+    # v2.1: an English brief of the concrete situation -- every negative of a class with
+    # `negative_scenarios`, and the scam cells picked by a `scam_scenarios` entry.
     scenario: str | None = None
+    # v2.1: an extra per-cell writer instruction (e.g. a line the dialogue must NOT contain), set
+    # by `with_constraint` when a cell is regenerated; omitted from manifests and specs when None.
+    constraint: str | None = None
 
     @model_validator(mode="after")
     def _kind_consistent(self) -> "GridCell":
@@ -100,13 +104,26 @@ class Scenario(BaseModel):
     lookalike_of: str | None = None
 
 
+class ScamScenario(BaseModel):
+    """A brief given to exactly `cells` scam cells of the listed `schemes` (v2.1). Cells are
+    allocated over the schemes in proportion to their cell counts and picked with a separate
+    seeded RNG, so a grid without scam scenarios draws exactly as before. English only.
+    `stages` restricts the candidates (e.g. a move made "before the ask" needs a stage with an ask)."""
+
+    model_config = ConfigDict(frozen=True)
+    brief: str = Field(min_length=1)
+    schemes: tuple[str, ...] = Field(min_length=1)
+    cells: int = Field(ge=1)
+    stages: tuple[str, ...] = ()  # only cells of these stages (empty = any stage)
+
+
 class GridConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     version: int
     seed: int
     registers: dict[str, float]
-    scam_share: float = Field(ge=0.0, lt=1.0)  # 0 = a legit-only run (v2.1, PLAN A2)
+    scam_share: float = Field(ge=0.0, le=1.0)  # 0 / 1 = a legit-only / scam-only run (v2.1, PLAN A2)
     scheme_weights: dict[str, float] = {}
     negative_weights: dict[str, float]
     negative_roles: dict[str, tuple[str | None, ...]]
@@ -122,6 +139,7 @@ class GridConfig(BaseModel):
     hook_compatible_tactics: tuple[str, ...] = ()
     occupation_age_bands: dict[str, tuple[str, ...]] = {}
     negative_scenarios: dict[str, tuple[Scenario, ...]] = {}
+    scam_scenarios: tuple[ScamScenario, ...] = ()
 
     @model_validator(mode="after")
     def _registers_known(self) -> "GridConfig":
@@ -265,6 +283,44 @@ def _scenario_decks(slots, cfg: GridConfig, rng_key: str, schemes) -> dict[str, 
     return decks
 
 
+def _apply_scam_scenarios(cells: Sequence[GridCell], cfg: GridConfig, rng_key: str, schemes) -> tuple[GridCell, ...]:
+    """Give each `scam_scenarios` entry's brief to `cells` scam cells of its schemes (a cell gets
+    at most one brief). New cells are returned; the input is not modified."""
+    assigned: dict[str, str] = {}
+    for index, entry in enumerate(cfg.scam_scenarios):
+        for scheme_id in entry.schemes:
+            try:
+                schemes.get(scheme_id)
+            except KeyError as exc:
+                raise GridError(f"scam scenario names an unknown scheme {scheme_id!r}") from exc
+        unknown_stages = set(entry.stages) - set(cfg.stages)
+        if unknown_stages:
+            raise GridError(f"scam scenario {index} names unknown stages {sorted(unknown_stages)}")
+        by_scheme = {sid: [c for c in cells if c.kind == "scam" and c.scheme == sid and c.cell_id not in assigned
+                           and (not entry.stages or c.stage in entry.stages)] for sid in entry.schemes}
+        available = sum(len(v) for v in by_scheme.values())
+        if entry.cells > available:
+            raise GridError(f"scam scenario {index} wants {entry.cells} cells, the run has {available} of {list(entry.schemes)}")
+        quotas = allocate(entry.cells, {sid: len(v) for sid, v in by_scheme.items() if v})
+        rng = random.Random(f"{rng_key}:scam_scenarios:{index}")
+        for sid, n in quotas.items():
+            for cell in rng.sample(by_scheme[sid], n):
+                assigned[cell.cell_id] = entry.brief
+    return tuple(c.model_copy(update={"scenario": assigned[c.cell_id]}) if c.cell_id in assigned else c for c in cells)
+
+
+def with_constraint(cells: Sequence[GridCell], cell_ids: Sequence[str], text: str) -> tuple[GridCell, ...]:
+    """New cells with `constraint=text` on the named cells (a regeneration instruction); every
+    other cell is returned unchanged. Unknown ids or a blank text raise `GridError`."""
+    if not text.strip():
+        raise GridError("a constraint must not be blank")
+    wanted = set(cell_ids)
+    unknown = wanted - {c.cell_id for c in cells}
+    if unknown:
+        raise GridError(f"unknown cell ids: {sorted(unknown)}")
+    return tuple(c.model_copy(update={"constraint": text}) if c.cell_id in wanted else c for c in cells)
+
+
 def build_manifest(cfg: GridConfig, *, run: str, size: int, schemes, taxonomy, roles=None) -> tuple[GridCell, ...]:
     """The run's cells, deterministic in (cfg, run, size). Scams first, then negatives,
     each block ordered by class; registers interleaved evenly across the whole sequence.
@@ -316,12 +372,19 @@ def build_manifest(cfg: GridConfig, *, run: str, size: int, schemes, taxonomy, r
                 stage="none", confusable=is_hard and rng.random() < cfg.confusable_negative_share,
                 lookalike_of=lookalike, scenario=scenario.brief if scenario is not None else None,
             ))
+    if cfg.scam_scenarios:
+        return _apply_scam_scenarios(cells, cfg, f"{cfg.seed}:{run}:{size}", schemes)
     return tuple(cells)
+
+
+def manifest_line(cell: GridCell) -> str:
+    """A cell's manifest JSON; `constraint` is left out when unset (earlier manifests unchanged)."""
+    return cell.model_dump_json(exclude={"constraint"} if cell.constraint is None else None)
 
 
 def write_manifest(cells: Sequence[GridCell], path: Path) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(c.model_dump_json() + "\n" for c in cells), encoding="utf-8")
+    path.write_text("".join(manifest_line(c) + "\n" for c in cells), encoding="utf-8")
     return path
 
 

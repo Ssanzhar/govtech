@@ -2743,3 +2743,55 @@ alarms on test/ood, so test/ood cannot be the main judge for v2.1; `shift_local_
    borderline family row (v21_legit_0100, "new SIM, save my number", then a loan) needs review.
 
 Data is local-only, not folded, not trained.
+
+### D63 v2.1 / A2 (cont.) — the A4 blockers closed: 37 bank calls rewritten, 236 scams added (2026-10-22)
+Closes items 1 and 2 of "Open before A4" above. Item 3 (persona coherence, v21_legit_0100) stays open
+for the user's review before the fold.
+
+**Reassurance line (item 2).** A caller-side rule (`v21_legit/redo/rule.py`, local) found the line in
+57 rows. 20 were kept, and the other 37 were rewritten as chunks 15–16 with a per-cell `constraint`.
+The constraint says the call shows it is legitimate only by what it does, never by a disclaimer.
+The rows they replace are in `v21_legit/superseded/`. After the redo the rule hits 21 bank calls:
+the 20 kept, plus one false match ("если покупка ваша, делать ничего не надо", not a disclaimer).
+- On the scam side, `scam_scenarios` gives the line to 28 scam cells. The scammer says it to win
+  trust and asks anyway. All 28 carry it, and so do 8 more scams written without the brief.
+- **The line is now in 36 scams against 20 legit calls, so it is no longer a legit-only signal.**
+
+**Style confound (item 1).** The scam-only run is `v21_scam` (`configs/gen_grid_v21_scam.yaml`,
+seed 20261023, `scam_share: 1.0`, kk 0.45 / ru 0.30 / mixed 0.25).
+- It has 236 cells, which puts the Claude block's P(scam) at **944/1981 = 0.4765**. Gemini train
+  is 0.4766.
+- The nine low-arousal administrative schemes are weighted 1.4× (13 cells each). The other schemes
+  get 9–10 each.
+- Stages: full 118, hook_escalation 64, extraction_handoff 43, hook_only 11. Phrasing: indirect
+  131, direct 105.
+- Code (`grid.py`, `spec.py`):
+  - `scam_share` may be 1.
+  - `ScamScenario` briefs are allocated across schemes by a separate seeded RNG, so grids that use
+    none stay byte-identical.
+  - A cell `constraint` is a hard per-cell rule.
+  - Tests: `tests/data/gen/test_gen_grid_scam.py`.
+
+**Generation.** Seven Opus writer agents wrote two chunks each and read only their chunk specs.
+Every chunk passed `check` the first time.
+
+**QC** (`python -m qorgan.data.gen qc`, embedding gates on):
+
+| run | rows accepted | eval overlaps | near-dup (run→train NN max) | ROUGE-L max | negatives with a cue | role recall | fingerprint AUC char / e5 |
+|---|---|---|---|---|---|---|---|
+| v21_legit (after redo) | 300/300 | 0 | 0 (0.940) | 0.342 | 11 | 0.49 | 1.000 / 0.986 |
+| v21_scam | 236/236 | 0 | 0 (0.936) | 0.305 | — | 0.66 | 1.000 / 0.977 |
+
+- v21_scam: the cue-free scam share is 0.775, and no scheme is below its leak target.
+  `scheme_rule_agreement` is 236/236.
+- Some rows are not a scrub fixed point (legit 32, scam 10), mostly self-introduced names. The fold
+  scrubs them (D66).
+- The fingerprint AUC stays ≈ 1. Matching the label rate removes the *label* confound. It cannot make
+  Claude's text look like Gemini's, and that is why `shift_local_2` is the judge.
+
+**Fresh judge (A3, same day).** `shift_local_2` is 130 calls (kk 80 / ru 50, 65/65). It uses the
+same briefs, model and sampling as `shift_local`, with seed 20261022. All 130 slots were accepted by
+automated checks only, and it is disjoint from every split, `shift_local` included. Provenance:
+`data/provenance/shift_local_2.json`. **No model has been scored on it.**
+
+Data is local-only, not folded, not trained. Next: A4 (pre-registered retrain, device embeddings).

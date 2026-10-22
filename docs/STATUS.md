@@ -1,10 +1,19 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: **2026-10-21**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
+_Last updated: **2026-10-22**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
 day (what is shipped, the honest numbers, the strategy, who does what). Then read this file
 (the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D70) and `docs/eval_report.md`
 (numbers, with intervals). The July sprint log below is kept as history._
 
+- **2026-10-22 — v2.1 data ready for A4 (D63 v2.1 A1–A3, branch `feat/kkru-voice`).**
+  - `v21_legit` 300 rows (37 bank calls were rewritten without the "never ask for codes" line) and
+    `v21_scam` 236 rows (label rate 0.4765, the same as Gemini train). Both pass QC with 0 overlaps
+    and 0 near-duplicates. The fingerprint AUC stays ≈ 1, so the style confound remains and
+    `shift_local_2` is the judge.
+  - `shift_local_2`: 130 kk/ru calls by the local Qwen3.5-Kazakh model. It is local-only and
+    nothing has been scored on it.
+  - **Open:** the user reviews v21_legit_0100. Then A4: fold and retrain on device embeddings, with
+    the operating point pre-registered.
 - **2026-10-21 — kk/ru only; live word tags survive the endpoint (ADR D70), branch `feat/kkru-voice`.**
   - **Decision:** stakeholders keep Qorğan Kazakh/Russian only. English leaves the voice pipeline
     (Vosk-EN, handicap, 3-state LID). The `en` UI locale stays.
