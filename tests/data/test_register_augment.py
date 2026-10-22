@@ -19,7 +19,7 @@ _REPO = Path(__file__).resolve().parents[2]
 _AUGMENT = _REPO / "data" / "augment"
 _PROCESSED = _REPO / "data" / "processed"
 _FILES = ("register_diversity.jsonl", "register_diversity_negatives.jsonl")
-_EVAL_SPLITS = ("val", "test", "authored_heldout", "ood", "adversarial", "adversarial_legit", "shift", "shift_local")
+_EVAL_SPLITS = ("val", "test", "authored_heldout", "ood", "adversarial", "adversarial_legit", "shift", "shift_local", "shift_local_2")
 
 
 def _load(name: str) -> list[Dialogue]:

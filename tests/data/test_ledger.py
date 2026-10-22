@@ -77,7 +77,7 @@ def test_repo_ledger_ids_exist_in_an_evaluation_split():
     ledger = load_inspection_ledger()
     known = {d.id for d in build_anchor_dialogues()}
     processed = _Path(__file__).resolve().parents[2] / "data" / "processed"
-    for split in ("val", "test", "authored_heldout", "ood", "adversarial", "adversarial_legit", "shift", "shift_local"):
+    for split in ("val", "test", "authored_heldout", "ood", "adversarial", "adversarial_legit", "shift", "shift_local", "shift_local_2"):
         path = processed / f"{split}.jsonl"
         if path.exists():
             known |= {json.loads(l)["id"] for l in path.read_text(encoding="utf-8").splitlines() if l.strip()}
