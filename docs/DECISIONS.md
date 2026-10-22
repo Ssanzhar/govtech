@@ -2643,3 +2643,22 @@ moves both ways by small amounts (e.g. kk credentials_request 0.000 → 0.333; m
 - B: `risk_clf.joblib` 863cf52559cebe014c47eac7320b6f45635d07c5d1931a8cf551f0259ceae5b2 ·
   `tactic_clf.joblib` 5c63e2426f0d3cf558e014e666354935f805a38e3e275491064691a0bde134e1 ·
   `web/weights.json` aaa1fd4f765c7ec46dda8507ea4df1f3debeb5a230b6872537c999b534ff56a2
+
+**Step 2 result (2026-10-22, one look, `qorgan.eval.run --split shift_local --by-language` on the 97
+kk+ru rows, device embeddings, the frozen weights above).**
+A first attempt printed no metrics for either arm (the browser bridge died when the Mac slept), so
+this run is the only look.
+
+| arm | FPR | recall | kk FPR / recall | ru FPR / recall | PR-AUC |
+|---|---|---|---|---|---|
+| B (with English rows) | 0.041 [0.005, 0.140] (2/49) | 0.542 [0.392, 0.686] (26/48) | 0.080 / 0.417 | 0.000 / 0.667 | 0.904 |
+| A (without) | 0.041 [0.005, 0.140] (2/49) | 0.479 [0.333, 0.628] (23/48) | 0.080 / 0.458 | 0.000 / 0.500 | 0.905 |
+
+- (a) passes: 2 ≤ 2 false alarms.
+- (b) **fails**: 23 < 26 − 1 caught scams. The loss is Russian (16 → 12 of 24); Kazakh gains one
+  (10 → 11 of 24). The intervals overlap; the rule was fixed in advance, so it decides.
+
+**Decision: the English rows stay in `train` as training-only data.** English stays out of the
+product, the voice mode and the evaluation headlines (D70). v2.1 (A2–A6) keeps them. The English
+generation slots of A2 still go to Kazakh, which this does not contradict: those are *new* rows.
+`shift_local` is not used again for this question.
