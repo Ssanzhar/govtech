@@ -202,10 +202,16 @@ def test_an_ablative_mid_sentence_is_a_transfer_not_an_introduction():
         "Сізге кеше кешке елу бес мың түсті ғой, Kaspi-ге. Это мой, қате болып кетті.",
         "Қараңыз, мен қазір Kaspi-дің өз нөміріне қоңырау шалып, сұраймын.",
         "Hello, sorry to disturb you. I sent you a message on Kaspi an hour ago. My name is Aigerim.",
-        "Мам, это я, переведи на Kaspi пять тысяч.",
         "Зять уговорил вложить через Halyk Invest, сам в приложении. Говорит, двенадцать процентов.",
         "Это не Kaspi, это мой знакомый.",
     ],
 )
 def test_an_organisation_named_as_a_channel_is_not_the_callers_role(transcript):
     assert detect_role(transcript, load_role_lexicon(REAL)) is None
+
+
+def test_a_channel_organisation_leaves_only_the_relatives_own_cue():
+    # «Мам, это я» is the relative_friend CUE (a claim since phase 1, true on this row);
+    # «на Kaspi» is a payment channel and must not add a bank claim.
+    claims = detect_roles("Мам, это я, переведи на Kaspi пять тысяч.", load_role_lexicon(REAL))
+    assert [(c.role_id, c.span.text) for c in claims] == [("relative_friend", "Мам, это я")]

@@ -2662,3 +2662,44 @@ this run is the only look.
 product, the voice mode and the evaluation headlines (D70). v2.1 (A2–A6) keeps them. The English
 generation slots of A2 still go to Kazakh, which this does not contradict: those are *new* rows.
 `shift_local` is not used again for this question.
+
+### D63 v2.1 / A1 — the role line no longer reads a payment channel as the caller's role (2026-10-22)
+Display-only; no retrain (`roles.yaml` is not in the hashed lexicons;
+`test_role_lexicon_is_not_part_of_the_trained_bundle`). The yaml and its tests landed early in
+3cb7af5 by accident (a `git apply --3way` left them staged); this entry is the implementation.
+
+**Rules.**
+- An organisation is a claim only when an introduction marker sits within `ROLE_INTRO_WINDOW` = 4
+  tokens of it **in the same sentence** (`ROLE_SENTENCE_END` = `.!?` is a wall).
+- A bare Kazakh ablative («Kaspi-ден») is no longer enough. "here" and "support" are no longer
+  markers. A separate ablative token belongs to the organisation («Kaspi-ден хабарласып»).
+- `intro.channel` vetoes an organisation named as a channel or help desk:
+  - a preposition right before it («через/на Kaspi», "on Kaspi");
+  - "support", «арқылы», «қолдау», «қосымша» or «приложени» right after it;
+  - a separate non-ablative case affix («Kaspi-ге», «Kaspi-дің»);
+  - a negation between a preceding marker and it («Это не Kaspi»).
+- A negation between the organisation and a *following* marker only drops that marker, so
+  «служба безопасности Kaspi, не беспокойтесь» still claims.
+- Python and `role.js` stay 1:1. The fixture (`tests_js/fixtures/roles.json`) was regenerated with
+  88 cases, 13 of them new hand cases.
+- «Мам, это я, переведи на Kaspi…» keeps its phase-1 `relative_friend` claim, and no bank claim is
+  added. Its test asserts exactly that.
+
+**Measured on the phase-2 batch** (train). The fix was designed on its role-less rows, so this is
+**not** independent; re-measure on the next batch.
+
+| p2 batch | role recall | fires on role-less rows | wrong role | no claim |
+|---|---|---|---|---|
+| before | 749/1136 (0.659) | 47/189 | 63 | 324 |
+| after | 738/1136 (0.650) | 33/189 | 54 | 344 |
+
+- All 14 wrong Kaspi / Halyk Invest lines are gone. The 33 left are D63's old 31 cue fires plus
+  2 factual OLX buyers.
+- **Recall lost:** 14 rows, with 3 gained:
+  - 7 bare ablatives with no marker;
+  - 3 genitive «X Bank-тің қауіпсіздік қызметі», a cost of the genitive veto kept for «Kaspi-дің өз
+    нөміріне…»;
+  - 1 sentence wall;
+  - 3 channel words.
+- The pilot is unchanged: 75/102, 1/18, 4 wrong.
+- **Tests:** pytest 1666 passed / 3 skipped; `npm test` 159/159.

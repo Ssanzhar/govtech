@@ -54,11 +54,19 @@ def export_client_config() -> dict[str, Any]:
              "names": {locale: role.names[locale] for locale in locales}}
             for role in get_role_lexicon().roles
         ],
-        # Self-introduction by organisation (ADR D63 phase 2): markers, ablative affixes, window.
+        # Self-introduction by organisation (ADR D63 phase 2; v2.1 channel veto).
         "role_intro": {
             "markers": [list(m) for m in get_role_lexicon().intro.markers],
             "affixes": list(get_role_lexicon().intro.affixes),
             "window": get_role_lexicon().intro.window,
+            # D63 v2.1: a sentence end walls marker from organisation; the channel veto.
+            "sentence_end": get_role_lexicon().intro.sentence_end,
+            "channel": {
+                "before": list(get_role_lexicon().intro.channel.before),
+                "after": list(get_role_lexicon().intro.channel.after),
+                "affixes": list(get_role_lexicon().intro.channel.affixes),
+                "blockers": list(get_role_lexicon().intro.channel.blockers),
+            },
         },
         "templates": {locale: _templates(locale) for locale in locales},
         "advice": {locale: _advice(locale) for locale in locales},

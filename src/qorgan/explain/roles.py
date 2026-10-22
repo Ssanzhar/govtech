@@ -13,12 +13,18 @@ the first, `detect_roles` all of them (the v1 -> v2 label migration uses the ful
 Self-introduction by organisation (phase 2): «это Асель из Kaspi», «Halyk банктен Ерлан»,
 "this is John from Beeline". Each line (an utterance; the boundary is a wall, as for cues) is
 tokenised into runs of letters/digits (lower-cased, ё -> е). An organisation (`orgs` of a role;
-tokens, `*` = prefix, otherwise exact or exact + a Kazakh ablative affix) is a claim when
-  (a) it carries an ablative affix (glued «каспиден», or the next token «Tele2-ден») and opens
-      the line (starts within the first `ROLE_INTRO_WINDOW` tokens: «Jusan-нан аударыңыз» in
-      mid-sentence is a transfer, not an introduction), or
-  (b) an introduction marker (`intro.markers`) sits within `ROLE_INTRO_WINDOW` tokens of it
-      on the same line; the nearest marker gives the span (ties: the one before).
+tokens, `*` = prefix, otherwise exact or exact + a Kazakh ablative affix; a separate ablative
+token right after it, «Tele2-ден», belongs to it) is a claim only when an introduction marker
+(`intro.markers`) sits within `ROLE_INTRO_WINDOW` tokens of it in the same sentence (no
+`ROLE_SENTENCE_END` character between them); the nearest marker gives the span (ties: the one
+before). A bare ablative is not a claim (D63 v2.1: «Kaspi-ден бір нәрсе келді»).
+Channel veto (D63 v2.1, `intro.channel`): the organisation is not the caller's role when
+  - the token right before it is a `before` word («через Kaspi», "on Kaspi"),
+  - the token right after it (after any ablative token) is an `after` word ("Kaspi support",
+    «Kaspi арқылы»), or the token right after it is a separate non-ablative case affix
+    («Kaspi-ге», «Kaspi-дің»), or
+  - a `blockers` negation sits between a marker BEFORE it and it («Это не Kaspi»); a negation
+    between it and a marker after it only drops that marker («Kaspi, не беспокойтесь»).
 At each position the longest organisation wins (ties: file order), so «Kaspi доставка» is a
 courier, not the bank. Per role, the earlier of its cue span and its first introduction span is
 its candidate (ties: the longer). Names are never matched: only the organisation decides.
@@ -34,7 +40,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict
 
 from qorgan.classifier.cue_match import UTTERANCE_BOUNDARY, find_cue
-from qorgan.config import ROLE_INTRO_WINDOW, get_config
+from qorgan.config import ROLE_INTRO_WINDOW, ROLE_SENTENCE_END, get_config
 from qorgan.data.schema import Span
 
 _LOCALES = ("ru", "kk", "en")
@@ -59,13 +65,28 @@ class RoleDefinition:
 
 
 @dataclass(frozen=True)
+class ChannelSpec:
+    """Words that make an organisation a channel or a help desk, not the caller (D63 v2.1).
+    `before`/`after`/`blockers` are single-token patterns (`*` = prefix); `affixes` are
+    separate case-affix tokens («Kaspi-ге»)."""
+
+    before: tuple[str, ...] = ()
+    after: tuple[str, ...] = ()
+    affixes: tuple[str, ...] = ()
+    blockers: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class IntroSpec:
     """Self-introduction markers (token tuples, `*` = prefix on that token), the Kazakh
-    ablative affixes, and the token window between marker and organisation."""
+    ablative affixes, the token window between marker and organisation, the sentence-end
+    characters that wall them apart, and the channel veto."""
 
     markers: tuple[tuple[str, ...], ...] = ()
     affixes: tuple[str, ...] = ()
     window: int = ROLE_INTRO_WINDOW
+    sentence_end: str = ROLE_SENTENCE_END
+    channel: ChannelSpec = ChannelSpec()
 
 
 @dataclass(frozen=True)
@@ -124,8 +145,39 @@ def _parse_intro(raw: object, path: Path) -> IntroSpec:
     if not isinstance(raw, dict):
         raise RoleLexiconError(f"{path}: `intro` must be a mapping")
     markers = tuple(t for t in (phrase_tokens(m) for m in raw.get("markers") or ()) if t)
-    affixes = tuple(a for a in (str(x).strip().lower() for x in raw.get("affixes") or ()) if a)
-    return IntroSpec(markers=markers, affixes=affixes, window=ROLE_INTRO_WINDOW)
+    return IntroSpec(
+        markers=markers,
+        affixes=_affix_list(raw.get("affixes")),
+        window=ROLE_INTRO_WINDOW,
+        sentence_end=ROLE_SENTENCE_END,
+        channel=_parse_channel(raw.get("channel") or {}, path),
+    )
+
+
+def _affix_list(raw: object) -> tuple[str, ...]:
+    return tuple(a for a in (str(x).strip().lower() for x in raw or ()) if a)
+
+
+def _word_patterns(raw: object, field: str, path: Path) -> tuple[str, ...]:
+    """Single-token patterns (`*` = prefix); a multi-token entry is a lexicon error."""
+    patterns = []
+    for word in raw or ():
+        tokens = phrase_tokens(word)
+        if len(tokens) != 1:
+            raise RoleLexiconError(f"{path}: intro.channel.{field} entry {word!r} must be one token")
+        patterns.append(tokens[0])
+    return tuple(patterns)
+
+
+def _parse_channel(raw: object, path: Path) -> ChannelSpec:
+    if not isinstance(raw, dict):
+        raise RoleLexiconError(f"{path}: `intro.channel` must be a mapping")
+    return ChannelSpec(
+        before=_word_patterns(raw.get("before"), "before", path),
+        after=_word_patterns(raw.get("after"), "after", path),
+        affixes=_affix_list(raw.get("affixes")),
+        blockers=_word_patterns(raw.get("blockers"), "blockers", path),
+    )
 
 
 def _parse_role(entry: object, path: Path) -> RoleDefinition:
@@ -243,30 +295,64 @@ def _marker_ranges(tokens, intro: IntroSpec) -> list[tuple[int, int]]:
     return ranges
 
 
-def _intro_span(tokens, first: int, last: int, remainder: str, markers, intro: IntroSpec) -> tuple[int, int] | None:
+def _is_word(tokens, at: int, patterns: tuple[str, ...]) -> bool:
+    """True when tokens[at] exists and matches one single-token pattern (`*` = prefix)."""
+    return 0 <= at < len(tokens) and any(_token_match(tokens[at][0], p, ()) is not None for p in patterns)
+
+
+def _org_end(tokens, last: int, remainder: str, intro: IntroSpec) -> int:
+    """Last token of the organisation: a separate ablative right after it belongs to it."""
+    if not remainder and last + 1 < len(tokens) and tokens[last + 1][0] in intro.affixes:
+        return last + 1
+    return last
+
+
+def _is_channel(tokens, first: int, last: int, end: int, channel: ChannelSpec) -> bool:
+    """The organisation at tokens[first..last] (ablative-extended to `end`) is a channel."""
+    if _is_word(tokens, first - 1, channel.before) or _is_word(tokens, end + 1, channel.after):
+        return True
+    return end == last and last + 1 < len(tokens) and tokens[last + 1][0] in channel.affixes
+
+
+def _blocked(tokens, lo: int, hi: int, channel: ChannelSpec) -> bool:
+    """A negation among tokens[lo..hi]."""
+    return any(_is_word(tokens, at, channel.blockers) for at in range(lo, hi + 1))
+
+
+def _same_sentence(line: str, tokens, left: int, right: int, intro: IntroSpec) -> bool:
+    """No sentence end between the end of tokens[left] and the start of tokens[right]."""
+    gap = line[tokens[left][2] : tokens[right][1]]
+    return not any(c in intro.sentence_end for c in gap)
+
+
+def _intro_span(line: str, tokens, first: int, last: int, remainder: str, markers, intro: IntroSpec) -> tuple[int, int] | None:
     """Token range of the claim for an organisation at tokens[first..last], or None."""
-    opens_line = first <= intro.window  # an introduction opens the turn
-    if opens_line and remainder and any(remainder.endswith(a) for a in intro.affixes):
-        return first, last
-    if opens_line and not remainder and last + 1 < len(tokens) and tokens[last + 1][0] in intro.affixes:
-        return first, last + 1
+    end = _org_end(tokens, last, remainder, intro)
+    if _is_channel(tokens, first, last, end, intro.channel):
+        return None
     best: tuple[int, int, int, int] | None = None  # (gap, after?, start, end)
     for m_start, m_end in markers:
         if m_end < first:
-            gap, after = first - m_end - 1, 0
-        elif m_start > last:
-            gap, after = m_start - last - 1, 1
+            gap, after, lo, hi = first - m_end - 1, 0, m_end, first
+        elif m_start > end:
+            gap, after, lo, hi = m_start - end - 1, 1, end, m_start
         else:
             continue
-        if gap <= intro.window and (best is None or (gap, after) < best[:2]):
-            best = (gap, after, min(first, m_start), max(last, m_end))
+        if gap > intro.window or not _same_sentence(line, tokens, lo, hi, intro):
+            continue
+        if _blocked(tokens, lo + 1, hi - 1, intro.channel):
+            if not after:
+                return None  # «Это не Kaspi»: the organisation is denied
+            continue  # «Kaspi, не беспокойтесь»: only this marker is dropped
+        if best is None or (gap, after) < best[:2]:
+            best = (gap, after, min(first, m_start), max(end, m_end))
     return None if best is None else (best[2], best[3])
 
 
 def intro_claims(transcript: str, lexicon: RoleLexicon) -> dict[int, Span]:
     """{role order: earliest self-introduction span} over every line of the transcript."""
     found: dict[int, Span] = {}
-    if not lexicon.intro.markers and not lexicon.intro.affixes:
+    if not lexicon.intro.markers:
         return found
     offset = 0
     for line in transcript.split(UTTERANCE_BOUNDARY):
@@ -279,7 +365,7 @@ def intro_claims(transcript: str, lexicon: RoleLexicon) -> dict[int, Span]:
                 at += 1
                 continue
             order, length, remainder = org
-            span = _intro_span(tokens, at, at + length - 1, remainder, markers, lexicon.intro)
+            span = _intro_span(line, tokens, at, at + length - 1, remainder, markers, lexicon.intro)
             if span is not None and order not in found:
                 start, end = tokens[span[0]][1] + offset, tokens[span[1]][2] + offset
                 found[order] = Span(text=transcript[start:end], start=start, end=end)

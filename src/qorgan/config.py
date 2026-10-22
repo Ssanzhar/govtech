@@ -130,6 +130,9 @@ GEN_VAL_FRACTION = 0.15
 # Layer-2 role slot: tokens allowed between a self-introduction marker and an organisation name
 # («это Асель из Kaspi», "this is John from Beeline"). Display-only; exported to site/core/role.js.
 ROLE_INTRO_WINDOW = 4
+# A sentence end between a marker and an organisation is a wall (D63 v2.1): «Менің атым Әсел. …
+# Kaspi арқылы …» is two sentences, not «атым … Kaspi». Exported to site/core/role.js.
+ROLE_SENTENCE_END = ".!?"
 
 ClassifierBackend = Literal["linear", "llm", "xlmr", "mock"]
 
