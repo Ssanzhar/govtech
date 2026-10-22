@@ -57,6 +57,13 @@ INSTRUCTIONS = (
     "from the cell exactly.",
 )
 
+# Added only to specs whose cells carry a `scenario` (v2.1), so earlier specs stay byte-identical.
+SCENARIO_INSTRUCTION = (
+    "Scenario (negative cells with `scenario` set): the brief says what the legitimate call is concretely "
+    "about. Write that situation, in your own words and details (names, amounts, places, who says what); "
+    "never copy the brief's wording into the dialogue."
+)
+
 OUTPUT_SCHEMA = {
     "type": "object",
     "additionalProperties": False,
@@ -107,15 +114,21 @@ def glossaries(taxonomy, schemes, roles) -> dict:
     }
 
 
+def _cell_json(cell: GridCell) -> dict:
+    exclude = {"run", "hard_negative"} | ({"scenario"} if cell.scenario is None else set())
+    return json.loads(cell.model_dump_json(exclude=exclude))
+
+
 def build_chunk_spec(cells: Sequence[GridCell], *, run: str, chunk: str, taxonomy, schemes, roles) -> dict:
+    with_scenarios = any(c.scenario for c in cells)
     return {
         "spec_version": SPEC_VERSION,
         "run": run,
         "chunk": chunk,
-        "instructions": list(INSTRUCTIONS),
+        "instructions": list(INSTRUCTIONS) + ([SCENARIO_INSTRUCTION] if with_scenarios else []),
         "output_schema": OUTPUT_SCHEMA,
         "glossary": glossaries(taxonomy, schemes, roles),
-        "cells": [json.loads(c.model_dump_json(exclude={"run", "hard_negative"})) for c in cells],
+        "cells": [_cell_json(c) for c in cells],
     }
 
 

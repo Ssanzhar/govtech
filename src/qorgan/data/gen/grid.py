@@ -64,6 +64,8 @@ class GridCell(BaseModel):
     confusable: bool | None = None
     # Negatives only: the scheme whose pretext this legitimate call shares (none of its asks).
     lookalike_of: str | None = None
+    # Negatives only (v2.1): an English brief of the concrete situation, from `negative_scenarios`.
+    scenario: str | None = None
 
     @model_validator(mode="after")
     def _kind_consistent(self) -> "GridCell":
@@ -89,13 +91,22 @@ class PersonaSpec(BaseModel):
     occupation: tuple[str, ...]
 
 
+class Scenario(BaseModel):
+    """One concrete situation for a negative class (v2.1). `lookalike_of` must be a scheme whose
+    `twin` is that class; the brief is English (the writer never sees a ru/kk phrase)."""
+
+    model_config = ConfigDict(frozen=True)
+    brief: str = Field(min_length=1)
+    lookalike_of: str | None = None
+
+
 class GridConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     version: int
     seed: int
     registers: dict[str, float]
-    scam_share: float = Field(gt=0.0, lt=1.0)
+    scam_share: float = Field(ge=0.0, lt=1.0)  # 0 = a legit-only run (v2.1, PLAN A2)
     scheme_weights: dict[str, float] = {}
     negative_weights: dict[str, float]
     negative_roles: dict[str, tuple[str | None, ...]]
@@ -110,12 +121,16 @@ class GridConfig(BaseModel):
     twin_share: float = Field(default=0.0, ge=0.0, le=1.0)
     hook_compatible_tactics: tuple[str, ...] = ()
     occupation_age_bands: dict[str, tuple[str, ...]] = {}
+    negative_scenarios: dict[str, tuple[Scenario, ...]] = {}
 
     @model_validator(mode="after")
     def _registers_known(self) -> "GridConfig":
         unknown = set(self.registers) - {"kk", "ru", "mixed", "en"}
         if unknown or not self.registers:
             raise ValueError(f"unknown registers {sorted(unknown)}")
+        unknown_scenarios = {k for k, v in self.negative_scenarios.items() if k not in self.negative_weights or not v}
+        if unknown_scenarios:
+            raise ValueError(f"scenarios for classes not in negative_weights (or empty): {sorted(unknown_scenarios)}")
         missing_roles = set(self.negative_weights) - set(self.negative_roles)
         if missing_roles:
             raise ValueError(f"negative classes without a caller role: {sorted(missing_roles)}")
@@ -233,6 +248,23 @@ def _negative_slots(n_neg: int, scheme_counts: Mapping[str, int], cfg: GridConfi
     return sorted(slots, key=lambda s: (list(cfg.negative_roles).index(s[0]), s[1] or ""))
 
 
+def _scenario_decks(slots, cfg: GridConfig, rng_key: str, schemes) -> dict[str, list]:
+    """Per negative class with scenarios: one scenario per cell of that class, every scenario
+    used evenly (largest remainder), in a seeded order that is independent of the register
+    interleave. A separate RNG, so a grid without scenarios draws exactly as before."""
+    decks: dict[str, list] = {}
+    for cls, scenarios in cfg.negative_scenarios.items():
+        for scenario in scenarios:
+            if scenario.lookalike_of and schemes.get(scenario.lookalike_of).generation.twin != cls:
+                raise GridError(f"scenario look-alike {scenario.lookalike_of!r} is not a twin of {cls!r}")
+        n = sum(1 for kind, c, _ in slots if kind == "legit" and c == cls)
+        counts = allocate(n, {str(i): 1.0 for i in range(len(scenarios))}) if n else {}
+        deck = [scenarios[int(i)] for i, k in counts.items() for _ in range(k)]
+        random.Random(f"{rng_key}:scenarios:{cls}").shuffle(deck)
+        decks[cls] = deck
+    return decks
+
+
 def build_manifest(cfg: GridConfig, *, run: str, size: int, schemes, taxonomy, roles=None) -> tuple[GridCell, ...]:
     """The run's cells, deterministic in (cfg, run, size). Scams first, then negatives,
     each block ordered by class; registers interleaved evenly across the whole sequence.
@@ -252,6 +284,7 @@ def build_manifest(cfg: GridConfig, *, run: str, size: int, schemes, taxonomy, r
     slots: list[tuple[Kind, str, str | None]] = [("scam", k, None) for k, n in scheme_counts.items() for _ in range(n)]
     slots += [("legit", cls, look) for cls, look in _negative_slots(size - n_scam, scheme_counts, cfg, schemes)]
     registers = smooth_round_robin(allocate(size, cfg.registers))
+    decks = _scenario_decks(slots, cfg, f"{cfg.seed}:{run}:{size}", schemes)
     hard = set(taxonomy.hard_negative_ids())
     cells: list[GridCell] = []
     for index, ((kind, cls, lookalike), register) in enumerate(zip(slots, registers)):
@@ -272,13 +305,16 @@ def build_manifest(cfg: GridConfig, *, run: str, size: int, schemes, taxonomy, r
             ))
         else:
             is_hard = cls in hard
+            scenario = decks[cls].pop() if decks.get(cls) else None
+            if scenario is not None and scenario.lookalike_of and not lookalike:
+                lookalike = scenario.lookalike_of
             legit_roles = list(cfg.negative_roles[cls])
             if lookalike:  # prefer the role the scheme impersonates, when it can call legitimately
                 legit_roles = [r for r in legit_roles if r in schemes.get(lookalike).generation.roles] or legit_roles
             cells.append(GridCell(
                 **common, negative_class=cls, hard_negative=is_hard, role=rng.choice(legit_roles),
                 stage="none", confusable=is_hard and rng.random() < cfg.confusable_negative_share,
-                lookalike_of=lookalike,
+                lookalike_of=lookalike, scenario=scenario.brief if scenario is not None else None,
             ))
     return tuple(cells)
 

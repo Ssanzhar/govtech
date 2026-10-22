@@ -1,0 +1,180 @@
+# Generation grid v2.1 / A2 (PLAN_2026-10 track A): a LEGIT-ONLY run, derived from
+# configs/gen_grid.yaml. Run: `python -m qorgan.data.gen manifest --run v21_legit --size 300
+# --grid configs/gen_grid_v21_legit.yaml`.
+#
+# Why: v2 (ADR D63 phase 2) gave 5 new held-out false alarms, 2 of them ordinary family money
+# requests by Kaspi -- the "relative" and "payment redirect" heads learned "a relative asking for
+# money" as a scam. v2.1 adds legitimate family/friend money calls and real bank/Kaspi contacts.
+# Note the style-confound consequence: this run alone is 100 % legit, so the Claude block's
+# P(scam) falls when it is folded in next to pilot + p2 (D63 phase 2); the fold/retrain step (A4)
+# must report P(scam | generator) again.
+
+version: 2
+seed: 20261022
+
+registers:          # D70/D71: no English; its 0.15 goes to Kazakh, the weakest language
+  kk: 0.45
+  ru: 0.30
+  mixed: 0.25
+
+scam_share: 0.0     # legit-only run
+twin_share: 0.0     # look-alikes come from the scenarios below (there are no scam counts to follow)
+
+# ~40 % family/friend money requests, ~40 % real bank/Kaspi contacts, ~20 % other institutional
+# look-alikes (courier, clinic, eGov/PSC, utility).
+negative_weights:
+  family_money_request: 0.40
+  legit_bank_call: 0.40
+  legit_delivery_code: 0.05
+  legit_clinic_appointment: 0.05
+  legit_gov_service: 0.05
+  legit_utility_notice: 0.05
+
+negative_roles:
+  family_money_request: [relative_friend]
+  legit_bank_call: [bank_security]
+  legit_delivery_code: [courier_post]
+  legit_clinic_appointment: [clinic]
+  legit_gov_service: [egov_con]
+  legit_utility_notice: [utility]
+
+# Same share as the base grid (every class here is a hard negative).
+confusable_negative_share: 0.6
+
+# One brief per cell, every brief used evenly per class. English only (no ru/kk phrase reaches
+# the writer). `lookalike_of` must be a scheme whose twin is the class.
+negative_scenarios:
+  family_money_request:
+    - brief: "A student studying in another city asks a parent to send money by Kaspi transfer for rent or food before the stipend arrives; ordinary family talk around it."
+    - brief: "A sibling asks to borrow money until payday, to their own usual Kaspi card or phone number, and says when they will give it back."
+    - brief: "A friend calls to pay back money they owe: asks where to send it, or says they already sent it and asks the callee to check the app."
+    - brief: "Friends or colleagues split a bill (a birthday gift, a restaurant, a shared taxi or trip): who owes how much, send it by transfer to the organiser's number."
+    - brief: "An older parent asks an adult child to top up their phone balance or pay a bill for them in the banking app, because the parent cannot manage the app."
+    - brief: "A relative explains a real unexpected expense (car repair, medicine for grandmother, a broken phone) and asks for help; the callee knows the details, asks questions, maybe says they will call back or check with family. No secrecy, no stranger, no courier."
+      lookalike_of: relative_in_trouble
+    - brief: "A cousin or aunt collects the family's contribution for a wedding, a toi or a memorial meal, and asks the callee to send their share by transfer to a named relative's number."
+    - brief: "A relative's own card does not work at the shop or pharmacy right now and they ask the callee to pay or send a small sum quickly; the callee recognises them and chats normally, maybe checks a family detail."
+      lookalike_of: relative_in_trouble
+    - brief: "A spouse or parent asks the callee to transfer money to ANOTHER family member they both know (a niece, a brother, the grandmother) instead of to the caller; an ordinary errand."
+    - brief: "A neighbour or close friend asks to borrow a small amount for a day or two and promises to return it tomorrow; they talk about everyday things too."
+  legit_bank_call:
+    - brief: "A real bank (Kaspi, Halyk, Freedom, Jusan, BCC...) confirms an unusual card purchase and only asks yes or no whether the customer made it; if not, tells them to block the card themselves in the app. No codes, no transfers."
+      lookalike_of: bank_card_phish
+    - brief: "A real bank warns of a login from a new device. It says never to tell anyone a code, asks the customer to check the app, and if in doubt to call the number on the back of their card. It asks for nothing."
+      lookalike_of: bank_safe_account
+    - brief: "A real bank holds a large outgoing transfer for review and asks the customer to confirm or cancel it in the app (a push notification), not on the phone."
+      lookalike_of: bank_card_phish
+    - brief: "A real bank tells the customer about a bonus, cashback or promotion; details and activation are only in the app. The customer is suspicious at first and is reassured because nothing is asked."
+    - brief: "A real bank or its courier arranges delivery of a renewed card: date, address, bring an ID; or the card waits at a branch. Nothing is read out on the phone."
+      lookalike_of: bank_card_phish
+    - brief: "A real bank reminds about an upcoming or slightly overdue loan instalment and says to pay in the app or at a terminal as usual; no other account, no threat."
+      lookalike_of: mirror_loan
+    - brief: "A real bank offers a pre-approved loan or a credit limit; if the customer is interested they apply themselves in the app; the customer declines or says they will think, and that is fine."
+      lookalike_of: mirror_loan
+    - brief: "A real bank calls back about a complaint the customer filed (a disputed charge, a cash machine that did not give out money); a status update, all handled through the app or branch."
+    - brief: "A real bank says the customer's deposit term ends soon and explains the options (extend, withdraw, move to another deposit), done in the app or at a branch."
+    - brief: "A real bank says the customer's ID document on file has expired and asks them to update it themselves in the app or at a branch; nothing is collected by phone."
+      lookalike_of: bank_safe_account
+  legit_delivery_code:
+    - brief: "A courier at the door hands over an order and asks for the pickup code shown in the recipient's own marketplace app."
+      lookalike_of: parcel_code
+    - brief: "A courier calls to agree on the delivery time and address details; payment, if any, by card terminal or cash on delivery."
+      lookalike_of: parcel_code
+    - brief: "The post office calls: a parcel has arrived, come with an ID, it is held for a stated number of days."
+      lookalike_of: parcel_code
+  legit_clinic_appointment:
+    - brief: "The local polyclinic reminds the patient of a yearly screening or vaccination and invites them to come with an ID."
+      lookalike_of: benefits_recalc_and_clinic
+    - brief: "A clinic reschedules a doctor's appointment the patient booked earlier and agrees a new time."
+      lookalike_of: benefits_recalc_and_clinic
+    - brief: "A nurse says test results are ready and asks the patient to come and see the doctor."
+  legit_gov_service:
+    - brief: "The public service centre says the callee's new ID card or passport is ready and they can pick it up in person."
+      lookalike_of: egov_eds_renewal
+    - brief: "A reminder that the callee's digital signature certificate expires soon, and how to renew it themselves on eGov or at the public service centre; no codes on the phone."
+      lookalike_of: egov_eds_renewal
+    - brief: "A public service centre operator calls back about an application (address registration, a property certificate) and says what document to bring or to check the status on eGov."
+  legit_utility_notice:
+    - brief: "The gas company announces a planned meter check or safety inspection on a given date and asks to be at home."
+      lookalike_of: utility_code
+    - brief: "The water or electricity company warns of a planned outage in the building and when supply returns."
+      lookalike_of: utility_code
+    - brief: "The housing association announces an intercom or meter replacement; any cost comes on the regular bill."
+
+# ---- shared axes, copied from configs/gen_grid.yaml (scam-only axes kept for schema completeness)
+
+optional_tactics: {min: 0, max: 2}
+indirect_scam_share: 0.5
+
+length_targets:     # utterances; weights
+  5: 0.15
+  7: 0.25
+  9: 0.25
+  12: 0.20
+  15: 0.15
+
+outcomes:
+  complies: 0.30
+  refuses: 0.30
+  hangs_up: 0.20
+  calls_back: 0.20
+
+channels:
+  cold_call: 0.45
+  call_after_sms: 0.25
+  messenger_then_call: 0.15
+  second_call: 0.15
+
+# Which stages of the scheme the call shows (scams); negatives use `none`.
+stages:
+  hook_only: 0.15
+  hook_escalation: 0.25
+  full: 0.45
+  extraction_handoff: 0.15
+
+persona:
+  age_band: {"18-25": 0.2, "26-40": 0.3, "41-60": 0.3, "61+": 0.2}
+  region:
+    - Almaty
+    - Astana
+    - Shymkent
+    - Karaganda
+    - Aktobe
+    - Atyrau
+    - Pavlodar
+    - Kostanay
+    - Oskemen
+    - Turkestan region (village)
+    - Kyzylorda
+    - Taraz
+  occupation:
+    - student
+    - schoolteacher
+    - pensioner
+    - sole trader (ИП)
+    - office worker
+    - nurse
+    - taxi driver
+    - accountant
+    - stay-at-home parent
+    - IT specialist
+    - bazaar vendor
+    - oil-field shift worker
+    - civil servant
+    - small-business owner
+
+# Which occupations fit which age band (phase 2; the pilot drew them independently and wrote a
+# "pensioner 18-25"). An occupation missing here fits every band.
+occupation_age_bands:
+  student: ["18-25", "26-40"]
+  pensioner: ["61+"]
+  stay-at-home parent: ["18-25", "26-40", "41-60"]
+  IT specialist: ["18-25", "26-40", "41-60"]
+  oil-field shift worker: ["18-25", "26-40", "41-60"]
+  nurse: ["18-25", "26-40", "41-60"]
+  taxi driver: ["26-40", "41-60", "61+"]
+  schoolteacher: ["26-40", "41-60", "61+"]
+  civil servant: ["26-40", "41-60"]
+  accountant: ["26-40", "41-60", "61+"]
+  small-business owner: ["26-40", "41-60", "61+"]
+  sole trader (ИП): ["26-40", "41-60", "61+"]

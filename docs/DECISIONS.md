@@ -2703,3 +2703,43 @@ Display-only; no retrain (`roles.yaml` is not in the hashed lexicons;
   - 3 channel words.
 - The pilot is unchanged: 75/102, 1/18, 4 wrong.
 - **Tests:** pytest 1666 passed / 3 skipped; `npm test` 159/159.
+
+### D63 v2.1 / A2 — 300 legitimate dialogues for the v2.1 retrain (run `v21_legit`, 2026-10-22)
+**Why.** Two of v2's five new held-out false alarms were ordinary family money requests by Kaspi.
+v2.1 therefore adds legitimate family and bank calls. These were chosen after seeing v2's false
+alarms on test/ood, so test/ood cannot be the main judge for v2.1; `shift_local_2` is (PLAN §4).
+
+**Grid** (`configs/gen_grid_v21_legit.yaml`, seed 20261022, 300 cells, 15 chunks of 20):
+- `scam_share: 0`; registers kk 0.45 / ru 0.30 / mixed 0.25 (no new English rows, D70/D71).
+- Classes: family_money_request 120, legit_bank_call 120, and 15 each of delivery code, clinic,
+  eGov/ЦОН and utility. 178 are confusable.
+- 173 cells are look-alikes: bank_card_phish 36, bank_safe_account 24, mirror_loan 24,
+  relative_in_trouble 24, parcel_code 15, and 10 each for clinic, eGov and utility.
+- Code (`grid.py`, `spec.py`):
+  - `scam_share` may be 0.
+  - Per-class `negative_scenarios` (32 English briefs) are spread evenly with a separate RNG, so the
+    base grid's manifests and specs are byte-identical.
+  - A brief's `lookalike_of` must be the scheme's twin.
+  - Tests: `tests/data/gen/test_gen_grid_legit.py` (10).
+- No brief asks for a code, PIN or transfer.
+
+**Generation.** 15 writer agents, each seeing only its chunk spec. All passed `check` first time.
+
+**QC.**
+- 300/300 schema-valid; **300 accepted**.
+- 0 eval-split hash overlaps; 0 near-duplicates (nearest neighbour vs train max 0.940); ROUGE-L max
+  0.376.
+- A hard-signal cue fires on 16/300 negatives, 12 of them confusables.
+- Role-slot recall is 0.51.
+- 40 rows are not a scrub fixed point (self-introduced names, 2 rows with numbers read aloud). The
+  fold scrubs them (D66).
+
+**Open before A4.**
+1. **Style confound.** Fingerprint vs Gemini train: char AUC 1.000, e5 0.984. With this run, the
+   Claude block's P(scam) falls to 708/1745 = 0.406, against Gemini train's 0.477.
+2. **Reassurance line.** 57 of 120 bank calls carry "we never ask for codes", a line real scammers
+   also use, so a head could learn "never-ask-code ⇒ legit".
+3. **Persona–scenario coherence** is not enforced (one cell was rewritten by its writer). One
+   borderline family row (v21_legit_0100, "new SIM, save my number", then a loan) needs review.
+
+Data is local-only, not folded, not trained.
