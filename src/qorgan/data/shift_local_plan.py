@@ -4,8 +4,9 @@ Every call slot (language x brief x persona x outcome x length x seed) is fixed 
 before any text is generated, so the set is reproducible and no slot can be chosen after
 seeing an output. The label of a slot comes from its brief.
 
-`LOCAL_SPLITS` registers every batch: `shift_local` (D65) and `shift_local_2` (PLAN_2026-10 §4
-A3: same briefs, same model and sampling, a new seed, kk/ru only after D70). A batch is planned
+`LOCAL_SPLITS` registers every batch: `shift_local` (D65), `shift_local_2` (PLAN_2026-10 §4
+A3: same briefs, same model and sampling, a new seed, kk/ru only after D70) and `shift_local_3`
+(A7, the v2.2 judge: the second batch's design under another seed). A batch is planned
 with `plan_for(name, briefs)`; the first batch's plan is pinned by a fingerprint test.
 
 The generator is a local open-weights model from a different family than the training data
@@ -145,6 +146,8 @@ _NOTE = (
     "corpus, prompts or lexicons; accepted by automated checks only"
 )
 SHIFT_LOCAL_2_SEED = 20261022
+# The v2.2 judge (D63 v2.1 A6 verdict, PLAN_2026-10 A7): `shift_local_2` was looked at once by v2.1.
+SHIFT_LOCAL_3_SEED = 20261024
 # D70: kk/ru only. The English slots go to Kazakh, the weakest language (PLAN_2026-10 §0); mixed
 # stays 0 for the D65 reason (the model never code-switches). Same total as `shift_local`.
 SHIFT_LOCAL_2_TARGETS: dict[str, int] = {
@@ -161,6 +164,12 @@ LOCAL_SPLITS: Mapping[str, LocalSplit] = MappingProxyType({
         language_targets=MappingProxyType(SHIFT_LOCAL_2_TARGETS),
         generator_note=_NOTE.format(date="2026-10-22", name="shift_local_2"), adr="D65",
         prior=("shift_local",), near_duplicate_jaccard=0.7, plan_task="PLAN_2026-10 §4 A3",
+    ),
+    "shift_local_3": LocalSplit(
+        name="shift_local_3", plan_seed=SHIFT_LOCAL_3_SEED, slot_prefix="sl3",
+        language_targets=MappingProxyType(SHIFT_LOCAL_2_TARGETS),
+        generator_note=_NOTE.format(date="2026-10-23", name="shift_local_3"), adr="D65",
+        prior=("shift_local", "shift_local_2"), near_duplicate_jaccard=0.7, plan_task="PLAN_2026-10 A7",
     ),
 })
 
