@@ -5,6 +5,11 @@ day (what is shipped, the honest numbers, the strategy, who does what). Then rea
 (the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D70) and `docs/eval_report.md`
 (numbers, with intervals). The July sprint log below is kept as history._
 
+- **2026-10-24 (later) — v3 trained, judged and NOT shipped (ADR D73).**
+  - On `shift_local_4` v3 keeps v1's false alarms (5/79) and catches 55/80 scams (v1 33/80);
+    on the v3 scenarios it catches 19/30 (v1 9/30).
+  - Fails A6 (a) and (c): a family money request and everyday chat now alert (test clean FPR
+    0 → 1, ood styled 1 → 2). Same failure as v2.2. v1 stays; v3 frozen in `models/linear_v3_device`.
 - **2026-10-24 — taxonomy v3 and its retrain, pre-registered (ADR D73).**
   - Five new tactics chosen by the owner (minors, blackmail, survey pretext, romance, charity),
     each with a legitimate twin, a scheme and DRAFT advice awaiting the owner's RU/KK review.

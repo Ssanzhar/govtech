@@ -3295,3 +3295,52 @@ At the rule point, as v1 → v3 (FPs; caught scams):
 Validation per-tactic F1 of the new heads (labelled v3 rows only, support 5–9, so wide):
 minor_targeting 0.714, blackmail_extortion 0.667, survey_pretext 0.824, romance_trust 0.762,
 charity_appeal 0.462. mule_recruitment 0.718 (v2.1: 0.50).
+
+#### D73 — the one look: (b) passes, (a) and (c) FAIL; v1 stays (2026-10-24)
+_One run on device embeddings with the frozen weights of 96a1f64, each arm at its own point: v1
+0.59 / 0.49, v3 0.83 / 0.73, the frozen v2.1 0.82 / 0.72 (reference). Outputs in
+`models/linear_v3_device/a5/{v1,v3,v21}.{run,styled}.txt`, `*.neg_rows.json` and `*.v3_scams.json`
+(ids, risks and tag ids, no text). The first attempt stopped in a report-only script
+(`ScoreResult.tags`, not `tactic_tags`); the whole look was rerun unchanged and is deterministic._
+
+**The judge: `shift_local_4`** (159 calls, first look).
+
+| | FPR [95 % CP] | recall [95 % CP] | PR-AUC |
+|---|---|---|---|
+| v1 @ 0.59 | 0.063 [0.021, 0.142] | 0.412 [0.304, 0.528] | 0.825 |
+| **v3 @ 0.83** | **0.063 [0.021, 0.142]** | **0.688 [0.574, 0.787]** | 0.914 |
+| v2.1 @ 0.82 (ref.) | 0.063 [0.021, 0.142] | 0.562 [0.447, 0.673] | 0.901 |
+
+(b) passes: the same false alarms as v1, and recall 0.688 > 0.412.
+
+**(a) fails.**
+- test (clean): FPR 0.000 → 0.017, one new false alarm (`neg_family_money_request_en_8`).
+- ood styled copies: 1 → 2 false alarms (`ood_neg_legit_gov_service_kk_0`, the row that also failed v2.2).
+- authored and ood (clean) are unchanged at 0.
+
+**(c) fails.** v3's new false alarms against v1 include family and everyday calls, judged by
+their class ids: `neg_family_money_request_en_8` (test, 0.847), `aug_neg_family_money_request_ru_1`
+(test, inspected; the row that failed v2.2's (c), 0.899) and two general-conversation rows
+(`neg_general_conversation_mixed_21`, inspected, 0.966; `aug_neg_general_conversation_mixed_1`,
+styled, 0.845). The verdict does not depend on their text, so the three unread rows stay unread.
+
+**Report only: the v3 briefs' 30 scams on `shift_local_4`.**
+
+| caught | blackmail | charity | romance | survey | minors | total |
+|---|---|---|---|---|---|---|
+| v1 | 1/7 | 0/7 | 1/5 | 2/5 | 5/6 | 9/30 |
+| v2.1 | 4/7 | 1/7 | 0/5 | 1/5 | 6/6 | 12/30 |
+| v3 | 5/7 | 4/7 | 2/5 | 2/5 | 6/6 | 19/30 |
+
+v3's new tags on those calls: minor_targeting 4/6, romance_trust 3/5, charity_appeal 3/7,
+blackmail_extortion 1/7, survey_pretext 1/5.
+
+**Verdict.** v1 stays shipped; v3 stays frozen in `models/linear_v3_device`, not exported. Nothing
+is re-tuned on this look. `shift_local_4` has now been looked at once and cannot judge a retrain
+built after it.
+
+**What it shows.** v3 widens coverage (19/30 v3-brief scams vs v1's 9) and recall on the judge,
+but for the second time in a row (v2.2, v3) adding scam data pushes family money requests and
+everyday chat over the alert line at the rule point. The rule matches v1's validation FPs, and
+validation is mostly writer-matched rows, so it does not protect these classes. v2.1 remains the
+only retrain without such a false alarm.
