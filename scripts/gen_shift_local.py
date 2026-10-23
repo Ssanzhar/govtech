@@ -31,13 +31,13 @@ from pathlib import Path
 
 from qorgan.data.shift_local_checks import accept
 from qorgan.data.shift_local_plan import (
-    LOCAL_SPLITS, MAX_ATTEMPTS, MAX_TOKENS, TEMPERATURE, system_prompt, TOP_P, Slot, build_plan, load_briefs, raw_row,
+    LOCAL_SPLITS, MAX_ATTEMPTS, MAX_TOKENS, TEMPERATURE, system_prompt, TOP_P, Slot, build_plan, load_split_briefs, raw_row,
     user_prompt,
 )
 from qorgan.data.shift_local_set import prior_accepted_texts
 
 _REPO = Path(__file__).resolve().parents[1]
-_BRIEFS = _REPO / "configs" / "shift_local_briefs.yaml"
+_CONFIGS = _REPO / "configs"  # a batch's brief files: LOCAL_SPLITS[split].briefs_files (D73)
 _RAW = _REPO / "data" / "raw"
 _REQUEST_TIMEOUT_S = 900
 
@@ -80,7 +80,7 @@ def run(
     attempts_path = out_dir / "meta" / "attempts.jsonl"  # a subdir: the split builder globs *.jsonl
     attempts_path.parent.mkdir(parents=True, exist_ok=True)
     past = _read_jsonl(attempts_path)
-    planned = build_plan(load_briefs(_BRIEFS), seed=plan_seed, targets=spec.language_targets, prefix=spec.slot_prefix)
+    planned = build_plan(load_split_briefs(split, _CONFIGS), seed=plan_seed, targets=spec.language_targets, prefix=spec.slot_prefix)
     slots = [s for s in planned if s.generator == generator and (not languages or s.language in languages)]
     if limit:  # a smoke test samples both labels: the plan lists each language's scams first
         slots = slots[::max(1, len(slots) // limit)][:limit]

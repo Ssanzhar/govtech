@@ -1,0 +1,120 @@
+# Scenario briefs added for the `shift_local_4` held-out split (ADR D73): the five taxonomy-v3
+# tactics and their legitimate twins. `shift_local_4` is planned from `shift_local_briefs.yaml`
+# PLUS this file; earlier batches read only the first file, so their plans are unchanged.
+#
+# Written 2026-10-24 from PUBLIC descriptions of these schemes (police, bank and child-safety
+# warnings and press coverage of the 2025-26 waves; mechanism counts from fraudlens-ru-v1, see
+# ADR D73) and from ordinary legitimate calls with the same pretexts. Written WITHOUT opening the
+# cue lexicons, the corpus, any generated row or any evaluation split. The label of every
+# generated call comes from its brief, never from a model's score.
+#
+# Track-2 rule: these briefs describe an evaluation split. Do not build training prompts,
+# grid cells or seed scenarios from this file.
+#
+# tactics: taxonomy ids the brief implies; legit briefs carry none.
+# persona: pins the person who answers (the plan still makes its persona draw, so no other slot
+# moves). Used where the scheme only exists for that callee: a call to a child.
+version: 1
+briefs:
+  # ---------------------------------------------------------------- scam: minors
+  - id: s3_minor_parent_card
+    label: scam
+    tactics: [minor_targeting, secrecy, credentials_request]
+    persona: "a 12-year-old schoolboy at home alone in Almaty"
+    brief: "A friendly caller tells a child he has won a prize in an online game and can get it today. To send it, he needs the numbers on the front and back of mum's or dad's bank card, and he says the parents must not be told so the surprise is not spoiled."
+  - id: s3_minor_police_threat
+    label: scam
+    tactics: [minor_targeting, fear_threat, imp_law_enforcement, secrecy]
+    persona: "a 15-year-old schoolgirl in Karaganda"
+    brief: "A man says he is a police officer and that the teenager's phone was used in a crime. To avoid the parents being arrested, she must not tell them, must read out the codes that come to the parents' phone, and later go to a place he will name."
+  - id: s3_minor_tasks
+    label: scam
+    tactics: [minor_targeting, task_advance_fee, secrecy]
+    persona: "a 16-year-old college student in Shymkent"
+    brief: "A caller offers a teenager easy money for small online tasks. After the first tasks he says a deposit is needed to unlock the earnings, suggests borrowing a parent's phone to pay, and tells him to keep it between them."
+  # ---------------------------------------------------------------- scam: blackmail
+  - id: s3_blackmail_photos
+    label: scam
+    tactics: [blackmail_extortion, fear_threat, urgency]
+    brief: "A caller says he has private photos and chat messages of the person and will send them to all of their contacts and their employer tonight unless a sum is paid to a card he gives."
+  - id: s3_blackmail_case
+    label: scam
+    tactics: [blackmail_extortion, imp_law_enforcement, payment_redirect]
+    brief: "A caller presents himself as an investigator and says a criminal case has been opened against the person over an online purchase. He offers to make the case disappear if a 'fine' is transferred today, and warns that otherwise it will go to court and their workplace will be told."
+  - id: s3_blackmail_video
+    label: scam
+    tactics: [blackmail_extortion, secrecy, payment_redirect]
+    brief: "A caller says a video of the person from a recent video call was recorded and edited, and that it will be posted online and shown to the family unless they pay, and that telling anyone will make it worse."
+  # ---------------------------------------------------------------- scam: survey pretext
+  - id: s3_survey_bonus
+    label: scam
+    tactics: [survey_pretext, credentials_request, prize_lottery]
+    brief: "A caller runs a short 'customer satisfaction survey' for a mobile operator and promises a bonus for taking part. After a few easy questions she asks for the person's IIN and which bank card the bonus should be credited to."
+  - id: s3_survey_census
+    label: scam
+    tactics: [survey_pretext, credentials_request, imp_gov_service]
+    brief: "A caller says she is from the statistics office and is updating household census data. She asks who lives in the flat, then their IIN numbers and the bank where pensions or benefits are received."
+  - id: s3_survey_code
+    label: scam
+    tactics: [survey_pretext, otp_request, verification_ploy]
+    brief: "A caller conducts a 'poll about the quality of public services' and at the end says a code has been sent to confirm the person's participation, and asks them to read it out."
+  # ---------------------------------------------------------------- scam: romance
+  - id: s3_romance_ticket
+    label: scam
+    tactics: [romance_trust, payment_redirect, urgency]
+    brief: "A man the person met on a dating app weeks ago, and has never seen in person, calls sounding affectionate. He says he finally bought a ticket to come but his card was blocked and he needs money for the flight today, to be sent to a friend's card."
+  - id: s3_romance_customs
+    label: scam
+    tactics: [romance_trust, payment_redirect, imp_telecom_delivery_utility]
+    brief: "An online sweetheart from abroad calls to say she sent an expensive gift, and that customs is holding the parcel until a fee is paid. A 'courier' joins the call and gives the card number for the fee."
+  - id: s3_romance_invest
+    label: scam
+    tactics: [romance_trust, investment_scam]
+    brief: "Someone the person has been chatting with romantically for a month calls to share how they earn on a trading platform and gently insists the person invest with them so they can build a future together."
+  # ---------------------------------------------------------------- scam: charity
+  - id: s3_charity_surgery
+    label: scam
+    tactics: [charity_appeal, payment_redirect, urgency]
+    brief: "A caller says she is collecting money for an urgent operation for a sick child, names a clinic, and asks the person to transfer any amount right now to a personal card because the hospital deadline is tomorrow."
+  - id: s3_charity_flood
+    label: scam
+    tactics: [charity_appeal, payment_redirect]
+    brief: "A caller says he is a volunteer helping families whose houses were flooded in the spring, and asks for donations to the 'curator's' phone number because the fund's account is 'being set up'."
+  - id: s3_charity_relative_fund
+    label: scam
+    tactics: [charity_appeal, imp_personal, payment_redirect]
+    brief: "A caller says he is a former classmate of the person's son and is collecting money for a mutual friend's funeral. He asks for a transfer to his card today and asks the person not to bother the son about it."
+  # ---------------------------------------------------------------- legit twins
+  - id: l3_child_parent
+    label: legit
+    persona: "a 13-year-old schoolgirl in Astana"
+    brief: "A mother calls her daughter from work to check she got home from school, reminds her to eat, and says she will be home at seven; she asks nothing about cards or codes."
+  - id: l3_child_coach
+    label: legit
+    persona: "a 14-year-old schoolboy in Pavlodar"
+    brief: "A football coach calls a boy to move tomorrow's training to the morning and asks him to tell his parents, who will get the details in the team's parent chat."
+  - id: l3_debt_bank
+    label: legit
+    brief: "A bank's collections officer reminds the person that a credit-card payment is overdue, states the amount and says it can be paid in the bank's app or at a branch; he threatens nothing and asks for no data."
+  - id: l3_debt_bailiff
+    label: legit
+    brief: "A private bailiff's office calls to say a court order about an unpaid utility bill is on the person's eGov account and explains how to read it and pay through the official portal."
+  - id: l3_survey_polling
+    label: legit
+    hard_negative: true
+    brief: "A pollster from a sociological research centre asks the person five short questions about public transport in their city and their age group, and thanks them; she asks for no name, IIN or card."
+  - id: l3_survey_operator
+    label: legit
+    brief: "A mobile operator's call-centre asks the person to rate the network quality at home from one to five and whether they would recommend the operator, then ends the call."
+  - id: l3_partner_dinner
+    label: legit
+    brief: "A man calls his girlfriend to plan dinner on Saturday, they decide to split the bill as usual, and he asks how her exam went."
+  - id: l3_partner_date
+    label: legit
+    brief: "Two people who met online a week ago talk on the phone for the first time, agree to meet for coffee in a public café on Sunday, and chat about their jobs."
+  - id: l3_charity_registered
+    label: legit
+    brief: "A registered charity calls a person who donated last year, thanks them, tells them how the money helped, and invites them to read the annual report on the fund's website; it asks for nothing."
+  - id: l3_charity_school
+    label: legit
+    brief: "The parents' committee chair calls another parent about a collection for the class teacher's birthday gift, says the amount is voluntary and will be collected in person at the next meeting."

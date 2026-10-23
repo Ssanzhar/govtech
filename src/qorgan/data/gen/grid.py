@@ -95,6 +95,15 @@ class PersonaSpec(BaseModel):
     occupation: tuple[str, ...]
 
 
+class ClassPersona(BaseModel):
+    """The callee of every cell of one class (ADR D73): a child for `minor_targeted`. Replaces
+    the age-band draw and the occupation; the region is still drawn from the grid's persona."""
+
+    model_config = ConfigDict(frozen=True)
+    age_band: dict[str, float] = Field(min_length=1)
+    occupation: tuple[str, ...] = Field(min_length=1)
+
+
 class Scenario(BaseModel):
     """One concrete situation for a negative class (v2.1). `lookalike_of` must be a scheme whose
     `twin` is that class; the brief is English (the writer never sees a ru/kk phrase)."""
@@ -143,6 +152,7 @@ class GridConfig(BaseModel):
     # The label space the run is written in (ADR D73). A grid draws only schemes expressible in it,
     # so every v2 grid (no key) still yields the manifest it always did.
     label_space: Literal["v2", "v3"] = "v2"
+    class_personas: dict[str, ClassPersona] = {}  # scheme or negative class -> pinned callee (D73)
 
     @model_validator(mode="after")
     def _registers_known(self) -> "GridConfig":
@@ -208,11 +218,18 @@ def _draw(rng: random.Random, weights: Mapping, ) -> object:
     return rng.choices(keys, weights=[weights[k] for k in keys], k=1)[0]
 
 
-def _persona(rng: random.Random, cfg: GridConfig) -> Persona:
-    """Age band first, then an occupation that fits it (phase-2 coherence fix)."""
+def _persona(rng: random.Random, cfg: GridConfig, cls: str | None = None, cell_key: str = "") -> Persona:
+    """Age band first, then an occupation that fits it (phase-2 coherence fix). A class with a
+    pinned callee (`class_personas`, D73) still makes the run's draws -- so every other cell is
+    unchanged -- and takes its band and occupation from a per-cell generator instead."""
     band = str(_draw(rng, cfg.persona.age_band))
     fitting = [o for o in cfg.persona.occupation if band in cfg.occupation_age_bands.get(o, (band,))]
-    return Persona(age_band=band, region=rng.choice(cfg.persona.region), occupation=rng.choice(fitting))
+    persona = Persona(age_band=band, region=rng.choice(cfg.persona.region), occupation=rng.choice(fitting))
+    pinned = cfg.class_personas.get(cls) if cls is not None else None
+    if pinned is None:
+        return persona
+    own = random.Random(f"{cfg.seed}:persona:{cell_key}")
+    return persona.model_copy(update={"age_band": str(_draw(own, pinned.age_band)), "occupation": own.choice(pinned.occupation)})
 
 
 def _stage(rng: random.Random, scheme, cfg: GridConfig) -> str:
@@ -341,6 +358,9 @@ def build_manifest(cfg: GridConfig, *, run: str, size: int, schemes, taxonomy, r
     unknown = set(cfg.negative_weights) - set(taxonomy.negative_ids())
     if unknown:
         raise GridError(f"unknown negative classes in grid: {sorted(unknown)}")
+    unknown_pinned = set(cfg.class_personas) - set(schemes.ids()) - set(taxonomy.negative_ids())
+    if unknown_pinned:
+        raise GridError(f"class_personas names unknown classes {sorted(unknown_pinned)}")
     slots: list[tuple[Kind, str, str | None]] = [("scam", k, None) for k, n in scheme_counts.items() for _ in range(n)]
     slots += [("legit", cls, look) for cls, look in _negative_slots(size - n_scam, scheme_counts, cfg, schemes)]
     registers = smooth_round_robin(allocate(size, cfg.registers))
@@ -349,7 +369,7 @@ def build_manifest(cfg: GridConfig, *, run: str, size: int, schemes, taxonomy, r
     cells: list[GridCell] = []
     for index, ((kind, cls, lookalike), register) in enumerate(zip(slots, registers)):
         common = dict(
-            cell_id=f"{run}_{index:04d}", run=run, kind=kind, language=register, persona=_persona(rng, cfg),
+            cell_id=f"{run}_{index:04d}", run=run, kind=kind, language=register, persona=_persona(rng, cfg, cls, f"{run}_{index:04d}"),
             outcome=str(_draw(rng, cfg.outcomes)), channel=str(_draw(rng, cfg.channels)),
             length_target=int(_draw(rng, cfg.length_targets)),
         )
