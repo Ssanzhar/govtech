@@ -1,10 +1,18 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: **2026-10-22**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
+_Last updated: **2026-10-23**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
 day (what is shipped, the honest numbers, the strategy, who does what). Then read this file
 (the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D70) and `docs/eval_report.md`
 (numbers, with intervals). The July sprint log below is kept as history._
 
+- **2026-10-23 — v2.1 trained, judged and NOT shipped (D63 v2.1 A4–A6); v2.2 next.**
+  - **v2.1 vs v1.** On the fresh judge `shift_local_2` v2.1 makes 0/65 false alarms (v1 2/65) and
+    catches 38/65 scams (v1 28/65). Clean test / authored / ood and styled FPR are unchanged, and
+    the new false alarms are institutional look-alikes only.
+  - **Not shipped.** The pre-registered browser gate fails on tag-set Jaccard, 0.899994 < 0.9, so
+    v1 stays and the export is reverted. v2.1 is kept frozen in `models/linear_v21_device`.
+  - **Next: v2.2.** About 250 Claude + Gemini dialogues, code-switched and Kazakh heavy, judged by a
+    new `shift_local_3`.
 - **2026-10-22 — v2.1 data ready for A4 (D63 v2.1 A1–A3, branch `feat/kkru-voice`).**
   - `v21_legit` 300 rows (37 bank calls were rewritten without the "never ask for codes" line) and
     `v21_scam` 236 rows (label rate 0.4765, the same as Gemini train). Both pass QC with 0 overlaps

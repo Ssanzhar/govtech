@@ -2957,3 +2957,40 @@ each at its own point: v1 at 0.59/0.49, v2.1 at 0.82/0.72. Outputs:
 scrubber gap to fix separately (it is not part of v2.1).
 
 **Next (A6, after export):** the browser gate on device embeddings, the demo scenes, and pytest + npm.
+
+#### D63 v2.1 / A6 — verdict: the browser gate fails by 6e-6; v1 stays; v2.1 is a frozen candidate (2026-10-23)
+The export was run locally (weights cd7b47bb…, config 0.82 / 0.72, floors 84/84,
+`active_label_space: v2`, sw.js v13). The existing int8 browser gate (`browser_gate.test.mjs`,
+assertions unchanged) then read, against v1 on the same gate:
+
+| browser gate (200 cases, ONNX-Python vs WASM-browser) | decision flips | p95 Δrisk | tag-set Jaccard |
+|---|---|---|---|
+| limit | ≤ 6 | < 0.15 | ≥ 0.9 |
+| shipped v1 | 4 | 0.091 | 0.952 |
+| v2.1 @ 0.82 | 1 | 0.129 | **0.899994 (fail)** |
+
+The decision and risk gates pass. The tag-set gate misses by 6e-6, most likely because v2.1 has 23
+tactic heads against v1's 15. **The pre-registration said "the gate passes, do not loosen it; on a
+fail, v1 stays."** The user chose to follow the rule (2026-10-23):
+- The export is reverted. v1 stays shipped (weights f0659e7c…, 0.59 / 0.49).
+- The gate is not loosened and not switched to device mode after the fact.
+- `models/linear_v21_device` stays as a frozen candidate (sha256 above). `shift_local_2` has now
+  been looked at once, so it cannot judge a later model.
+
+**Found during the export, for any future v2-space ship:**
+- `.env` / `.env.example` pin `QORGAN_RISK_THRESHOLD*`, which overrides `config.py`'s defaults.
+  A threshold change must edit both env files, or `client_config` exports the old point.
+- At enter 0.82 the meter needs a fourth risk-0.9 utterance to latch: the EMA reaches 78.75 after
+  three.
+- The flip to `active_label_space: v2` breaks 12 Python tests. Most are expected updates; the anchor
+  dialogues and the `shift_local` briefs still carry v1 tactic ids, which is real migration work.
+- The demo scenes were not run.
+
+**Next: v2.2** (PLAN_2026-10 §4, track A, re-opened).
+- About 250 new dialogues, aimed at v2.1's weak cells: code-switched (validation recall 12/30) and
+  Kazakh (`shift_local_2` 21/40).
+- Split between Claude and Gemini writers, so the new rows do not deepen the Claude style gap.
+- The scam share stays matched to train's.
+- New judge `shift_local_3`: the same local model and briefs, a new seed. It is judge-only and is
+  never a training writer.
+- The same cycle: pre-register → train → freeze → one look → A6.
