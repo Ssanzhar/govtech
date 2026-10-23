@@ -2994,3 +2994,54 @@ fail, v1 stays."** The user chose to follow the rule (2026-10-23):
 - New judge `shift_local_3`: the same local model and briefs, a new seed. It is judge-only and is
   never a training writer.
 - The same cycle: pre-register → train → freeze → one look → A6.
+
+### D63 v2.2 / A7 — PRE-REGISTRATION: targeted kk + code-switched data from two writers (2026-10-23)
+_Committed before any v2.2 model was trained or any held-out split was scored. The procedure is
+v2.1's (A4 pre-registration above) with the changes listed here._
+
+**Why.** v2.1 beat v1 on its judge but failed the browser gate's tag-set Jaccard by 6e-6. Its weak
+cells were code-switched calls (validation recall 12/30 at the rule point) and Kazakh
+(`shift_local_2` 21/40). The user chose to keep v1 and generate targeted data (2026-10-23).
+
+**New data** (both runs pass QC; local-only):
+- `v22_claude` (Claude agents, spec only) and `v22_gemini` (Gemini 2.5 Pro via
+  `qorgan.data.gen.gemini_writer`, the same chunk specs).
+  - Each is 126 cells: kk 57 / mixed 69, scam 60 / legit 66, 53 look-alike negatives. The grids are
+    `configs/gen_grid_v22_{claude,gemini}.yaml`, which is the base grid with a new seed and
+    registers.
+- QC: 126/126 accepted in each run, 0 eval overlaps, 0 near-duplicates.
+
+  | QC | v22_claude | v22_gemini |
+  |---|---|---|
+  | ROUGE-L max | — | 0.340 |
+  | fingerprint AUC vs Gemini train, char / e5 | 0.971 / 0.939 | 0.984 / 0.914 |
+  | negatives with a cue | 6 | 5 |
+  | role recall | 0.69 | 0.48 |
+
+- **Writer difference, kept, not filtered.** Gemini's `mixed` rows are more Kazakh-dominant:
+  58/69 have fewer than two Kazakh-free turns, against 34/69 for Claude. The legacy Gemini corpus
+  shows the same tilt. No heuristic filter is applied.
+- **Provenance.** `configs/gen_run_writers.yaml` marks `v22_gemini` as `gemini_grid`. Its rows carry
+  v2 labels and are not masked. The v2.1 corpus rebuilds byte-identically under this code.
+
+**Corpus.**
+- Command: `build_corpus --gen-run pilot --gen-run p2 --gen-run v21_legit --gen-run v21_scam --gen-run
+  v22_claude --gen-run v22_gemini --label-space v2 --processed-dir data/cache/processed_v22`.
+  Content hash **c1adcb4268d0…f6c04**. The `v21_legit_0100` reject is applied.
+- Train P(scam): claude 1714/3592 = 0.477; gemini (legacy) 896/1880 = 0.477;
+  gemini_grid 102/212 = 0.481.
+- Val: 465 rows (kk 150, mixed 118, ru 144, en 53).
+
+**Unchanged from v2.1.**
+- The trainer: v2's settings on device embeddings, into `models/linear_v22_device`.
+- The operating-point rule: enter = the lowest 0.01 step at which v2.2's validation FPs ≤ v1's on
+  the v2.2 validation set at 0.59; exit = enter − 0.10.
+- The freeze step: sha256s and the validation table are committed before the look.
+- A6 (a)–(c), and the browser gate with its assertions unchanged, including tag-set Jaccard ≥ 0.9.
+  v2.1's 0.899994 is a known risk for v2.2 too.
+
+**The judge is `shift_local_3`.** It is 130 kk/ru calls (seed 20261024), never looked at, and
+disjoint from `shift_local` and `shift_local_2`. A6 (b) applies on it: v2.2's false alarms ≤ v1's
++ 1, and v2.2's recall > v1's.
+- `shift_local_2` and `shift_local` are reported only; both were seen.
+- The frozen v2.1 is scored alongside v2.2 for reference. It is not a criterion.
