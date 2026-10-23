@@ -7,6 +7,11 @@ export const SPOKEN_NUMBER_MIN_DIGITS = 7;
 const MAX_GAP_CHARS = 3;
 const GAP_CHARS = new Set([" ", "\t", "\r", "\n", "\u00a0", ",", "-"]);
 const DIGIT_GROUP_GAPS = new Set([" ", "-"]);
+const FILLER = /^(?:э+|э+м+|ә+|аа+|мм+|хм+|uh+|um+|hm+)$/;
+const MAX_FILLERS = 2;
+const MAX_HESITATION_PIECE_CHARS = 5;
+const HESITATION_CHARS = new Set([...GAP_CHARS, ".", "\u2026"]);
+const ELLIPSES = ["..", "\u2026"];
 const ASCII_WORD = /^[A-Za-z0-9_]$/;
 const CURRENCY_WORDS = new Set([
   "тенге", "теңге", "тг", "tenge", "kzt", "рублей", "рубля", "руб", "долларов", "доллара",
@@ -128,12 +133,28 @@ export function spokenDigits(text) {
   return composeDigits(tokenize(Array.from(text)).filter((t) => numberKind(t) !== null));
 }
 
-const joinable = (gap) => gap.length <= MAX_GAP_CHARS && gap.every((c) => GAP_CHARS.has(c));
+const isFiller = (token) => token.kind === "letters" && FILLER.test(token.folded);
+
+function isHesitation(gap) {
+  const fillers = tokenize(gap);
+  if (fillers.length > MAX_FILLERS || !fillers.every(isFiller)) return false;
+  const bounds = [0, ...fillers.flatMap((token) => [token.start, token.end]), gap.length];
+  for (let i = 0; i < bounds.length; i += 2) {
+    const piece = gap.slice(bounds[i], bounds[i + 1]);
+    if (piece.length > MAX_HESITATION_PIECE_CHARS || !piece.every((c) => HESITATION_CHARS.has(c))) return false;
+  }
+  const text = gap.join("");
+  return fillers.length > 0 || ELLIPSES.some((mark) => text.includes(mark));
+}
+
+const joinable = (gap) =>
+  (gap.length <= MAX_GAP_CHARS && gap.every((c) => GAP_CHARS.has(c))) || isHesitation(gap);
 
 function runs(chars, tokens) {
   const found = [];
   let current = [];
   tokens.forEach((token, index) => {
+    if (current.length && isFiller(token)) return; // judged with its gap when the next number arrives
     if (numberKind(token) === null) {
       if (current.length) found.push(current);
       current = [];
@@ -172,7 +193,8 @@ function followedByCurrency(chars, end, nextToken) {
 function digitGroupsQualify(chars, run, digits) {
   if (run.length < 2 || placeholderFor(digits) === PLACEHOLDERS.number) return false;
   for (let i = 1; i < run.length; i += 1) {
-    if (!DIGIT_GROUP_GAPS.has(slice(chars, run[i - 1].end, run[i].start))) return false;
+    const gap = chars.slice(run[i - 1].end, run[i].start);
+    if (!DIGIT_GROUP_GAPS.has(gap.join("")) && !isHesitation(gap)) return false;
   }
   const before = run[0].start > 0 ? chars[run[0].start - 1] : "";
   const after = run.at(-1).end < chars.length ? chars[run.at(-1).end] : "";

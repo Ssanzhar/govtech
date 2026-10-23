@@ -3138,3 +3138,35 @@ no text). v2.1 is reference only._
   - `shift_local_2` (its pre-registered look): 0/65 false alarms vs v1's 2, recall 38 vs 28.
   - `shift_local_3` (reference, not pre-registered for it): 2/65 vs 6/65, 42 vs 32.
   - Its only failed gate is the browser tag-set Jaccard, 0.899994 < 0.9.
+
+### D72 — Scrubber v3: a dictated number may continue over a hesitation (2026-10-24)
+**Context.** The D63 v2.1 one look found an IIN in `ood_neg_legit_gov_service_mixed_2` read as two
+six-digit groups split by an ellipsis and a filler («…... эээ... …»). D66 joins number tokens only
+over ≤ 3 characters of spaces, commas and dashes, so neither half reached a PII shape and both
+were stored verbatim. People dictate exactly like this, and so does any transcriber that writes
+pauses as "...".
+
+**Decision.** A number run may continue over a *hesitation* (`scrub_numbers._is_hesitation`,
+1:1 in `site/core/scrub-numbers.js`): at most two filler sounds (`э+`, `э+м+`, `ә+`, `аа+`, `мм+`,
+`хм+`, `uh+`, `um+`, `hm+`; never a lone «а», which is a conjunction) between separator pieces of
+≤ 5 characters drawn from the gap characters plus `.` and `…`. The gap must hold a filler or an
+ellipsis (`..` / `…`). A full stop, a third filler or any real word still ends the run. The
+masking thresholds are unchanged: a 6-digit code said with a hesitation stays evidence, and digit
+groups are masked only at a PII shape (16 / 12 / 10–11). `SCRUBBER_VERSION` 2 → 3; `sw.js` →
+`qorgan-shell-v13`.
+
+**Evidence.**
+- Tests first: 8 red, then green. `tests/data/test_scrub_spoken.py` gains 7 masked and 6
+  untouched cases plus idempotency, and `scripts/export_scrub_fixtures.py` gains the same 12 cases
+  for the JS port. pytest 1738 passed, 2 xfailed (the two designed "rebuild pending" guards);
+  npm 159/159.
+- Effect on stored text (counted, every changed span printed only as an abstract shape: digits →
+  `9`, number words → `N`, other words → `w`): 3 rows change, all true PII. These are a phone in
+  `train` dictated in groups over ellipses, and two IINs in `ood`, one of them the row above.
+  `shift_local` shows 15 other differences, all `[NAME]` masks from D66. That split predates the
+  name rule; it is local-only and never published, so it is left as built.
+
+**Consequences.** The corpus on disk was scrubbed with v2, so `hf_upload.py` refuses to publish it
+until the next corpus rebuild, which is the guard working as designed (D66 precedent). The shipped
+v1 model is not retrained for this: 1 of 1,880 training rows changes, and only inside a masked
+number.

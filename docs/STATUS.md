@@ -1,10 +1,15 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: **2026-10-23**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
+_Last updated: **2026-10-24**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
 day (what is shipped, the honest numbers, the strategy, who does what). Then read this file
 (the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D70) and `docs/eval_report.md`
 (numbers, with intervals). The July sprint log below is kept as history._
 
+- **2026-10-24 — scrubber v3: dictation over hesitations (ADR D72).**
+  - An IIN or phone said with «эээ» / «...» in the middle was stored verbatim. Now it is masked
+    (Python + JS, fixtures regenerated, `sw.js` → v13).
+  - 3 stored rows change, all true PII (1 train, 2 ood). The corpus needs a rebuild before the
+    next HF upload; the publish guard blocks it until then. v1 is not retrained.
 - **2026-10-23 (later) — v2.2 trained, judged and NOT shipped (D63 v2.2).**
   - **Data:** about 250 kk/code-switched dialogues, written by Claude and by Gemini (new
     `gemini_writer`). The new judge is `shift_local_3` (129 calls).
