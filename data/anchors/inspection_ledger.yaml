@@ -98,3 +98,7 @@ entries:
   - id: ood_neg_general_conversation_ru_3
     inspected_on: 2026-10-12
     reason: v2 false positive (ood, 0.798); D63 phase-2 check 1 -- Kaspi asks to confirm a transaction by in-app push (pretext matches)
+  # D63 v2.1 A6 check (c), 2026-10-23: the one new v2.1 held-out false alarm not already listed.
+  - id: ood_neg_legit_gov_service_mixed_2
+    inspected_on: 2026-10-23
+    reason: v2.1 false positive on the ASR-styled copy only (ood, 0.828; clean 0.53); D63 v2.1 check (c) -- clinic registrar re-attaches the patient to a GP after a system update and asks the IIN for verification (institutional pretext matches)

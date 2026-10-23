@@ -2905,3 +2905,55 @@ match v1's FPs, and v2.1 needs 0.82. On Claude rows v2.1 ranks better than v2 (R
 0.919). **Mixed-language recall at the rule point is the weak spot (12/30).**
 
 A4 is closed. Next is A5: one look, per the pre-registration above.
+
+#### D63 v2.1 / A5–A6 — the one held-out look: A6 (a)–(c) pass (2026-10-23)
+_One run on device embeddings, the frozen weights of 799bbe4. Both arms ran in the same harness,
+each at its own point: v1 at 0.59/0.49, v2.1 at 0.82/0.72. Outputs:
+`models/linear_v21_device/a5/{v1,v21}.{run,styled}.txt`, from `qorgan.eval.run` and
+`qorgan.eval.asr_realism`. Nothing was re-run or re-tuned._
+
+**The judge: `shift_local_2`** (130 calls, never seen before this run).
+
+| shift_local_2 | FPR [95 % CP] | recall [95 % CP] | PR-AUC |
+|---|---|---|---|
+| v1 @ 0.59 | 2/65 = 0.031 [0.004, 0.107] | 28/65 = 0.431 [0.308, 0.560] | 0.871 |
+| **v2.1 @ 0.82** | **0/65 = 0.000 [0.000, 0.055]** | **38/65 = 0.585 [0.456, 0.706]** | **0.942** |
+| v1, kk / ru | 2/40 / 0/25 | 16/40 / 12/25 | |
+| v2.1, kk / ru | 0/40 / 0/25 | 21/40 / 17/25 | |
+
+**Other held-out splits** (FPR, then recall; each as v1 → v2.1):
+
+| split | FPR | recall |
+|---|---|---|
+| test (clean) | 0/60 → 0/60 | 83/83 → 80/83 |
+| authored_heldout (clean) | 0/19 → 0/19 | 16/18 → 17/18 |
+| ood (clean) | 0/69 → 0/69 | 41/44 → 40/44 |
+| test, ASR-styled | 0/60 → 0/60 | 82/83 → 82/83 |
+| authored, ASR-styled | 0/24 → 0/24 | 17/18 → 17/18 |
+| ood, ASR-styled | 1/74 → 1/74 | 41/44 → 37/44 |
+| `shift_local` (reported only; seen before) | 3/64 → 3/64 | 34/62 → 42/62 |
+
+**A6 verdicts.**
+- **(a) passes.** FPR does not rise on any clean subset or styled copy.
+- **(b) passes.** On `shift_local_2`, false alarms fall 2 → 0 (the limit was ≤ 3) and recall rises
+  28 → 38.
+- **(c) passes.** v2.1 adds two false alarms that v1 does not make. Only these two rows were read:
+  - `neg_general_conversation_mixed_21` (test, inspected subset, 0.942): already in the ledger since
+    2026-10-12. A former colleague now at a bank offers a card bonus with an identity-confirmation
+    link. The institutional pretext matches.
+  - `ood_neg_legit_gov_service_mixed_2` (ood, styled copy only, 0.828; clean 0.53): added to the
+    ledger. A clinic registrar re-attaches the patient to a GP after a system update and asks for
+    the IIN "for verification". The institutional pretext matches.
+- v2.1 also drops four of v1's false alarms: three in `shift_local_2` (kk) and
+  `ood_neg_legit_bank_call_mixed_3` (styled).
+
+**Costs, recorded, not criteria.**
+- v2.1 misses 3 `test` scams that v1 caught.
+- On ood styled copies it catches 37/44 against v1's 41/44.
+- The validation stream false-latch rate has not been measured yet.
+
+**Side finding.** The IIN in `ood_neg_legit_gov_service_mixed_2` is read with a filler in the middle
+("980315... эээ... 350021"). The D66 scrubber does not mask it. The data is fabricated, but it is a
+scrubber gap to fix separately (it is not part of v2.1).
+
+**Next (A6, after export):** the browser gate on device embeddings, the demo scenes, and pytest + npm.
