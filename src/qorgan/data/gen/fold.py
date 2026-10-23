@@ -4,6 +4,7 @@ Only rows a QC report accepted are used: the run-level `qc_report.json` when it 
 also catches near-duplicates ACROSS chunks), otherwise the union of the per-chunk reports.
 Generated rows go to `train` or `val` by a seeded id hash and NEVER to `test`: the held-out for
 a model trained on Claude rows is built separately, from other generators (ADR D63 §3.2).
+Rows a person rejected on review (`REVIEW_REJECTS`, committed, with a reason) are dropped too.
 """
 
 from __future__ import annotations
@@ -13,12 +14,15 @@ import json
 from collections.abc import Sequence
 from pathlib import Path
 
+import yaml
+
 from qorgan.data.gen.qc import _schema_gate, load_run_rows
 from qorgan.data.schema import Dialogue
 
 GENERATOR_CLAUDE = "claude"
 GENERATOR_GEMINI = "gemini"
 _HASH_BUCKETS = 1_000_000
+REVIEW_REJECTS = Path("configs") / "gen_review_rejects.yaml"
 
 
 class FoldError(RuntimeError):
@@ -40,9 +44,20 @@ def accepted_ids(run_dir: Path) -> frozenset[str]:
     return frozenset(ids)
 
 
-def accepted_dialogues(run_dir: Path) -> list[Dialogue]:
-    """The run's QC-accepted rows as corpus dialogues, in manifest order."""
-    keep = accepted_ids(run_dir)
+def load_review_rejects(path: Path) -> frozenset[str]:
+    """Ids rejected on human review; every entry needs an `id` and a `reason` (no file = none)."""
+    if not path.exists():
+        return frozenset()
+    entries = (yaml.safe_load(path.read_text(encoding="utf-8")) or {}).get("rejects") or []
+    for entry in entries:
+        if not isinstance(entry, dict) or not entry.get("id") or not entry.get("reason"):
+            raise ValueError(f"{path}: every reject needs an id and a reason, got {entry!r}")
+    return frozenset(str(entry["id"]) for entry in entries)
+
+
+def accepted_dialogues(run_dir: Path, *, rejected: frozenset[str] = frozenset()) -> list[Dialogue]:
+    """The run's QC-accepted rows as corpus dialogues, in manifest order, minus review rejects."""
+    keep = accepted_ids(run_dir) - rejected
     cells, rows = load_run_rows(run_dir)
     checks, _ = _schema_gate(cells, rows)
     by_id = {c.dialogue.id: c.dialogue for c in checks if c.dialogue is not None and c.dialogue.id in keep}

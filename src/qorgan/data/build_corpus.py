@@ -375,10 +375,11 @@ def main(argv: Sequence[str] | None = None) -> None:
     gen_dialogues: list[Dialogue] = []
     if args.gen_run:
         from qorgan.data.gen.__main__ import run_dir
-        from qorgan.data.gen.fold import accepted_dialogues
+        from qorgan.data.gen.fold import REVIEW_REJECTS, accepted_dialogues, load_review_rejects
 
+        rejected = load_review_rejects(get_config().repo_root / REVIEW_REJECTS)
         for run in args.gen_run:
-            gen_dialogues += accepted_dialogues(run_dir(run))
+            gen_dialogues += accepted_dialogues(run_dir(run), rejected=rejected)
     decisions = None
     if args.label_space == "v2":
         from qorgan.data.migrate_v2 import load_review_decisions

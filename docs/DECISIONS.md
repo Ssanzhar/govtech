@@ -2795,3 +2795,61 @@ automated checks only, and it is disjoint from every split, `shift_local` includ
 `data/provenance/shift_local_2.json`. **No model has been scored on it.**
 
 Data is local-only, not folded, not trained. Next: A4 (pre-registered retrain, device embeddings).
+
+### D63 v2.1 / A4 — PRE-REGISTRATION of the v2.1 retrain and its one-shot held-out run (2026-10-23)
+_Committed before any v2.1 model was trained or any held-out split was scored. Everything below is
+chosen by the user (2026-10-23) or copied from v2 phase 2 (f038cde) and PLAN_2026-10 §4._
+
+**User decisions (2026-10-23).**
+1. `v21_legit_0100` is dropped. It is a legit neighbour loan that opens with "new SIM, save my
+   number", which is the new-number relative scam's opening. The drop is in the committed
+   `configs/gen_review_rejects.yaml`, which `build_corpus --gen-run` applies after QC
+   (`fold.load_review_rejects`; tests in `test_gen_fold.py`).
+2. The operating-point rule below is confirmed.
+
+**Corpus.**
+- Command: `build_corpus --gen-run pilot --gen-run p2 --gen-run v21_legit --gen-run v21_scam
+  --label-space v2 --processed-dir data/cache/processed_v21`. Content hash **2e8b3d5f77df…88e93d**.
+- `pilot` and `p2` had been deleted from the main checkout. They were restored from an agent
+  worktree; the two surviving copies are byte-identical (120 + 1,325 QC-accepted rows).
+- The v1 corpus rebuilds to its recorded hash a183b0e5…, so the inputs are current.
+- Train: Claude 3,374 rows (incl. ASR copies), P(scam) 0.4766; Gemini 1,880, P(scam) 0.4766.
+- Val: Claude 293 (0.478), Gemini 135 (0.430); 230 legit and 198 scam in total.
+- `data/processed` (v1) is untouched.
+
+**Trainer: v2's settings, unchanged.**
+- `QORGAN_LABEL_SPACE=v2 QORGAN_EMBED_BACKEND=device python -m qorgan.classifier.linear_train
+  --processed-dir data/cache/processed_v21 --out-dir models/linear_v21_device`.
+- Device embeddings come from the browser bridge (D33).
+- Label masking is on. `V2_MIN_OOF_POSITIVES` = 8. `_RISK_C` = 4.0. Per-tactic thresholds are
+  re-fit by D30.
+- No setting is changed after seeing a result. If training fails for a technical reason, the fix
+  and the rerun are recorded here.
+
+**Operating-point rule (validation only, device embeddings).**
+- **enter** is the lowest threshold on a 0.01 grid at which v2.1's validation false positives are
+  ≤ the shipped v1's false positives on the **same v2.1 validation set** at 0.59.
+- **exit** = enter − 0.10. The single-shot `risk_threshold` = enter.
+- The hard-signal floors come from `meter.hard_signal_floors(enter)`.
+- Shipped v1 stays at 0.59 / 0.49.
+
+**Freeze.** Before any held-out split is scored, this entry gets the sha256 of v2.1's
+`risk_clf.joblib`, `tactic_clf.joblib` and `web/weights.json`, the chosen enter/exit, and the
+validation table (v1 vs v2.1, FPR and recall with 95 % CP, by generator and by language). That
+commit closes A4.
+
+**A5: one look, device embeddings, both models in the same harness, each at its own point.**
+- Splits: `shift_local_2` (the judge; kk / ru), plus test / authored_heldout / ood as **clean**
+  subsets (`qorgan.eval.run`'s `(clean)` rows exclude every inspection-ledger id), and the ASR-styled
+  copies.
+- Reported, but not a ship criterion: `shift_local` (v2 and A0 looked at it), and the
+  validation stream false-latch rate (`eval.stream`).
+
+**A6: ship criteria (PLAN_2026-10 §4), all required.**
+- (a) FPR does not rise on the clean test / authored / ood subsets or on the styled copies.
+- (b) On `shift_local_2`, v2.1's false alarms ≤ v1's + 1, and v2.1's recall > v1's.
+- (c) Every new false alarm is an institutional look-alike, never a family or everyday call. Only
+  those rows are read, and they go into the inspection ledger.
+- After export: the browser gate passes, and the demo scenes are right (the RU and KK scams alert,
+  and the real bank call stays LOW).
+- **On a fail, v1 stays.** Nothing is re-tuned on what A5 shows.
