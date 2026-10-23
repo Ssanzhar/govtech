@@ -3260,3 +3260,38 @@ published. Nobody has read or scored it.
 - Reported, not criteria: v2.1 scored alongside; on `shift_local_4`, recall on the scams of the
   v3 briefs for v1 / v2.1 / v3; per-tactic tag recall of the five new heads on those calls.
   Nothing is re-tuned on what A5 shows.
+
+#### D73 — FREEZE: trained, operating point by rule (2026-10-24)
+_Committed before any held-out split is scored. Validation only, device embeddings, numbers from
+`scripts/taxonomy_v2_dryrun_eval.py` (`models/linear_v3_device/val_report.json`). Training ran as
+pre-registered: no rerun, 28 heads, none dropped, 5,254 train rows masked for at least one head.
+Out-of-fold positives of the new heads: minor_targeting 102, blackmail_extortion 98,
+survey_pretext 96, romance_trust 95, charity_appeal 99._
+
+**Frozen model** (`models/linear_v3_device`, sha256):
+- `risk_clf.joblib` 2892f7fff23d7174d419980c622b6b7cf9389145fd53f2b6b1be11793abb6506
+- `tactic_clf.joblib` 4cf905db60a16b813237a8a60b6a92987da325fd85dd7ee729e55271ad7631f5
+- `web/weights.json` b3bfef297bc91da616bb5725abb1b35172f9f34d185cbd8b6d3f9ed22f2a6666
+
+**Operating point (the rule).** v1 makes 7/322 validation FPs at 0.59, so **enter = 0.83,
+exit = 0.73**.
+
+| validation (device) | ROC-AUC / PR-AUC | FPR [95 % CP] | recall [95 % CP] |
+|---|---|---|---|
+| shipped v1 @ 0.59 | 0.837 / 0.831 | 7/322 = 0.022 [0.009, 0.044] | 101/263 = 0.384 [0.325, 0.446] |
+| v3 @ 0.59 (reference) | 0.955 / 0.957 | 25/322 = 0.078 [0.051, 0.113] | 233/263 = 0.886 [0.841, 0.922] |
+| **v3 @ 0.83 (rule)** | | **7/322 = 0.022 [0.009, 0.044]** | **187/263 = 0.711 [0.652, 0.765]** |
+
+At the rule point, as v1 → v3 (FPs; caught scams):
+
+| rows | FPs | caught scams |
+|---|---|---|
+| Claude kk | 1/89 → 0/89 | 11/82 → 48/82 |
+| Claude mixed | 0/54 → 1/54 | 10/56 → 29/56 |
+| Claude ru | 5/86 → 4/86 | 18/53 → 43/53 |
+| Claude en | 0/16 → 0/16 | 4/14 → 10/14 |
+| legacy Gemini | 1/77 → 2/77 | 58/58 → 57/58 |
+
+Validation per-tactic F1 of the new heads (labelled v3 rows only, support 5–9, so wide):
+minor_targeting 0.714, blackmail_extortion 0.667, survey_pretext 0.824, romance_trust 0.762,
+charity_appeal 0.462. mule_recruitment 0.718 (v2.1: 0.50).
