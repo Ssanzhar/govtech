@@ -229,15 +229,17 @@ def _mask_kwargs(mask: np.ndarray | None) -> dict:
 
 
 def provenance_mask(
-    dialogues: Sequence[Dialogue], label_space: Sequence[str], generator: dict[str, str], *, new_tactics: Sequence[str], labelled_by: str,
+    dialogues: Sequence[Dialogue], label_space: Sequence[str], generator: dict[str, str], *, new_tactics: Sequence[str],
+    labelled_by: str | Sequence[str],
 ) -> np.ndarray:
-    """`(n, L)` bool, True = labelled. A row whose generator is not `labelled_by` (it was written
-    for the v1 space) is unlabelled for `new_tactics` (ADR D63 label masking, approved
+    """`(n, L)` bool, True = labelled. A row whose generator is not in `labelled_by` (it was
+    written for the v1 space) is unlabelled for `new_tactics` (ADR D63 label masking, approved
     2026-10-09). Rows missing from `generator` count as v1 rows."""
+    labellers = {labelled_by} if isinstance(labelled_by, str) else set(labelled_by)
     mask = np.ones((len(dialogues), len(label_space)), dtype=bool)
     columns = [j for j, t in enumerate(label_space) if t in set(new_tactics)]
     for i, dialogue in enumerate(dialogues):
-        if generator.get(dialogue.id) != labelled_by:
+        if generator.get(dialogue.id) not in labellers:
             mask[i, columns] = False
     return mask
 
@@ -414,13 +416,13 @@ def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - CLI (
     provenance_path = args.processed_dir / "provenance.json"
     if provenance_path.exists() and set(V2_NEW_TACTICS) & set(label_space):
         # Taxonomy v2 (ADR D63 phase 2): mask v1 rows out of the new heads, drop thin heads.
-        from qorgan.data.gen.fold import GENERATOR_CLAUDE
+        from qorgan.data.gen.fold import V2_LABELLED_GENERATORS
 
         generator = json.loads(provenance_path.read_text(encoding="utf-8"))["generator"]
 
         def masks(space):
-            return (provenance_mask(train, space, generator, new_tactics=V2_NEW_TACTICS, labelled_by=GENERATOR_CLAUDE),
-                    provenance_mask(val, space, generator, new_tactics=V2_NEW_TACTICS, labelled_by=GENERATOR_CLAUDE))
+            return (provenance_mask(train, space, generator, new_tactics=V2_NEW_TACTICS, labelled_by=V2_LABELLED_GENERATORS),
+                    provenance_mask(val, space, generator, new_tactics=V2_NEW_TACTICS, labelled_by=V2_LABELLED_GENERATORS))
 
         train_mask, val_mask = masks(label_space)
         positives = (labelled_positives(train, label_space, train_mask), labelled_positives(val, label_space, val_mask))

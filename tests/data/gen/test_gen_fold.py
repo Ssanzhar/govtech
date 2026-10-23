@@ -59,3 +59,38 @@ def test_committed_review_rejects_drop_the_borderline_family_row():
     from qorgan.data.gen.fold import REVIEW_REJECTS, load_review_rejects
 
     assert "v21_legit_0100" in load_review_rejects(get_config().repo_root / REVIEW_REJECTS)
+
+
+def test_run_writers_default_to_claude_and_validate(tmp_path):
+    from qorgan.data.gen.fold import GENERATOR_CLAUDE, GENERATOR_GEMINI_GRID, load_run_writers, run_writer
+
+    assert load_run_writers(tmp_path / "missing.yaml") == {}
+    path = tmp_path / "writers.yaml"
+    path.write_text("writers:\n  v22_gemini: gemini_grid\n", encoding="utf-8")
+    writers = load_run_writers(path)
+    assert run_writer("v22_gemini", writers) == GENERATOR_GEMINI_GRID
+    assert run_writer("p2", writers) == GENERATOR_CLAUDE
+    path.write_text("writers:\n  v22_x: gemini\n", encoding="utf-8")  # legacy v1 corpus label: not a grid writer
+    with pytest.raises(ValueError):
+        load_run_writers(path)
+
+
+def test_provenance_records_each_generated_rows_writer():
+    from qorgan.data.build_corpus import build_provenance
+    from qorgan.data.schema import Dialogue, Label, Utterance
+
+    def row(i, scam):
+        return Dialogue(id=i, language="kk", utterances=(Utterance(speaker="caller", text="сәлем"),),
+                        label=Label(risk=0.9 if scam else 0.02))
+
+    splits = {"train": [row("old_1", True), row("g_1", True), row("g_1-asr", True), row("c_1", False)], "val": []}
+    prov = build_provenance(splits, {"g_1", "c_1"}, "v2", writers={"g_1": "gemini_grid"})
+    assert prov["generator"] == {"old_1": "gemini", "g_1": "gemini_grid", "g_1-asr": "gemini_grid", "c_1": "claude"}
+    assert prov["balance"]["train"]["gemini_grid"] == {"rows": 2, "scam": 2, "p_scam": 1.0}
+
+
+def test_committed_run_writers_name_only_grid_writers():
+    from qorgan.config import get_config
+    from qorgan.data.gen.fold import RUN_WRITERS, V2_LABELLED_GENERATORS, load_run_writers
+
+    assert set(load_run_writers(get_config().repo_root / RUN_WRITERS).values()) <= set(V2_LABELLED_GENERATORS)
