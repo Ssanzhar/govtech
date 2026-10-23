@@ -60,3 +60,15 @@ def test_tuner_ignores_masked_cells():
     unmasked = tune_tactic_thresholds(probs, truth, ("a",), min_positives=2)
     masked = tune_tactic_thresholds(probs, truth, ("a",), min_positives=2, mask=[[True], [True], [False]])
     assert masked == {"a": 0.5} and unmasked["a"] > 0.6
+
+
+def test_provenance_mask_accepts_several_v2_writers():
+    """Grid rows written by Gemini (D63 v2.2) carry v2 labels like Claude's; only the legacy
+    v1 corpus rows are masked out of the new heads."""
+    from qorgan.data.gen.fold import V2_LABELLED_GENERATORS
+
+    rows = [_d(i) for i in ("old", "claude_row", "gem_row")]
+    generator = {"old": "gemini", "claude_row": "claude", "gem_row": "gemini_grid"}
+    mask = provenance_mask(rows, ("urgency", "refund_request"), generator, new_tactics=("refund_request",),
+                           labelled_by=V2_LABELLED_GENERATORS)
+    assert mask.tolist() == [[True, False], [True, True], [True, True]]

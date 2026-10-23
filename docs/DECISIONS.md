@@ -2486,3 +2486,687 @@ row was read at curation), which the manifest's `excluded_by_review` records.
 2. Volume: sudact's own search would give far more than web-search discovery (6 of 135 fetched pages
    gave a kept row); ask the operator for permission, or for an export.
 3. A human spot-check of the 47 rows and a KZ advocate's line on the "local-only" boundary.
+
+### D70 — Kazakh and Russian only; the live per-word tags survive the endpoint (2026-10-21)
+**Context.**
+- **Stakeholders (call of 2026-10-21):** Qorğan stays a kk/ru system for Kazakhstan, with no English
+  model, to gain accuracy and focus. English is no longer a **call language**. The page's `en`
+  **UI locale** stays (judges, foreign residents); it costs the model nothing.
+- **User report:** in a live call each word gets a language chip while it is spoken. When the
+  phrase ends, the whole line flips to one or two classes and re-labels words that were right.
+
+**Root cause (the bug).** At commit, `asr.js` emitted only the winning recogniser's whole text, so
+the live span-vote tags (D64) were thrown away. `endpoint.js` then re-tagged that text from scratch.
+- Deployments run the **fallback**: the GigaAM runtime is not hosted yet (PLAN C1). There the text
+  is one monolingual Vosk model's output (the RU model cannot write Kazakh letters), so the line
+  collapses to one or two runs.
+- On the GigaAM path the word LID re-tags GigaAM's text and changes 7.8 % of the words the person
+  had already seen.
+- D64 intended the replacement. The loss of the live tags was never decided.
+
+**Decisions**
+1. **The committed utterance carries the span vote's final words** (`asr.js committedWords`). The
+   fallback emits those words and their tags unchanged (`endpoint.js fallbackUtterance`). Their text
+   is what the meter scores, because it is the better transcript: WER 0.274 against the vote's
+   0.424. Without word-level models nothing changes.
+2. **GigaAM's words inherit the live tags** (`site/core/word-align.js`; reference
+   `scripts/spikes/asr_wordlevel/spanvote/inherit.py`).
+   - Words are aligned by a word edit distance whose substitution cost is 1 − normalised-Levenshtein
+     similarity.
+   - The word LID's Viterbi then runs with a hint: a paired word (similarity ≥ `min_sim`) costs
+     `weight` nats in any language but its live tag.
+   - Kazakh-only letters still decide. Unpaired words follow the LID.
+   - `min_sim` 0.34 and `weight` 16 were chosen on **DEV**. To make that possible, DEV got GigaAM
+     decodes for the first time (`decode_dev_gigaam.py`). TEST was then scored once.
+3. **English leaves the voice pipeline.**
+   - Gone: the D62 Vosk-EN recogniser, its handicap and its `optional` slot (`config.py`,
+     `client_config.py`, `deploy_bootstrap.py`, `.env.example`).
+   - The word LID and span vote have two states. A Latin word ("sms", "kaspi") is neutral and
+     follows its neighbours.
+   - The span-vote calibrators were refit and the vote retuned on DEV rows without English speech
+     (`SPANVOTE_LANGS`, default `kk,ru`; `kk,ru,en` reproduces D64, whose
+     `spanvote_results.json` is kept). Output: `spanvote_results_kkru.json`.
+4. **Word-LID tuning uses the one-standard-error rule.** The spliced synthetic dev set switches
+   language every few words, far more often than a call does. So among settings within 1 SE of the
+   best, the smoothest is taken. The refit on the current `train` (D66 changed it) otherwise chose
+   switch penalty 1.0, with 0.9693 against 0.9668–0.9680 for its neighbours (SE ≈ 0.0026).
+   - This was noticed because a unit test («назовите код из смс» tagged «код» kk) failed, not from
+     held-out data.
+   - «код» occurs 128× in Kazakh and 130× in Russian training text.
+   - Chosen: switch 3.0, lexicon weight 2.0.
+5. Display:
+   - `alignTokens` now lets a hyphenated token take several words and a punctuation token take its
+     neighbour's language. Before, one such token removed every chip from the line.
+   - English chips are no longer provisional by language, and the page copy says "two" Vosk models.
+   - `sw.js` → `qorgan-shell-v12`, adding `core/word-align.js`. **The ui-refresh branch (D69) also
+     claims v12; whichever merges second takes v13.**
+
+**Evidence.** The TEST set is `cs_set` (440 code-switched rows, macOS TTS, clean + phone channel),
+scored once after DEV tuning, with 1,000 bootstrap resamples.
+
+| Final word tags, TEST | word-language acc | kk / ru | WER |
+|---|---|---|---|
+| fallback as D64 shipped it (vote text, re-tagged by the LID) | 0.786 [0.766, 0.804] | 0.820 / 0.798 | 0.424 |
+| D64 three-model span vote (for reference) | 0.873 [0.859, 0.887] | 0.943 / 0.833 | 0.260 |
+| **kk/ru span vote = new fallback** (offline) | **0.875** [0.858, 0.890] | 0.943 / 0.859 | 0.265 |
+| kk/ru span vote, live replay with the 0.5 s freeze (what commits) | 0.874 [0.858, 0.889] | 0.931 / 0.873 | 0.274 |
+
+- On kk/ru-only speech (the `no_en` subset) the span vote scores 0.902 [0.888, 0.914], against
+  0.803 for the D64 fallback.
+- Live flicker: 0.046 tag changes per word with the 0.5 s freeze, against 0.099 in D64 (1.0 s
+  freeze, spike REPORT).
+
+| GigaAM path, TEST | word-language acc (kk/ru speech) | live tags changed at the endpoint |
+|---|---|---|
+| word LID only (D64) | 0.920 [0.910, 0.931] | 7.8 % |
+| inherit live tags | 0.931 [0.920, 0.941] | **1.6 %** |
+
+The accuracy intervals overlap, so the accuracy gain is not shown. The result is the 5× drop in
+re-labelled words. The DEV `live` words come from calibrators fit on that same DEV, so `weight` 16
+may be slightly optimistic.
+
+- **Browser check:** the real page in Chrome with a fake microphone, the same 7 TEST WAVs, no
+  GigaAM, so the deployed fallback (`docs/research/2026-10/voice_d70/`).
+  - Before: one kk/ru phrase was won by the English model and shown all-`en` («both security team
+    says the a committee seems»), and one phrase was committed twice.
+  - After: no English, no duplicate, and the lines keep their kk/ru runs.
+  - The final meter differs (97.5 vs 82.5, both critical) because the text differs. This is a
+    collage, not a labelled call.
+  - With the GigaAM runtime installed locally (the hash-pinned D64 build; nothing published), all
+    six lines came from GigaAM and kept mixed kk/ru runs (`after-cs_mix_gigaam.json`). That run
+    did not measure endpoint latency.
+- **Tests:** `npm test` 158/158. pytest 1652 passed, 3 skipped. The new parity fixture is
+  `tests_js/fixtures/word_align.json`. `word_lid.json` and `span_vote.json` were regenerated.
+
+**What this does not show.**
+- The classifier gates (test / authored / ood / styled / browser) are untouched: they score text,
+  not ASR. Decision 1 changes the *text* that reaches the meter in voice mode. It is a better
+  transcript, but no labelled-call audio exists to measure the meter on real speech (B1 `real_asr`).
+  This is recorded as an exception to "FPR first". It must be re-checked when `real_asr` exists.
+- All audio is TTS, and DEV and TEST share voices. English speech now gets kk/ru tags by design.
+- Known limits (code review, all low):
+  - A line made only of Latin words («kaspi gold») has no neighbour to follow. It ties to `kk`.
+  - The span vote keeps the first piece of a hyphenated Vosk word («из-за» → «из»), and that text
+    now reaches the meter in the fallback.
+  - The empty `handicap` plumbing stays, generic.
+  - A deployment that still sets `QORGAN_VOSK_MODEL_EN` has it silently ignored.
+
+**Not decided here.** Whether the classifier's English **training** rows (238 in `train`) stay is
+a separate, pre-registered ablation (PLAN_2026-10 §4 A0). D54 saw `shift` improve when English was
+added, without isolating the effect, so dropping it untested could cost kk/ru recall.
+
+### D71 — A0: do the English training rows help Kazakh and Russian? Pre-registration (2026-10-22)
+**Context.** Since D70 English is not a call language. The current `train` split holds 238 English
+dialogues (172 scam, 66 legit) of 1,880, and `val` holds 23 of 135. D54 saw `shift` improve when
+English arrived, but three things changed together, so whether these rows help kk/ru recall is
+unknown. This entry is committed **before** any run, per PLAN_2026-10 rule 3.
+
+**Arms.** Same code, same corpus build, device embeddings (`QORGAN_EMBED_BACKEND=device`, the
+browser bridge, D33), same seeds:
+- **B (baseline):** `linear_train` on today's `train` + `val`, all rows.
+- **A (ablation):** the same with every `language == "en"` row removed from `train` and `val`.
+
+The shipped v1 `site/models/weights.json` is reported for reference only. It was trained on an older
+corpus build, so it is not an arm.
+
+**Step 1: validation only.** Score both arms on the `val` rows in kk / ru / mixed (112 dialogues).
+Metrics: FPR and recall at the shipped alert threshold 0.59, ROC-AUC, per language. A passes
+step 1 if:
+- (a) A's FPR ≤ B's FPR; and
+- (b) A's recall ≥ B's recall − 0.03.
+
+**Step 2: one held-out look, only if step 1 passes.**
+- Before running it, record the sha256 of both arms' weights in this entry.
+- Then score both arms once on the kk + ru rows of `shift_local` (97 calls; English rows
+  excluded). A passes step 2 if:
+  - (a) A's false alarms ≤ B's false alarms (counts); and
+  - (b) A's caught scams ≥ B's − 1.
+
+**Decision, fixed now.**
+- **Steps 1 and 2 both pass:** English rows leave the training corpus (corpus config). v2.1 (A2–A6)
+  is built without them.
+- **Otherwise:** they stay as training-only rows. English remains absent from the product, the
+  evaluation headlines and the voice mode.
+- **No re-tuning after the look.** Whatever the result, `shift_local` is not used again for this
+  question.
+
+**Step 1 result (2026-10-22, `qorgan.eval.run --split val --by-language`, device embeddings).**
+Both arms score FPR 0.000 and recall 1.000 on kk (n=30), mixed (38) and ru (44): validation is
+saturated (same generator as train), so step 1 passes without telling the arms apart. Per-tactic F1
+moves both ways by small amounts (e.g. kk credentials_request 0.000 → 0.333; mixed urgency 0.706 →
+0.667).
+
+**Weights frozen before step 2 (sha256):**
+- A: `risk_clf.joblib` a1eeee6eac1c53cb4308dfa1bc80a733ead7cbc9d70f6ba5daa06de4b221ab3b ·
+  `tactic_clf.joblib` 480b5f589a6b87c2b33f091396a0fd70d9cb62c0e46b2ea6c99f3da0c48a685f ·
+  `web/weights.json` 285db215747a0e4d67b8ca8b6252e5b61661f04a081cbe78be0b3d3224e38adc
+- B: `risk_clf.joblib` 863cf52559cebe014c47eac7320b6f45635d07c5d1931a8cf551f0259ceae5b2 ·
+  `tactic_clf.joblib` 5c63e2426f0d3cf558e014e666354935f805a38e3e275491064691a0bde134e1 ·
+  `web/weights.json` aaa1fd4f765c7ec46dda8507ea4df1f3debeb5a230b6872537c999b534ff56a2
+
+**Step 2 result (2026-10-22, one look, `qorgan.eval.run --split shift_local --by-language` on the 97
+kk+ru rows, device embeddings, the frozen weights above).**
+A first attempt printed no metrics for either arm (the browser bridge died when the Mac slept), so
+this run is the only look.
+
+| arm | FPR | recall | kk FPR / recall | ru FPR / recall | PR-AUC |
+|---|---|---|---|---|---|
+| B (with English rows) | 0.041 [0.005, 0.140] (2/49) | 0.542 [0.392, 0.686] (26/48) | 0.080 / 0.417 | 0.000 / 0.667 | 0.904 |
+| A (without) | 0.041 [0.005, 0.140] (2/49) | 0.479 [0.333, 0.628] (23/48) | 0.080 / 0.458 | 0.000 / 0.500 | 0.905 |
+
+- (a) passes: 2 ≤ 2 false alarms.
+- (b) **fails**: 23 < 26 − 1 caught scams. The loss is Russian (16 → 12 of 24); Kazakh gains one
+  (10 → 11 of 24). The intervals overlap; the rule was fixed in advance, so it decides.
+
+**Decision: the English rows stay in `train` as training-only data.** English stays out of the
+product, the voice mode and the evaluation headlines (D70). v2.1 (A2–A6) keeps them. The English
+generation slots of A2 still go to Kazakh, which this does not contradict: those are *new* rows.
+`shift_local` is not used again for this question.
+
+### D63 v2.1 / A1 — the role line no longer reads a payment channel as the caller's role (2026-10-22)
+Display-only; no retrain (`roles.yaml` is not in the hashed lexicons;
+`test_role_lexicon_is_not_part_of_the_trained_bundle`). The yaml and its tests landed early in
+3cb7af5 by accident (a `git apply --3way` left them staged); this entry is the implementation.
+
+**Rules.**
+- An organisation is a claim only when an introduction marker sits within `ROLE_INTRO_WINDOW` = 4
+  tokens of it **in the same sentence** (`ROLE_SENTENCE_END` = `.!?` is a wall).
+- A bare Kazakh ablative («Kaspi-ден») is no longer enough. "here" and "support" are no longer
+  markers. A separate ablative token belongs to the organisation («Kaspi-ден хабарласып»).
+- `intro.channel` vetoes an organisation named as a channel or help desk:
+  - a preposition right before it («через/на Kaspi», "on Kaspi");
+  - "support", «арқылы», «қолдау», «қосымша» or «приложени» right after it;
+  - a separate non-ablative case affix («Kaspi-ге», «Kaspi-дің»);
+  - a negation between a preceding marker and it («Это не Kaspi»).
+- A negation between the organisation and a *following* marker only drops that marker, so
+  «служба безопасности Kaspi, не беспокойтесь» still claims.
+- Python and `role.js` stay 1:1. The fixture (`tests_js/fixtures/roles.json`) was regenerated with
+  88 cases, 13 of them new hand cases.
+- «Мам, это я, переведи на Kaspi…» keeps its phase-1 `relative_friend` claim, and no bank claim is
+  added. Its test asserts exactly that.
+
+**Measured on the phase-2 batch** (train). The fix was designed on its role-less rows, so this is
+**not** independent; re-measure on the next batch.
+
+| p2 batch | role recall | fires on role-less rows | wrong role | no claim |
+|---|---|---|---|---|
+| before | 749/1136 (0.659) | 47/189 | 63 | 324 |
+| after | 738/1136 (0.650) | 33/189 | 54 | 344 |
+
+- All 14 wrong Kaspi / Halyk Invest lines are gone. The 33 left are D63's old 31 cue fires plus
+  2 factual OLX buyers.
+- **Recall lost:** 14 rows, with 3 gained:
+  - 7 bare ablatives with no marker;
+  - 3 genitive «X Bank-тің қауіпсіздік қызметі», a cost of the genitive veto kept for «Kaspi-дің өз
+    нөміріне…»;
+  - 1 sentence wall;
+  - 3 channel words.
+- The pilot is unchanged: 75/102, 1/18, 4 wrong.
+- **Tests:** pytest 1666 passed / 3 skipped; `npm test` 159/159.
+
+### D63 v2.1 / A2 — 300 legitimate dialogues for the v2.1 retrain (run `v21_legit`, 2026-10-22)
+**Why.** Two of v2's five new held-out false alarms were ordinary family money requests by Kaspi.
+v2.1 therefore adds legitimate family and bank calls. These were chosen after seeing v2's false
+alarms on test/ood, so test/ood cannot be the main judge for v2.1; `shift_local_2` is (PLAN §4).
+
+**Grid** (`configs/gen_grid_v21_legit.yaml`, seed 20261022, 300 cells, 15 chunks of 20):
+- `scam_share: 0`; registers kk 0.45 / ru 0.30 / mixed 0.25 (no new English rows, D70/D71).
+- Classes: family_money_request 120, legit_bank_call 120, and 15 each of delivery code, clinic,
+  eGov/ЦОН and utility. 178 are confusable.
+- 173 cells are look-alikes: bank_card_phish 36, bank_safe_account 24, mirror_loan 24,
+  relative_in_trouble 24, parcel_code 15, and 10 each for clinic, eGov and utility.
+- Code (`grid.py`, `spec.py`):
+  - `scam_share` may be 0.
+  - Per-class `negative_scenarios` (32 English briefs) are spread evenly with a separate RNG, so the
+    base grid's manifests and specs are byte-identical.
+  - A brief's `lookalike_of` must be the scheme's twin.
+  - Tests: `tests/data/gen/test_gen_grid_legit.py` (10).
+- No brief asks for a code, PIN or transfer.
+
+**Generation.** 15 writer agents, each seeing only its chunk spec. All passed `check` first time.
+
+**QC.**
+- 300/300 schema-valid; **300 accepted**.
+- 0 eval-split hash overlaps; 0 near-duplicates (nearest neighbour vs train max 0.940); ROUGE-L max
+  0.376.
+- A hard-signal cue fires on 16/300 negatives, 12 of them confusables.
+- Role-slot recall is 0.51.
+- 40 rows are not a scrub fixed point (self-introduced names, 2 rows with numbers read aloud). The
+  fold scrubs them (D66).
+
+**Open before A4.**
+1. **Style confound.** Fingerprint vs Gemini train: char AUC 1.000, e5 0.984. With this run, the
+   Claude block's P(scam) falls to 708/1745 = 0.406, against Gemini train's 0.477.
+2. **Reassurance line.** 57 of 120 bank calls carry "we never ask for codes", a line real scammers
+   also use, so a head could learn "never-ask-code ⇒ legit".
+3. **Persona–scenario coherence** is not enforced (one cell was rewritten by its writer). One
+   borderline family row (v21_legit_0100, "new SIM, save my number", then a loan) needs review.
+
+Data is local-only, not folded, not trained.
+
+### D63 v2.1 / A2 (cont.) — the A4 blockers closed: 37 bank calls rewritten, 236 scams added (2026-10-22)
+Closes items 1 and 2 of "Open before A4" above. Item 3 (persona coherence, v21_legit_0100) stays open
+for the user's review before the fold.
+
+**Reassurance line (item 2).** A caller-side rule (`v21_legit/redo/rule.py`, local) found the line in
+57 rows. 20 were kept, and the other 37 were rewritten as chunks 15–16 with a per-cell `constraint`.
+The constraint says the call shows it is legitimate only by what it does, never by a disclaimer.
+The rows they replace are in `v21_legit/superseded/`. After the redo the rule hits 21 bank calls:
+the 20 kept, plus one false match ("если покупка ваша, делать ничего не надо", not a disclaimer).
+- On the scam side, `scam_scenarios` gives the line to 28 scam cells. The scammer says it to win
+  trust and asks anyway. All 28 carry it, and so do 8 more scams written without the brief.
+- **The line is now in 36 scams against 20 legit calls, so it is no longer a legit-only signal.**
+
+**Style confound (item 1).** The scam-only run is `v21_scam` (`configs/gen_grid_v21_scam.yaml`,
+seed 20261023, `scam_share: 1.0`, kk 0.45 / ru 0.30 / mixed 0.25).
+- It has 236 cells, which puts the Claude block's P(scam) at **944/1981 = 0.4765**. Gemini train
+  is 0.4766.
+- The nine low-arousal administrative schemes are weighted 1.4× (13 cells each). The other schemes
+  get 9–10 each.
+- Stages: full 118, hook_escalation 64, extraction_handoff 43, hook_only 11. Phrasing: indirect
+  131, direct 105.
+- Code (`grid.py`, `spec.py`):
+  - `scam_share` may be 1.
+  - `ScamScenario` briefs are allocated across schemes by a separate seeded RNG, so grids that use
+    none stay byte-identical.
+  - A cell `constraint` is a hard per-cell rule.
+  - Tests: `tests/data/gen/test_gen_grid_scam.py`.
+
+**Generation.** Seven Opus writer agents wrote two chunks each and read only their chunk specs.
+Every chunk passed `check` the first time.
+
+**QC** (`python -m qorgan.data.gen qc`, embedding gates on):
+
+| run | rows accepted | eval overlaps | near-dup (run→train NN max) | ROUGE-L max | negatives with a cue | role recall | fingerprint AUC char / e5 |
+|---|---|---|---|---|---|---|---|
+| v21_legit (after redo) | 300/300 | 0 | 0 (0.940) | 0.342 | 11 | 0.49 | 1.000 / 0.986 |
+| v21_scam | 236/236 | 0 | 0 (0.936) | 0.305 | — | 0.66 | 1.000 / 0.977 |
+
+- v21_scam: the cue-free scam share is 0.775, and no scheme is below its leak target.
+  `scheme_rule_agreement` is 236/236.
+- Some rows are not a scrub fixed point (legit 32, scam 10), mostly self-introduced names. The fold
+  scrubs them (D66).
+- The fingerprint AUC stays ≈ 1. Matching the label rate removes the *label* confound. It cannot make
+  Claude's text look like Gemini's, and that is why `shift_local_2` is the judge.
+
+**Fresh judge (A3, same day).** `shift_local_2` is 130 calls (kk 80 / ru 50, 65/65). It uses the
+same briefs, model and sampling as `shift_local`, with seed 20261022. All 130 slots were accepted by
+automated checks only, and it is disjoint from every split, `shift_local` included. Provenance:
+`data/provenance/shift_local_2.json`. **No model has been scored on it.**
+
+Data is local-only, not folded, not trained. Next: A4 (pre-registered retrain, device embeddings).
+
+### D63 v2.1 / A4 — PRE-REGISTRATION of the v2.1 retrain and its one-shot held-out run (2026-10-23)
+_Committed before any v2.1 model was trained or any held-out split was scored. Everything below is
+chosen by the user (2026-10-23) or copied from v2 phase 2 (f038cde) and PLAN_2026-10 §4._
+
+**User decisions (2026-10-23).**
+1. `v21_legit_0100` is dropped. It is a legit neighbour loan that opens with "new SIM, save my
+   number", which is the new-number relative scam's opening. The drop is in the committed
+   `configs/gen_review_rejects.yaml`, which `build_corpus --gen-run` applies after QC
+   (`fold.load_review_rejects`; tests in `test_gen_fold.py`).
+2. The operating-point rule below is confirmed.
+
+**Corpus.**
+- Command: `build_corpus --gen-run pilot --gen-run p2 --gen-run v21_legit --gen-run v21_scam
+  --label-space v2 --processed-dir data/cache/processed_v21`. Content hash **2e8b3d5f77df…88e93d**.
+- `pilot` and `p2` had been deleted from the main checkout. They were restored from an agent
+  worktree; the two surviving copies are byte-identical (120 + 1,325 QC-accepted rows).
+- The v1 corpus rebuilds to its recorded hash a183b0e5…, so the inputs are current.
+- Train: Claude 3,374 rows (incl. ASR copies), P(scam) 0.4766; Gemini 1,880, P(scam) 0.4766.
+- Val: Claude 293 (0.478), Gemini 135 (0.430); 230 legit and 198 scam in total.
+- `data/processed` (v1) is untouched.
+
+**Trainer: v2's settings, unchanged.**
+- `QORGAN_LABEL_SPACE=v2 QORGAN_EMBED_BACKEND=device python -m qorgan.classifier.linear_train
+  --processed-dir data/cache/processed_v21 --out-dir models/linear_v21_device`.
+- Device embeddings come from the browser bridge (D33).
+- Label masking is on. `V2_MIN_OOF_POSITIVES` = 8. `_RISK_C` = 4.0. Per-tactic thresholds are
+  re-fit by D30.
+- No setting is changed after seeing a result. If training fails for a technical reason, the fix
+  and the rerun are recorded here.
+
+**Operating-point rule (validation only, device embeddings).**
+- **enter** is the lowest threshold on a 0.01 grid at which v2.1's validation false positives are
+  ≤ the shipped v1's false positives on the **same v2.1 validation set** at 0.59.
+- **exit** = enter − 0.10. The single-shot `risk_threshold` = enter.
+- The hard-signal floors come from `meter.hard_signal_floors(enter)`.
+- Shipped v1 stays at 0.59 / 0.49.
+
+**Freeze.** Before any held-out split is scored, this entry gets the sha256 of v2.1's
+`risk_clf.joblib`, `tactic_clf.joblib` and `web/weights.json`, the chosen enter/exit, and the
+validation table (v1 vs v2.1, FPR and recall with 95 % CP, by generator and by language). That
+commit closes A4.
+
+**A5: one look, device embeddings, both models in the same harness, each at its own point.**
+- Splits: `shift_local_2` (the judge; kk / ru), plus test / authored_heldout / ood as **clean**
+  subsets (`qorgan.eval.run`'s `(clean)` rows exclude every inspection-ledger id), and the ASR-styled
+  copies.
+- Reported, but not a ship criterion: `shift_local` (v2 and A0 looked at it), and the
+  validation stream false-latch rate (`eval.stream`).
+
+**A6: ship criteria (PLAN_2026-10 §4), all required.**
+- (a) FPR does not rise on the clean test / authored / ood subsets or on the styled copies.
+- (b) On `shift_local_2`, v2.1's false alarms ≤ v1's + 1, and v2.1's recall > v1's.
+- (c) Every new false alarm is an institutional look-alike, never a family or everyday call. Only
+  those rows are read, and they go into the inspection ledger.
+- After export: the browser gate passes, and the demo scenes are right (the RU and KK scams alert,
+  and the real bank call stays LOW).
+- **On a fail, v1 stays.** Nothing is re-tuned on what A5 shows.
+
+#### D63 v2.1 / A4 — FREEZE: trained, operating point by rule (2026-10-23)
+_Committed before any held-out split is scored. Validation only, device embeddings
+(transformers.js 3.8.1 / ORT-web wasm bridge). Numbers pasted from
+`scripts/taxonomy_v2_dryrun_eval.py` (`models/linear_v21_device/val_report.json`)._
+
+**Training ran as pre-registered:** no rerun and no setting changed.
+- 23 heads, none dropped. The thinnest are task_advance_fee 94, cash_courier_handoff 105 and
+  loan_inducement 108 OOF positives.
+- 1,880 Gemini train rows are masked for the new tactics.
+
+**Frozen model** (`models/linear_v21_device`, sha256):
+- `risk_clf.joblib` 16c6e450b812070ed33a2df641d4e90d969433a9d16bef43d8502f56209b27f7
+- `tactic_clf.joblib` 67996f602399be3e47629948d5487dcc0504e44adee91bfb3c7c3fe4c397104c
+- `web/weights.json` cd7b47bba7ab2bc4aff0666d316133b1ae4efa0cfea502de58f6ab58affe5e40
+
+**Operating point (the rule):**
+- Shipped v1 makes 5/230 false positives on the v2.1 validation set at 0.59.
+- **enter = 0.82** is the lowest 0.01 step at which v2.1 makes ≤ 5. **exit = 0.72**; the
+  single-shot `risk_threshold` is also 0.82.
+- The hard-signal floors from `live.meter.hard_signal_floors` are **84 / 84**.
+
+| validation (device) | ROC-AUC / PR-AUC | FPR [95 % CP] | recall [95 % CP] |
+|---|---|---|---|
+| shipped v1 @ 0.59 | 0.867 / 0.868 | 5/230 = 0.022 [0.007, 0.050] | 91/198 = 0.460 [0.389, 0.532] |
+| v2.1 @ 0.59 (for reference) | 0.958 / 0.962 | 18/230 = 0.078 [0.047, 0.121] | 177/198 = 0.894 [0.843, 0.933] |
+| **v2.1 @ 0.82 (rule)** | | **5/230 = 0.022 [0.007, 0.050]** | **147/198 = 0.742 [0.676, 0.802]** |
+| v1, Claude rows | 0.783 / 0.766 | 4/153 | 33/140 |
+| v2.1 @ 0.82, Claude rows | 0.930 / 0.939 | 4/153 | 90/140 |
+| v1, Gemini rows | 1.000 / 1.000 | 1/77 | 58/58 |
+| v2.1 @ 0.82, Gemini rows | 1.000 / 0.999 | 1/77 | 57/58 |
+
+v2.1 @ 0.82 by language (Claude rows), each as v1 → v2.1:
+
+| language | FPR | recall |
+|---|---|---|
+| kk | 1/52 → 1/52 | 10/54 → 34/54 |
+| ru | 3/58 → 3/58 | 15/42 → 33/42 |
+| mixed | 0/27 → 0/27 | 4/30 → 12/30 |
+
+**The five validation false positives at 0.82** (generated or augment rows, not held-out):
+- aug_neg_delivery_notification_ru_0 (Gemini, ru, 0.826)
+- p2_0864 (kk, 0.868)
+- p2_1105 (ru, 0.863)
+- p2_1248 (ru, 0.906)
+- p2_1761 (ru, 0.908)
+
+**Compared with v2 phase 2** (different validation sets, so indicative only): v2 needed 0.78 to
+match v1's FPs, and v2.1 needs 0.82. On Claude rows v2.1 ranks better than v2 (ROC-AUC 0.930 vs
+0.919). **Mixed-language recall at the rule point is the weak spot (12/30).**
+
+A4 is closed. Next is A5: one look, per the pre-registration above.
+
+#### D63 v2.1 / A5–A6 — the one held-out look: A6 (a)–(c) pass (2026-10-23)
+_One run on device embeddings, the frozen weights of 799bbe4. Both arms ran in the same harness,
+each at its own point: v1 at 0.59/0.49, v2.1 at 0.82/0.72. Outputs:
+`models/linear_v21_device/a5/{v1,v21}.{run,styled}.txt`, from `qorgan.eval.run` and
+`qorgan.eval.asr_realism`. Nothing was re-run or re-tuned._
+
+**The judge: `shift_local_2`** (130 calls, never seen before this run).
+
+| shift_local_2 | FPR [95 % CP] | recall [95 % CP] | PR-AUC |
+|---|---|---|---|
+| v1 @ 0.59 | 2/65 = 0.031 [0.004, 0.107] | 28/65 = 0.431 [0.308, 0.560] | 0.871 |
+| **v2.1 @ 0.82** | **0/65 = 0.000 [0.000, 0.055]** | **38/65 = 0.585 [0.456, 0.706]** | **0.942** |
+| v1, kk / ru | 2/40 / 0/25 | 16/40 / 12/25 | |
+| v2.1, kk / ru | 0/40 / 0/25 | 21/40 / 17/25 | |
+
+**Other held-out splits** (FPR, then recall; each as v1 → v2.1):
+
+| split | FPR | recall |
+|---|---|---|
+| test (clean) | 0/60 → 0/60 | 83/83 → 80/83 |
+| authored_heldout (clean) | 0/19 → 0/19 | 16/18 → 17/18 |
+| ood (clean) | 0/69 → 0/69 | 41/44 → 40/44 |
+| test, ASR-styled | 0/60 → 0/60 | 82/83 → 82/83 |
+| authored, ASR-styled | 0/24 → 0/24 | 17/18 → 17/18 |
+| ood, ASR-styled | 1/74 → 1/74 | 41/44 → 37/44 |
+| `shift_local` (reported only; seen before) | 3/64 → 3/64 | 34/62 → 42/62 |
+
+**A6 verdicts.**
+- **(a) passes.** FPR does not rise on any clean subset or styled copy.
+- **(b) passes.** On `shift_local_2`, false alarms fall 2 → 0 (the limit was ≤ 3) and recall rises
+  28 → 38.
+- **(c) passes.** v2.1 adds two false alarms that v1 does not make. Only these two rows were read:
+  - `neg_general_conversation_mixed_21` (test, inspected subset, 0.942): already in the ledger since
+    2026-10-12. A former colleague now at a bank offers a card bonus with an identity-confirmation
+    link. The institutional pretext matches.
+  - `ood_neg_legit_gov_service_mixed_2` (ood, styled copy only, 0.828; clean 0.53): added to the
+    ledger. A clinic registrar re-attaches the patient to a GP after a system update and asks for
+    the IIN "for verification". The institutional pretext matches.
+- v2.1 also drops four of v1's false alarms: three in `shift_local_2` (kk) and
+  `ood_neg_legit_bank_call_mixed_3` (styled).
+
+**Costs, recorded, not criteria.**
+- v2.1 misses 3 `test` scams that v1 caught.
+- On ood styled copies it catches 37/44 against v1's 41/44.
+- The validation stream false-latch rate has not been measured yet.
+
+**Side finding.** The IIN in `ood_neg_legit_gov_service_mixed_2` is read with a filler in the middle
+("980315... эээ... 350021"). The D66 scrubber does not mask it. The data is fabricated, but it is a
+scrubber gap to fix separately (it is not part of v2.1).
+
+**Next (A6, after export):** the browser gate on device embeddings, the demo scenes, and pytest + npm.
+
+#### D63 v2.1 / A6 — verdict: the browser gate fails by 6e-6; v1 stays; v2.1 is a frozen candidate (2026-10-23)
+The export was run locally (weights cd7b47bb…, config 0.82 / 0.72, floors 84/84,
+`active_label_space: v2`, sw.js v13). The existing int8 browser gate (`browser_gate.test.mjs`,
+assertions unchanged) then read, against v1 on the same gate:
+
+| browser gate (200 cases, ONNX-Python vs WASM-browser) | decision flips | p95 Δrisk | tag-set Jaccard |
+|---|---|---|---|
+| limit | ≤ 6 | < 0.15 | ≥ 0.9 |
+| shipped v1 | 4 | 0.091 | 0.952 |
+| v2.1 @ 0.82 | 1 | 0.129 | **0.899994 (fail)** |
+
+The decision and risk gates pass. The tag-set gate misses by 6e-6, most likely because v2.1 has 23
+tactic heads against v1's 15. **The pre-registration said "the gate passes, do not loosen it; on a
+fail, v1 stays."** The user chose to follow the rule (2026-10-23):
+- The export is reverted. v1 stays shipped (weights f0659e7c…, 0.59 / 0.49).
+- The gate is not loosened and not switched to device mode after the fact.
+- `models/linear_v21_device` stays as a frozen candidate (sha256 above). `shift_local_2` has now
+  been looked at once, so it cannot judge a later model.
+
+**Found during the export, for any future v2-space ship:**
+- `.env` / `.env.example` pin `QORGAN_RISK_THRESHOLD*`, which overrides `config.py`'s defaults.
+  A threshold change must edit both env files, or `client_config` exports the old point.
+- At enter 0.82 the meter needs a fourth risk-0.9 utterance to latch: the EMA reaches 78.75 after
+  three.
+- The flip to `active_label_space: v2` breaks 12 Python tests. Most are expected updates; the anchor
+  dialogues and the `shift_local` briefs still carry v1 tactic ids, which is real migration work.
+- The demo scenes were not run.
+
+**Next: v2.2** (PLAN_2026-10 §4, track A, re-opened).
+- About 250 new dialogues, aimed at v2.1's weak cells: code-switched (validation recall 12/30) and
+  Kazakh (`shift_local_2` 21/40).
+- Split between Claude and Gemini writers, so the new rows do not deepen the Claude style gap.
+- The scam share stays matched to train's.
+- New judge `shift_local_3`: the same local model and briefs, a new seed. It is judge-only and is
+  never a training writer.
+- The same cycle: pre-register → train → freeze → one look → A6.
+
+### D63 v2.2 / A7 — PRE-REGISTRATION: targeted kk + code-switched data from two writers (2026-10-23)
+_Committed before any v2.2 model was trained or any held-out split was scored. The procedure is
+v2.1's (A4 pre-registration above) with the changes listed here._
+
+**Why.** v2.1 beat v1 on its judge but failed the browser gate's tag-set Jaccard by 6e-6. Its weak
+cells were code-switched calls (validation recall 12/30 at the rule point) and Kazakh
+(`shift_local_2` 21/40). The user chose to keep v1 and generate targeted data (2026-10-23).
+
+**New data** (both runs pass QC; local-only):
+- `v22_claude` (Claude agents, spec only) and `v22_gemini` (Gemini 2.5 Pro via
+  `qorgan.data.gen.gemini_writer`, the same chunk specs).
+  - Each is 126 cells: kk 57 / mixed 69, scam 60 / legit 66, 53 look-alike negatives. The grids are
+    `configs/gen_grid_v22_{claude,gemini}.yaml`, which is the base grid with a new seed and
+    registers.
+- QC: 126/126 accepted in each run, 0 eval overlaps, 0 near-duplicates.
+
+  | QC | v22_claude | v22_gemini |
+  |---|---|---|
+  | ROUGE-L max | — | 0.340 |
+  | fingerprint AUC vs Gemini train, char / e5 | 0.971 / 0.939 | 0.984 / 0.914 |
+  | negatives with a cue | 6 | 5 |
+  | role recall | 0.69 | 0.48 |
+
+- **Writer difference, kept, not filtered.** Gemini's `mixed` rows are more Kazakh-dominant:
+  58/69 have fewer than two Kazakh-free turns, against 34/69 for Claude. The legacy Gemini corpus
+  shows the same tilt. No heuristic filter is applied.
+- **Provenance.** `configs/gen_run_writers.yaml` marks `v22_gemini` as `gemini_grid`. Its rows carry
+  v2 labels and are not masked. The v2.1 corpus rebuilds byte-identically under this code.
+
+**Corpus.**
+- Command: `build_corpus --gen-run pilot --gen-run p2 --gen-run v21_legit --gen-run v21_scam --gen-run
+  v22_claude --gen-run v22_gemini --label-space v2 --processed-dir data/cache/processed_v22`.
+  Content hash **c1adcb4268d0…f6c04**. The `v21_legit_0100` reject is applied.
+- Train P(scam): claude 1714/3592 = 0.477; gemini (legacy) 896/1880 = 0.477;
+  gemini_grid 102/212 = 0.481.
+- Val: 465 rows (kk 150, mixed 118, ru 144, en 53).
+
+**Unchanged from v2.1.**
+- The trainer: v2's settings on device embeddings, into `models/linear_v22_device`.
+- The operating-point rule: enter = the lowest 0.01 step at which v2.2's validation FPs ≤ v1's on
+  the v2.2 validation set at 0.59; exit = enter − 0.10.
+- The freeze step: sha256s and the validation table are committed before the look.
+- A6 (a)–(c), and the browser gate with its assertions unchanged, including tag-set Jaccard ≥ 0.9.
+  v2.1's 0.899994 is a known risk for v2.2 too.
+
+**The judge is `shift_local_3`.** It is 130 kk/ru calls (seed 20261024), never looked at, and
+disjoint from `shift_local` and `shift_local_2`. A6 (b) applies on it: v2.2's false alarms ≤ v1's
++ 1, and v2.2's recall > v1's.
+- `shift_local_2` and `shift_local` are reported only; both were seen.
+- The frozen v2.1 is scored alongside v2.2 for reference. It is not a criterion.
+
+#### D63 v2.2 — FREEZE: trained, operating point by rule (2026-10-23)
+_Committed before any held-out split is scored. Validation only, device embeddings, from
+`scripts/taxonomy_v2_dryrun_eval.py` (`models/linear_v22_device/val_report.json`). Training ran as
+pre-registered: no rerun, 23 heads, none dropped (the thinnest are task_advance_fee 105,
+cash_courier_handoff 116 and refund_request 119), 1,880 legacy rows masked._
+
+**Frozen model** (`models/linear_v22_device`, sha256):
+- `risk_clf.joblib` aefc76c09fd7e2059336f888e7a812d70594cf78d1d8b592d647a317b72e5e8a
+- `tactic_clf.joblib` 0e3c6cbfd1f38670c1fe54a7cff6414b05b6399942eb9f8ec8ce140478362ede
+- `web/weights.json` e08bcba041795e79881b46d87b3c2a1c1f55068898e1d33f5fe37d9404394aa6
+
+**Operating point (the rule).** v1 makes 5/251 validation FPs at 0.59, so **enter = 0.82,
+exit = 0.72**, with floors 84 / 84 (the same point as v2.1).
+
+| validation (device) | ROC-AUC / PR-AUC | FPR [95 % CP] | recall [95 % CP] |
+|---|---|---|---|
+| shipped v1 @ 0.59 | 0.867 / 0.867 | 5/251 = 0.020 [0.007, 0.046] | 96/214 = 0.449 [0.381, 0.518] |
+| v2.2 @ 0.59 (reference) | 0.957 / 0.961 | 18/251 = 0.072 [0.043, 0.111] | 187/214 = 0.874 [0.822, 0.915] |
+| **v2.2 @ 0.82 (rule)** | | **5/251 = 0.020 [0.007, 0.046]** | **158/214 = 0.738 [0.674, 0.796]** |
+
+By generator and language at the rule point, as v1 → v2.2 (FPs; caught scams):
+
+| rows | FPs | caught scams |
+|---|---|---|
+| Claude kk | 1/58 → 1/58 | 10/56 → 34/56 |
+| Claude mixed | 0/31 → 0/31 | 4/35 → 17/35 |
+| Claude ru | 3/58 → 4/58 | 15/42 → 33/42 |
+| Claude en | 0/16 → 0/16 | 4/14 → 11/14 |
+| gemini_grid | 0/11 → 0/11 | 5/9 → 6/9 |
+| legacy Gemini | 1/77 → 0/77 | 58/58 → 57/58 |
+
+The five validation FPs at 0.82 are p2_0864 (kk), p2_0955, p2_1105, p2_1248 and p2_1761 (ru). They
+are generated rows, not held-out.
+
+#### D63 v2.2 — the one look: (b) passes, (a) and (c) FAIL; v1 stays (2026-10-23)
+_One run on device embeddings, with the frozen weights of 782460a. Each arm ran at its own point: v1
+0.59 / 0.49, v2.2 and the frozen v2.1 0.82 / 0.72. Outputs are in
+`models/linear_v22_device/a5/{v1,v22,v21}.{run,styled}.txt` and `*.neg_rows.json` (ids and risks,
+no text). v2.1 is reference only._
+
+**The judge: `shift_local_3`** (129 calls, first look).
+
+| | FPR [95 % CP] | recall [95 % CP] | PR-AUC | kk FPR / recall | ru FPR / recall |
+|---|---|---|---|---|---|
+| v1 @ 0.59 | 6/65 = 0.092 [0.035, 0.190] | 32/64 = 0.500 [0.372, 0.628] | 0.878 | 0.125 / 0.450 | 0.040 / 0.583 |
+| **v2.2 @ 0.82** | **2/65 = 0.031 [0.004, 0.107]** | **43/64 = 0.672 [0.543, 0.784]** | 0.955 | 0.025 / 0.600 | 0.040 / 0.792 |
+| v2.1 @ 0.82 (ref.) | 2/65 = 0.031 [0.004, 0.107] | 42/64 = 0.656 [0.527, 0.771] | 0.950 | 0.025 / 0.575 | 0.040 / 0.792 |
+
+**Other held-out FPR** (clean subsets and styled copies):
+
+| split | v1 | v2.2 | v2.1 (ref.) |
+|---|---|---|---|
+| test (clean) | 0 | 0 | 0 |
+| authored (clean) | 0 | 0 | 0 |
+| ood (clean) | 0 | **1** | 0 |
+| test, styled | 0/60 | 0/60 | 0/60 |
+| authored, styled | 0/24 | 0/24 | 0/24 |
+| ood, styled | 1/74 | **2/74** | 1/74 |
+
+**A6 verdicts.**
+- **(a) fails.** ood (clean) FPR rises 0 → 1 (`ood_neg_legit_gov_service_kk_0`, 0.830), and ood
+  styled rises 1 → 2 (the same row, 0.829). v1 scores that row 0.057.
+- **(b) passes.** On `shift_local_3`, false alarms fall 6 → 2 and recall rises 32 → 43.
+- **(c) fails.** v2.2's new false alarms against v1:
+
+  | row | v2.2 risk | in the ledger? | what it is |
+  |---|---|---|---|
+  | `aug_neg_family_money_request_ru_1` (test, inspected) | 0.878 | since 2026-10-12 | a relative in hospital asks for money by Kaspi: **a family call** |
+  | `neg_general_conversation_mixed_21` (test) | 0.954 | yes | institutional |
+  | `ood_neg_general_conversation_ru_1` (ood) | 0.840 | yes | Kaspi support confirms a transfer: institutional |
+  | `ood_neg_legit_gov_service_mixed_2` (styled) | 0.838 | yes | institutional |
+  | `ood_neg_legit_gov_service_kk_0` | 0.830 | no | not read |
+  | `sl3_ru_legit_05` (judge) | 0.918 | no | not read |
+
+  The family row decides (c). The two unread rows are left unread: the verdict does not depend on
+  them, so the held-out sets stay unread.
+
+**Decision (rule): v1 stays shipped.** v2.2 was not exported, and the browser gate was not run.
+`models/linear_v22_device` is kept frozen. `shift_local_3` has now been looked at once.
+
+**What the three models show (indicative, not a decision).**
+- At the same 0.82 threshold, v2.2 adds held-out false alarms that v2.1 does not make:
+  - the family request (v2.1: 0.807);
+  - an eGov call (0.773);
+  - a Kaspi confirmation (0.818).
+- Both models make the same 2 errors on the new judge, and recall is 43 vs 42.
+- So the extra 250 rows did not buy measurable recall on the independent judge. They moved some
+  legitimate kk/ru look-alikes over the line.
+- **v2.1 now has two independent judges in its favour.**
+  - `shift_local_2` (its pre-registered look): 0/65 false alarms vs v1's 2, recall 38 vs 28.
+  - `shift_local_3` (reference, not pre-registered for it): 2/65 vs 6/65, 42 vs 32.
+  - Its only failed gate is the browser tag-set Jaccard, 0.899994 < 0.9.
+
+### D72 — Scrubber v3: a dictated number may continue over a hesitation (2026-10-24)
+**Context.** The D63 v2.1 one look found an IIN in `ood_neg_legit_gov_service_mixed_2` read as two
+six-digit groups split by an ellipsis and a filler («…... эээ... …»). D66 joins number tokens only
+over ≤ 3 characters of spaces, commas and dashes, so neither half reached a PII shape and both
+were stored verbatim. People dictate exactly like this, and so does any transcriber that writes
+pauses as "...".
+
+**Decision.** A number run may continue over a *hesitation* (`scrub_numbers._is_hesitation`,
+1:1 in `site/core/scrub-numbers.js`): at most two filler sounds (`э+`, `э+м+`, `ә+`, `аа+`, `мм+`,
+`хм+`, `uh+`, `um+`, `hm+`; never a lone «а», which is a conjunction) between separator pieces of
+≤ 5 characters drawn from the gap characters plus `.` and `…`. The gap must hold a filler or an
+ellipsis (`..` / `…`). A full stop, a third filler or any real word still ends the run. The
+masking thresholds are unchanged: a 6-digit code said with a hesitation stays evidence, and digit
+groups are masked only at a PII shape (16 / 12 / 10–11). `SCRUBBER_VERSION` 2 → 3; `sw.js` →
+`qorgan-shell-v13`.
+
+**Evidence.**
+- Tests first: 8 red, then green. `tests/data/test_scrub_spoken.py` gains 7 masked and 6
+  untouched cases plus idempotency, and `scripts/export_scrub_fixtures.py` gains the same 12 cases
+  for the JS port. pytest 1738 passed, 2 xfailed (the two designed "rebuild pending" guards);
+  npm 159/159.
+- Effect on stored text (counted, every changed span printed only as an abstract shape: digits →
+  `9`, number words → `N`, other words → `w`): 3 rows change, all true PII. These are a phone in
+  `train` dictated in groups over ellipses, and two IINs in `ood`, one of them the row above.
+  `shift_local` shows 15 other differences, all `[NAME]` masks from D66. That split predates the
+  name rule; it is local-only and never published, so it is left as built.
+
+**Consequences.** The corpus on disk was scrubbed with v2, so `hf_upload.py` refuses to publish it
+until the next corpus rebuild, which is the guard working as designed (D66 precedent). The shipped
+v1 model is not retrained for this: 1 of 1,880 training rows changes, and only inside a masked
+number.

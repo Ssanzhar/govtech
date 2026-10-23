@@ -5,11 +5,13 @@
 Writes
 - `site/core/asr-wordlevel.json`: the per-word language tagger (`word_lid.py`: char-trigram LMs +
   word-frequency lexicons + Viterbi, fitted on the `train` split only) and the calibrated span
-  vote's parameters (`spanvote_results.json → js_port`: 13 features, three logistic calibrators in
-  raw feature space, switch penalty, missing logit, freeze). The span vote's char-trigram feature
+  vote's parameters (`spanvote_results_kkru.json → js_port`: 13 features, one logistic calibrator per
+  recogniser (kk, ru; ADR D70) in raw feature space, switch penalty, missing logit, freeze). The span vote's char-trigram feature
   reads the same LMs, so one file serves both modules.
 - `tests_js/fixtures/word_lid.json`: tags for real GigaAM transcripts (code-switch + FLEURS decodes)
   and hand-made edge cases, from the spike's `WordLID.tag` — `site/core/word-lid.js` must match.
+- `tests_js/fixtures/word_align.json`: GigaAM's words inheriting the live span-vote tags (ADR D70;
+  `spanvote/inherit.py`) on DEV rows -- `site/core/word-align.js` + `word-lid.js tagWithHints` must match.
 - `tests_js/fixtures/span_vote.json`: the live replay of DEV rows (`spanvote_dev_decodes.*`, built
   from `train` text) through the spike's features → raw-space calibrators → `span_vote` → 1.0 s
   freeze loop (`realtime.simulate`), step by step — `site/core/span-vote.js` must match.
@@ -40,7 +42,10 @@ FORMAT_VERSION = 1
 MODEL_OUT = REPO / "site/core/asr-wordlevel.json"
 LID_FIXTURE = REPO / "tests_js/fixtures/word_lid.json"
 VOTE_FIXTURE = REPO / "tests_js/fixtures/span_vote.json"
-RESULTS = REPO / "data/asr_capture/spanvote_results.json"
+ALIGN_FIXTURE = REPO / "tests_js/fixtures/word_align.json"
+INHERIT_RESULTS = REPO / "data/asr_capture/inherit_results.json"
+N_ALIGN = 40
+RESULTS = REPO / "data/asr_capture/spanvote_results_kkru.json"  # kk/ru recognisers only (ADR D70)
 CS_DECODES = REPO / "data/asr_capture/cs_decodes.jsonl"
 FLEURS_DECODES = REPO / "data/asr_capture/fleurs_decodes_clean.jsonl"
 DEV_DECODES = "data/asr_capture/spanvote_dev_decodes.*.jsonl"
@@ -160,26 +165,48 @@ def replay(row: dict, model: wl.WordLID, port: dict) -> dict:
     return {"id": row["id"], "condition": row["condition"], "channel": row["channel"], "steps": steps}
 
 
+def align_fixture(model: wl.WordLID, inherit: dict) -> list[dict]:
+    """DEV rows: GigaAM words, the committed live words, the hints and the inherited tags."""
+    import inherit as ih
+
+    port = json.loads(RESULTS.read_text(encoding="utf-8"))["js_port"]
+    cases = []
+    for row in ih.prepare("dev", model, port)[:N_ALIGN]:
+        live = [{"word": w, "lang": l} for w, l in row["live"]]
+        hints = ih.hints_for(row["giga"], row["live"], inherit["min_sim"])
+        cases.append({
+            "giga": row["giga"], "live": live,
+            "pairs": [[i, j, s] for i, j, s in ih.align_words(row["giga"], [w for w, _ in row["live"]])],
+            "hints": hints, "tags": ih.tag_with_hints(model, row["giga"], hints, inherit["weight"]),
+        })
+    return cases
+
+
 def main() -> None:
     model = wl.fitted()
+    inherit = json.loads(INHERIT_RESULTS.read_text(encoding="utf-8"))["js_port"]
     port = json.loads(RESULTS.read_text(encoding="utf-8"))["js_port"]
     bundle = {
         "format_version": FORMAT_VERSION,
         "provenance": {
             "word_lid": "scripts/spikes/asr_wordlevel/word_lid.py fitted() on the train split",
             "train_sha256": sha256(REPO / "data/processed/train.jsonl"),
-            "span_vote": "data/asr_capture/spanvote_results.json js_port",
+            "span_vote": "data/asr_capture/spanvote_results_kkru.json js_port",
             "span_vote_sha256": sha256(RESULTS),
+            "inherit": "data/asr_capture/inherit_results.json js_port",
+            "inherit_sha256": sha256(INHERIT_RESULTS),
         },
         "lid": export_lid(model),
         "span_vote": {k: port[k] for k in ("features", "calibrators", "switch_penalty", "missing_logit",
                                             "pause_reset_s", "bias_logit", "freeze_s", "conf_clip", "min_duration_s")},
+        "inherit": {"min_sim": inherit["min_sim"], "weight": inherit["weight"]},
     }
     MODEL_OUT.write_text(json.dumps(bundle, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     LID_FIXTURE.write_text(json.dumps({"cases": lid_fixture(model)}, ensure_ascii=False, indent=0) + "\n", encoding="utf-8")
+    ALIGN_FIXTURE.write_text(json.dumps({"inherit": inherit, "cases": align_fixture(model, inherit)}, ensure_ascii=False, indent=0) + "\n", encoding="utf-8")
     rows = [replay(r, model, port) for r in dev_rows()]
     VOTE_FIXTURE.write_text(json.dumps({"rows": rows}, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
-    for path in (MODEL_OUT, LID_FIXTURE, VOTE_FIXTURE):
+    for path in (MODEL_OUT, LID_FIXTURE, ALIGN_FIXTURE, VOTE_FIXTURE):
         print(f"{path.relative_to(REPO)}: {path.stat().st_size / 1e3:.0f} kB")
     print(f"word_lid: switch_penalty={model.switch_penalty} lexicon_weight={model.lexicon_weight}; "
           f"span_vote rows={len(rows)} steps={sum(len(r['steps']) for r in rows)}")

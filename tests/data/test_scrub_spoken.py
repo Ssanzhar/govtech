@@ -212,3 +212,43 @@ def test_amounts_dates_and_short_groups_are_untouched(text):
 def test_idempotent(text):
     once = scrub_text(text)
     assert scrub_text(once) == once
+
+
+# --- dictation with hesitations (ADR D72) ------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("raw", "placeholder"),
+    [
+        ("940101... эээ... 300123", IIN_PLACEHOLDER),
+        ("940101 ээ 300123", IIN_PLACEHOLDER),
+        ("940101, әә, 300123", IIN_PLACEHOLDER),
+        ("940101… 300123", IIN_PLACEHOLDER),
+        ("940101... мм... эм... 300123", IIN_PLACEHOLDER),
+        ("707... ээ... 123 45 67", PHONE_PLACEHOLDER),
+        ("восемь семьсот ноль один... ээ... двести тридцать четыре пятьдесят шесть семьдесят восемь", PHONE_PLACEHOLDER),
+    ],
+)
+def test_dictation_broken_by_hesitations_is_masked(raw, placeholder):
+    assert scrub_text(f"номер {raw} записан") == f"номер {placeholder} записан"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "код 123... ээ... 456",  # a 6-digit code stays evidence, hesitation or not
+        "пять... ээ... шесть раз",
+        "940101. 300123",  # a full stop is not a hesitation
+        "940101 и 300123",  # a word is not a hesitation
+        "940101 ээ мм эм 300123",  # at most two fillers in one gap
+        "940101 а 300123",  # a lone «а» is a conjunction, not a filler
+    ],
+)
+def test_hesitation_rule_does_not_join_unrelated_numbers(text):
+    assert scrub_text(text) == text
+
+
+def test_hesitation_masking_is_idempotent():
+    once = scrub_text("ИИН 940101... эээ... 300123, верно")
+    assert once == "ИИН [IIN], верно"
+    assert scrub_text(once) == once

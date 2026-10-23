@@ -1,8 +1,13 @@
-"""Deterministic generation plan for the `shift_local` held-out split (ADR D65).
+"""Deterministic generation plan for the `shift_local` held-out splits (ADR D65).
 
 Every call slot (language x brief x persona x outcome x length x seed) is fixed by one seed
 before any text is generated, so the set is reproducible and no slot can be chosen after
 seeing an output. The label of a slot comes from its brief.
+
+`LOCAL_SPLITS` registers every batch: `shift_local` (D65), `shift_local_2` (PLAN_2026-10 §4
+A3: same briefs, same model and sampling, a new seed, kk/ru only after D70) and `shift_local_3`
+(A7, the v2.2 judge: the second batch's design under another seed). A batch is planned
+with `plan_for(name, briefs)`; the first batch's plan is pinned by a fingerprint test.
 
 The generator is a local open-weights model from a different family than the training data
 (Gemini) and the planned training generator (Claude); see `GENERATORS`.
@@ -11,8 +16,10 @@ The generator is a local open-weights model from a different family than the tra
 from __future__ import annotations
 
 import random
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from types import MappingProxyType
 
 import yaml
 
@@ -116,6 +123,57 @@ _SYSTEM_LANGUAGE = {
 }
 
 
+@dataclass(frozen=True)
+class LocalSplit:
+    """One batch written by the local model: its seed, slot-id prefix, language targets, the
+    earlier batches it must not near-duplicate, and the cross-split near-duplicate threshold its
+    build enforces (None = exact-overlap only, as `shift_local` was built under D65)."""
+
+    name: str
+    plan_seed: int
+    slot_prefix: str
+    language_targets: Mapping[str, int]
+    generator_note: str
+    adr: str
+    prior: tuple[str, ...] = ()
+    near_duplicate_jaccard: float | None = None
+    plan_task: str | None = None
+
+
+_NOTE = (
+    "generated {date} offline with llama.cpp by local open-weights models from non-Gemini, non-Claude "
+    "families (see data/provenance/{name}.json); briefs from public scam descriptions; no access to the "
+    "corpus, prompts or lexicons; accepted by automated checks only"
+)
+SHIFT_LOCAL_2_SEED = 20261022
+# The v2.2 judge (D63 v2.1 A6 verdict, PLAN_2026-10 A7): `shift_local_2` was looked at once by v2.1.
+SHIFT_LOCAL_3_SEED = 20261024
+# D70: kk/ru only. The English slots go to Kazakh, the weakest language (PLAN_2026-10 §0); mixed
+# stays 0 for the D65 reason (the model never code-switches). Same total as `shift_local`.
+SHIFT_LOCAL_2_TARGETS: dict[str, int] = {
+    "kk": LANGUAGE_TARGETS["kk"] + LANGUAGE_TARGETS["en"], "ru": LANGUAGE_TARGETS["ru"], "mixed": 0, "en": 0,
+}
+LOCAL_SPLITS: Mapping[str, LocalSplit] = MappingProxyType({
+    "shift_local": LocalSplit(
+        name="shift_local", plan_seed=PLAN_SEED, slot_prefix="sl",
+        language_targets=MappingProxyType(LANGUAGE_TARGETS),
+        generator_note=_NOTE.format(date="2026-10-09", name="shift_local"), adr="D65",
+    ),
+    "shift_local_2": LocalSplit(
+        name="shift_local_2", plan_seed=SHIFT_LOCAL_2_SEED, slot_prefix="sl2",
+        language_targets=MappingProxyType(SHIFT_LOCAL_2_TARGETS),
+        generator_note=_NOTE.format(date="2026-10-22", name="shift_local_2"), adr="D65",
+        prior=("shift_local",), near_duplicate_jaccard=0.7, plan_task="PLAN_2026-10 §4 A3",
+    ),
+    "shift_local_3": LocalSplit(
+        name="shift_local_3", plan_seed=SHIFT_LOCAL_3_SEED, slot_prefix="sl3",
+        language_targets=MappingProxyType(SHIFT_LOCAL_2_TARGETS),
+        generator_note=_NOTE.format(date="2026-10-23", name="shift_local_3"), adr="D65",
+        prior=("shift_local", "shift_local_2"), near_duplicate_jaccard=0.7, plan_task="PLAN_2026-10 A7",
+    ),
+})
+
+
 def system_prompt(language: str) -> str:
     return f"{SYSTEM_PROMPT} {_SYSTEM_LANGUAGE[language]}"
 _LABEL_NOTES = {
@@ -174,7 +232,9 @@ def load_briefs(path: Path) -> tuple[Brief, ...]:
     return briefs
 
 
-def build_plan(briefs: tuple[Brief, ...], *, seed: int = PLAN_SEED, targets: dict[str, int] | None = None) -> tuple[Slot, ...]:
+def build_plan(
+    briefs: tuple[Brief, ...], *, seed: int = PLAN_SEED, targets: Mapping[str, int] | None = None, prefix: str = "sl",
+) -> tuple[Slot, ...]:
     """Half scam, half legit per language (odd counts give legit the extra slot); each label's
     briefs are cycled in a per-language shuffled order so every brief is used before any repeats."""
     rng = random.Random(seed)
@@ -188,7 +248,7 @@ def build_plan(briefs: tuple[Brief, ...], *, seed: int = PLAN_SEED, targets: dic
             outcomes = SCAM_OUTCOMES if label == "scam" else LEGIT_OUTCOMES
             for index in range(counts[label]):
                 slots.append(Slot(
-                    slot_id=f"sl_{language}_{label}_{index + 1:02d}",
+                    slot_id=f"{prefix}_{language}_{label}_{index + 1:02d}",
                     language=language,
                     brief=order[index % len(order)],
                     persona=rng.choice(PERSONAS),
@@ -198,6 +258,12 @@ def build_plan(briefs: tuple[Brief, ...], *, seed: int = PLAN_SEED, targets: dic
                     generator=LANGUAGE_GENERATOR[language],
                 ))
     return tuple(slots)
+
+
+def plan_for(split: str, briefs: tuple[Brief, ...]) -> tuple[Slot, ...]:
+    """The fixed plan of a registered batch (`KeyError` for an unknown split)."""
+    spec = LOCAL_SPLITS[split]
+    return build_plan(briefs, seed=spec.plan_seed, targets=spec.language_targets, prefix=spec.slot_prefix)
 
 
 def user_prompt(slot: Slot) -> str:

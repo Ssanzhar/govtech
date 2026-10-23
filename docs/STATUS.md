@@ -1,10 +1,62 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: **2026-10-12**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
+_Last updated: **2026-10-24**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
 day (what is shipped, the honest numbers, the strategy, who does what). Then read this file
-(the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D68) and `docs/eval_report.md`
+(the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D70) and `docs/eval_report.md`
 (numbers, with intervals). The July sprint log below is kept as history._
 
+- **2026-10-24 — scrubber v3: dictation over hesitations (ADR D72).**
+  - An IIN or phone said with «эээ» / «...» in the middle was stored verbatim. Now it is masked
+    (Python + JS, fixtures regenerated, `sw.js` → v13).
+  - 3 stored rows change, all true PII (1 train, 2 ood). The corpus needs a rebuild before the
+    next HF upload; the publish guard blocks it until then. v1 is not retrained.
+- **2026-10-23 (later) — v2.2 trained, judged and NOT shipped (D63 v2.2).**
+  - **Data:** about 250 kk/code-switched dialogues, written by Claude and by Gemini (new
+    `gemini_writer`). The new judge is `shift_local_3` (129 calls).
+  - **On the judge:** v2.2 makes 2/65 false alarms (v1 6/65) and catches 43/64 scams (v1 32/64).
+  - **Fails A6 (a) and (c):** ood clean FPR rises 0 → 1, and a family money request now alerts.
+    v1 stays shipped.
+  - **v2.1 is cleaner:** at the same point on the same rows it makes none of those errors, and
+    catches 42/64 on `shift_local_3`.
+- **2026-10-23 — v2.1 trained, judged and NOT shipped (D63 v2.1 A4–A6); v2.2 next.**
+  - **v2.1 vs v1.** On the fresh judge `shift_local_2` v2.1 makes 0/65 false alarms (v1 2/65) and
+    catches 38/65 scams (v1 28/65). Clean test / authored / ood and styled FPR are unchanged, and
+    the new false alarms are institutional look-alikes only.
+  - **Not shipped.** The pre-registered browser gate fails on tag-set Jaccard, 0.899994 < 0.9, so
+    v1 stays and the export is reverted. v2.1 is kept frozen in `models/linear_v21_device`.
+  - **Next: v2.2.** About 250 Claude + Gemini dialogues, code-switched and Kazakh heavy, judged by a
+    new `shift_local_3`.
+- **2026-10-22 — v2.1 data ready for A4 (D63 v2.1 A1–A3, branch `feat/kkru-voice`).**
+  - `v21_legit` 300 rows (37 bank calls were rewritten without the "never ask for codes" line) and
+    `v21_scam` 236 rows (label rate 0.4765, the same as Gemini train). Both pass QC with 0 overlaps
+    and 0 near-duplicates. The fingerprint AUC stays ≈ 1, so the style confound remains and
+    `shift_local_2` is the judge.
+  - `shift_local_2`: 130 kk/ru calls by the local Qwen3.5-Kazakh model. It is local-only and
+    nothing has been scored on it.
+  - **Open:** the user reviews v21_legit_0100. Then A4: fold and retrain on device embeddings, with
+    the operating point pre-registered.
+- **2026-10-21 — kk/ru only; live word tags survive the endpoint (ADR D70), branch `feat/kkru-voice`.**
+  - **Decision:** stakeholders keep Qorğan Kazakh/Russian only. English leaves the voice pipeline
+    (Vosk-EN, handicap, 3-state LID). The `en` UI locale stays.
+  - **Bug fixed:** at a phrase end the live per-word tags were thrown away and the line was re-tagged
+    from one model's text. Now the committed utterance carries the span vote's words.
+    - Fallback, the deployed path: tag accuracy 0.786 → 0.874, WER 0.424 → 0.274.
+    - GigaAM path: its words inherit the live tags; tags changed at the endpoint 7.8 % → 1.6 %,
+      accuracy 0.920 → 0.931.
+  - **Gates:** npm 158/158, pytest 1652 passed.
+  - **Open:** the meter on real voice text needs `real_asr` (B1). The English *training-data*
+    ablation (A0) has not run. The ui-refresh branch (D69) also bumps `sw.js` to v12.
+- **2026-10-21 — Android for NITEC (`android/`, see `android/CORE_SPIKE.md`; never run on a phone).**
+  - **WebView shell:** the shell builds a debug APK. The start URL is set at build time (https or
+    localhost only), and the microphone is granted to that origin only.
+  - **TWA:** still blocked. It needs a production host, a signing key, assetlinks and Bubblewrap.
+  - **Kotlin text core (`:core` JVM + `:aar`):** scrubber, cue matcher, DJL tokenizer +
+    onnxruntime-android 1.21, heads and meter. JUnit 16/16 passes against the existing JS fixtures,
+    and the runtime gate is 0/200 flips against Python.
+  - **Risk (needs an ADR before native scoring):** the heads were trained on *browser* embeddings,
+    and native ORT flips 4/200 decisions against them, including one legitimate OOD bank call
+    scored 0.138 → 0.710. So it is either WebView scoring or heads retrained on native embeddings.
+  - **Sizes:** AAR 341 KB, plus 27 MB of arm64 native libraries and 266 MB of model files.
 - **2026-10-12 — v2 not shipped; v1 stays.** The taxonomy-v2 retrain improved `shift_local`
   recall 0.548 → 0.661 at equal FPR (3/64) but added 5 held-out false alarms (test 2/60, ood
   3/74). Two of them are ordinary family money requests, which failed the user's pre-stated

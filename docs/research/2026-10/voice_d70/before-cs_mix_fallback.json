@@ -1,0 +1,279 @@
+{
+ "variant": "after",
+ "scene": "cs_mix",
+ "audio_s": 37.04025,
+ "files": [
+  {
+   "file": "data/asr_capture/_wav/cs/cs_081_spliced_clean.wav",
+   "start": 5,
+   "seconds": 3.593125,
+   "speechStart": 5.016625,
+   "speechEnd": 8.5680625
+  },
+  {
+   "file": "data/asr_capture/_wav/cs/cs_085_spliced_clean.wav",
+   "start": 9.793125,
+   "seconds": 2.353875,
+   "speechStart": 9.8025625,
+   "speechEnd": 12.103875
+  },
+  {
+   "file": "data/asr_capture/_wav/cs/cs_086_spliced_clean.wav",
+   "start": 13.347,
+   "seconds": 2.15275,
+   "speechStart": 13.3519375,
+   "speechEnd": 15.471124999999999
+  },
+  {
+   "file": "data/asr_capture/_wav/cs/cs_087_spliced_clean.wav",
+   "start": 16.69975,
+   "seconds": 2.958375,
+   "speechStart": 16.704875,
+   "speechEnd": 19.635
+  },
+  {
+   "file": "data/asr_capture/_wav/cs/cs_001_single_clean.wav",
+   "start": 20.858125,
+   "seconds": 4.2068125,
+   "speechStart": 20.878875,
+   "speechEnd": 25.039625
+  },
+  {
+   "file": "data/asr_capture/_wav/cs/cs_002_single_clean.wav",
+   "start": 26.2649375,
+   "seconds": 5.059625,
+   "speechStart": 26.2836875,
+   "speechEnd": 31.2884375
+  },
+  {
+   "file": "data/asr_capture/_wav/cs/cs_003_single_clean.wav",
+   "start": 32.5245625,
+   "seconds": 3.3156875,
+   "speechStart": 32.533437500000005,
+   "speechEnd": 35.8128125
+  }
+ ],
+ "listening_after_ms": 4043,
+ "rss_mb": {
+  "listening": {
+   "total": 2624,
+   "browser": 163,
+   "GPU": 107,
+   "network.mojom.NetworkService": 46,
+   "renderer": 2252,
+   "audio.mojom.AudioService": 55
+  },
+  "end_of_audio": {
+   "total": 1465,
+   "browser": 107,
+   "GPU": 82,
+   "network.mojom.NetworkService": 42,
+   "renderer": 1183,
+   "audio.mojom.AudioService": 51
+  }
+ },
+ "js_heap_mb": 15,
+ "summary_score": "97 / 100",
+ "final_meter": 97.46460630408919,
+ "final_band": "critical",
+ "utterances": [
+  {
+   "seq": 0,
+   "text": "сіздің онлайн банкинг есептік жазбаңыз бұғатталды",
+   "language": "kk",
+   "confidence": 1,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "сіздің онлайн банкинг есептік жазбаңыз бұғатталды",
+    "confidence": 1
+   },
+   "decodeMs": null,
+   "latencyMs": 0.35500000044703484,
+   "meter": 47.781895283805284,
+   "band": "medium",
+   "at": 16728.449999999255,
+   "tags": "kk ru ru kk kk kk"
+  },
+  {
+   "seq": 1,
+   "text": "тіс радиодан калай назовите год",
+   "language": "kk",
+   "confidence": 0.8769316,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "тіс радиодан калай назовите год",
+    "confidence": 0.8769316
+   },
+   "decodeMs": null,
+   "latencyMs": 0.08000000193715096,
+   "meter": 64.75895712927002,
+   "band": "high",
+   "at": 19359.68499999866,
+   "tags": "kk kk kk ru ru"
+  },
+  {
+   "seq": 2,
+   "text": "юра грант есболат кодты айтыңыз",
+   "language": "kk",
+   "confidence": 1,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "юра грант есболат кодты айтыңыз",
+    "confidence": 1
+   },
+   "decodeMs": null,
+   "latencyMs": 0.3399999998509884,
+   "meter": 76.50221583087244,
+   "band": "high",
+   "at": 23257.68499999866,
+   "tags": "ru ru kk kk kk"
+  },
+  {
+   "seq": 3,
+   "text": "both security team says the a committee seems",
+   "language": "en",
+   "confidence": 0.903198,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "en",
+    "text": "both security team says the a committee seems",
+    "confidence": 0.903198
+   },
+   "decodeMs": null,
+   "latencyMs": 0.044999998062849045,
+   "meter": 86.5366938669582,
+   "band": "critical",
+   "at": 26866.980000000447,
+   "tags": "en en en en en en en en"
+  },
+  {
+   "seq": 4,
+   "text": "сәлеметсіз бе мен банктің су жұбы безопасности қызметкерімін",
+   "language": "kk",
+   "confidence": 0.99997775,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "сәлеметсіз бе мен банктің су жұбы безопасности қызметкерімін",
+    "confidence": 0.99997775
+   },
+   "decodeMs": null,
+   "latencyMs": 0.33500000089406967,
+   "meter": 92.33126167032896,
+   "band": "critical",
+   "at": 33331.73000000045,
+   "tags": "kk kk kk kk kk kk ru kk"
+  },
+  {
+   "seq": 5,
+   "text": "сәлеметсіз бе мен банктің су жұбы безопасности қызметкерімін сіздің картаңыздың подъезге черная операция жасалды қазір тоқтатамыз",
+   "language": "kk",
+   "confidence": 1,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "kk",
+    "text": "сәлеметсіз бе мен банктің су жұбы безопасности қызметкерімін сіздің картаңыздың подъезге черная операция жасалды қазір тоқтатамыз",
+    "confidence": 1
+   },
+   "decodeMs": null,
+   "latencyMs": 0.39499999955296516,
+   "meter": 95.91366540043367,
+   "band": "critical",
+   "at": 39501.33999999985,
+   "tags": "kk kk kk kk kk kk ru kk kk kk ru ru kk kk kk kk"
+  },
+  {
+   "seq": 6,
+   "text": "создан картами сдан подозрительная операция же солдат хазард охта там с телефона на свои георгием код из сайтами сша",
+   "language": "ru",
+   "confidence": 0.8291684210526316,
+   "source": "vosk",
+   "fallback": "unavailable",
+   "vosk": {
+    "language": "ru",
+    "text": "создан картами сдан подозрительная операция же солдат хазард охта там с телефона на свои георгием код из сайтами сша",
+    "confidence": 0.8291684210526316
+   },
+   "decodeMs": null,
+   "latencyMs": 0.1900000013411045,
+   "meter": 97.46460630408919,
+   "band": "critical",
+   "at": 43080.8049999997,
+   "tags": "ru ru ru ru ru ru kk kk ru ru ru ru ru ru ru ru ru ru ru"
+  }
+ ],
+ "latency_ms": {
+  "n": 7,
+  "median": 0.33500000089406967,
+  "max": 0.39499999955296516
+ },
+ "live_events": 300,
+ "live_snapshot": [
+  {
+   "lang": "kk",
+   "words": [
+    "сіздің",
+    "картаңыздың"
+   ]
+  },
+  {
+   "lang": "en",
+   "words": [
+    "the",
+    "region",
+    "they"
+   ]
+  }
+ ],
+ "endpoint": [
+  {
+   "status": "loading",
+   "at": 5355.539999999106
+  },
+  {
+   "status": "unavailable",
+   "reason": "Failed to execute 'importScripts' on 'WorkerGlobalScope': The script at 'http://127.0.0.1:8001/vendor/sherpa-onnx/1.13.8/sherpa-onnx-asr.js' failed to load.",
+   "at": 5366.484999999404
+  }
+ ],
+ "lines": [
+  {
+   "source": "vosk",
+   "text": "казсіздің русонлайн банкинг казесептік жазбаңыз бұғатталды каз · уверенность 100%"
+  },
+  {
+   "source": "vosk",
+   "text": "казтіс радиодан калай русназовите год каз · уверенность 88%"
+  },
+  {
+   "source": "vosk",
+   "text": "русюра грант казесболат кодты айтыңыз каз · уверенность 100%"
+  },
+  {
+   "source": "vosk",
+   "text": "англboth security team says the a committee seems англ · уверенность 90%"
+  },
+  {
+   "source": "vosk",
+   "text": "казсәлеметсіз бе мен банктің су жұбы русбезопасности казқызметкерімін каз · уверенность 100%"
+  },
+  {
+   "source": "vosk",
+   "text": "казсәлеметсіз бе мен банктің су жұбы русбезопасности казқызметкерімін сіздің картаңыздың русподъезге черная казоперация жасалды қазір тоқтатамыз каз · уверенность 100%"
+  },
+  {
+   "source": "vosk",
+   "text": "руссоздан картами сдан подозрительная операция же казсолдат хазард русохта там с телефона на свои георгием код из сайтами сша рус · уверенность 83%"
+  }
+ ],
+ "errors": []
+}

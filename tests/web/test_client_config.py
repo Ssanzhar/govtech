@@ -141,22 +141,17 @@ def test_export_names_the_on_device_asr_models():
     assert data["asr"]["sample_rate"] == cfg.asr_sample_rate
 
 
-def test_english_is_a_third_handicapped_recogniser_and_can_be_switched_off(monkeypatch):
-    # ADR D62: English joins the voice mode last in the vote order, ranked with a handicap so its
-    # confident garbage on kk/ru speech does not win; QORGAN_VOSK_MODEL_EN="" removes it.
-    cfg = get_config()
+def test_voice_mode_runs_kazakh_and_russian_recognisers_only(monkeypatch):
+    # ADR D70: kk/ru are the only call languages (stakeholders, 2026-10-21); the D62 English
+    # recogniser, its handicap and its "optional" slot are gone, and no setting brings them back.
     data = export_client_config()
-    # The JSON writer sorts keys (models arrive as en, kk, ru); the vote order travels as a list.
-    assert data["asr"]["order"] == ["kk", "ru", "en"]
-    assert json.loads(json.dumps(data, sort_keys=True))["asr"]["order"] == ["kk", "ru", "en"]
-    assert data["asr"]["models"]["en"] == {"id": cfg.vosk_model_en, "url": f"vosk/{cfg.vosk_model_en}.tar.gz"}
-    assert data["asr"]["handicap"] == {"en": cfg.asr_en_handicap}
-    assert 0 < cfg.asr_en_handicap < 1
-
-    monkeypatch.setenv("QORGAN_VOSK_MODEL_EN", "")
-    off = export_client_config()
-    assert off["asr"]["order"] == ["kk", "ru"] and set(off["asr"]["models"]) == {"kk", "ru"}
-    assert off["asr"]["handicap"] == {}
+    assert data["asr"]["order"] == ["kk", "ru"]
+    assert set(data["asr"]["models"]) == {"kk", "ru"}
+    assert data["asr"]["handicap"] == {}
+    assert data["asr"]["optional"] == []
+    monkeypatch.setenv("QORGAN_VOSK_MODEL_EN", "vosk-model-small-en-us-0.15")
+    assert set(export_client_config()["asr"]["models"]) == {"kk", "ru"}
+    assert not hasattr(get_config(), "vosk_model_en")
 
 
 def test_endpoint_pass_names_the_self_hosted_gigaam_model_and_runtime(monkeypatch):
@@ -180,8 +175,3 @@ def test_endpoint_pass_names_the_self_hosted_gigaam_model_and_runtime(monkeypatc
 
     monkeypatch.setenv("QORGAN_ASR_ENDPOINT_MODEL", "")
     assert export_client_config()["asr"]["endpoint"] is None
-
-
-def test_english_handicap_is_the_measured_real_speech_value():
-    # ADR D64: 0.05 gives English 0.910 of real English utterances and 0 false wins on real kk/ru.
-    assert export_client_config()["asr"]["handicap"] == {"en": 0.05}

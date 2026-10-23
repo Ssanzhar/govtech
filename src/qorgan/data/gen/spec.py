@@ -57,6 +57,27 @@ INSTRUCTIONS = (
     "from the cell exactly.",
 )
 
+# Added only to specs whose cells carry a `scenario` (v2.1), so earlier specs stay byte-identical.
+SCENARIO_INSTRUCTION = (
+    "Scenario (negative cells with `scenario` set): the brief says what the legitimate call is concretely "
+    "about. Write that situation, in your own words and details (names, amounts, places, who says what); "
+    "never copy the brief's wording into the dialogue."
+)
+
+# Added only to specs with a scam cell that carries a `scenario` (v2.1 `scam_scenarios`).
+SCAM_SCENARIO_INSTRUCTION = (
+    "Scenario (scam cells with `scenario` set): the brief describes a move the scammer makes in this call, on "
+    "top of the scheme, tactics, stage and phrasing. Write it in your own words and details; never copy the "
+    "brief's wording into the dialogue. The move named in the brief is not itself a tactic: annotate only "
+    "the glossary tactics the call shows."
+)
+
+# Added only to specs with a cell that carries a `constraint` (a regenerated cell, v2.1).
+CONSTRAINT_INSTRUCTION = (
+    "Constraint (cells with `constraint` set): the constraint is a hard rule for that one dialogue. It "
+    "overrides every other instruction, example and brief, including the confusable example above."
+)
+
 OUTPUT_SCHEMA = {
     "type": "object",
     "additionalProperties": False,
@@ -107,15 +128,25 @@ def glossaries(taxonomy, schemes, roles) -> dict:
     }
 
 
+def _cell_json(cell: GridCell) -> dict:
+    exclude = ({"run", "hard_negative"} | ({"scenario"} if cell.scenario is None else set())
+               | ({"constraint"} if cell.constraint is None else set()))
+    return json.loads(cell.model_dump_json(exclude=exclude))
+
+
 def build_chunk_spec(cells: Sequence[GridCell], *, run: str, chunk: str, taxonomy, schemes, roles) -> dict:
+    with_scenarios = any(c.scenario and c.kind == "legit" for c in cells)
+    with_scam_scenarios = any(c.scenario and c.kind == "scam" for c in cells)
+    with_constraints = any(c.constraint for c in cells)
     return {
         "spec_version": SPEC_VERSION,
         "run": run,
         "chunk": chunk,
-        "instructions": list(INSTRUCTIONS),
+        "instructions": list(INSTRUCTIONS) + ([SCENARIO_INSTRUCTION] if with_scenarios else [])
+        + ([SCAM_SCENARIO_INSTRUCTION] if with_scam_scenarios else []) + ([CONSTRAINT_INSTRUCTION] if with_constraints else []),
         "output_schema": OUTPUT_SCHEMA,
         "glossary": glossaries(taxonomy, schemes, roles),
-        "cells": [json.loads(c.model_dump_json(exclude={"run", "hard_negative"})) for c in cells],
+        "cells": [_cell_json(c) for c in cells],
     }
 
 

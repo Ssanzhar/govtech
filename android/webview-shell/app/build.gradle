@@ -1,12 +1,23 @@
 // Test harness for ADR D67 (debug builds only; no signing config: Gradle signs debug builds with
 // the SDK's local debug key, which never belongs in this repository).
+//
+// Start URL is a build-time property:  ./gradlew assembleDebug -PqorganUrl=https://host/live.html
+// Default: http://localhost:8000/live.html, i.e. `python -m qorgan.api` on the Mac made reachable
+// from a USB-connected phone with `adb reverse tcp:8000 tcp:8000` (localhost is a secure context,
+// so getUserMedia works over plain http there and nowhere else).
 plugins {
     id 'com.android.application'
+}
+
+def qorganUrl = (project.findProperty('qorganUrl') ?: 'http://localhost:8000/live.html').toString()
+if (!(qorganUrl ==~ /^https:\/\/.+/ || qorganUrl ==~ /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/.*/)) {
+    throw new GradleException("qorganUrl must be https:// or http://localhost (got ${qorganUrl}): the microphone needs a secure context")
 }
 
 android {
     namespace 'kz.qorgan.webviewshell'
     compileSdk 35
+    buildToolsVersion '35.0.0'
 
     defaultConfig {
         applicationId 'kz.qorgan.webviewshell'
@@ -14,6 +25,7 @@ android {
         targetSdk 35
         versionCode 1
         versionName '0.1.0'
+        buildConfigField 'String', 'QORGAN_URL', "\"${qorganUrl}\""
     }
 
     buildFeatures {

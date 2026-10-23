@@ -254,8 +254,8 @@ def ensure_asr_models() -> None:
     except Exception as exc:  # noqa: BLE001 - offline / tampered download: mic mode reports it
         _log(f"asr runtime: unavailable ({exc}); microphone mode will report it")
     cfg = get_config()
-    # English is the optional third recogniser (ADR D62); "" in QORGAN_VOSK_MODEL_EN skips it.
-    for name in (cfg.vosk_model_kk, cfg.vosk_model_ru, cfg.vosk_model_en):
+    # Kazakh and Russian only (ADR D70; the D62 English recogniser is gone).
+    for name in (cfg.vosk_model_kk, cfg.vosk_model_ru):
         if not name:
             continue
         try:

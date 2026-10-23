@@ -7,7 +7,7 @@ Model repo  sanzh-ts/govtech     <- models/linear (heads + metadata + web/weight
 Dataset repo sanzh-ts/govtech_ds <- the processed splits by explicit name + data/augment.
 Never published: data/processed/{incidents,organizations,citizen_reports,audit_log}.jsonl,
 real_heldout_v2.jsonl / real_train.jsonl (real partner calls, docs/DATA_INTAKE.md),
-data/synthetic/, data/real/, data/raw/ (incl. court_quotes, ADR D68), and the independent held-out `shift_local` (ADR D65)
+data/synthetic/, data/real/, data/raw/ (incl. court_quotes, ADR D68), and the independent held-outs `shift_local` / `shift_local_2` (ADR D65)
 -- the allow list (publish_guard.DATASET_ALLOW_PATTERNS) is the guard, keep it explicit.
 """
 
@@ -20,7 +20,7 @@ from qorgan.data.publish_guard import (
     DATASET_ALLOW_PATTERNS, PUBLISHED_SPLITS, assert_not_publishing_court_quotes, assert_publishable, find_unscrubbed,
 )
 
-# Independent held-outs never leave this machine (ADR D65): `shift_local` must not match.
+# Independent held-outs never leave this machine (ADR D65): `shift_local*` must not match.
 assert_publishable(DATASET_ALLOW_PATTERNS)
 assert_publishable([p.name for p in Path("data/augment").glob("*")])  # the augment folder goes up whole
 # Real court-verdict quotes (ADR D68) never leave the machine either.
@@ -51,7 +51,7 @@ api.upload_folder(repo_id=MODEL_REPO, repo_type="model", folder_path="data/lexic
 DATASET_REPO = "sanzh-ts/govtech_ds"
 api.upload_folder(
     repo_id=DATASET_REPO, repo_type="dataset", folder_path="data/processed",
-    # train/val/test/authored_heldout/ood/adversarial*/manifest + shift (ADR D35); never shift_local (D65)
+    # train/val/test/authored_heldout/ood/adversarial*/manifest + shift (ADR D35); never shift_local / shift_local_2 (D65)
     allow_patterns=list(DATASET_ALLOW_PATTERNS),
     # The pre-A2 name of the hand-written set; it was never real calls, but the name misleads.
     delete_patterns=["real_heldout.jsonl"],

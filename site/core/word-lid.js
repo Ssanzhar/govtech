@@ -1,14 +1,15 @@
-/* Per-word language tags (kk / ru / en) for a transcript from the joint recogniser (ADR D64).
+/* Per-word language tags (kk / ru) for a transcript from the joint recogniser (ADR D64, D70).
 
    A 1:1 port of `scripts/spikes/asr_wordlevel/word_lid.py`, pinned by
    tests_js/fixtures/word_lid.json (`scripts/export_asr_wordlevel.py`):
-   - the letters decide when they can: a Latin letter -> en, a Kazakh-only letter -> kk;
+   - the letters decide when they can: a Kazakh-only letter -> kk; a Latin word ("sms", "kaspi")
+     is neutral and follows its neighbours (kk/ru are the only call languages, ADR D70);
    - plain-Cyrillic words are scored by a char-trigram LM per language (kk, ru) plus a
      word-frequency lexicon, and the utterance is decoded with Viterbi under a language-switch
      penalty, so a lone ambiguous word ("мен", "код") follows its neighbours.
    The model (`asr-wordlevel.json → lid`) was fitted on the `train` split only. Pure, no I/O. */
 
-export const LANGS = Object.freeze(["kk", "ru", "en"]);
+export const LANGS = Object.freeze(["kk", "ru"]);
 const PAD_START = "^";
 const PAD_END = "$";
 const ADD_K = 0.1; // CharLM add-k smoothing
@@ -68,6 +69,8 @@ export function createWordLid(lid) {
     charLogprob: (word, lang) => charLogprob(model, word, lang),
     emission: (word, lang) => emission(model, word, lang),
     tag: (words) => tagWords(model, words),
+    // ADR D70: `hints[i]` (a language or null) costs every other language `weight` nats.
+    tagWithHints: (words, hints, weight) => tagWords(model, words, hints, weight),
     tagText: (text) => {
       const words = normalizeWords(text);
       const tags = tagWords(model, words);
@@ -92,19 +95,22 @@ function charLogprob(model, word, lang) {
 
 function emission(model, word, lang) {
   const decided = letterLanguage(word, model.kazakhOnly);
+  if (decided === "en") return 0; // neutral: no English state since ADR D70
   if (decided) return decided === lang ? 0 : -model.hard;
-  if (lang === "en") return -model.hard;
   const lex = model.lexicons[lang];
   const lexLp = Math.log(((lex.counts[word] ?? 0) + LEX_ADD) / (lex.total + LEX_ADD * model.lexiconVocab));
   return charLogprob(model, word, lang) + model.lexiconWeight * lexLp;
 }
 
-/** Viterbi over LANGS; ties go to the earlier language in LANGS (Python `max` semantics). */
-function tagWords(model, words) {
+/** Viterbi over LANGS; ties go to the earlier language in LANGS (Python `max` semantics).
+    With `hints` (spike `inherit.py tag_with_hints`), a hinted word pays `weight` for every
+    language but its hint. */
+function tagWords(model, words, hints = null, weight = 0) {
   if (!words.length) return [];
-  let scores = Object.fromEntries(LANGS.map((l) => [l, emission(model, words[0], l)]));
+  const em = (i, l) => emission(model, words[i], l) - (hints?.[i] && l !== hints[i] ? weight : 0);
+  let scores = Object.fromEntries(LANGS.map((l) => [l, em(0, l)]));
   const back = [];
-  for (const word of words.slice(1)) {
+  for (let i = 1; i < words.length; i++) {
     const step = {};
     const ptr = {};
     for (const l of LANGS) {
@@ -114,7 +120,7 @@ function tagWords(model, words) {
         const s = scores[p] - (p === l ? 0 : model.switchPenalty);
         if (s > best) { best = s; prev = p; }
       }
-      step[l] = best + emission(model, word, l);
+      step[l] = best + em(i, l);
       ptr[l] = prev;
     }
     scores = step;

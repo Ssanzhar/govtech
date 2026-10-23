@@ -163,15 +163,16 @@ def test_committed_provenance_never_carries_text():
     assert "utterances" not in json.dumps(record)
 
 
-def test_local_shift_local_shares_nothing_with_training_data():
-    """Track 2 adds generated training rows: none may coincide with the independent held-out."""
+@pytest.mark.parametrize("split_name", [SPLIT_NAME, "shift_local_2", "shift_local_3"])
+def test_local_shift_local_shares_nothing_with_training_data(split_name):
+    """Track 2 adds generated training rows: none may coincide with the independent held-outs."""
     from qorgan.data.build_corpus import normalize_for_dedup
     from qorgan.data.schema import Dialogue
 
     processed = _REPO / "data" / "processed"
-    held_out = processed / f"{SPLIT_NAME}.jsonl"
+    held_out = processed / f"{split_name}.jsonl"
     if not held_out.exists():
-        pytest.skip("shift_local not built locally")
+        pytest.skip(f"{split_name} not built locally")
 
     def texts(path: Path) -> set[str]:
         if not path.exists():

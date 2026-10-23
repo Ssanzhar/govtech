@@ -334,15 +334,16 @@ const showActivity = (key) => {
   partialEl.hidden = !key;
 };
 
-/** Provisional words while the person speaks (the span vote, ADR D64). English stays marked
-    provisional (live English recall is 0.29); the endpoint pass replaces the whole line. */
+/** Provisional words while the person speaks (the span vote, ADR D64): a word stays marked
+    provisional until its stretch is frozen. In the fallback the committed line keeps these words
+    and tags (ADR D70); GigaAM's text, when it is ready, replaces them. */
 const showLiveWords = (words) => {
   liveEl.hidden = !words?.length;
   if (!words?.length) {
     liveWordsEl.innerHTML = "";
     return;
   }
-  liveWordsEl.innerHTML = runsHtml(words, (w) => esc(w.word), (w) => (w.frozen && w.lang !== "en" ? "" : " is-provisional"));
+  liveWordsEl.innerHTML = runsHtml(words, (w) => esc(w.word), (w) => (w.frozen ? "" : " is-provisional"));
   localize(liveWordsEl);
 };
 

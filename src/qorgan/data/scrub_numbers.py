@@ -14,7 +14,9 @@ composed into the digit string a listener would write down (dictation groups: «
   grouping is unusual («940101 300123», «707 123 45 67»);
 - a run followed by a currency word or sign is an amount and stays («150 000 000 000 тенге»);
 - a run may continue over an utterance break (a dictation split by the endpointer), but it is
-  replaced line by line so the utterance structure survives.
+  replaced line by line so the utterance structure survives;
+- a run may continue over a hesitation (ADR D72): an ellipsis and/or at most two filler sounds
+  («940101... эээ... 300123», «707, әә, 123 45 67»). A full stop or any real word still ends it.
 
 Multiplier words (тысяча, миллион, мың, thousand …) are not number tokens, so amounts said with
 them never form a long run. `site/core/scrub-numbers.js` is a 1:1 port.
@@ -22,6 +24,7 @@ them never form a long run. `site/core/scrub-numbers.js` is a 1:1 port.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 
 from qorgan.data.scrub_tokens import (
@@ -39,6 +42,13 @@ _MAX_GAP_CHARS = 3
 # Dictation gaps only: an em/en dash is prose punctuation («12345678901 — одиннадцать цифр»).
 _GAP_CHARS = frozenset(" \t\r\n\u00a0,-")
 _DIGIT_GROUP_GAPS = frozenset({" ", "-"})
+# A hesitation inside a dictation: filler sounds (never a lone «а», a conjunction) between
+# separator pieces of gap characters and ellipses; it must hold a filler or an ellipsis.
+_FILLER = re.compile(r"(?:э+|э+м+|ә+|аа+|мм+|хм+|uh+|um+|hm+)")
+_MAX_FILLERS = 2
+_MAX_HESITATION_PIECE_CHARS = 5
+_HESITATION_CHARS = _GAP_CHARS | {".", "\u2026"}
+_ELLIPSES = ("..", "\u2026")
 _ASCII_WORD = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
 _CURRENCY_WORDS = frozenset(
     {"тенге", "теңге", "тг", "tenge", "kzt", "рублей", "рубля", "руб", "долларов", "доллара",
@@ -197,8 +207,24 @@ def spoken_digits(text: str) -> str:
 # --- runs ------------------------------------------------------------------------------------
 
 
+def _is_filler(token: Token) -> bool:
+    return token.kind == "letters" and _FILLER.fullmatch(token.folded) is not None
+
+
+def _is_hesitation(gap: str) -> bool:
+    fillers = tokenize(gap)
+    if len(fillers) > _MAX_FILLERS or not all(_is_filler(token) for token in fillers):
+        return False
+    bounds = [0, *(edge for token in fillers for edge in (token.start, token.end)), len(gap)]
+    pieces = [gap[start:end] for start, end in zip(bounds[::2], bounds[1::2])]
+    if any(len(piece) > _MAX_HESITATION_PIECE_CHARS or not set(piece) <= _HESITATION_CHARS for piece in pieces):
+        return False
+    return bool(fillers) or any(mark in gap for mark in _ELLIPSES)
+
+
 def _joinable(gap: str) -> bool:
-    return len(gap) <= _MAX_GAP_CHARS and all(character in _GAP_CHARS for character in gap)
+    plain = len(gap) <= _MAX_GAP_CHARS and all(character in _GAP_CHARS for character in gap)
+    return plain or _is_hesitation(gap)
 
 
 def _runs(text: str, tokens: Sequence[Token]) -> list[list[int]]:
@@ -206,6 +232,8 @@ def _runs(text: str, tokens: Sequence[Token]) -> list[list[int]]:
     runs: list[list[int]] = []
     current: list[int] = []
     for index, token in enumerate(tokens):
+        if current and _is_filler(token):
+            continue  # judged with the gap it sits in, when the next number token arrives
         if _number_kind(token) is None:
             if current:
                 runs.append(current)
@@ -243,7 +271,7 @@ def _digit_groups_qualify(text: str, run: Sequence[Token], digits: str) -> bool:
     if len(run) < 2 or _placeholder_for(digits) == NUMBER_PLACEHOLDER:
         return False
     gaps = [text[a.end : b.start] for a, b in zip(run, run[1:])]
-    if not all(gap in _DIGIT_GROUP_GAPS for gap in gaps):
+    if not all(gap in _DIGIT_GROUP_GAPS or _is_hesitation(gap) for gap in gaps):
         return False
     before = text[run[0].start - 1] if run[0].start > 0 else ""
     after = text[run[-1].end] if run[-1].end < len(text) else ""

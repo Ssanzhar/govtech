@@ -5,9 +5,14 @@
    (ties: lexicon order). Pinned by tests_js/fixtures/roles.json.
    Self-introduction by organisation (phase 2): per line, tokens = runs of letters/digits folded
    per character (lower, ё -> е); an organisation (`orgs`, `*` = prefix token, else exact or
-   exact + ablative affix) is a claim when it carries an affix and opens the line, or an intro
-   marker sits within `intro.window` tokens (nearest wins, ties: before). Longest organisation
-   wins at a position; per role the earlier of cue span and intro span (ties: longer). */
+   exact + ablative affix; a separate ablative token right after it belongs to it) is a claim
+   only when an intro marker sits within `intro.window` tokens in the same sentence (no
+   `intro.sentence_end` character between them); nearest wins, ties: before. D63 v2.1 channel
+   veto (`intro.channel`): a `before` word right before it, an `after` word right after it (after
+   any ablative token), a separate non-ablative case affix right after it, or a negation between
+   a preceding marker and it vetoes the organisation; a negation between it and a following
+   marker drops only that marker. Longest organisation wins at a position; per role the earlier
+   of cue span and intro span (ties: longer). */
 
 import { findCue } from "./cue-match.js";
 
@@ -89,16 +94,44 @@ function markerRanges(tokens, intro) {
   return ranges;
 }
 
-function introSpan(tokens, first, last, remainder, markers, intro) {
-  const opensLine = first <= intro.window;
-  if (opensLine && remainder && intro.affixes.some((a) => remainder.endsWith(a))) return [first, last];
-  if (opensLine && !remainder && last + 1 < tokens.length && intro.affixes.includes(tokens[last + 1][0])) return [first, last + 1];
+function isWord(tokens, at, patterns) {
+  return at >= 0 && at < tokens.length && (patterns || []).some((p) => tokenMatch(tokens[at][0], p, []) !== null);
+}
+
+function orgEnd(tokens, last, remainder, intro) {
+  return !remainder && last + 1 < tokens.length && intro.affixes.includes(tokens[last + 1][0]) ? last + 1 : last;
+}
+
+function isChannel(tokens, first, last, end, channel) {
+  if (isWord(tokens, first - 1, channel.before) || isWord(tokens, end + 1, channel.after)) return true;
+  return end === last && last + 1 < tokens.length && (channel.affixes || []).includes(tokens[last + 1][0]);
+}
+
+function blocked(tokens, lo, hi, channel) {
+  for (let at = lo; at <= hi; at += 1) if (isWord(tokens, at, channel.blockers)) return true;
+  return false;
+}
+
+function sameSentence(line, tokens, left, right, intro) {
+  const gap = line.slice(tokens[left][2], tokens[right][1]);
+  return ![...gap].some((c) => (intro.sentence_end || "").includes(c));
+}
+
+function introSpan(line, tokens, first, last, remainder, markers, intro) {
+  const channel = intro.channel || {};
+  const end = orgEnd(tokens, last, remainder, intro);
+  if (isChannel(tokens, first, last, end, channel)) return null;
   let best = null;
   for (const [mStart, mEnd] of markers) {
-    let gap; let after;
-    if (mEnd < first) { gap = first - mEnd - 1; after = 0; } else if (mStart > last) { gap = mStart - last - 1; after = 1; } else continue;
-    if (gap <= intro.window && (best === null || gap < best.gap || (gap === best.gap && after < best.after))) {
-      best = { gap, after, start: Math.min(first, mStart), end: Math.max(last, mEnd) };
+    let gap; let after; let lo; let hi;
+    if (mEnd < first) { gap = first - mEnd - 1; after = 0; lo = mEnd; hi = first; } else if (mStart > end) { gap = mStart - end - 1; after = 1; lo = end; hi = mStart; } else continue;
+    if (gap > intro.window || !sameSentence(line, tokens, lo, hi, intro)) continue;
+    if (blocked(tokens, lo + 1, hi - 1, channel)) {
+      if (!after) return null; // «Это не Kaspi»: the organisation is denied
+      continue; // «Kaspi, не беспокойтесь»: only this marker is dropped
+    }
+    if (best === null || gap < best.gap || (gap === best.gap && after < best.after)) {
+      best = { gap, after, start: Math.min(first, mStart), end: Math.max(end, mEnd) };
     }
   }
   return best === null ? null : [best.start, best.end];
@@ -107,7 +140,7 @@ function introSpan(tokens, first, last, remainder, markers, intro) {
 /** {role order: earliest self-introduction span}. */
 export function introClaims(transcript, roles, intro) {
   const found = new Map();
-  if (!intro || (!intro.markers.length && !intro.affixes.length)) return found;
+  if (!intro || !intro.markers.length) return found;
   let offset = 0;
   for (const line of transcript.split(BOUNDARY)) {
     const tokens = tokenize(line);
@@ -116,7 +149,7 @@ export function introClaims(transcript, roles, intro) {
     while (at < tokens.length) {
       const org = orgAt(tokens, at, roles, intro.affixes);
       if (org === null) { at += 1; continue; }
-      const span = introSpan(tokens, at, at + org.length - 1, org.remainder, markers, intro);
+      const span = introSpan(line, tokens, at, at + org.length - 1, org.remainder, markers, intro);
       if (span !== null && !found.has(org.order)) {
         const start = tokens[span[0]][1] + offset;
         const end = tokens[span[1]][2] + offset;

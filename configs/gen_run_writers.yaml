@@ -1,0 +1,5 @@
+# Who wrote each generation run (ADR D63 v2.2). Runs not listed were written by Claude agents
+# (pilot, p2, v21_legit, v21_scam). `gemini_grid` = Gemini writing the same grid chunk specs; its
+# rows carry v2 labels and are NOT masked like the legacy v1 Gemini corpus (`gemini`).
+writers:
+  v22_gemini: gemini_grid

@@ -26,7 +26,7 @@ class Params:
     switch: float = 1.0
     missing: float = -4.0
     pause: float | None = 0.15
-    bias: dict = field(default_factory=lambda: {"kk": 0.0, "ru": 0.0, "en": 0.0})
+    bias: dict = field(default_factory=lambda: dict.fromkeys(LANGS, 0.0))
     raw: bool = False          # True: emission = raw conf (minus `handicap`), no HMM (baseline b)
     handicap: dict = field(default_factory=dict)
 

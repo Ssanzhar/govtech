@@ -199,6 +199,7 @@ def build_corpus(
     gen_dialogues: Sequence[Dialogue] = (),
     label_space: str = "v1",
     review_decisions: Mapping[str, dict] | None = None,
+    gen_writers: Mapping[str, str] | None = None,
 ) -> dict:
     """Assemble, clean, split, and persist the corpus; return the manifest.
 
@@ -282,7 +283,7 @@ def build_corpus(
     manifest["asr_style_fraction"] = active_asr_fraction
     manifest["adversarial_count"] = _copy_adversarial(cfg.data_dir / "adversarial", active_processed)
     if label_space != "v1" or generated_ids:
-        provenance = build_provenance(splits, generated_ids, label_space)
+        provenance = build_provenance(splits, generated_ids, label_space, gen_writers)
         (active_processed / PROVENANCE_FILE).write_text(json.dumps(provenance, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
         manifest["label_space"] = label_space
         manifest["generator_balance"] = provenance["balance"]
@@ -296,17 +297,24 @@ PROVENANCE_FILE = "provenance.json"
 _ASR_SUFFIX = "-asr"
 
 
-def build_provenance(splits: Mapping[str, Sequence[Dialogue]], generated_ids: set[str], label_space: str) -> dict:
+def build_provenance(
+    splits: Mapping[str, Sequence[Dialogue]], generated_ids: set[str], label_space: str,
+    writers: Mapping[str, str] | None = None,
+) -> dict:
     """Generator per train/val row (an `-asr` copy inherits its source's) and P(scam | generator)
-    per split -- the style-confound check (ADR D63 phase 2). Ids only, no text."""
+    per split -- the style-confound check (ADR D63 phase 2). A generated row's generator is its
+    run's writer (`writers`, id -> writer; Claude when absent). Ids only, no text."""
     from qorgan.data.gen.fold import GENERATOR_CLAUDE, GENERATOR_GEMINI
+
+    writers = writers or {}
 
     generator: dict[str, str] = {}
     balance: dict[str, dict] = {}
     for name in ("train", "val"):
         counts: dict[str, dict[str, int]] = {}
         for d in splits.get(name, ()):
-            source = GENERATOR_CLAUDE if d.id.removesuffix(_ASR_SUFFIX) in generated_ids else GENERATOR_GEMINI
+            base = d.id.removesuffix(_ASR_SUFFIX)
+            source = writers.get(base, GENERATOR_CLAUDE) if base in generated_ids else GENERATOR_GEMINI
             generator[d.id] = source
             bucket = counts.setdefault(source, {"rows": 0, "scam": 0})
             bucket["rows"] += 1
@@ -373,12 +381,19 @@ def main(argv: Sequence[str] | None = None) -> None:
     corpus_cfg = load_corpus_config(args.config)
     augment_dir = args.augment_dir or (get_config().data_dir / "augment")
     gen_dialogues: list[Dialogue] = []
+    gen_writers: dict[str, str] = {}
     if args.gen_run:
         from qorgan.data.gen.__main__ import run_dir
-        from qorgan.data.gen.fold import accepted_dialogues
+        from qorgan.data.gen.fold import (
+            REVIEW_REJECTS, RUN_WRITERS, accepted_dialogues, load_review_rejects, load_run_writers, run_writer,
+        )
 
+        rejected = load_review_rejects(get_config().repo_root / REVIEW_REJECTS)
+        writers = load_run_writers(get_config().repo_root / RUN_WRITERS)
         for run in args.gen_run:
-            gen_dialogues += accepted_dialogues(run_dir(run))
+            run_rows = accepted_dialogues(run_dir(run), rejected=rejected)
+            gen_dialogues += run_rows
+            gen_writers.update({d.id: run_writer(run, writers) for d in run_rows})
     decisions = None
     if args.label_space == "v2":
         from qorgan.data.migrate_v2 import load_review_decisions
@@ -392,6 +407,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         gen_dialogues=gen_dialogues,
         label_space=args.label_space,
         review_decisions=decisions,
+        gen_writers=gen_writers,
     )
     print(json.dumps(manifest, ensure_ascii=False, indent=2))
 

@@ -48,8 +48,20 @@ test("code-switched GigaAM text is tagged word by word; the utterance language i
   ]);
   assert.equal(emits[0].language, "kk");
   assert.ok(emits[0].words.some((w) => w.lang === "ru"), "the Russian insertion keeps its own tag");
-  const en = run(initialEndpointState("ready"), [{ type: "utterance", utterance: vosk("зе код", "ru") }, { type: "decoded", seq: 0, text: "read me the code now" }]);
-  assert.equal(en.emits[0].language, "en");
+  // ADR D70: no English call language -- Latin words never become a third tag
+  const latin = run(initialEndpointState("ready"), [{ type: "utterance", utterance: vosk("зе код", "ru") }, { type: "decoded", seq: 0, text: "read me the code now" }]);
+  assert.ok(["kk", "ru"].includes(latin.emits[0].language));
+  assert.ok(latin.emits[0].words.every((w) => w.lang === "kk" || w.lang === "ru"));
+});
+
+test("ready: the tagger gets the utterance's live words, so GigaAM's words can inherit their tags (ADR D70)", () => {
+  const seen = [];
+  const tagText = (text, live) => { seen.push(live); return lid.tagText(text); };
+  const words = [{ word: "назовите", start: 0, end: 0.5, lang: "ru" }, { word: "код", start: 0.5, end: 0.8, lang: "ru" }];
+  let out = reduceEndpoint(initialEndpointState("ready"), { type: "utterance", utterance: { ...vosk("назовите код"), words } }, { tagText });
+  out = reduceEndpoint(out.state, { type: "decoded", seq: 0, text: "назовите код" }, { tagText });
+  assert.equal(out.emits[0].source, "gigaam");
+  assert.deepEqual(seen.at(-1), words);
 });
 
 test("answers out of order are emitted in commit order", () => {
@@ -76,6 +88,33 @@ test("fallback: while GigaAM loads, the Vosk vote is used immediately and marked
   assert.equal(emits[0].text, "назовите код");
   assert.equal(emits[0].confidence, 0.8);
   assert.deepEqual(emits[0].words.map((w) => w.word), ["назовите", "код"]);
+});
+
+// ADR D70: the fallback used to re-tag one monolingual model's whole text (word-language accuracy
+// 0.786); the span vote's words keep the tags the person already saw (0.874).
+test("fallback: the span vote's committed words and tags are kept, not re-tagged", () => {
+  const words = [
+    { word: "сәлеметсіз", start: 0, end: 0.7, lang: "kk" },
+    { word: "бе", start: 0.7, end: 0.9, lang: "kk" },
+    { word: "службы", start: 1.0, end: 1.5, lang: "ru" },
+    { word: "безопасности", start: 1.5, end: 2.2, lang: "ru" },
+  ];
+  const utterance = { language: "ru", text: "салем бе службы безопасности", confidence: 0.6, start: 0, end: 2.2, words };
+  const { emits } = run(initialEndpointState("loading"), [{ type: "utterance", utterance }]);
+  const [u] = emits;
+  assert.equal(u.source, "vosk");
+  assert.equal(u.fallback, "loading");
+  assert.equal(u.text, "сәлеметсіз бе службы безопасности");
+  assert.deepEqual(u.words, words.map(({ word, lang }) => ({ word, lang })));
+  assert.equal(u.language, "ru"); // a 2-2 tie keeps the vote's language
+  assert.equal(u.confidence, 0.6);
+  assert.deepEqual(u.vosk, { language: "ru", text: "салем бе службы безопасности", confidence: 0.6 });
+});
+
+test("fallback: without live words (no word-level models) the vote's text is tagged as before", () => {
+  const { emits } = run(initialEndpointState("unavailable"), [{ type: "utterance", utterance: { ...vosk("назовите код"), words: [] } }]);
+  assert.equal(emits[0].text, "назовите код");
+  assert.deepEqual(emits[0].words, lid.tagText("назовите код"));
 });
 
 test("fallback: GigaAM becoming unavailable releases everything pending, in order", () => {
@@ -109,6 +148,6 @@ test("a late or duplicate answer is ignored; inputs are never mutated", () => {
 
 test("majorityLanguage: ties keep the vote's language", () => {
   assert.equal(majorityLanguage([{ lang: "kk" }, { lang: "ru" }], "ru"), "ru");
-  assert.equal(majorityLanguage([{ lang: "kk" }, { lang: "ru" }], "en"), "kk");
+  assert.equal(majorityLanguage([{ lang: "kk" }, { lang: "ru" }], null), "kk");
   assert.equal(majorityLanguage([], "ru"), "ru");
 });

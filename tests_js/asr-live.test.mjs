@@ -61,6 +61,31 @@ test("the committed utterance carries its audio span; the live hypotheses and th
   assert.deepEqual(out.state.live, { finals: {}, partials: {}, freeze: { spans: [], until: 0 }, after: 2.3 });
 });
 
+// The live tags used to die at the endpoint: the utterance carried only the winning model's text,
+// which was re-tagged from scratch (word-language accuracy 0.874 live -> 0.786 final; ADR D70).
+test("the committed utterance carries the span vote's tagged words over its own audio", () => {
+  const opts = { voter };
+  const ru = [["назовите", 1.2, 1.8, 0.9], ["код", 1.8, 2.3, 0.9]];
+  const kk = [["назови", 1.1, 1.7, 0.4], ["те", 1.7, 1.9, 0.4]];
+  let out = reduceAsrEvent(initialAsrState(["kk", "ru"]), { type: "result", language: "ru", detail: timed("result", ru) }, 200, opts);
+  out = reduceAsrEvent(out.state, { type: "result", language: "kk", detail: timed("result", kk) }, 300, opts);
+  const utterance = out.emits.find((e) => e.type === "utterance");
+  const expected = voter.label({ kk, ru }).words.map(([word, start, end, lang]) => ({ word, start, end, lang }));
+  assert.ok(expected.length > 0);
+  assert.deepEqual(utterance.words, expected);
+  assert.equal(utterance.text, "назовите код"); // the vote's own text is still reported
+});
+
+test("the committed words also come with a commit forced by the align window", () => {
+  const opts = { voter };
+  let out = reduceAsrEvent(initialAsrState(["kk", "ru"]), { type: "partial", language: "kk", detail: timed("partial", [["сәлем", 0, 0.5, 0.95]]) }, 900, opts);
+  out = reduceAsrEvent(out.state, { type: "result", language: "ru", detail: timed("result", [["салем", 0, 0.5, 0.4]]) }, 1000, opts);
+  out = reduceAsrEvent(out.state, { type: "tick" }, 2300, opts);
+  const utterance = out.emits.find((e) => e.type === "utterance");
+  assert.ok(Array.isArray(utterance.words) && utterance.words.length === 1);
+  assert.ok(["kk", "ru"].includes(utterance.words[0].lang));
+});
+
 test("without a voter the reducer behaves exactly as before: no live emits, no timing on untimed words", () => {
   const out = reduceAsrEvent(initialAsrState(["kk", "ru"]), { type: "partial", language: "ru", detail: timed("partial", [["алло", 0, 0.4, 1]]) }, 100);
   assert.deepEqual(out.emits, [{ type: "partial", language: "ru", text: "алло" }]);

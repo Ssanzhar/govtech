@@ -4,14 +4,15 @@
 
    `reduceEndpoint` is a pure state machine over:
      {type: "status", status: "loading" | "ready" | "unavailable", reason?}
-     {type: "utterance", utterance}   -- a Vosk vote result ({language, text, confidence, start?, end?})
+     {type: "utterance", utterance}   -- a Vosk vote result ({language, text, confidence, start?, end?, words?})
      {type: "decoded", seq, text, decodeMs?}
      {type: "failed", seq, reason}
    and returns `{state, emits, requests}`:
      emits    -- final utterances, strictly in commit order: {seq, text, language, confidence,
                  words: [{word, lang}], source: "gigaam" | "vosk", fallback?, vosk, decodeMs?}
      requests -- {type: "decode", seq, start, end} for the runtime to cut the audio and post.
-   Fallback (the shipped per-utterance Vosk vote, clearly marked `source: "vosk"` with a reason)
+   Fallback (the Vosk pass -- the span vote's words when present, else the per-utterance vote --
+   clearly marked `source: "vosk"` with a reason)
    whenever GigaAM is not ready ("loading" / "unavailable"), the utterance has no timing
    ("no_timing"), the decode failed or timed out, or GigaAM returned nothing ("empty").
    Inputs are never mutated. */
@@ -36,12 +37,17 @@ export function majorityLanguage(words, preferred = null) {
 
 const voskView = (u) => ({ language: u.language, text: u.text, confidence: u.confidence });
 
-/** The Vosk vote's utterance as the final one (the fallback), with its own words tagged. */
+/** The Vosk vote's utterance as the final one (the fallback). With the span vote's committed
+    words (ADR D70) those words are the text and keep their live tags -- re-tagging the winning
+    model's monolingual text measured 0.786 word-language accuracy (WER 0.424) against the span
+    vote's 0.874 (WER 0.274) on the kk/ru code-switch TEST set;
+    without them, the vote's own text is tagged. */
 export function fallbackUtterance(utterance, reason, tagText) {
-  const words = tagText ? tagText(utterance.text) : [];
+  const live = Array.isArray(utterance.words) && utterance.words.length ? utterance.words : null;
+  const words = live ? live.map(({ word, lang }) => ({ word, lang })) : tagText ? tagText(utterance.text) : [];
   return {
-    text: utterance.text,
-    language: utterance.language,
+    text: live ? live.map((w) => w.word).join(" ") : utterance.text,
+    language: live ? majorityLanguage(words, utterance.language) : utterance.language,
     // The meter's step size keeps the recogniser's confidence, as before (ADR D26).
     confidence: utterance.confidence,
     words,
@@ -52,9 +58,12 @@ export function fallbackUtterance(utterance, reason, tagText) {
 }
 
 /** GigaAM's transcript replaces the Vosk text; the meter keeps the vote's confidence (GigaAM's
-    CTC decode exposes none), so the meter moves exactly as fast as it did before (FPR-first). */
+    CTC decode exposes none), so the meter moves exactly as fast as it did before (FPR-first).
+    `tagText(text, live)` gets the utterance's live span-vote words, so a tagger that inherits
+    them (word-align.js, ADR D70) keeps the tags the person already saw. */
 export function replacedUtterance(utterance, text, tagText, decodeMs = null) {
-  const words = tagText(text);
+  const live = Array.isArray(utterance.words) && utterance.words.length ? utterance.words : null;
+  const words = tagText(text, live);
   return {
     text: String(text).trim().replace(/\s+/g, " "),
     language: majorityLanguage(words, utterance.language),

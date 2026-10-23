@@ -48,8 +48,9 @@ __all__ = [
 # Bumped whenever a rule change can alter already-scrubbed text. The corpus manifest records the
 # version its text was scrubbed with (absent = 1); data on disk older than this is a pending
 # rebuild, and `scripts/hf_upload.py` refuses to publish it until then (it is no fixed point).
-# 1 = digits-only rules (D45); 2 = spoken numbers, split digit groups, IBAN, names (D66).
-SCRUBBER_VERSION = 2
+# 1 = digits-only rules (D45); 2 = spoken numbers, split digit groups, IBAN, names (D66);
+# 3 = a dictation may continue over a hesitation («940101... эээ... 300123», D72).
+SCRUBBER_VERSION = 3
 
 PLACEHOLDERS: tuple[str, ...] = (
     PHONE_PLACEHOLDER,

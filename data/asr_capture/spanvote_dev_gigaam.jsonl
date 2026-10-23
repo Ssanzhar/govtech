@@ -1,0 +1,900 @@
+{"id": "dev_009", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "каютрнужно будет предъявить удостоверение", "seconds": 0.303}}
+{"id": "dev_009", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "катр нужно будет предъявить удостоверение", "seconds": 0.2626}}
+{"id": "dev_083", "condition": "single", "channel": "clean", "gigaam220": {"text": "тұрмын картада при", "seconds": 0.0661}}
+{"id": "dev_083", "condition": "single", "channel": "phone", "gigaam220": {"text": "turman kartada pul", "seconds": 0.0557}}
+{"id": "dev_083", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "турмн карта допри", "seconds": 0.0561}}
+{"id": "dev_083", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "тұрмын карта дапре", "seconds": 0.0553}}
+{"id": "dev_228", "condition": "single", "channel": "clean", "gigaam220": {"text": "бұл бір түрлі екен нас", "seconds": 0.0767}}
+{"id": "dev_228", "condition": "single", "channel": "phone", "gigaam220": {"text": "бұл бір түрлі екен нас", "seconds": 0.0748}}
+{"id": "dev_228", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "бұл біртүрлі екен наз", "seconds": 0.0778}}
+{"id": "dev_228", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "бұл біртүрлі екен нас", "seconds": 0.0776}}
+{"id": "dev_093", "condition": "single", "channel": "clean", "gigaam220": {"text": "әрекеттер жалғасуда эгер си біздің сарапшылар сіздің", "seconds": 0.1545}}
+{"id": "dev_093", "condition": "single", "channel": "phone", "gigaam220": {"text": "әрекеттер жалғасуда эгер си біздің сарапшылар сіздің", "seconds": 0.1534}}
+{"id": "dev_093", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "әрекеттер жалғасуда егер сие біздің сарапшылар сіздің", "seconds": 0.1482}}
+{"id": "dev_093", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "әрекеттер жалғасуда егер сие біздің сарапшылар сіздің", "seconds": 0.1625}}
+{"id": "dev_193", "condition": "single", "channel": "clean", "gigaam220": {"text": "звонка спасибо что үшін буду дома", "seconds": 0.1577}}
+{"id": "dev_193", "condition": "single", "channel": "phone", "gigaam220": {"text": "звонко спасибо что шін бұлдыл дома", "seconds": 0.1386}}
+{"id": "dev_193", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "звонка спасибо что буду дома", "seconds": 0.1184}}
+{"id": "dev_193", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "звонка спасибо что буду дома", "seconds": 0.1145}}
+{"id": "dev_114", "condition": "single", "channel": "clean", "gigaam220": {"text": "бәрі жақсы растағаннан кейін служба безопасности ба шегу", "seconds": 0.1799}}
+{"id": "dev_114", "condition": "single", "channel": "phone", "gigaam220": {"text": "бәрі жақсы растағаннан кейін служба безопасности ва шегу", "seconds": 0.1806}}
+{"id": "dev_114", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "бәрі жақсы растағаннан кейін служба безопасности вашего", "seconds": 0.1585}}
+{"id": "dev_114", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "бәрі жақсы растағаннан кейін служба безопасности вашего", "seconds": 0.1647}}
+{"id": "dev_113", "condition": "single", "channel": "clean", "gigaam220": {"text": "тексеру үшін хабарластық вам сейтчас кредит", "seconds": 0.1293}}
+{"id": "dev_113", "condition": "single", "channel": "phone", "gigaam220": {"text": "тексеру үшін хабарластық вам сейчас кредит", "seconds": 0.139}}
+{"id": "dev_113", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "тексеру үшін хабарластық вам сейчас придет", "seconds": 0.1179}}
+{"id": "dev_113", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "тексеру үшін хабарластық вам сейчас придет", "seconds": 0.1239}}
+{"id": "dev_204", "condition": "single", "channel": "clean", "gigaam220": {"text": "просто бұтте банк қауіпсіздігі", "seconds": 0.0826}}
+{"id": "dev_204", "condition": "single", "channel": "phone", "gigaam220": {"text": "росто бұтте банк қауіпсіздігі", "seconds": 0.0818}}
+{"id": "dev_204", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "просто будьте банк қауіпсіздігі", "seconds": 0.0944}}
+{"id": "dev_204", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "просто будьте банк қауіпсіздігі", "seconds": 0.0889}}
+{"id": "dev_024", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "гл ірі көлемде ақша аудару", "seconds": 0.1034}}
+{"id": "dev_024", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "гл ірі көлемде ақша аудару", "seconds": 0.0917}}
+{"id": "dev_125", "condition": "single", "channel": "clean", "gigaam220": {"text": "тынас ойы қауіпсіздік үшін бұл", "seconds": 0.0783}}
+{"id": "dev_125", "condition": "single", "channel": "phone", "gigaam220": {"text": "тынас лойы қауіпсіздік үшін бұл", "seconds": 0.0824}}
+{"id": "dev_125", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "на свое қауіпсіздік үшін бұл", "seconds": 0.0819}}
+{"id": "dev_125", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "н свое қауіпсіздік үшін бұл", "seconds": 0.08}}
+{"id": "dev_202", "condition": "single", "channel": "clean", "gigaam220": {"text": "что мне стоит құжат күтіп тұрған", "seconds": 0.0916}}
+{"id": "dev_202", "condition": "single", "channel": "phone", "gigaam220": {"text": "что не стоит құжат күтіп тұрған", "seconds": 0.1251}}
+{"id": "dev_202", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "что мне стоит құжат күтіп тұрған", "seconds": 0.0877}}
+{"id": "dev_202", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "что мне стоит құжат күтіп тұрған", "seconds": 0.088}}
+{"id": "dev_166", "condition": "single", "channel": "clean", "gigaam220": {"text": "су шаю мен төлеген сияқты едім", "seconds": 0.0968}}
+{"id": "dev_166", "condition": "single", "channel": "phone", "gigaam220": {"text": "су шаю мен төлеген сияқты едім", "seconds": 0.0972}}
+{"id": "dev_166", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "слушаю мен төлеген сияқты едім", "seconds": 0.1116}}
+{"id": "dev_166", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "слушал мен төлеген сияқты едім", "seconds": 0.1042}}
+{"id": "dev_247", "condition": "single", "channel": "clean", "gigaam220": {"text": "жақсы күтемін рахмет", "seconds": 0.0775}}
+{"id": "dev_247", "condition": "single", "channel": "phone", "gigaam220": {"text": "жақсы күтемін рахмет", "seconds": 0.0755}}
+{"id": "dev_247", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "вэ жақсы күтемін рахмет", "seconds": 0.1041}}
+{"id": "dev_247", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "вэ жақсы күтемін рахмет", "seconds": 0.0975}}
+{"id": "dev_072", "condition": "single", "channel": "clean", "gigaam220": {"text": "я никаких операций сегодня мекен жайы бойынша", "seconds": 0.1528}}
+{"id": "dev_072", "condition": "single", "channel": "phone", "gigaam220": {"text": "я никаких операций сегодняя мекен жайы бойынша", "seconds": 0.1499}}
+{"id": "dev_072", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "я никаких операций сегодня мекенжайы бойынша", "seconds": 0.1332}}
+{"id": "dev_072", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "я никаких операций сегодня мекен жайы бойынша", "seconds": 0.1321}}
+{"id": "dev_207", "condition": "single", "channel": "clean", "gigaam220": {"text": "біз сіздің ақшаңыздың и вам тоже", "seconds": 0.1323}}
+{"id": "dev_207", "condition": "single", "channel": "phone", "gigaam220": {"text": "біз сіздің ақшаңыздың иван тоже", "seconds": 0.113}}
+{"id": "dev_207", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "біз сіздің ақшаңыздың и вам тоже", "seconds": 0.1122}}
+{"id": "dev_207", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "біз сіздің ақшаңыздың и вам тоже", "seconds": 0.1124}}
+{"id": "dev_124", "condition": "single", "channel": "clean", "gigaam220": {"text": "хорошо аскар тауып жіберейін кайда банка мы зафиксировали подозрительную", "seconds": 0.209}}
+{"id": "dev_124", "condition": "single", "channel": "phone", "gigaam220": {"text": "хорошо аскар тауып жіберейін қайда банка мы зафикцировали подозрительным", "seconds": 0.2094}}
+{"id": "dev_124", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "хорошо аскар тауып жіберейін кайда банкоми зафиксировали подозрительную", "seconds": 0.1895}}
+{"id": "dev_124", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "хорошо аскар кау жіберейін кайда банком ы зафиксировали подозрительную", "seconds": 0.2145}}
+{"id": "dev_231", "condition": "single", "channel": "clean", "gigaam220": {"text": "безопасности отметила картасына рахмет", "seconds": 0.1303}}
+{"id": "dev_231", "condition": "single", "channel": "phone", "gigaam220": {"text": "бейзопаснусти отметига картасына рахмет", "seconds": 0.1218}}
+{"id": "dev_231", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "безопасности отметила картасына рахмет", "seconds": 0.1187}}
+{"id": "dev_231", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "безопасности отметила картасына рахмет", "seconds": 0.1168}}
+{"id": "dev_005", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "аа түсінікті рахмет әй және банк", "seconds": 0.1063}}
+{"id": "dev_005", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "аа түсінікті рахмет әй және банк", "seconds": 0.1073}}
+{"id": "dev_088", "condition": "single", "channel": "clean", "gigaam220": {"text": "производятся полку сіздің жиырма", "seconds": 0.0925}}
+{"id": "dev_088", "condition": "single", "channel": "phone", "gigaam220": {"text": "производятся полку сіздің жиырма", "seconds": 0.0925}}
+{"id": "dev_088", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "производится только сіздің жиырма", "seconds": 0.0992}}
+{"id": "dev_088", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "производится только сздің жиырма", "seconds": 0.1006}}
+{"id": "dev_149", "condition": "single", "channel": "clean", "gigaam220": {"text": "э тобе бұл қазақстанның қауіпсіздік", "seconds": 0.1}}
+{"id": "dev_149", "condition": "single", "channel": "phone", "gigaam220": {"text": "этобе бұл қазақстанның қауіпсіздік", "seconds": 0.0993}}
+{"id": "dev_149", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "это би бұл қазақстанның қауіпсіздік", "seconds": 0.1216}}
+{"id": "dev_149", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "это би бұл қазақстанның қауіпсіздік", "seconds": 0.1069}}
+{"id": "dev_050", "condition": "single", "channel": "clean", "gigaam220": {"text": "это контиденциалная информация сомада ақша аудару", "seconds": 0.1531}}
+{"id": "dev_050", "condition": "single", "channel": "phone", "gigaam220": {"text": "это контиденциальная информация сомада ақша аудару", "seconds": 0.1554}}
+{"id": "dev_050", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "это конфиденциальная информация сомада ақша аудару", "seconds": 0.1497}}
+{"id": "dev_050", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "это конфиденциальная информация сомада ақша аудару", "seconds": 0.1501}}
+{"id": "dev_069", "condition": "single", "channel": "clean", "gigaam220": {"text": "подозрительную активность что халай оплатить такя", "seconds": 0.1381}}
+{"id": "dev_069", "condition": "single", "channel": "phone", "gigaam220": {"text": "подозрительную активность чту калай оплатить тая", "seconds": 0.1353}}
+{"id": "dev_069", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "подозрительную активность что калай оплатить так я", "seconds": 0.1416}}
+{"id": "dev_069", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "подозрительную активность что халай оплатить так я", "seconds": 0.1399}}
+{"id": "dev_055", "condition": "single", "channel": "clean", "gigaam220": {"text": "се төлеміңізді ғайта", "seconds": 0.0862}}
+{"id": "dev_055", "condition": "single", "channel": "phone", "gigaam220": {"text": "се төлеміңізді қайта", "seconds": 0.0682}}
+{"id": "dev_055", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "сие төлеміңізді қайта", "seconds": 0.0736}}
+{"id": "dev_055", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "сие төлемімізді қайта", "seconds": 0.0728}}
+{"id": "dev_189", "condition": "single", "channel": "clean", "gigaam220": {"text": "документо но бул халык не думаю что это", "seconds": 0.1398}}
+{"id": "dev_189", "condition": "single", "channel": "phone", "gigaam220": {"text": "документы но бұл халық не думаю что это", "seconds": 0.1383}}
+{"id": "dev_189", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "документы но полхалык не думаю что это", "seconds": 0.1213}}
+{"id": "dev_189", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "документы ну полк халык не думал что это", "seconds": 0.1217}}
+{"id": "dev_096", "condition": "single", "channel": "clean", "gigaam220": {"text": "бұл не болшы ой бұл сіздің қаражатыңызда", "seconds": 0.1285}}
+{"id": "dev_096", "condition": "single", "channel": "phone", "gigaam220": {"text": "бұл не болшы ой бұл сіздің қаражатыңызды", "seconds": 0.1276}}
+{"id": "dev_096", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "был небольшой бұл сіздің қаражатыңызды", "seconds": 0.1169}}
+{"id": "dev_096", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "был небольшой бұл сіздің қаражатыңызды", "seconds": 0.1221}}
+{"id": "dev_136", "condition": "single", "channel": "clean", "gigaam220": {"text": "смс но саған үлкен көмек болды", "seconds": 0.0937}}
+{"id": "dev_136", "condition": "single", "channel": "phone", "gigaam220": {"text": "сын сно саған үлкен көмек болды", "seconds": 0.0918}}
+{"id": "dev_136", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "эсэмэс но саған үлкен көмек болды", "seconds": 0.112}}
+{"id": "dev_136", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "эс эмэс но саған үлкен көмек болды", "seconds": 0.1109}}
+{"id": "dev_068", "condition": "single", "channel": "clean", "gigaam220": {"text": "старая уже ну өзің просим никаких конфиденциальных", "seconds": 0.1641}}
+{"id": "dev_068", "condition": "single", "channel": "phone", "gigaam220": {"text": "втарая уже ну өзің просим никаких конфиденциальных", "seconds": 0.1626}}
+{"id": "dev_068", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "старая ужену узин просим никаких конфиденциальных", "seconds": 0.148}}
+{"id": "dev_068", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "старая ужену уэзен просим никаких конфиденциальных", "seconds": 0.148}}
+{"id": "dev_122", "condition": "single", "channel": "clean", "gigaam220": {"text": "телефон нөміріңізге жіберілген сілтеме да это оя", "seconds": 0.1389}}
+{"id": "dev_122", "condition": "single", "channel": "phone", "gigaam220": {"text": "телефон нөміріңізге жіберілген сілтеме да эт оя", "seconds": 0.1347}}
+{"id": "dev_122", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "телефон нөміріңізге жіберілген сілтеме дт ә", "seconds": 0.1293}}
+{"id": "dev_122", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "телефон нөміріңізге жіберілген сілтеме дэт я", "seconds": 0.1307}}
+{"id": "dev_208", "condition": "single", "channel": "clean", "gigaam220": {"text": "транзакцияға қатысты дебетовая көмек болды", "seconds": 0.118}}
+{"id": "dev_208", "condition": "single", "channel": "phone", "gigaam220": {"text": "транзакцияға қатысты дебетовая көмек болды", "seconds": 0.1179}}
+{"id": "dev_208", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "транзакцияға қатысты дебютовая көмек болды", "seconds": 0.1219}}
+{"id": "dev_208", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "транзакцияға қатысты дебютовая көмек болды", "seconds": 0.1219}}
+{"id": "dev_085", "condition": "single", "channel": "clean", "gigaam220": {"text": "все операции наших клиентов пени", "seconds": 0.1047}}
+{"id": "dev_085", "condition": "single", "channel": "phone", "gigaam220": {"text": "все операции наших клиентов пене", "seconds": 0.1037}}
+{"id": "dev_085", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "все операции наших клиентов пени", "seconds": 0.1107}}
+{"id": "dev_085", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "все операции наших клиентов пи", "seconds": 0.1106}}
+{"id": "dev_203", "condition": "single", "channel": "clean", "gigaam220": {"text": "подозрительную активность в тезірек керек болып", "seconds": 0.1329}}
+{"id": "dev_203", "condition": "single", "channel": "phone", "gigaam220": {"text": "подозрительную активность тезірек керек болып", "seconds": 0.1304}}
+{"id": "dev_203", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "подозрительную активность  тезірек керек бол", "seconds": 0.1084}}
+{"id": "dev_203", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "подозрительную активность тезрек керек поз", "seconds": 0.1075}}
+{"id": "dev_222", "condition": "single", "channel": "clean", "gigaam220": {"text": "занят жетімділікті қамтамасыз етсеңіз подтверждайте эту сумму и", "seconds": 0.1922}}
+{"id": "dev_222", "condition": "single", "channel": "phone", "gigaam220": {"text": "тызанят жетімділікті қамтамасыз етсеңіз подтверждайте эту сумму", "seconds": 0.1915}}
+{"id": "dev_222", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "занят жетімділікті қамтамасыз етсеңіз подтверждайте эту сумму", "seconds": 0.1834}}
+{"id": "dev_222", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "занят жетімділікті қамтамасыз етсеңіз подтверждайте эту сумму", "seconds": 0.1891}}
+{"id": "dev_219", "condition": "single", "channel": "clean", "gigaam220": {"text": "эштеңе көрсетуге уақыт ой сорык пят", "seconds": 0.1224}}
+{"id": "dev_219", "condition": "single", "channel": "phone", "gigaam220": {"text": "ештеңе көрсетуге уақыт ой сорок пят", "seconds": 0.1226}}
+{"id": "dev_219", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "ештеңе көрсетуге уақыт ой сорок пять", "seconds": 0.1073}}
+{"id": "dev_219", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "ештеңе көрсетубе уақыт ой сорок пять", "seconds": 0.1096}}
+{"id": "dev_140", "condition": "single", "channel": "clean", "gigaam220": {"text": "вы хотите жеке деректеріңізге курьера сегодня между", "seconds": 0.1564}}
+{"id": "dev_140", "condition": "single", "channel": "phone", "gigaam220": {"text": "вы хотите жеке деректеріңізге курьера сегод я между", "seconds": 0.1548}}
+{"id": "dev_140", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "вы хотите жеке деректеріңізге курьера сегодня между", "seconds": 0.1433}}
+{"id": "dev_140", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "вы хотите жеке директернскй курьеры сегодня между", "seconds": 0.1415}}
+{"id": "dev_141", "condition": "single", "channel": "clean", "gigaam220": {"text": "сәлеметсіз бе не болды менея учен куәлік нөміріңіздің соңғы", "seconds": 0.1606}}
+{"id": "dev_141", "condition": "single", "channel": "phone", "gigaam220": {"text": "сәлеметсіз бе не болды меня учем куәлік нөміріңіздің соңғы", "seconds": 0.159}}
+{"id": "dev_141", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "сәлеметсізбе не болды меня очень куәлік нөміріңіздің соңғы", "seconds": 0.1612}}
+{"id": "dev_141", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "сәлеметсіз бе не болды меня ожинь куәлік нөміріңіздің соңғы", "seconds": 0.1587}}
+{"id": "dev_169", "condition": "single", "channel": "clean", "gigaam220": {"text": "арман расталды сіздің сәлемдемеңіз қостанай", "seconds": 0.1176}}
+{"id": "dev_169", "condition": "single", "channel": "phone", "gigaam220": {"text": "арман расталды сіздің сәлемдемеңіз қостанай", "seconds": 0.116}}
+{"id": "dev_169", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "арман расталды сіздің сәлемдемеңіз қостанай", "seconds": 0.1276}}
+{"id": "dev_169", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "арман расталды сіздің сәлемдемеңіз қостанай", "seconds": 0.1284}}
+{"id": "dev_131", "condition": "single", "channel": "clean", "gigaam220": {"text": "се в порядке сәлеметсізда это я", "seconds": 0.1157}}
+{"id": "dev_131", "condition": "single", "channel": "phone", "gigaam220": {"text": "все в порядке сәлеметсіз да это я", "seconds": 0.1166}}
+{"id": "dev_131", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "все в порядке салимисес да это я", "seconds": 0.1156}}
+{"id": "dev_131", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "все в порядке салемитсиз да это я", "seconds": 0.1173}}
+{"id": "dev_116", "condition": "single", "channel": "clean", "gigaam220": {"text": "ийчпо ешкімге айтпау керек", "seconds": 0.1008}}
+{"id": "dev_116", "condition": "single", "channel": "phone", "gigaam220": {"text": "ешкімге айтпау керек", "seconds": 0.0834}}
+{"id": "dev_116", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "и что ешкімге айтпау керек", "seconds": 0.086}}
+{"id": "dev_116", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "ичто ешкімге айтпау керек", "seconds": 0.0875}}
+{"id": "dev_047", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "аратовы", "seconds": 0.0667}}
+{"id": "dev_047", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "ларад что вы", "seconds": 0.0664}}
+{"id": "dev_036", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "мәтір аударып жіберейін қай картаға", "seconds": 0.0995}}
+{"id": "dev_036", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "мәтір аударып жіберейін қай картаға", "seconds": 0.1018}}
+{"id": "dev_002", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "анда я попробую сделать", "seconds": 0.0806}}
+{"id": "dev_002", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "анда я попробую сделать", "seconds": 0.0792}}
+{"id": "dev_121", "condition": "single", "channel": "clean", "gigaam220": {"text": "бәрі жақсы поньяла ақша жоқ", "seconds": 0.0926}}
+{"id": "dev_121", "condition": "single", "channel": "phone", "gigaam220": {"text": "бәрі жақсы поньяла ақша жоқ", "seconds": 0.0917}}
+{"id": "dev_121", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "бәрі жақсы поняла ақша жоқ", "seconds": 0.0947}}
+{"id": "dev_121", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "бәрі жақсы поняла ақша жоқ", "seconds": 0.0956}}
+{"id": "dev_059", "condition": "single", "channel": "clean", "gigaam220": {"text": "соған өтіп хорош отты банкке барып", "seconds": 0.0916}}
+{"id": "dev_059", "condition": "single", "channel": "phone", "gigaam220": {"text": "соған өтіп хорош ұлтты банкке барып", "seconds": 0.0919}}
+{"id": "dev_059", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "соған өтіп хорошо ты банкке барып", "seconds": 0.1022}}
+{"id": "dev_059", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "соған өтіп хорошо ты банкке барып", "seconds": 0.1028}}
+{"id": "dev_153", "condition": "single", "channel": "clean", "gigaam220": {"text": "лучше проверю это жазып беріңізші", "seconds": 0.1073}}
+{"id": "dev_153", "condition": "single", "channel": "phone", "gigaam220": {"text": "лучше проверил это жазып беріңізші", "seconds": 0.11}}
+{"id": "dev_153", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "лучше проверю это жазып беріңізші", "seconds": 0.1038}}
+{"id": "dev_153", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "лучше проверю это жазып беріңізші", "seconds": 0.0993}}
+{"id": "dev_105", "condition": "single", "channel": "clean", "gigaam220": {"text": "пожалуйста дол съеданья е", "seconds": 0.089}}
+{"id": "dev_105", "condition": "single", "channel": "phone", "gigaam220": {"text": "пожалуйста дол свидания е", "seconds": 0.09}}
+{"id": "dev_105", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "пожалуйста до свидания я", "seconds": 0.0785}}
+{"id": "dev_105", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "пожалуйста до свидания я", "seconds": 0.0781}}
+{"id": "dev_103", "condition": "single", "channel": "clean", "gigaam220": {"text": "не могу потерять кдкты назвать последни четре цифры", "seconds": 0.1679}}
+{"id": "dev_103", "condition": "single", "channel": "phone", "gigaam220": {"text": "не могу потерять кдікті назад последний четыре цифры", "seconds": 0.165}}
+{"id": "dev_103", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "не могу потерять ттк та назвать последние четыре цифры", "seconds": 0.155}}
+{"id": "dev_103", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "не могу потерять ктк та назвать последние четыре цифры", "seconds": 0.1509}}
+{"id": "dev_079", "condition": "single", "channel": "clean", "gigaam220": {"text": "сіздің шотыңызды открыт специальный счет", "seconds": 0.1218}}
+{"id": "dev_079", "condition": "single", "channel": "phone", "gigaam220": {"text": "сіздің шотыңызды открыз специалный щеть", "seconds": 0.1207}}
+{"id": "dev_079", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "сіздің шотыңызды открыть специальный счет", "seconds": 0.1138}}
+{"id": "dev_079", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "сіздің шотыңызды открыть специальный счет", "seconds": 0.1134}}
+{"id": "dev_248", "condition": "single", "channel": "clean", "gigaam220": {"text": "мен оны сізге бере если что надо растау керек", "seconds": 0.1292}}
+{"id": "dev_248", "condition": "single", "channel": "phone", "gigaam220": {"text": "нин оны сізге бере иси что надо растау керек", "seconds": 0.1292}}
+{"id": "dev_248", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "мен оны сізге бере если что надо растау керек", "seconds": 0.1359}}
+{"id": "dev_248", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "мен оны сізге бере если что надо растау керек", "seconds": 0.1331}}
+{"id": "dev_209", "condition": "single", "channel": "clean", "gigaam220": {"text": "ладно хороше мне живеря аласыз", "seconds": 0.0961}}
+{"id": "dev_209", "condition": "single", "channel": "phone", "gigaam220": {"text": "ладно хорошу мне жібере аласыз", "seconds": 0.0955}}
+{"id": "dev_209", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "ладно хорошо мне живери аласас", "seconds": 0.0965}}
+{"id": "dev_209", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "ладно хорошо мне живериаласос", "seconds": 0.0977}}
+{"id": "dev_027", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "активность п понял спасибо большое", "seconds": 0.136}}
+{"id": "dev_027", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "активность п тнд понял спасибо большое", "seconds": 0.137}}
+{"id": "dev_100", "condition": "single", "channel": "clean", "gigaam220": {"text": "тоғыз жүз сексен си", "seconds": 0.0734}}
+{"id": "dev_100", "condition": "single", "channel": "phone", "gigaam220": {"text": "тоғыз жүз сексен сей", "seconds": 0.0722}}
+{"id": "dev_100", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "тоғыз жүз сексен си", "seconds": 0.0777}}
+{"id": "dev_100", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "тоғыз жүз сексен сегіз", "seconds": 0.077}}
+{"id": "dev_099", "condition": "single", "channel": "clean", "gigaam220": {"text": "через мобильное приложение банка барлық сұрақтарды реттеу", "seconds": 0.1608}}
+{"id": "dev_099", "condition": "single", "channel": "phone", "gigaam220": {"text": "через мобильное приложение банка барлық сұрақтарды реттеу", "seconds": 0.1604}}
+{"id": "dev_099", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "через мобильное приложение банка барлық сұрақтарды реттеу", "seconds": 0.1632}}
+{"id": "dev_099", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "через мобильное приложение банка барлық сұрақтарды реттеу", "seconds": 0.1509}}
+{"id": "dev_018", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "это служба безопасности лайк", "seconds": 0.0937}}
+{"id": "dev_018", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "это служба безопасности лайк", "seconds": 0.092}}
+{"id": "dev_064", "condition": "single", "channel": "clean", "gigaam220": {"text": "сіз жақын актигност погашей", "seconds": 0.0975}}
+{"id": "dev_064", "condition": "single", "channel": "phone", "gigaam220": {"text": "сіз жақын актиност погашей", "seconds": 0.097}}
+{"id": "dev_064", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "сіз жақын активность по вашей", "seconds": 0.0948}}
+{"id": "dev_064", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "сжакн активность по вашей", "seconds": 0.0924}}
+{"id": "dev_091", "condition": "single", "channel": "clean", "gigaam220": {"text": "это сіздің желіңізде", "seconds": 0.0774}}
+{"id": "dev_091", "condition": "single", "channel": "phone", "gigaam220": {"text": "этл сіздің жеріңізде", "seconds": 0.0807}}
+{"id": "dev_091", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "это сіздің желіңізде", "seconds": 0.0735}}
+{"id": "dev_091", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "это сіздің желіңізде", "seconds": 0.0729}}
+{"id": "dev_165", "condition": "single", "channel": "clean", "gigaam220": {"text": "что случилось какой аккаунт кызметнен предпринимательство в", "seconds": 0.156}}
+{"id": "dev_165", "condition": "single", "channel": "phone", "gigaam220": {"text": "что случилось какой аккаунт кызметнен предпринимательства в", "seconds": 0.1558}}
+{"id": "dev_165", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "что случилось какой аккаунт кызметне предпринимательство вы", "seconds": 0.1612}}
+{"id": "dev_165", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "что случилось какой аткаунт позметме предпринимательство вы", "seconds": 0.1598}}
+{"id": "dev_192", "condition": "single", "channel": "clean", "gigaam220": {"text": "у меня се сияқты действуем в рамках", "seconds": 0.1257}}
+{"id": "dev_192", "condition": "single", "channel": "phone", "gigaam220": {"text": "у меня сю сияқты действуем в рамках", "seconds": 0.1252}}
+{"id": "dev_192", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "у меня все в сето действуем в рамках", "seconds": 0.1212}}
+{"id": "dev_192", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "у меня все в сето действуем в рамках", "seconds": 0.1227}}
+{"id": "dev_019", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "тоқтатамыз банкке баруым керек әй біздің бөлімшеге жиди", "seconds": 0.1562}}
+{"id": "dev_019", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "тоқтатамыз банкке баруың керек әй біздің бөлімшеге жедей", "seconds": 0.1576}}
+{"id": "dev_196", "condition": "single", "channel": "clean", "gigaam220": {"text": "жасалғанын шорухдитские голоса друмчи", "seconds": 0.1275}}
+{"id": "dev_196", "condition": "single", "channel": "phone", "gigaam220": {"text": "жасалғанын шорухтицкие голоса друмчи", "seconds": 0.1269}}
+{"id": "dev_196", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "жасалғанын шорох детские голоса громче", "seconds": 0.1164}}
+{"id": "dev_196", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "жасалғанн шорох детский голоса громче", "seconds": 0.1148}}
+{"id": "dev_155", "condition": "single", "channel": "clean", "gigaam220": {"text": "рахмет это квартира номир", "seconds": 0.0866}}
+{"id": "dev_155", "condition": "single", "channel": "phone", "gigaam220": {"text": "рахмет это квартира номир", "seconds": 0.0861}}
+{"id": "dev_155", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "рахмет это квартира номер", "seconds": 0.0768}}
+{"id": "dev_155", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "рахмет это квартира номер", "seconds": 0.075}}
+{"id": "dev_237", "condition": "single", "channel": "clean", "gigaam220": {"text": "қазір сізде тек бес либо при сәлем арман", "seconds": 0.1233}}
+{"id": "dev_237", "condition": "single", "channel": "phone", "gigaam220": {"text": "қазір сізде текпе слибоприй сәлем арман", "seconds": 0.1215}}
+{"id": "dev_237", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "қазір сізде тек бес либо бре сәлем арман", "seconds": 0.1269}}
+{"id": "dev_237", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "қазір сізде тек бес либо ре сәлем арман", "seconds": 0.1265}}
+{"id": "dev_162", "condition": "single", "channel": "clean", "gigaam220": {"text": "не может пыт болып қалған бір", "seconds": 0.0883}}
+{"id": "dev_162", "condition": "single", "channel": "phone", "gigaam220": {"text": "не может пыт болып қалған бір", "seconds": 0.087}}
+{"id": "dev_162", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "не может быть болып қалған бір", "seconds": 0.0789}}
+{"id": "dev_162", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "не может быть болып қалғандыр", "seconds": 0.0807}}
+{"id": "dev_007", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "халық банкінің қауіпсіздік деливери теңге көлемінде транзакция жасалғанын", "seconds": 0.2055}}
+{"id": "dev_007", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "халық банкінің қауіпсіздік деливери теңге көлемінде транзакция жасалғанын", "seconds": 0.2032}}
+{"id": "dev_160", "condition": "single", "channel": "clean", "gigaam220": {"text": "қатысты құжаттардың мы з о емес", "seconds": 0.0905}}
+{"id": "dev_160", "condition": "single", "channel": "phone", "gigaam220": {"text": "қатысты құжаттардың мыз ой емес", "seconds": 0.0899}}
+{"id": "dev_160", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "қатысты құжаттардың мы звониміз", "seconds": 0.1071}}
+{"id": "dev_160", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "қатысты құжаттардың міз звониміз", "seconds": 0.0959}}
+{"id": "dev_244", "condition": "single", "channel": "clean", "gigaam220": {"text": "а когда нужно сізге айтқым вопросы звоните", "seconds": 0.1414}}
+{"id": "dev_244", "condition": "single", "channel": "phone", "gigaam220": {"text": "а кугда нужно сізге айтқым вопросы звоните", "seconds": 0.1416}}
+{"id": "dev_244", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "а когда нужно сізге айткым вопросы звоните", "seconds": 0.1268}}
+{"id": "dev_244", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "а когда нужно саком вопросы звоните", "seconds": 0.1256}}
+{"id": "dev_178", "condition": "single", "channel": "clean", "gigaam220": {"text": "подтвердит последние хитры салимецзмне сротну нужну", "seconds": 0.1568}}
+{"id": "dev_178", "condition": "single", "channel": "phone", "gigaam220": {"text": "подтвердит последни читре салиметсізмне сотну нужну", "seconds": 0.1557}}
+{"id": "dev_178", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "подтвердить последние четыре салимитсес мне срочно нужно", "seconds": 0.1634}}
+{"id": "dev_178", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "подтвердить последние четыре салемец мне срочно нужно", "seconds": 0.1617}}
+{"id": "dev_182", "condition": "single", "channel": "clean", "gigaam220": {"text": "икі сіздерге рахмет ескерткендеріңіз а", "seconds": 0.1172}}
+{"id": "dev_182", "condition": "single", "channel": "phone", "gigaam220": {"text": "икі сіздерге рахмет ескерткендеріңіз аз", "seconds": 0.1152}}
+{"id": "dev_182", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "икі сіздерге рахмет ескерткендеріңіз а", "seconds": 0.1272}}
+{"id": "dev_182", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "икі сіздерге рахмет ескерткендеріңіз а", "seconds": 0.1259}}
+{"id": "dev_127", "condition": "single", "channel": "clean", "gigaam220": {"text": "дайын болды олар все в порядке", "seconds": 0.0953}}
+{"id": "dev_127", "condition": "single", "channel": "phone", "gigaam220": {"text": "дайын болды улар ссех порядкеш", "seconds": 0.0957}}
+{"id": "dev_127", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "дайын болды олар все в порядке", "seconds": 0.0848}}
+{"id": "dev_127", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "тайын голдоолар всее в порядке", "seconds": 0.0855}}
+{"id": "dev_040", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "это звучит как джаст эбаут ту", "seconds": 0.092}}
+{"id": "dev_040", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "это звучит как джаст эбаут ту", "seconds": 0.09}}
+{"id": "dev_060", "condition": "single", "channel": "clean", "gigaam220": {"text": "түсінікті сағат бесте удаленный доступ эту үйретеді ең бастысы", "seconds": 0.1893}}
+{"id": "dev_060", "condition": "single", "channel": "phone", "gigaam220": {"text": "түсінікті сағат бесте удаленный доступ эту үйретеді ең бастысы", "seconds": 0.1837}}
+{"id": "dev_060", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "түсінікті сағат бести удаленный доступ это үйретеді ең бастысы", "seconds": 0.1752}}
+{"id": "dev_060", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "түсінікті сағат бестей удаленный доступ это үйретеді ең бастысы", "seconds": 0.1768}}
+{"id": "dev_227", "condition": "single", "channel": "clean", "gigaam220": {"text": "я ничего не тезірек булса", "seconds": 0.1007}}
+{"id": "dev_227", "condition": "single", "channel": "phone", "gigaam220": {"text": "я ничего не тезірек булса", "seconds": 0.1013}}
+{"id": "dev_227", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "я ничего не тезірэк пулса", "seconds": 0.0793}}
+{"id": "dev_227", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "я ничего не тезірек булса", "seconds": 0.0781}}
+{"id": "dev_071", "condition": "single", "channel": "clean", "gigaam220": {"text": "сіздерге енді не істеуім не айтқымыз келеді", "seconds": 0.1269}}
+{"id": "dev_071", "condition": "single", "channel": "phone", "gigaam220": {"text": "сіздерге енді не істеуім не айтқымыз келеді", "seconds": 0.1275}}
+{"id": "dev_071", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "сіздерге енді не істеуім не айтқымыз келеді", "seconds": 0.1524}}
+{"id": "dev_071", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "сіздерге енді не істеуім ме айтқымыз келеді", "seconds": 0.1427}}
+{"id": "dev_217", "condition": "single", "channel": "clean", "gigaam220": {"text": "ештеңе істеген не не", "seconds": 0.066}}
+{"id": "dev_217", "condition": "single", "channel": "phone", "gigaam220": {"text": "ештеңе істеген неме", "seconds": 0.0655}}
+{"id": "dev_217", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "ештеңе істеген мне не", "seconds": 0.0721}}
+{"id": "dev_217", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "ештеңе істеген не не", "seconds": 0.0738}}
+{"id": "dev_086", "condition": "single", "channel": "clean", "gigaam220": {"text": "можем отметить транзакцию как тәуекелге бармайсыз біздің", "seconds": 0.1676}}
+{"id": "dev_086", "condition": "single", "channel": "phone", "gigaam220": {"text": "можем отнетить транзакцию как тәуекелге бармайсыз біздің", "seconds": 0.1656}}
+{"id": "dev_086", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "можем отметить транзакцию как тәуекелге бармайсыз біздің", "seconds": 0.1537}}
+{"id": "dev_086", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "можем отметить транзакцию как тәуекелге бармайсыз біздің", "seconds": 0.1504}}
+{"id": "dev_080", "condition": "single", "channel": "clean", "gigaam220": {"text": "келіңіздер моглибалбы", "seconds": 0.0659}}
+{"id": "dev_080", "condition": "single", "channel": "phone", "gigaam220": {"text": "келіңіздер моглибалвы", "seconds": 0.0655}}
+{"id": "dev_080", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "келіңіздер могли бы вы", "seconds": 0.0628}}
+{"id": "dev_080", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "телинсдер могли бы вы", "seconds": 0.0627}}
+{"id": "dev_039", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "и заблокировать угрозу аплл подозрительная активность", "seconds": 0.1547}}
+{"id": "dev_039", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "и заблокировать угрозу ал подозрительная активность", "seconds": 0.155}}
+{"id": "dev_163", "condition": "single", "channel": "clean", "gigaam220": {"text": "ораз азаматұлы сза у", "seconds": 0.0771}}
+{"id": "dev_163", "condition": "single", "channel": "phone", "gigaam220": {"text": "ораз азаматосов ау", "seconds": 0.0774}}
+{"id": "dev_163", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "ораз азаматулсыс", "seconds": 0.078}}
+{"id": "dev_163", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "ораз азаматусов л", "seconds": 0.0774}}
+{"id": "dev_161", "condition": "single", "channel": "clean", "gigaam220": {"text": "сейчас сприше улшист ми", "seconds": 0.0737}}
+{"id": "dev_161", "condition": "single", "channel": "phone", "gigaam220": {"text": "сейчас приши уши сни", "seconds": 0.0735}}
+{"id": "dev_161", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "сейчас пришел шесть ми", "seconds": 0.0777}}
+{"id": "dev_161", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "сейчас пришел шесть", "seconds": 0.0776}}
+{"id": "dev_234", "condition": "single", "channel": "clean", "gigaam220": {"text": "он бес понятно спасибо большое көлемде ақша аударымдары жасалған", "seconds": 0.1808}}
+{"id": "dev_234", "condition": "single", "channel": "phone", "gigaam220": {"text": "он бес понятно спасибо большой көлемде ақша аударымдары жасалған", "seconds": 0.182}}
+{"id": "dev_234", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "он бес понятно спасибо большое көлемде ақша аударымдары жасалған", "seconds": 0.183}}
+{"id": "dev_234", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "он бес понятно спасибо большое көлемде ақша аударымдары жасалған", "seconds": 0.1824}}
+{"id": "dev_133", "condition": "single", "channel": "clean", "gigaam220": {"text": "тез арада тексеру в маған бұл", "seconds": 0.0847}}
+{"id": "dev_133", "condition": "single", "channel": "phone", "gigaam220": {"text": "тез арада тексеру маған бұл", "seconds": 0.0833}}
+{"id": "dev_133", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "тез арада тексеру вэ маған бұл", "seconds": 0.1095}}
+{"id": "dev_133", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "кеіз арада тексеру вэ маған бұл", "seconds": 0.1077}}
+{"id": "dev_175", "condition": "single", "channel": "clean", "gigaam220": {"text": "жоқ енді это герифицировать я", "seconds": 0.0979}}
+{"id": "dev_175", "condition": "single", "channel": "phone", "gigaam220": {"text": "жоқ енді это верифицировать е", "seconds": 0.0982}}
+{"id": "dev_175", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "шоғинді это верифицировать я", "seconds": 0.0908}}
+{"id": "dev_175", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "шоенд это верифицировать я", "seconds": 0.0909}}
+{"id": "dev_225", "condition": "single", "channel": "clean", "gigaam220": {"text": "әлч тоза қазір шұғыл түрде", "seconds": 0.0951}}
+{"id": "dev_225", "condition": "single", "channel": "phone", "gigaam220": {"text": "әч тоза қазір шұғыл түрдей", "seconds": 0.0936}}
+{"id": "dev_225", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "а что за қазір шұғыл түрде", "seconds": 0.0859}}
+{"id": "dev_225", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "аштоза қазір шұғыл түрде", "seconds": 0.0865}}
+{"id": "dev_200", "condition": "single", "channel": "clean", "gigaam220": {"text": "тыңдап тұрмын не болды часто шамамен жеті мың", "seconds": 0.1357}}
+{"id": "dev_200", "condition": "single", "channel": "phone", "gigaam220": {"text": "тыңдап тұрмын не болды часто шамамен жеті мың", "seconds": 0.126}}
+{"id": "dev_200", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "тыңдап тұрмын не болды часто шамамен жеті мың", "seconds": 0.1394}}
+{"id": "dev_200", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "тыңдап тұрмын не болды часто шамамен жеті мың", "seconds": 0.1383}}
+{"id": "dev_089", "condition": "single", "channel": "clean", "gigaam220": {"text": "аудару әрекеті жасалды семнадцат нул при кіммен сөйлесіп тұрмын", "seconds": 0.1783}}
+{"id": "dev_089", "condition": "single", "channel": "phone", "gigaam220": {"text": "аудару әрекеті жасалды семнадцат нул при кіммен сөйлесіп тұрмын", "seconds": 0.1873}}
+{"id": "dev_089", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "аудару әрекеті жасалды семнадцать нол пре тыммен сөйлесіп тұрмын", "seconds": 0.1756}}
+{"id": "dev_089", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "аудару әрекеті жасалды семнадцать ноль три түнмен сөйлесіп тұрмын", "seconds": 0.174}}
+{"id": "dev_015", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "сен ше не жаңалық айдж асд мәселесі бойынша", "seconds": 0.1356}}
+{"id": "dev_015", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "сен шенне жаңалық а жа мәселесі бойынша", "seconds": 0.1575}}
+{"id": "dev_074", "condition": "single", "channel": "clean", "gigaam220": {"text": "деректерді сұраған а почему я", "seconds": 0.096}}
+{"id": "dev_074", "condition": "single", "channel": "phone", "gigaam220": {"text": "деректерда сұраган а почему я", "seconds": 0.0957}}
+{"id": "dev_074", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "деректерді сұраган а почему я", "seconds": 0.0898}}
+{"id": "dev_074", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "деректерді сураган апжим уя", "seconds": 0.0882}}
+{"id": "dev_181", "condition": "single", "channel": "clean", "gigaam220": {"text": "дима привет что был операцный", "seconds": 0.1022}}
+{"id": "dev_181", "condition": "single", "channel": "phone", "gigaam220": {"text": "дима привет что был в операцини", "seconds": 0.1027}}
+{"id": "dev_181", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "дима привет что пол операции не", "seconds": 0.1028}}
+{"id": "dev_181", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "дима привет что пол операции не", "seconds": 0.1004}}
+{"id": "dev_051", "condition": "single", "channel": "clean", "gigaam220": {"text": "солшайте нөміріңізге нұсқаулық", "seconds": 0.0986}}
+{"id": "dev_051", "condition": "single", "channel": "phone", "gigaam220": {"text": "солшайте нөміріңізге нұсқаулық", "seconds": 0.0967}}
+{"id": "dev_051", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "слушайте нөміріңізге нұсқаулық", "seconds": 0.0952}}
+{"id": "dev_051", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "слушайте нөміріңізге нұсқаулық", "seconds": 0.1064}}
+{"id": "dev_045", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "что онлайн краймс", "seconds": 0.0683}}
+{"id": "dev_045", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "штонлайн крайм", "seconds": 0.0657}}
+{"id": "dev_035", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "мерзімі аяқталуғы эз каспийге аудара салшы өтініш", "seconds": 0.1684}}
+{"id": "dev_035", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "мерзімі аяқталуғы э каспийге аудара салшы өтініш", "seconds": 0.1686}}
+{"id": "dev_176", "condition": "single", "channel": "clean", "gigaam220": {"text": "оы здравствуйте вас песпокить служба", "seconds": 0.1335}}
+{"id": "dev_176", "condition": "single", "channel": "phone", "gigaam220": {"text": "оны здравствуйте вас беспокоит служба", "seconds": 0.1403}}
+{"id": "dev_176", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "она здравствуйте вас беспокоит служба", "seconds": 0.1128}}
+{"id": "dev_176", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "она здравствуйте вас беспокоит служба", "seconds": 0.1055}}
+{"id": "dev_154", "condition": "single", "channel": "clean", "gigaam220": {"text": "напоминание иза жоғалтуыңыз мүмкін бізде задолженность я вроде бы", "seconds": 0.1932}}
+{"id": "dev_154", "condition": "single", "channel": "phone", "gigaam220": {"text": "напомнинание иза жоғалтуыңыз мүмкін бізде задолженность ия вроде бы", "seconds": 0.1886}}
+{"id": "dev_154", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "напоминание за жоғалтуыңыз мүмкін бізде задолженность я вроде бы", "seconds": 0.1813}}
+{"id": "dev_154", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "напоминание иза жоғалтуыңыз мүмкін бізде задолженность я вроде бы", "seconds": 0.183}}
+{"id": "dev_000", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "мен оны сізге айтқым и", "seconds": 0.1034}}
+{"id": "dev_000", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "мен оны сізге айтқым", "seconds": 0.105}}
+{"id": "dev_134", "condition": "single", "channel": "clean", "gigaam220": {"text": "бесте келе берсін үйде я могу егу", "seconds": 0.1049}}
+{"id": "dev_134", "condition": "single", "channel": "phone", "gigaam220": {"text": "бесте келе берсін ийге ямугуегу", "seconds": 0.1038}}
+{"id": "dev_134", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "бесте келе берсін үйде я могу его", "seconds": 0.0981}}
+{"id": "dev_134", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "бесте келе берсін неге я могу его", "seconds": 0.0971}}
+{"id": "dev_138", "condition": "single", "channel": "clean", "gigaam220": {"text": "полную конфиденциальность мүмкін емес мен ешқандай", "seconds": 0.1323}}
+{"id": "dev_138", "condition": "single", "channel": "phone", "gigaam220": {"text": "полныю конфиденциалынус мүмкін емес мен ешқандай", "seconds": 0.1331}}
+{"id": "dev_138", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "полную конфиденциальность мүмкін емес мен ешқандай", "seconds": 0.1402}}
+{"id": "dev_138", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "полную конфиденциальность мүмкін емес мен ешқандай", "seconds": 0.1417}}
+{"id": "dev_126", "condition": "single", "channel": "clean", "gigaam220": {"text": "хот үш жұмыс", "seconds": 0.0412}}
+{"id": "dev_126", "condition": "single", "channel": "phone", "gigaam220": {"text": "код ішінов", "seconds": 0.0413}}
+{"id": "dev_126", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "код эшомус", "seconds": 0.0473}}
+{"id": "dev_126", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "о она", "seconds": 0.0468}}
+{"id": "dev_092", "condition": "single", "channel": "clean", "gigaam220": {"text": "ваис шита нахотятсямаған", "seconds": 0.0953}}
+{"id": "dev_092", "condition": "single", "channel": "phone", "gigaam220": {"text": "ваши шита нахотятсямаган", "seconds": 0.095}}
+{"id": "dev_092", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "ваши чета находятся маган", "seconds": 0.0876}}
+{"id": "dev_092", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "ваши счета находятся маған", "seconds": 0.0881}}
+{"id": "dev_008", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "аскар да колд виз", "seconds": 0.0636}}
+{"id": "dev_008", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "аскар дак колт вит", "seconds": 0.0629}}
+{"id": "dev_025", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "ни за что ждем гоуинг он ис", "seconds": 0.0774}}
+{"id": "dev_025", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "не за что ждем конс", "seconds": 0.0779}}
+{"id": "dev_120", "condition": "single", "channel": "clean", "gigaam220": {"text": "аренду нового жоқ әр нәрсені зафиксировали подозрительную активность пу", "seconds": 0.1922}}
+{"id": "dev_120", "condition": "single", "channel": "phone", "gigaam220": {"text": "аренду новогжок әр нәрсені зафиксировали подозрительную активность пу", "seconds": 0.1958}}
+{"id": "dev_120", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "аренду нового жоқ әр нәрсені зафиксировали подозрительную активность п", "seconds": 0.1988}}
+{"id": "dev_120", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "аренду нового шок рнартен зафиксировали подозрительную активность", "seconds": 0.1958}}
+{"id": "dev_156", "condition": "single", "channel": "clean", "gigaam220": {"text": "стелад терес рахмет сізге", "seconds": 0.0899}}
+{"id": "dev_156", "condition": "single", "channel": "phone", "gigaam220": {"text": "стелат через рахмет сізге", "seconds": 0.0901}}
+{"id": "dev_156", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "сделать через рахмет сізге", "seconds": 0.0846}}
+{"id": "dev_156", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "сделат через рахмет сізге", "seconds": 0.0839}}
+{"id": "dev_006", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "временный защищенный счет", "seconds": 0.0845}}
+{"id": "dev_006", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "ейвременный защищенный счет", "seconds": 0.0858}}
+{"id": "dev_216", "condition": "single", "channel": "clean", "gigaam220": {"text": "хоп вам всего", "seconds": 0.049}}
+{"id": "dev_216", "condition": "single", "channel": "phone", "gigaam220": {"text": "xur van sevuv", "seconds": 0.0488}}
+{"id": "dev_216", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "овам всего", "seconds": 0.0469}}
+{"id": "dev_216", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "вам всего", "seconds": 0.0474}}
+{"id": "dev_001", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "оф нэшнал иә дұрыс асқар", "seconds": 0.0814}}
+{"id": "dev_001", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "эншнал я дрысаа", "seconds": 0.0818}}
+{"id": "dev_107", "condition": "single", "channel": "clean", "gigaam220": {"text": "екеніңізді растайт подозрительная активность", "seconds": 0.1257}}
+{"id": "dev_107", "condition": "single", "channel": "phone", "gigaam220": {"text": "екеніңізді растай подозрительная активность", "seconds": 0.1262}}
+{"id": "dev_107", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "екеніңізді растай подозрительная активность", "seconds": 0.1102}}
+{"id": "dev_107", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "екеніңізді растай подозрительная активность", "seconds": 0.11}}
+{"id": "dev_082", "condition": "single", "channel": "clean", "gigaam220": {"text": "транзактия қазақстанның қауіпсіздік қызметі", "seconds": 0.1163}}
+{"id": "dev_082", "condition": "single", "channel": "phone", "gigaam220": {"text": "транзактия қазақстанның қауіпсіздік қызметі", "seconds": 0.1237}}
+{"id": "dev_082", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "транзакциия қазақстанның қауіпсіздік қызметі", "seconds": 0.1221}}
+{"id": "dev_082", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "транзакциия қазақстанның қауіпсіздік қызметі", "seconds": 0.1222}}
+{"id": "dev_043", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "югаоу сияқты ешқандай", "seconds": 0.0868}}
+{"id": "dev_043", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "югаал сияқты ешқандай", "seconds": 0.083}}
+{"id": "dev_041", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "г мы звоним по поводу", "seconds": 0.0756}}
+{"id": "dev_041", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "эг мы звоним по поводу", "seconds": 0.0757}}
+{"id": "dev_197", "condition": "single", "channel": "clean", "gigaam220": {"text": "это мумен ешқандай операция спасибо большоо я", "seconds": 0.1343}}
+{"id": "dev_197", "condition": "single", "channel": "phone", "gigaam220": {"text": "этом у мен ешқандай операция спасибо гулшо эя", "seconds": 0.1355}}
+{"id": "dev_197", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "к этому мен ешқандай операция спасибо большое я", "seconds": 0.157}}
+{"id": "dev_197", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "кэтому мен ешқандай операция спасибо большое я", "seconds": 0.1544}}
+{"id": "dev_240", "condition": "single", "channel": "clean", "gigaam220": {"text": "минималды мөлшері зачем эту", "seconds": 0.1071}}
+{"id": "dev_240", "condition": "single", "channel": "phone", "gigaam220": {"text": "минималды мөлшері зачим ету", "seconds": 0.1087}}
+{"id": "dev_240", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "минималды мөлшері зачем это", "seconds": 0.0984}}
+{"id": "dev_240", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "минималды мөлшері зачем это", "seconds": 0.0976}}
+{"id": "dev_054", "condition": "single", "channel": "clean", "gigaam220": {"text": "сіз барлық қаражатыңыздан сжет ии переводит", "seconds": 0.1248}}
+{"id": "dev_054", "condition": "single", "channel": "phone", "gigaam220": {"text": "сіз барлық қаражатыңыздан жет и перегодит", "seconds": 0.1259}}
+{"id": "dev_054", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "сіз барлық қаражатыңыздан счеты переводить", "seconds": 0.1214}}
+{"id": "dev_054", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "сіз барлық қаражатыңыздан счеты переводить", "seconds": 0.1196}}
+{"id": "dev_066", "condition": "single", "channel": "clean", "gigaam220": {"text": "встречи скоро бунша ну вот операционной проверки", "seconds": 0.1577}}
+{"id": "dev_066", "condition": "single", "channel": "phone", "gigaam220": {"text": "встречи скоро бойынша ну воп операционной проверки", "seconds": 0.1599}}
+{"id": "dev_066", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "встреча скоро бойнша ну вот операционной проверки", "seconds": 0.1406}}
+{"id": "dev_066", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "встреча скоро бойнша ну вот операционной проверки", "seconds": 0.1432}}
+{"id": "dev_191", "condition": "single", "channel": "clean", "gigaam220": {"text": "бұл ііэс сіздің телефон ожидат", "seconds": 0.1006}}
+{"id": "dev_191", "condition": "single", "channel": "phone", "gigaam220": {"text": "бұл і сіздің телефон ужидат", "seconds": 0.1}}
+{"id": "dev_191", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "бол  сіздің телефон ожидать", "seconds": 0.103}}
+{"id": "dev_191", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "бұл іэ сіздің телефон ожидать", "seconds": 0.103}}
+{"id": "dev_078", "condition": "single", "channel": "clean", "gigaam220": {"text": "ә тыңдап тұрмын крупную сумму мәселелерді банк бөлімшесінде жеке", "seconds": 0.2193}}
+{"id": "dev_078", "condition": "single", "channel": "phone", "gigaam220": {"text": "иә тыңдап тұрмын крупную сумму мәселелерді банк бөлімшесінде жеке", "seconds": 0.2209}}
+{"id": "dev_078", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "иә тыңдап тұрмын крупную сумму в мәселелерді банк бөлімшесінде жеке", "seconds": 0.1925}}
+{"id": "dev_078", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "иә тыңдап тұрмын крупную сумму мәселелерді банк бөлімшесінде жеке", "seconds": 0.1894}}
+{"id": "dev_243", "condition": "single", "channel": "clean", "gigaam220": {"text": "аяқталуға жақын қызық екен шестий", "seconds": 0.1012}}
+{"id": "dev_243", "condition": "single", "channel": "phone", "gigaam220": {"text": "аяқталуға жақын қызық екен шестий", "seconds": 0.1005}}
+{"id": "dev_243", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "аяқталуға жақын қызық екен шести", "seconds": 0.1039}}
+{"id": "dev_243", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "аяқталуға жақын қызық екен шести", "seconds": 0.1032}}
+{"id": "dev_128", "condition": "single", "channel": "clean", "gigaam220": {"text": "сол копии установить", "seconds": 0.0774}}
+{"id": "dev_128", "condition": "single", "channel": "phone", "gigaam220": {"text": "сол копии установить", "seconds": 0.0759}}
+{"id": "dev_128", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "сол котто ее установить", "seconds": 0.078}}
+{"id": "dev_128", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "сол котта ее установить", "seconds": 0.0796}}
+{"id": "dev_046", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "тезірек болса жаксы болар ту криэта", "seconds": 0.1149}}
+{"id": "dev_046", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "тезірек болса жақсы болар тукрет а", "seconds": 0.1152}}
+{"id": "dev_158", "condition": "single", "channel": "clean", "gigaam220": {"text": "без него мы не безуспешного предопращения", "seconds": 0.1333}}
+{"id": "dev_158", "condition": "single", "channel": "phone", "gigaam220": {"text": "без него мың не безуспешного предопращения", "seconds": 0.1333}}
+{"id": "dev_158", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "без него мы не гс успешного предотвращения", "seconds": 0.1287}}
+{"id": "dev_158", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "без него мы не гз успешного предотвращения", "seconds": 0.1284}}
+{"id": "dev_044", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "активность по май", "seconds": 0.064}}
+{"id": "dev_044", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "активность фол май", "seconds": 0.0628}}
+{"id": "dev_098", "condition": "single", "channel": "clean", "gigaam220": {"text": "алло добрийден қандай мәселемен", "seconds": 0.0957}}
+{"id": "dev_098", "condition": "single", "channel": "phone", "gigaam220": {"text": "алло добрейден қандай мәселемен", "seconds": 0.0955}}
+{"id": "dev_098", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "алло добрый день қандай мәселемен", "seconds": 0.0897}}
+{"id": "dev_098", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "алло добрый день қандай мәселемен", "seconds": 0.0878}}
+{"id": "dev_151", "condition": "single", "channel": "clean", "gigaam220": {"text": "теңге интернет біздің эксклюзивті сауда платформамыз", "seconds": 0.1617}}
+{"id": "dev_151", "condition": "single", "channel": "phone", "gigaam220": {"text": "теңге интернет біздің эксклюзивті сауда платформамыз", "seconds": 0.1589}}
+{"id": "dev_151", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "тенге в интернет біздің эксклюзивті сауда платформамыз", "seconds": 0.1671}}
+{"id": "dev_151", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "тге интернет біздің эксклюзивті сауда платформамыз", "seconds": 0.1631}}
+{"id": "dev_143", "condition": "single", "channel": "clean", "gigaam220": {"text": "по поводу недавней транзакции келе аласыз", "seconds": 0.1267}}
+{"id": "dev_143", "condition": "single", "channel": "phone", "gigaam220": {"text": "по поводу недавней транзакции келе аласыз", "seconds": 0.1264}}
+{"id": "dev_143", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "по поводу недавней транзакции келе аласыз", "seconds": 0.1143}}
+{"id": "dev_143", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "по поводу недавней транзакции теллас", "seconds": 0.1269}}
+{"id": "dev_157", "condition": "single", "channel": "clean", "gigaam220": {"text": "оны қалай сегодня после шести", "seconds": 0.1043}}
+{"id": "dev_157", "condition": "single", "channel": "phone", "gigaam220": {"text": "оны қалай сегодняя после шести", "seconds": 0.102}}
+{"id": "dev_157", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "она калай сегодня после шести", "seconds": 0.0902}}
+{"id": "dev_157", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "она калай сегодня после шести", "seconds": 0.0901}}
+{"id": "dev_003", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "невэр херд сіздің аты жөніңіз", "seconds": 0.0936}}
+{"id": "dev_003", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "невер херд сіздің аты жөніңіз", "seconds": 0.0934}}
+{"id": "dev_090", "condition": "single", "channel": "clean", "gigaam220": {"text": "просто для атымнан жаздырған сияқты не поддержите сейчас будет", "seconds": 0.19}}
+{"id": "dev_090", "condition": "single", "channel": "phone", "gigaam220": {"text": "простогя апымнан жаздырған сияқты не подвердите сейчас будет", "seconds": 0.1879}}
+{"id": "dev_090", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "просто для атымнан жаздырган сиякты не подтвердите сейчас будет", "seconds": 0.1713}}
+{"id": "dev_090", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "просто для атымнан жаздырған сияқты не подтвердите сейчас будет", "seconds": 0.1714}}
+{"id": "dev_076", "condition": "single", "channel": "clean", "gigaam220": {"text": "ссе хорошо қолданды мен улица абая дом", "seconds": 0.121}}
+{"id": "dev_076", "condition": "single", "channel": "phone", "gigaam220": {"text": "селхорошел қолданды мен улица авая дом", "seconds": 0.1236}}
+{"id": "dev_076", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "все хорошо қолданды мен улица абая дом", "seconds": 0.1184}}
+{"id": "dev_076", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "все хорошо қолданды мен улица абая дом", "seconds": 0.117}}
+{"id": "dev_159", "condition": "single", "channel": "clean", "gigaam220": {"text": "жақсымын өзің қалайсың не спасибу", "seconds": 0.1117}}
+{"id": "dev_159", "condition": "single", "channel": "phone", "gigaam220": {"text": "жақсымын өзің қалайсың еспасибу", "seconds": 0.1218}}
+{"id": "dev_159", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "жақсымын өзің қалайсың не спасибо", "seconds": 0.1195}}
+{"id": "dev_159", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "жақсымын өзің қалайсың не спасибо", "seconds": 0.1164}}
+{"id": "dev_053", "condition": "single", "channel": "clean", "gigaam220": {"text": "привет тыңдап тұрмын", "seconds": 0.0577}}
+{"id": "dev_053", "condition": "single", "channel": "phone", "gigaam220": {"text": "привет тыңдап тұрмын", "seconds": 0.0585}}
+{"id": "dev_053", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "привет тыңдап тұрмын", "seconds": 0.0617}}
+{"id": "dev_053", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "привет тыңдап тұрмын", "seconds": 0.0624}}
+{"id": "dev_201", "condition": "single", "channel": "clean", "gigaam220": {"text": "кепілдендірілген кіріс әкелетін никугі ақысы қалай төленеді", "seconds": 0.1655}}
+{"id": "dev_201", "condition": "single", "channel": "phone", "gigaam220": {"text": "кепілдендірілген кіріс әкелетін никугі ақысы қалай төленеді", "seconds": 0.1673}}
+{"id": "dev_201", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "кепілдендірілген кіріс әкелетін никого ақысы қалай төленеді", "seconds": 0.1729}}
+{"id": "dev_201", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "кепілдендірілген кіріс әкелетін никго ақысы қалай төленеді", "seconds": 0.1721}}
+{"id": "dev_017", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "жөнелту нөмері ват кайнд", "seconds": 0.0963}}
+{"id": "dev_017", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "жөнелту нөмері вакайн", "seconds": 0.0914}}
+{"id": "dev_037", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "пожалуйста до свидания вэн", "seconds": 0.0839}}
+{"id": "dev_037", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "пожалуйста до свидания вэн", "seconds": 0.0823}}
+{"id": "dev_213", "condition": "single", "channel": "clean", "gigaam220": {"text": "тапсырыс болшое спасибо за предупреждение", "seconds": 0.1261}}
+{"id": "dev_213", "condition": "single", "channel": "phone", "gigaam220": {"text": "тапсырыс болшое спасибо за предупреждение", "seconds": 0.1276}}
+{"id": "dev_213", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "тапсорос большое спасибо за предупреждение", "seconds": 0.1225}}
+{"id": "dev_213", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "апсарос большое спасибо за предупреждение", "seconds": 0.1232}}
+{"id": "dev_014", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "ақпарат бермеймін аксесс зис платформ", "seconds": 0.1025}}
+{"id": "dev_014", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "ақпарат бермеймін аксесс зис платформ", "seconds": 0.102}}
+{"id": "dev_238", "condition": "single", "channel": "clean", "gigaam220": {"text": "есеп шотына ақша аудардым ба предоставить решение", "seconds": 0.1394}}
+{"id": "dev_238", "condition": "single", "channel": "phone", "gigaam220": {"text": "есепшотыңа ақша аудардым ба предоставить решение", "seconds": 0.1392}}
+{"id": "dev_238", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "есеп шотыңа ақша аудардым ба предоставить решение", "seconds": 0.1443}}
+{"id": "dev_238", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "есепшотыңа ақша аудардым ба предоставить решение", "seconds": 0.1423}}
+{"id": "dev_221", "condition": "single", "channel": "clean", "gigaam220": {"text": "мобильное приложение шамалы білінді", "seconds": 0.099}}
+{"id": "dev_221", "condition": "single", "channel": "phone", "gigaam220": {"text": "мобильное приложение шамалы бүлінді", "seconds": 0.0987}}
+{"id": "dev_221", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "мобильное приложение шамалы білінді", "seconds": 0.1029}}
+{"id": "dev_221", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "мобильное приложение шамалы білімді", "seconds": 0.1021}}
+{"id": "dev_224", "condition": "single", "channel": "clean", "gigaam220": {"text": "тұрған сушаю бас", "seconds": 0.0675}}
+{"id": "dev_224", "condition": "single", "channel": "phone", "gigaam220": {"text": "тұрған сушай улас", "seconds": 0.0658}}
+{"id": "dev_224", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "турган слушай вас", "seconds": 0.0604}}
+{"id": "dev_224", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "турган слушай вас", "seconds": 0.0593}}
+{"id": "dev_095", "condition": "single", "channel": "clean", "gigaam220": {"text": "населения грода алматы сіз ешқандай тәуекелге мене там", "seconds": 0.1635}}
+{"id": "dev_095", "condition": "single", "channel": "phone", "gigaam220": {"text": "населениягрода алматы сыз ешқандай тәуекелге мен ятам", "seconds": 0.1623}}
+{"id": "dev_095", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "население города алматы сіз ешқандай тәуекелге меня там", "seconds": 0.1731}}
+{"id": "dev_095", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "население города алматы сіз ешқандай тәуекелге меня там", "seconds": 0.1723}}
+{"id": "dev_011", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "тэс национальной безопасности что за", "seconds": 0.1069}}
+{"id": "dev_011", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "национальной безопасности что за", "seconds": 0.1067}}
+{"id": "dev_210", "condition": "single", "channel": "clean", "gigaam220": {"text": "шаруа болып защитать последние четры", "seconds": 0.1155}}
+{"id": "dev_210", "condition": "single", "channel": "phone", "gigaam220": {"text": "шаруа болып защитат последние четыры", "seconds": 0.1464}}
+{"id": "dev_210", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "шаруавол зачитать последняе четыре", "seconds": 0.1075}}
+{"id": "dev_210", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "шаруагог зачитать последние четыре", "seconds": 0.1061}}
+{"id": "dev_144", "condition": "single", "channel": "clean", "gigaam220": {"text": "просто детали сәлеметсіз бе бұл қазақстанның", "seconds": 0.1197}}
+{"id": "dev_144", "condition": "single", "channel": "phone", "gigaam220": {"text": "просто дедт али сәлеметсіз бе бұл қазақстанның", "seconds": 0.1221}}
+{"id": "dev_144", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "просто детали сәлеметсіз бе бұл қазақстанның", "seconds": 0.1403}}
+{"id": "dev_144", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "просто детали сәлеметсіз бе бұл қазақстанның", "seconds": 0.134}}
+{"id": "dev_115", "condition": "single", "channel": "clean", "gigaam220": {"text": "на мо обышны қандай", "seconds": 0.0733}}
+{"id": "dev_115", "condition": "single", "channel": "phone", "gigaam220": {"text": "на мой обышный қандай", "seconds": 0.0735}}
+{"id": "dev_115", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "на мой обычный кандай", "seconds": 0.0618}}
+{"id": "dev_115", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "на мой обычный кандай", "seconds": 0.0612}}
+{"id": "dev_233", "condition": "single", "channel": "clean", "gigaam220": {"text": "жанара рахмет түсіндім", "seconds": 0.0667}}
+{"id": "dev_233", "condition": "single", "channel": "phone", "gigaam220": {"text": "жанара рахмет түсіндім", "seconds": 0.0658}}
+{"id": "dev_233", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "жынара рахмет түсіндім", "seconds": 0.0717}}
+{"id": "dev_233", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "жынара рахмет түсіндім", "seconds": 0.0715}}
+{"id": "dev_168", "condition": "single", "channel": "clean", "gigaam220": {"text": "и деңгей будут қазір менің айтқандарымды", "seconds": 0.1108}}
+{"id": "dev_168", "condition": "single", "channel": "phone", "gigaam220": {"text": "и деңгейі будут қазір менің айтқандарымды", "seconds": 0.1124}}
+{"id": "dev_168", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "и деньги будут қазір менің айтқандарымды", "seconds": 0.105}}
+{"id": "dev_168", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "иденьги будут қазір менің айтқандарымды", "seconds": 0.1036}}
+{"id": "dev_097", "condition": "single", "channel": "clean", "gigaam220": {"text": "временная мирани", "seconds": 0.0542}}
+{"id": "dev_097", "condition": "single", "channel": "phone", "gigaam220": {"text": "временная мирани", "seconds": 0.0542}}
+{"id": "dev_097", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "временная мера не", "seconds": 0.0604}}
+{"id": "dev_097", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "временная мера ни", "seconds": 0.0601}}
+{"id": "dev_187", "condition": "single", "channel": "clean", "gigaam220": {"text": "это актуалнотис", "seconds": 0.0658}}
+{"id": "dev_187", "condition": "single", "channel": "phone", "gigaam220": {"text": "эту актуальную кесть", "seconds": 0.0657}}
+{"id": "dev_187", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "это актуально тиз", "seconds": 0.0607}}
+{"id": "dev_187", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "это актуально кис", "seconds": 0.0633}}
+{"id": "dev_087", "condition": "single", "channel": "clean", "gigaam220": {"text": "есіміңіз нұрлан тасболатов реквизиті алматы қаласындағы электроника", "seconds": 0.1977}}
+{"id": "dev_087", "condition": "single", "channel": "phone", "gigaam220": {"text": "есіміңіз нұрлан тасболатов реквизиті алматы қаласындағы электроника", "seconds": 0.2007}}
+{"id": "dev_087", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "есіміңіз нұрлан тасболатов реквизиты алматы қаласындағы электроника", "seconds": 0.1994}}
+{"id": "dev_087", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "есіміңіз нұрлан тасболатов реквизиты алматы қаласындағы электроника", "seconds": 0.1995}}
+{"id": "dev_215", "condition": "single", "channel": "clean", "gigaam220": {"text": "авайа э то қалай төлесем", "seconds": 0.079}}
+{"id": "dev_215", "condition": "single", "channel": "phone", "gigaam220": {"text": "авая э то қалай төлесен", "seconds": 0.0787}}
+{"id": "dev_215", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "абай это қалай төлесем", "seconds": 0.0767}}
+{"id": "dev_215", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "абай это қалай сөйлесем", "seconds": 0.0766}}
+{"id": "dev_139", "condition": "single", "channel": "clean", "gigaam220": {"text": "әрекет мен ештеңес", "seconds": 0.0656}}
+{"id": "dev_139", "condition": "single", "channel": "phone", "gigaam220": {"text": "әрекет мен ештеңес", "seconds": 0.0662}}
+{"id": "dev_139", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "әрекет мен ештеңе з", "seconds": 0.0749}}
+{"id": "dev_139", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "әрекет нен ештеңе яз", "seconds": 0.0742}}
+{"id": "dev_132", "condition": "single", "channel": "clean", "gigaam220": {"text": "конено ия ест", "seconds": 0.0656}}
+{"id": "dev_132", "condition": "single", "channel": "phone", "gigaam220": {"text": "коеc u yястib", "seconds": 0.065}}
+{"id": "dev_132", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "конечно я бестіп", "seconds": 0.0693}}
+{"id": "dev_132", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "конечно я бестіп", "seconds": 0.0693}}
+{"id": "dev_075", "condition": "single", "channel": "clean", "gigaam220": {"text": "аш заказ номер семьсот бәрі", "seconds": 0.1079}}
+{"id": "dev_075", "condition": "single", "channel": "phone", "gigaam220": {"text": "аш заказ номер семьсот бәрі", "seconds": 0.0976}}
+{"id": "dev_075", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "ваш заказ номер семьсот бәрі", "seconds": 0.0949}}
+{"id": "dev_075", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "ваш заказ номер семьсот ар", "seconds": 0.0945}}
+{"id": "dev_065", "condition": "single", "channel": "clean", "gigaam220": {"text": "мин хеши чтобы их сохранить бам", "seconds": 0.1116}}
+{"id": "dev_065", "condition": "single", "channel": "phone", "gigaam220": {"text": "мин кеше чтобы их сохранить вам", "seconds": 0.1128}}
+{"id": "dev_065", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "минкиши чтобы их сохранить вам", "seconds": 0.0971}}
+{"id": "dev_065", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "мекиши чтобы их сохранить вам", "seconds": 0.0945}}
+{"id": "dev_173", "condition": "single", "channel": "clean", "gigaam220": {"text": "не ыдырысов азамат екеніңізге", "seconds": 0.1057}}
+{"id": "dev_173", "condition": "single", "channel": "phone", "gigaam220": {"text": "не ыдырысов азамат екеніңізге", "seconds": 0.1167}}
+{"id": "dev_173", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "не ыдырысов азамат екеніңізге", "seconds": 0.1099}}
+{"id": "dev_173", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "ние ыдырысов азамат екеніңізбей", "seconds": 0.1138}}
+{"id": "dev_184", "condition": "single", "channel": "clean", "gigaam220": {"text": "бұл сіздің лотереяну", "seconds": 0.0678}}
+{"id": "dev_184", "condition": "single", "channel": "phone", "gigaam220": {"text": "бұл сіздің лотереяныз", "seconds": 0.0678}}
+{"id": "dev_184", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "бұл сіздің лотрейно", "seconds": 0.0715}}
+{"id": "dev_184", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "бұл сіздің сотрено", "seconds": 0.0707}}
+{"id": "dev_220", "condition": "single", "channel": "clean", "gigaam220": {"text": "бізге көмектесуніз покупал", "seconds": 0.0827}}
+{"id": "dev_220", "condition": "single", "channel": "phone", "gigaam220": {"text": "бізге көмектесуіміз покупал", "seconds": 0.0821}}
+{"id": "dev_220", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "бізге көмектесуіңіз покупал", "seconds": 0.0872}}
+{"id": "dev_220", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "бізге көмектесуіміз покупал", "seconds": 0.0856}}
+{"id": "dev_179", "condition": "single", "channel": "clean", "gigaam220": {"text": "маған қазір бір ақша я жду спасибо", "seconds": 0.1113}}
+{"id": "dev_179", "condition": "single", "channel": "phone", "gigaam220": {"text": "маған қазір бір ақша я жду спасибо", "seconds": 0.1107}}
+{"id": "dev_179", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "маған қазір бір ақша я жду спасибо", "seconds": 0.1127}}
+{"id": "dev_179", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "маған қазір бір ақша я жду спасибо", "seconds": 0.1101}}
+{"id": "dev_108", "condition": "single", "channel": "clean", "gigaam220": {"text": "міндетті иә ничигі неделала", "seconds": 0.0898}}
+{"id": "dev_108", "condition": "single", "channel": "phone", "gigaam220": {"text": "міндепті я ничего не делала", "seconds": 0.0893}}
+{"id": "dev_108", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "міндетті я ничего не делала", "seconds": 0.0874}}
+{"id": "dev_108", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "міндетті я ничего не делала", "seconds": 0.0882}}
+{"id": "dev_067", "condition": "single", "channel": "clean", "gigaam220": {"text": "бессисдпу", "seconds": 0.0449}}
+{"id": "dev_067", "condition": "single", "channel": "phone", "gigaam220": {"text": "bessizda pul", "seconds": 0.0448}}
+{"id": "dev_067", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "бес сізді п", "seconds": 0.0485}}
+{"id": "dev_067", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "бес сүзді", "seconds": 0.0509}}
+{"id": "dev_230", "condition": "single", "channel": "clean", "gigaam220": {"text": "қазір менің за перевод сколко у рас па", "seconds": 0.1227}}
+{"id": "dev_230", "condition": "single", "channel": "phone", "gigaam220": {"text": "қазір менің за перевод солкоу рас па", "seconds": 0.1198}}
+{"id": "dev_230", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "қазір менің за перевод сколько о распа", "seconds": 0.1201}}
+{"id": "dev_230", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "қазір менің за перевод сколько о распа", "seconds": 0.1211}}
+{"id": "dev_236", "condition": "single", "channel": "clean", "gigaam220": {"text": "я забут ти зят", "seconds": 0.0688}}
+{"id": "dev_236", "condition": "single", "channel": "phone", "gigaam220": {"text": "я забудти зят", "seconds": 0.066}}
+{"id": "dev_236", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "я забудьте взять с", "seconds": 0.0627}}
+{"id": "dev_236", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "я забудьте взять", "seconds": 0.0626}}
+{"id": "dev_137", "condition": "single", "channel": "clean", "gigaam220": {"text": "көрсетуіңіз керек болғаш и", "seconds": 0.0791}}
+{"id": "dev_137", "condition": "single", "channel": "phone", "gigaam220": {"text": "көрсетуіңіз керек болғаш үй", "seconds": 0.0783}}
+{"id": "dev_137", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "көрсетуіңіз керек п ваший", "seconds": 0.0793}}
+{"id": "dev_137", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "көрсетуіңіз керек пваши", "seconds": 0.0773}}
+{"id": "dev_073", "condition": "single", "channel": "clean", "gigaam220": {"text": "мин то то это", "seconds": 0.0581}}
+{"id": "dev_073", "condition": "single", "channel": "phone", "gigaam220": {"text": "нинч топол эпл", "seconds": 0.0603}}
+{"id": "dev_073", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "мень что то это", "seconds": 0.0546}}
+{"id": "dev_073", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "нень что за это", "seconds": 0.0536}}
+{"id": "dev_063", "condition": "single", "channel": "clean", "gigaam220": {"text": "бе бұл қыдырәлі серікұлы не", "seconds": 0.0911}}
+{"id": "dev_063", "condition": "single", "channel": "phone", "gigaam220": {"text": "бе бұл қыдырәлі серікұлы не", "seconds": 0.1014}}
+{"id": "dev_063", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "бе бұл қыдырәлі серікұлы нее", "seconds": 0.1058}}
+{"id": "dev_063", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "бе бұ қыдырәлі серікұлы нее", "seconds": 0.1028}}
+{"id": "dev_038", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "ага это был чактд на месте удостоверение при", "seconds": 0.1402}}
+{"id": "dev_038", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "ага это был чакт на месте удостоверение при", "seconds": 0.1455}}
+{"id": "dev_070", "condition": "single", "channel": "clean", "gigaam220": {"text": "алло здравствуйте жанна жаннаби", "seconds": 0.0982}}
+{"id": "dev_070", "condition": "single", "channel": "phone", "gigaam220": {"text": "алло здравствуйте жанна жаннаби", "seconds": 0.0958}}
+{"id": "dev_070", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "алла здравствуйте жанна жанна би", "seconds": 0.0921}}
+{"id": "dev_070", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "алла здравствуйте жанна жанна би", "seconds": 0.0921}}
+{"id": "dev_235", "condition": "single", "channel": "clean", "gigaam220": {"text": "вамной көп әрекеттер байқалды", "seconds": 0.0861}}
+{"id": "dev_235", "condition": "single", "channel": "phone", "gigaam220": {"text": "вамной коп әрекеттер байқалды", "seconds": 0.0868}}
+{"id": "dev_235", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "вам мой код әрекеттер байқалды", "seconds": 0.0908}}
+{"id": "dev_235", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "во ной куз әрекеттер байқалды", "seconds": 0.0932}}
+{"id": "dev_028", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "у сарсенби түс атемпт", "seconds": 0.0862}}
+{"id": "dev_028", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "ол сәрсенбі түс аттaнд", "seconds": 0.0893}}
+{"id": "dev_195", "condition": "single", "channel": "clean", "gigaam220": {"text": "э то етіледі бұл", "seconds": 0.0586}}
+{"id": "dev_195", "condition": "single", "channel": "phone", "gigaam220": {"text": "это eтілеdіi buл", "seconds": 0.0581}}
+{"id": "dev_195", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "это итледа бұл", "seconds": 0.0765}}
+{"id": "dev_195", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "это етледа бұл", "seconds": 0.0695}}
+{"id": "dev_152", "condition": "single", "channel": "clean", "gigaam220": {"text": "қайда жіберу керек мы просто проводим в оборутную", "seconds": 0.1557}}
+{"id": "dev_152", "condition": "single", "channel": "phone", "gigaam220": {"text": "қайда жіберу керек вопросту проводим в оборунную", "seconds": 0.1478}}
+{"id": "dev_152", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "қайда жіберу керек мы просто проводим выборочную", "seconds": 0.1866}}
+{"id": "dev_152", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "қайда жіберу керек мы просто проводим выборочную", "seconds": 0.1358}}
+{"id": "dev_174", "condition": "single", "channel": "clean", "gigaam220": {"text": "қандай операциялар мен ешқандай и", "seconds": 0.1104}}
+{"id": "dev_174", "condition": "single", "channel": "phone", "gigaam220": {"text": "қандай операциялар мен ешқандай", "seconds": 0.109}}
+{"id": "dev_174", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "қандай операциялар мен ешқандай и", "seconds": 0.1073}}
+{"id": "dev_174", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "қандай операциялар мен ешқандай е", "seconds": 0.1081}}
+{"id": "dev_147", "condition": "single", "channel": "clean", "gigaam220": {"text": "бұл қауіпсіздік үшін голоса громче қандай әрекеттер", "seconds": 0.1477}}
+{"id": "dev_147", "condition": "single", "channel": "phone", "gigaam220": {"text": "бұл қауіпсіздік үшін голоса дронче қандай әрекеттер", "seconds": 0.163}}
+{"id": "dev_147", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "бұл қауіпсіздік үшін голоса громче қандай әрекеттер", "seconds": 0.1448}}
+{"id": "dev_147", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "бұл қауіпсіздік үшін длэса гроумже қандай әрекеттер", "seconds": 0.1413}}
+{"id": "dev_172", "condition": "single", "channel": "clean", "gigaam220": {"text": "разбирательство с болса жақсы", "seconds": 0.0855}}
+{"id": "dev_172", "condition": "single", "channel": "phone", "gigaam220": {"text": "разбирательствас болса жақсы", "seconds": 0.0845}}
+{"id": "dev_172", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "разбирательство с болса жақсы", "seconds": 0.0955}}
+{"id": "dev_172", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "разбирательство болса жақсы", "seconds": 0.0968}}
+{"id": "dev_218", "condition": "single", "channel": "clean", "gigaam220": {"text": "тіпті банк теңге", "seconds": 0.0505}}
+{"id": "dev_218", "condition": "single", "channel": "phone", "gigaam220": {"text": "тіпті банк теңге", "seconds": 0.0509}}
+{"id": "dev_218", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "тіпті банк тіңге", "seconds": 0.0576}}
+{"id": "dev_218", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "тіпті банк түнге", "seconds": 0.0579}}
+{"id": "dev_150", "condition": "single", "channel": "clean", "gigaam220": {"text": "тогда сех уақытша понятно спасибо за", "seconds": 0.1239}}
+{"id": "dev_150", "condition": "single", "channel": "phone", "gigaam220": {"text": "тогда все уакытша понятно спасибо за", "seconds": 0.1237}}
+{"id": "dev_150", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "тогда все в уакытша понятно спасибо за", "seconds": 0.1254}}
+{"id": "dev_150", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "тогда всв уакша понятно спасибо за", "seconds": 0.1279}}
+{"id": "dev_032", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "плиз телл в приложение или вэ", "seconds": 0.09}}
+{"id": "dev_032", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "плэйз тэлл в приложение или в", "seconds": 0.0893}}
+{"id": "dev_023", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "на казахстанской кайнд оф", "seconds": 0.0748}}
+{"id": "dev_023", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "на казахстанской канда", "seconds": 0.0749}}
+{"id": "dev_056", "condition": "single", "channel": "clean", "gigaam220": {"text": "бір минут күте тұрыңызшы номер", "seconds": 0.0867}}
+{"id": "dev_056", "condition": "single", "channel": "phone", "gigaam220": {"text": "бір минут күте тұрыңызшы номер", "seconds": 0.0772}}
+{"id": "dev_056", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "бір минут күте тұрыңызшы номер", "seconds": 0.0851}}
+{"id": "dev_056", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "бір минут күте тұрыңызшы номер", "seconds": 0.0848}}
+{"id": "dev_214", "condition": "single", "channel": "clean", "gigaam220": {"text": "түсінікті қазір бірден жіберемін правта что за", "seconds": 0.1371}}
+{"id": "dev_214", "condition": "single", "channel": "phone", "gigaam220": {"text": "түсінікті қазір бірден жіберемін правта что за", "seconds": 0.1394}}
+{"id": "dev_214", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "түсінікті қазір бірден жіберемін правда что за", "seconds": 0.1495}}
+{"id": "dev_214", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "түсінікті қазір бірден жіберемін правда что за", "seconds": 0.1344}}
+{"id": "dev_249", "condition": "single", "channel": "clean", "gigaam220": {"text": "карту в течение мүмкін егер мәселе мы не сможем", "seconds": 0.1472}}
+{"id": "dev_249", "condition": "single", "channel": "phone", "gigaam220": {"text": "карту в течение мүмкін егер мәселе мы не сможем", "seconds": 0.148}}
+{"id": "dev_249", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "карту в течение мүмкін егер мәсели мы не сможем", "seconds": 0.132}}
+{"id": "dev_249", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "карту в течение мүмкін егер мәселе мы не сможем", "seconds": 0.1345}}
+{"id": "dev_016", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "мен ешқандай аударым диднт гет эни егер сіз", "seconds": 0.1356}}
+{"id": "dev_016", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "мен ешқандай аударым динет гет ни егер сіз", "seconds": 0.1365}}
+{"id": "dev_177", "condition": "single", "channel": "clean", "gigaam220": {"text": "күні бүгінге белгіленген ты там на және сіздің картаңызға", "seconds": 0.1927}}
+{"id": "dev_177", "condition": "single", "channel": "phone", "gigaam220": {"text": "күні бүгінге белгіленген тас тамна және сіздің картаңызға", "seconds": 0.1896}}
+{"id": "dev_177", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "күні бүгінге белгіленген ттмна және сіздің картаңызға", "seconds": 0.174}}
+{"id": "dev_177", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "күні бүгінге белгіленген тта мна және сіздің картаңызға", "seconds": 0.1729}}
+{"id": "dev_109", "condition": "single", "channel": "clean", "gigaam220": {"text": "чтобы мы могли едет қызметі что тони", "seconds": 0.1198}}
+{"id": "dev_109", "condition": "single", "channel": "phone", "gigaam220": {"text": "чтобы мы могли видеть қызметі чтопыми", "seconds": 0.1189}}
+{"id": "dev_109", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "чтобы мы могли видеть кзмета что тони", "seconds": 0.1105}}
+{"id": "dev_109", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "чтобы мы могли видеть кзмета что то не", "seconds": 0.1117}}
+{"id": "dev_148", "condition": "single", "channel": "clean", "gigaam220": {"text": "подтверждаем информирование также қоту менің нөмірімнен", "seconds": 0.1621}}
+{"id": "dev_148", "condition": "single", "channel": "phone", "gigaam220": {"text": "подтверждаем информирование также қоту менің нөмірімнен", "seconds": 0.1617}}
+{"id": "dev_148", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "подтверждаем информирование также хочу менің нөмірімнен", "seconds": 0.1473}}
+{"id": "dev_148", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "подтверждаем информирование также хочу менің номірімнен", "seconds": 0.1455}}
+{"id": "dev_171", "condition": "single", "channel": "clean", "gigaam220": {"text": "жай ғана ну бес подтверждение сағат тоғыз", "seconds": 0.1225}}
+{"id": "dev_171", "condition": "single", "channel": "phone", "gigaam220": {"text": "жай ғана ну бес подтверждение сағат тоғыз", "seconds": 0.123}}
+{"id": "dev_171", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "жай ғана но без подтверждения сағат тоғыз", "seconds": 0.1255}}
+{"id": "dev_171", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "жай ғана ну без подтверждения сағат тоғыз", "seconds": 0.1258}}
+{"id": "dev_245", "condition": "single", "channel": "clean", "gigaam220": {"text": "чтобы вы назвали последние жоғы әлі тексерген не спросим", "seconds": 0.1602}}
+{"id": "dev_245", "condition": "single", "channel": "phone", "gigaam220": {"text": "шпбы вы назвали последние жуық әлі тексерген не спросим", "seconds": 0.1602}}
+{"id": "dev_245", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "чтобы вы назвали последнее жоқ әлі тексерген не спросим", "seconds": 0.1706}}
+{"id": "dev_245", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "чтобы вы назвали последнее жок әлі тексергель не спросим", "seconds": 0.1696}}
+{"id": "dev_130", "condition": "single", "channel": "clean", "gigaam220": {"text": "дүкеннен жасағаныңызды растай аласыз шж тобы успили төрт отыз", "seconds": 0.1806}}
+{"id": "dev_130", "condition": "single", "channel": "phone", "gigaam220": {"text": "дүкеннен жасағаныңызды растай аласыз ш тобы оспили төрт отыз", "seconds": 0.178}}
+{"id": "dev_130", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "дүкеннен жасағаныңызды растай аласыз чтобы успели төрт отыз", "seconds": 0.1811}}
+{"id": "dev_130", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "дүкеннен жасағаныңызды растай аласыз что бы успели төрт отыз", "seconds": 0.181}}
+{"id": "dev_198", "condition": "single", "channel": "clean", "gigaam220": {"text": "восемьсот девяносто да это құпия деректерді", "seconds": 0.1308}}
+{"id": "dev_198", "condition": "single", "channel": "phone", "gigaam220": {"text": "восемьсот девяносто да это құпия деректерді", "seconds": 0.1303}}
+{"id": "dev_198", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "восемьсот девяносто д это құпия деректерді", "seconds": 0.111}}
+{"id": "dev_198", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "восемьсот девяносто да это құпия деректерді", "seconds": 0.1107}}
+{"id": "dev_101", "condition": "single", "channel": "clean", "gigaam220": {"text": "я не переводил проблема жоқ кездесуде күтеміз", "seconds": 0.1284}}
+{"id": "dev_101", "condition": "single", "channel": "phone", "gigaam220": {"text": "я не переводил проблема жоқ кездесуде күтеміз", "seconds": 0.1274}}
+{"id": "dev_101", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "я не переводил проблема жоқ кездесуде күтеміз", "seconds": 0.1305}}
+{"id": "dev_101", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "я не переводил проблема жоқ кездесуде күтеміз", "seconds": 0.1314}}
+{"id": "dev_167", "condition": "single", "channel": "clean", "gigaam220": {"text": "бұл нұр сұлтан герехицироват я сейтчас", "seconds": 0.1128}}
+{"id": "dev_167", "condition": "single", "channel": "phone", "gigaam220": {"text": "бұл нұр сұлтан берехи церолат я сейтчас", "seconds": 0.1144}}
+{"id": "dev_167", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "бул нурсултан верифицировать я сейчас", "seconds": 0.1028}}
+{"id": "dev_167", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "бул нурсултан верифицировать я сейчас", "seconds": 0.1027}}
+{"id": "dev_241", "condition": "single", "channel": "clean", "gigaam220": {"text": "мого қауіпсіздендіру үшін", "seconds": 0.067}}
+{"id": "dev_241", "condition": "single", "channel": "phone", "gigaam220": {"text": "молғо қауіпсіздендіру үшін", "seconds": 0.0658}}
+{"id": "dev_241", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "магу қауіпсіздендіру үшін", "seconds": 0.0688}}
+{"id": "dev_241", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "магу қауіпсіздендіру үшін", "seconds": 0.0687}}
+{"id": "dev_129", "condition": "single", "channel": "clean", "gigaam220": {"text": "вроде ничего не келуа", "seconds": 0.0781}}
+{"id": "dev_129", "condition": "single", "channel": "phone", "gigaam220": {"text": "вроде ничего не келуа", "seconds": 0.0776}}
+{"id": "dev_129", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "вроди ничего не келуі", "seconds": 0.0727}}
+{"id": "dev_129", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "вроде ничего не келуі", "seconds": 0.0703}}
+{"id": "dev_226", "condition": "single", "channel": "clean", "gigaam220": {"text": "бұл потребуется удаленный доступ", "seconds": 0.0974}}
+{"id": "dev_226", "condition": "single", "channel": "phone", "gigaam220": {"text": "бұл потребуется удаленный доступ", "seconds": 0.0975}}
+{"id": "dev_226", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "бол потребуется удаленный доступ", "seconds": 0.0848}}
+{"id": "dev_226", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "пол потребуется удаленный доступ", "seconds": 0.0839}}
+{"id": "dev_164", "condition": "single", "channel": "clean", "gigaam220": {"text": "жарты сағат не буду", "seconds": 0.0776}}
+{"id": "dev_164", "condition": "single", "channel": "phone", "gigaam220": {"text": "жарты сағат не буду", "seconds": 0.0768}}
+{"id": "dev_164", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "жарты сағат не буду", "seconds": 0.0692}}
+{"id": "dev_164", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "жарты сағат не буду", "seconds": 0.0681}}
+{"id": "dev_111", "condition": "single", "channel": "clean", "gigaam220": {"text": "это для тіпті өзіміздің", "seconds": 0.0878}}
+{"id": "dev_111", "condition": "single", "channel": "phone", "gigaam220": {"text": "это для тіпті өзіміздің", "seconds": 0.0874}}
+{"id": "dev_111", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "это для тіпті өзіміздің", "seconds": 0.0858}}
+{"id": "dev_111", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "это для тіпті өзімізбің", "seconds": 0.0762}}
+{"id": "dev_030", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "эисин шуд би ээ не болып", "seconds": 0.0843}}
+{"id": "dev_030", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "эри ш б эне бол", "seconds": 0.0844}}
+{"id": "dev_034", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "ее как нетипичную для нэйчур аф света привет", "seconds": 0.1366}}
+{"id": "dev_034", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "ее как нетипичную для нейчера света привет", "seconds": 0.1341}}
+{"id": "dev_199", "condition": "single", "channel": "clean", "gigaam220": {"text": "онда эйш алаңдамаңыз хотим жақсы өзің қалайсың не", "seconds": 0.1593}}
+{"id": "dev_199", "condition": "single", "channel": "phone", "gigaam220": {"text": "онда еш алаңдамаңыз хоким жақсы өзің қалайсың не", "seconds": 0.1587}}
+{"id": "dev_199", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "онда эйш алаңдамаңыз хадим жақсы өзің қалайсың не", "seconds": 0.1645}}
+{"id": "dev_199", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "онда еш алаңдамаңыз хадим жақсы өзің қалайсың не", "seconds": 0.1646}}
+{"id": "dev_211", "condition": "single", "channel": "clean", "gigaam220": {"text": "ничего не сәлеметсіз верну завтра ожидайте курьера", "seconds": 0.1616}}
+{"id": "dev_211", "condition": "single", "channel": "phone", "gigaam220": {"text": "ничего не сәлеметсіз верну завтра ужидайте курьера", "seconds": 0.1797}}
+{"id": "dev_211", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "ничего не салемитсес верно завтра ожидайте курьера", "seconds": 0.1551}}
+{"id": "dev_211", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "ничего не салеметсс верно завтра ожидайте курьера", "seconds": 0.1544}}
+{"id": "dev_061", "condition": "single", "channel": "clean", "gigaam220": {"text": "сиязи с казахтелекомым сіздің", "seconds": 0.0916}}
+{"id": "dev_061", "condition": "single", "channel": "phone", "gigaam220": {"text": "сязис казақтелекомомсіздің", "seconds": 0.0906}}
+{"id": "dev_061", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "связи с казахтелекомом сзд", "seconds": 0.094}}
+{"id": "dev_061", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "связи с казахтелекомом сд", "seconds": 0.0937}}
+{"id": "dev_004", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "колинг фром будут опубликованы", "seconds": 0.0959}}
+{"id": "dev_004", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "калин фра будут опубликованы", "seconds": 0.0979}}
+{"id": "dev_223", "condition": "single", "channel": "clean", "gigaam220": {"text": "қазір теңге магазин электроикий", "seconds": 0.1099}}
+{"id": "dev_223", "condition": "single", "channel": "phone", "gigaam220": {"text": "қазір теңге магазин электроникий", "seconds": 0.1099}}
+{"id": "dev_223", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "хазар тенге в магазин электроники", "seconds": 0.0981}}
+{"id": "dev_223", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "казар тенге в магазин электроники", "seconds": 0.096}}
+{"id": "dev_180", "condition": "single", "channel": "clean", "gigaam220": {"text": "бұл жылдам жеткізу қызметінен спаси боғ алған едім", "seconds": 0.1409}}
+{"id": "dev_180", "condition": "single", "channel": "phone", "gigaam220": {"text": "бұл жылдам жеткізу қызметінен спасибо алған едім", "seconds": 0.2085}}
+{"id": "dev_180", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "бұл жылдам жеткізу қызметінен спасибо қалған едім", "seconds": 0.2161}}
+{"id": "dev_180", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "бұл жылдам жеткізу қызметінен спасибо қалған едім", "seconds": 0.1802}}
+{"id": "dev_021", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "дидненти гэт иминовы", "seconds": 0.0836}}
+{"id": "dev_021", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "диднен ти гэт именовы", "seconds": 0.0698}}
+{"id": "dev_183", "condition": "single", "channel": "clean", "gigaam220": {"text": "дя сверкей қоңырау шалып", "seconds": 0.0837}}
+{"id": "dev_183", "condition": "single", "channel": "phone", "gigaam220": {"text": "для сверки қоңырау шалып", "seconds": 0.0856}}
+{"id": "dev_183", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "для сверки қоңырау шалып", "seconds": 0.083}}
+{"id": "dev_183", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "для сверки коңыраушалып", "seconds": 0.0915}}
+{"id": "dev_026", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "бе мин ешқандай уперася дэлэй вилл үшін керек мин", "seconds": 0.1887}}
+{"id": "dev_026", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "бе мин ешқандай операция дэлейвэлл үшін керекмин", "seconds": 0.2003}}
+{"id": "dev_145", "condition": "single", "channel": "clean", "gigaam220": {"text": "что не бізге қосымша", "seconds": 0.0938}}
+{"id": "dev_145", "condition": "single", "channel": "phone", "gigaam220": {"text": "что не бізге қосымша", "seconds": 0.0916}}
+{"id": "dev_145", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "что не бізге қосымша", "seconds": 0.0869}}
+{"id": "dev_145", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "что не бізге қосымша", "seconds": 0.1036}}
+{"id": "dev_117", "condition": "single", "channel": "clean", "gigaam220": {"text": "получение лготного эшқашан мұндай ақпаратты", "seconds": 0.1829}}
+{"id": "dev_117", "condition": "single", "channel": "phone", "gigaam220": {"text": "получение лготного эшкашан мыңдай акпаратты", "seconds": 0.1948}}
+{"id": "dev_117", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "получение льготного эшқашан мұндай ақпаратты", "seconds": 0.17}}
+{"id": "dev_117", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "получение льбозного эшқашан мұндай ақпаратты", "seconds": 0.1782}}
+{"id": "dev_170", "condition": "single", "channel": "clean", "gigaam220": {"text": "была попытка значит уақытта келе ничего не делал", "seconds": 0.2039}}
+{"id": "dev_170", "condition": "single", "channel": "phone", "gigaam220": {"text": "была попытка значит уақытта келе ничего не делал", "seconds": 0.1763}}
+{"id": "dev_170", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "была попытка значит уакыт такели ничего не делал", "seconds": 0.1939}}
+{"id": "dev_170", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "была попытка значит уак такели ничего не делал", "seconds": 0.2001}}
+{"id": "dev_194", "condition": "single", "channel": "clean", "gigaam220": {"text": "атыңызға күдікті қаржылық звоним по поводу", "seconds": 0.175}}
+{"id": "dev_194", "condition": "single", "channel": "phone", "gigaam220": {"text": "атыңызға күдікті қаржылық звонинг полпы бұдыл", "seconds": 0.1755}}
+{"id": "dev_194", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "атыңызға күдікті қаржылық звоним по поводу", "seconds": 0.1733}}
+{"id": "dev_194", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "атыңызға тідікті қаржылық звоним по поводу", "seconds": 0.1702}}
+{"id": "dev_022", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "жақсы емеспе уори", "seconds": 0.0881}}
+{"id": "dev_022", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "жақсы емеспе уорри", "seconds": 0.0965}}
+{"id": "dev_058", "condition": "single", "channel": "clean", "gigaam220": {"text": "вопросов больше нет спасибо ушин ну ичту", "seconds": 0.1569}}
+{"id": "dev_058", "condition": "single", "channel": "phone", "gigaam220": {"text": "вопросов больше нет спасибо шін ну ичту", "seconds": 0.1533}}
+{"id": "dev_058", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "вопросов больше нет спасибо ну и что", "seconds": 0.1302}}
+{"id": "dev_058", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "вопросов больше нет спасибо ну и что", "seconds": 0.1302}}
+{"id": "dev_118", "condition": "single", "channel": "clean", "gigaam220": {"text": "сәлеметсіз бе бұл информатию", "seconds": 0.0935}}
+{"id": "dev_118", "condition": "single", "channel": "phone", "gigaam220": {"text": "сәлеметсіз бе бұл информацил", "seconds": 0.0911}}
+{"id": "dev_118", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "сәлеметсіз бе бул информацию", "seconds": 0.0858}}
+{"id": "dev_118", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "сәлеметсіз бе бұл информацию", "seconds": 0.09}}
+{"id": "dev_081", "condition": "single", "channel": "clean", "gigaam220": {"text": "в будные дни жатыр сәлемитсіз заблокируем мошеннические операции", "seconds": 0.2211}}
+{"id": "dev_081", "condition": "single", "channel": "phone", "gigaam220": {"text": "в будние дни жатыр сәлеметсе заблокируем мошеннические операции", "seconds": 0.2146}}
+{"id": "dev_081", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "в будние дни жатыр сәлеметсіз заблокируем мошеннические операции", "seconds": 0.1865}}
+{"id": "dev_081", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "в будни дни жатыр сталиетцс заблокируем мошеннические операции", "seconds": 0.1877}}
+{"id": "dev_020", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "иә тыңдап тұрмын стэндард просиджур", "seconds": 0.1028}}
+{"id": "dev_020", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "иә тыңдап тұрмын стандард процедур", "seconds": 0.1024}}
+{"id": "dev_212", "condition": "single", "channel": "clean", "gigaam220": {"text": "какой то другой счет тезрэк семьсот семьдесят", "seconds": 0.1308}}
+{"id": "dev_212", "condition": "single", "channel": "phone", "gigaam220": {"text": "какой то другой счет тезрэк семьсот семьдесят", "seconds": 0.1284}}
+{"id": "dev_212", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "какой то другой счет тезрэк семьсот семьдесят", "seconds": 0.1319}}
+{"id": "dev_212", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "какой то другой счет фезрек семьсот семьдесят", "seconds": 0.1324}}
+{"id": "dev_206", "condition": "single", "channel": "clean", "gigaam220": {"text": "подозрительную активность попуган", "seconds": 0.1016}}
+{"id": "dev_206", "condition": "single", "channel": "phone", "gigaam220": {"text": "подозрительную активность потуган", "seconds": 0.1003}}
+{"id": "dev_206", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "подозрительную активность п туган", "seconds": 0.0884}}
+{"id": "dev_206", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "подозрительную активность атуған", "seconds": 0.0869}}
+{"id": "dev_123", "condition": "single", "channel": "clean", "gigaam220": {"text": "керес қазір сізге бір реттік", "seconds": 0.1058}}
+{"id": "dev_123", "condition": "single", "channel": "phone", "gigaam220": {"text": "керес қазір сізге бір реттік", "seconds": 0.0856}}
+{"id": "dev_123", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "черз қазір сізге бірреттік", "seconds": 0.086}}
+{"id": "dev_123", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "чейльс қазір сізге бір реттік", "seconds": 0.0873}}
+{"id": "dev_094", "condition": "single", "channel": "clean", "gigaam220": {"text": "от вашей убной нен айтып все ваши деньги будут", "seconds": 0.1755}}
+{"id": "dev_094", "condition": "single", "channel": "phone", "gigaam220": {"text": "от вашей обной нені айтып все ваши деньги будут", "seconds": 0.1752}}
+{"id": "dev_094", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "от вашей обычной ненайто все ваши деньги будут", "seconds": 0.1373}}
+{"id": "dev_094", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "от вашей обычной ненайоп все ваши деньги будут", "seconds": 0.141}}
+{"id": "dev_010", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "қанша керек не болды ит фром аутсайд", "seconds": 0.1018}}
+{"id": "dev_010", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "қанша керек не болды ит фром аутсайд", "seconds": 0.1016}}
+{"id": "dev_049", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "төлеп тастайын ы түсінікті қазір жоспарымды", "seconds": 0.1295}}
+{"id": "dev_049", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "төлеп тастайын ы түсінікті қазір жоспарымды", "seconds": 0.1379}}
+{"id": "dev_112", "condition": "single", "channel": "clean", "gigaam220": {"text": "не істеуің керек ко үссем дереу түзетуіміз", "seconds": 0.1165}}
+{"id": "dev_112", "condition": "single", "channel": "phone", "gigaam220": {"text": "не істеуің керек когуз сен бериул түзетуіміз", "seconds": 0.1145}}
+{"id": "dev_112", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "не істеуім керек ко всем дереу түзетуіміз", "seconds": 0.1246}}
+{"id": "dev_112", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "не істеуім керек каквсем дереу түзейтуіміз", "seconds": 0.1261}}
+{"id": "dev_057", "condition": "single", "channel": "clean", "gigaam220": {"text": "сомадағы аударым спасибо чту предупредили растау үшін ғана біз", "seconds": 0.171}}
+{"id": "dev_057", "condition": "single", "channel": "phone", "gigaam220": {"text": "сомадағы аударым спасибо чту предупредили растау үшін ғана біз", "seconds": 0.1683}}
+{"id": "dev_057", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "сомадағы аударым спасибо что предупредили растау үшін ғана біз", "seconds": 0.1794}}
+{"id": "dev_057", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "сомадағы аударым спасибо что предупредили растау үшін ғана біз", "seconds": 0.179}}
+{"id": "dev_185", "condition": "single", "channel": "clean", "gigaam220": {"text": "подтвердит вашу личность ии в руки", "seconds": 0.1258}}
+{"id": "dev_185", "condition": "single", "channel": "phone", "gigaam220": {"text": "подтвердить вашу личность ии зруки", "seconds": 0.1256}}
+{"id": "dev_185", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "подтвердить вашу личность и в руки", "seconds": 0.1035}}
+{"id": "dev_185", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "подтвердить вашу личностьи в руки", "seconds": 0.1035}}
+{"id": "dev_232", "condition": "single", "channel": "clean", "gigaam220": {"text": "хорошо поняла жақсымен транзактиу и поставим вашу", "seconds": 0.1492}}
+{"id": "dev_232", "condition": "single", "channel": "phone", "gigaam220": {"text": "хорошу помяла жақсымен транзакцию и поставим вашу", "seconds": 0.1504}}
+{"id": "dev_232", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "хорошо поняла жақсымен транзакцию поставим вашу", "seconds": 0.1505}}
+{"id": "dev_232", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "хорошо поняла жақсымен транзакци поставим вашу", "seconds": 0.15}}
+{"id": "dev_029", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "сағат жетіден кейін зэ парсел", "seconds": 0.0917}}
+{"id": "dev_029", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "сағат жетіден кейін сэ парсел", "seconds": 0.0899}}
+{"id": "dev_190", "condition": "single", "channel": "clean", "gigaam220": {"text": "мин открывать счета на свой", "seconds": 0.0783}}
+{"id": "dev_190", "condition": "single", "channel": "phone", "gigaam220": {"text": "миң открывать чета на свой", "seconds": 0.0781}}
+{"id": "dev_190", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "мень открывать счеты на свое", "seconds": 0.0769}}
+{"id": "dev_190", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "меноткрывать счеты на свое", "seconds": 0.0929}}
+{"id": "dev_013", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "номера телефона на интагрити оф зэс я помогу вам", "seconds": 0.153}}
+{"id": "dev_013", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "номера телефона на интаграти оф эс я помогу вам", "seconds": 0.1425}}
+{"id": "dev_012", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "фолисэн какую активность моя", "seconds": 0.0907}}
+{"id": "dev_012", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "какую активность моя", "seconds": 0.0916}}
+{"id": "dev_106", "condition": "single", "channel": "clean", "gigaam220": {"text": "сәлеметсіз бе бұл лам спасибо", "seconds": 0.0912}}
+{"id": "dev_106", "condition": "single", "channel": "phone", "gigaam220": {"text": "сәлеметсіз бе бұллам спасибо", "seconds": 0.0914}}
+{"id": "dev_106", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "сәлеметсіз бе бул вам спасибо", "seconds": 0.0861}}
+{"id": "dev_106", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "сәлеметсіз бе бул вам спасибо", "seconds": 0.0866}}
+{"id": "dev_031", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "счет нашего ер устройство чтобы немедленно", "seconds": 0.1354}}
+{"id": "dev_031", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "счет нашего еар устройство чтобы немедленно", "seconds": 0.1284}}
+{"id": "dev_135", "condition": "single", "channel": "clean", "gigaam220": {"text": "очен важну енгізсеңіз болды бұл полуши", "seconds": 0.1378}}
+{"id": "dev_135", "condition": "single", "channel": "phone", "gigaam220": {"text": "лучен важну енгізсеңіз болды бұлполуший", "seconds": 0.1392}}
+{"id": "dev_135", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "очень важно енгізсеңіз болды бұл вы получили", "seconds": 0.1337}}
+{"id": "dev_135", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "очень важно енгізсеңіз болды бул вы получили", "seconds": 0.1341}}
+{"id": "dev_186", "condition": "single", "channel": "clean", "gigaam220": {"text": "я понимаю куда переводит калың калаймен что это документ", "seconds": 0.177}}
+{"id": "dev_186", "condition": "single", "channel": "phone", "gigaam220": {"text": "я понимаю куда переводит калым калаймен что эту документ", "seconds": 0.176}}
+{"id": "dev_186", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "я понимаю куда переводить қалың қалай мен что это документ", "seconds": 0.1518}}
+{"id": "dev_186", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "я понимаю куда переводить халың қалай мен что это документ", "seconds": 0.1531}}
+{"id": "dev_146", "condition": "single", "channel": "clean", "gigaam220": {"text": "рабочих дней для получения жеке басыңызды растау", "seconds": 0.1488}}
+{"id": "dev_146", "condition": "single", "channel": "phone", "gigaam220": {"text": "рабочих дней для получения жеке басыңызды растау", "seconds": 0.1457}}
+{"id": "dev_146", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "рабочих дней для получения жеке басынызды растав", "seconds": 0.1616}}
+{"id": "dev_146", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "рабочих дней для получения жеке басынз дорастав", "seconds": 0.1393}}
+{"id": "dev_205", "condition": "single", "channel": "clean", "gigaam220": {"text": "ш тоғыз сіздің", "seconds": 0.047}}
+{"id": "dev_205", "condition": "single", "channel": "phone", "gigaam220": {"text": "tog'i sizdim", "seconds": 0.047}}
+{"id": "dev_205", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "что вы с здм", "seconds": 0.0526}}
+{"id": "dev_205", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "что вы сіздің", "seconds": 0.0526}}
+{"id": "dev_033", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "тебе говорила про эту ту трансфер моней можете перезвонить", "seconds": 0.1523}}
+{"id": "dev_033", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "тебе говорила про эту ту трансфер моней можете перезвонить", "seconds": 0.1537}}
+{"id": "dev_229", "condition": "single", "channel": "clean", "gigaam220": {"text": "шотқа бұл қалай іскеналога", "seconds": 0.082}}
+{"id": "dev_229", "condition": "single", "channel": "phone", "gigaam220": {"text": "шотқы бұл қалай істен алылды", "seconds": 0.0805}}
+{"id": "dev_229", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "шотқа бұл халайске налога", "seconds": 0.092}}
+{"id": "dev_229", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "шотқа бу халайскей налога", "seconds": 0.0923}}
+{"id": "dev_242", "condition": "single", "channel": "clean", "gigaam220": {"text": "эту служба біздің", "seconds": 0.0662}}
+{"id": "dev_242", "condition": "single", "channel": "phone", "gigaam220": {"text": "эпол служба біздің", "seconds": 0.0661}}
+{"id": "dev_242", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "это служба біздің", "seconds": 0.0591}}
+{"id": "dev_242", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "это служба біздің", "seconds": 0.0608}}
+{"id": "dev_142", "condition": "single", "channel": "clean", "gigaam220": {"text": "айтпаймын мен торт сүю нет қонешіну", "seconds": 0.1357}}
+{"id": "dev_142", "condition": "single", "channel": "phone", "gigaam220": {"text": "айтпаймын мен тот сүю нетқон ешіну", "seconds": 0.2238}}
+{"id": "dev_142", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "айтпаймын мен турцию нет конечно", "seconds": 0.1081}}
+{"id": "dev_142", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "айтпаймын мен турцию нет конечно", "seconds": 0.1182}}
+{"id": "dev_188", "condition": "single", "channel": "clean", "gigaam220": {"text": "бар сияқты а жоқпын әлі", "seconds": 0.0906}}
+{"id": "dev_188", "condition": "single", "channel": "phone", "gigaam220": {"text": "бар сияқты ажоқпын әлі", "seconds": 0.0826}}
+{"id": "dev_188", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "бар сияқты а жоқпын әлі", "seconds": 0.116}}
+{"id": "dev_188", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "бар сияқты а жоқпын әлі", "seconds": 0.1233}}
+{"id": "dev_042", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "қай серік менің кайд оф активити операторының қолдау қызметі", "seconds": 0.3803}}
+{"id": "dev_042", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "қай серік менің кайд оф активити операторының қолдау қызметі", "seconds": 0.2497}}
+{"id": "dev_239", "condition": "single", "channel": "clean", "gigaam220": {"text": "хотель оточник по ол шоттың нөмірін опышный номер каспия", "seconds": 0.2576}}
+{"id": "dev_239", "condition": "single", "channel": "phone", "gigaam220": {"text": "хотель отопникь по ол шоттың нөмірін опшмей номер каспиі", "seconds": 0.2438}}
+{"id": "dev_239", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "хотел уточнить  ол шоттың номірін обычный номер каспи я", "seconds": 0.2486}}
+{"id": "dev_239", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "хотел уточнить  ол шоттың нөмірін обычный номер каспия", "seconds": 0.2689}}
+{"id": "dev_119", "condition": "single", "channel": "clean", "gigaam220": {"text": "звоним қосылды деп хабарлагым", "seconds": 0.2198}}
+{"id": "dev_119", "condition": "single", "channel": "phone", "gigaam220": {"text": "звонин қосылды деп хабарлағым", "seconds": 0.1444}}
+{"id": "dev_119", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "звоним қосылды деп хабарлағым", "seconds": 0.111}}
+{"id": "dev_119", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "звоним қосылды деп хабарлағым", "seconds": 0.1218}}
+{"id": "dev_102", "condition": "single", "channel": "clean", "gigaam220": {"text": "одиндтмштее", "seconds": 0.0976}}
+{"id": "dev_102", "condition": "single", "channel": "phone", "gigaam220": {"text": "оден зерятмы эштеңе", "seconds": 0.1076}}
+{"id": "dev_102", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "один девять мы тне", "seconds": 0.1059}}
+{"id": "dev_102", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "один девять мы эштеме", "seconds": 0.0895}}
+{"id": "dev_077", "condition": "single", "channel": "clean", "gigaam220": {"text": "байланысты бірақ тез прити", "seconds": 0.13}}
+{"id": "dev_077", "condition": "single", "channel": "phone", "gigaam220": {"text": "байланысты бірақ тез притли", "seconds": 0.1055}}
+{"id": "dev_077", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "байланысты бірақ тез приди", "seconds": 0.1177}}
+{"id": "dev_077", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "байланысты бірақ тез приди", "seconds": 0.1208}}
+{"id": "dev_048", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "тру үйінде идім ұйықтап жатқанмын", "seconds": 0.1666}}
+{"id": "dev_048", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "тру үйінде идім ұйықтап жатқанмын", "seconds": 0.1453}}
+{"id": "dev_104", "condition": "single", "channel": "clean", "gigaam220": {"text": "спасибо тебе большое спасло жеке куәлігім", "seconds": 0.193}}
+{"id": "dev_104", "condition": "single", "channel": "phone", "gigaam220": {"text": "спасибо тебе большое спасла жеке куәлігім", "seconds": 0.158}}
+{"id": "dev_104", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "спасибо тебе большое спасла жеке куәлігім", "seconds": 0.1617}}
+{"id": "dev_104", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "спасибо тебе большое спасла жеке куәлігім", "seconds": 0.1362}}
+{"id": "dev_062", "condition": "single", "channel": "clean", "gigaam220": {"text": "атыңызға ашылған банктік шот жан тұтам", "seconds": 0.1227}}
+{"id": "dev_062", "condition": "single", "channel": "phone", "gigaam220": {"text": "атыңызға ашылған банктік шот жан тұтам", "seconds": 0.1197}}
+{"id": "dev_062", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "атыңызға ашылған банктік шот жанды там", "seconds": 0.1171}}
+{"id": "dev_062", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "атыңызға ашылған банктік шот жандидам", "seconds": 0.1202}}
+{"id": "dev_084", "condition": "single", "channel": "clean", "gigaam220": {"text": "деректеріңізді растау оплатид", "seconds": 0.0842}}
+{"id": "dev_084", "condition": "single", "channel": "phone", "gigaam220": {"text": "деректеріңізді растау оплатить", "seconds": 0.0842}}
+{"id": "dev_084", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "теректерингсдорастав обладить", "seconds": 0.0834}}
+{"id": "dev_084", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "деректеріңізді растау обладить", "seconds": 0.0828}}
+{"id": "dev_246", "condition": "single", "channel": "clean", "gigaam220": {"text": "а істеген жоқпын", "seconds": 0.0529}}
+{"id": "dev_246", "condition": "single", "channel": "phone", "gigaam220": {"text": "ә істеген жоқпын", "seconds": 0.0522}}
+{"id": "dev_246", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "а істеген жоқпын", "seconds": 0.0595}}
+{"id": "dev_246", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "а істеген жоқпын", "seconds": 0.0581}}
+{"id": "dev_052", "condition": "single", "channel": "clean", "gigaam220": {"text": "банк никудабебул", "seconds": 0.0656}}
+{"id": "dev_052", "condition": "single", "channel": "phone", "gigaam220": {"text": "банк никугда бебул", "seconds": 0.0662}}
+{"id": "dev_052", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "банк никогда бебл", "seconds": 0.0658}}
+{"id": "dev_052", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "банк никогда бебл", "seconds": 0.0665}}
+{"id": "dev_110", "condition": "single", "channel": "clean", "gigaam220": {"text": "за рулем т ч то жоқ ешқандай", "seconds": 0.0962}}
+{"id": "dev_110", "condition": "single", "channel": "phone", "gigaam220": {"text": "за рулем тчто жоқ ешқандай", "seconds": 0.0946}}
+{"id": "dev_110", "condition": "spliced", "channel": "clean", "gigaam220": {"text": "за рулем ты что жоқ ешқандай", "seconds": 0.0852}}
+{"id": "dev_110", "condition": "spliced", "channel": "phone", "gigaam220": {"text": "за рулем ты что жоқ ешқандай", "seconds": 0.0831}}

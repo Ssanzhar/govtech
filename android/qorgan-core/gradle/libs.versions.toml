@@ -1,0 +1,21 @@
+[versions]
+# Pinned to the onnxruntime the server and transformers.js's onnxruntime-node use (pyproject:
+# onnxruntime==1.21.*, ADR D32): same version = bit-identical int8 embeddings on the JVM.
+onnxruntime = "1.21.0"
+# The only DJL release with an Android JNI build (ai.djl.android:tokenizer-native); the JVM
+# artifact must match it.
+djl = "0.33.0"
+serialization = "1.7.3"
+junit = "4.13.2"
+androidxTestRunner = "1.6.2"
+androidxTestJunit = "1.2.1"
+
+[libraries]
+onnxruntime-jvm = { module = "com.microsoft.onnxruntime:onnxruntime", version.ref = "onnxruntime" }
+onnxruntime-android = { module = "com.microsoft.onnxruntime:onnxruntime-android", version.ref = "onnxruntime" }
+djl-tokenizers = { module = "ai.djl.huggingface:tokenizers", version.ref = "djl" }
+djl-tokenizer-native-android = { module = "ai.djl.android:tokenizer-native", version.ref = "djl" }
+serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+junit = { module = "junit:junit", version.ref = "junit" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidxTestRunner" }
+androidx-test-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTestJunit" }
