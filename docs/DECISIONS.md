@@ -3170,3 +3170,93 @@ groups are masked only at a PII shape (16 / 12 / 10–11). `SCRUBBER_VERSION` 2 
 until the next corpus rebuild, which is the guard working as designed (D66 precedent). The shipped
 v1 model is not retrained for this: 1 of 1,880 training rows changes, and only inside a masked
 number.
+
+### D73 — Taxonomy v3: five more tactics, and the v3 retrain. PRE-REGISTRATION (2026-10-24)
+_Committed before any v3 model was trained and before `shift_local_4` was scored or read. The
+procedure is v2.1's (D63 v2.1 A4 above) with the changes listed here._
+
+**User decisions (2026-10-24).**
+1. "Let's improve. Also, let's widen the range of tactics we cover." v1 stays shipped and v2.1
+   stays frozen; neither is exported by this entry.
+2. Five new tactics, all chosen by the owner: `minor_targeting`, `blackmail_extortion`,
+   `survey_pretext`, `romance_trust`, `charity_appeal`. Evidence for the gap: keyword counts over
+   the 6,327 reports of `fraudlens-ru-v1` (CC-BY; 97 % Russia-grounded, so mechanism only):
+   children/teenagers 378 (phone 208), blackmail 191 (66), survey/poll 99 (46), romance 88 (41),
+   charity 38 (16). Voice-cloned relatives, SIM-contract expiry and marketplace "safe deal" were
+   already covered by schemes.
+3. The owner reviews every new RU / KK / EN name, example and advice line before any v3 export.
+   Until then they are marked DRAFT in `tactics.yaml`, `schemes.yaml`, `roles.yaml` and
+   `advice_{ru,kk,en}.yaml`.
+4. Gemini's prepaid credits are exhausted (402 RESOURCE_EXHAUSTED), so the planned Gemini run was
+   replaced by a second Claude run ("Claude only, double it").
+
+**Taxonomy v3** (6bb1965, 3e6f27c, 3a982de).
+- Label space `v3` = the 23 v2 ids + the five. Each new tactic has a legitimate twin
+  (`legit_child_call`, `legit_debt_notice`, `legit_survey`, `legit_partner_call`,
+  `legit_charity_call`), a scheme (`minor_targeted`, `blackmail`, `survey_data_harvest`,
+  `romance_scam`, `charity_fraud`) and advice. Two display-only roles: `pollster`, `charity_fund`.
+  The hard-signal cue block stays 5 columns and no lexicon is edited.
+- Masking: provenance records the label space of every row (legacy Gemini v1, every earlier grid
+  run v2, the two new runs v3). A row is unlabelled for every tactic a later space introduced.
+  On the v2.2 corpus this mask equals the D63 writer mask exactly; v2-era grids rebuild their
+  manifests identically (`v21_legit` up to its 37 recorded constraints).
+- A grid declares its label space (default v2) and may pin a class's callee (`class_personas`);
+  the minors scheme and its twin always get a child.
+
+**New data** (local-only; both QC pass).
+
+| QC | v3_claude | v3_claude_b |
+|---|---|---|
+| cells / accepted | 450 / 450 | 450 / 450 |
+| eval overlaps / near-dups / ROUGE-L flags | 0 / 0 / 0 | 0 / 0 / 0 |
+| scheme-rule agreement | 216/216 | 216/216 |
+| rows not a scrub fixed point (all `[NAME]`, scrubbed on fold) | 35 | 35 |
+| fingerprint AUC vs Gemini train, char / e5 | 0.9999 / 0.985 | 0.9998 / 0.984 |
+| role-slot recall | 0.53 | 0.51 |
+
+- Grids `configs/gen_grid_v3_claude{,_b}.yaml`: kk 0.40 / ru 0.30 / mixed 0.30, scam share 0.48,
+  the five v3 schemes at weight 8 (26–27 scams each per run), `mule_recruitment` 2.
+- 7 `v3_claude` cells pair "college student" with age 10–13 (band and occupation were drawn
+  apart); their writers wrote the callee as a young child. Kept. `v3_claude_b` pins school pupils.
+- Largest cross-run token Jaccard 0.304 (no pair ≥ 0.5).
+- **One writer family.** All v3 rows are Claude's. The five new heads see only v3 rows (every
+  earlier row is masked), so their positives and negatives share one style; the risk head keeps
+  the D63 balance (below).
+
+**Corpus.**
+- `build_corpus --gen-run pilot --gen-run p2 --gen-run v21_legit --gen-run v21_scam --gen-run
+  v3_claude --gen-run v3_claude_b --label-space v3 --processed-dir data/cache/processed_v3`.
+  Content hash **4fbc336362a7…f2e126b1**, scrubber v3.
+- **The v2.2 runs are left out.** They added no recall on `shift_local_3` (43 vs v2.1's 42) and
+  v2.2 failed A6 (a) and (c). That choice uses what `shift_local_3`, `ood` and A6 showed, which is
+  why the judge below is a new split.
+- Train 6,740 rows (kk 2,304 / ru 2,048 / mixed 1,774 / en 614); P(scam) Claude 2,342/4,860 =
+  0.482, Gemini 896/1,880 = 0.477. Val 585 (322 legit, 263 scam).
+- Calls carrying each v3 tactic (train incl. ASR copies / val): minor_targeting 96 / 6,
+  blackmail_extortion 92 / 6, survey_pretext 88 / 8, romance_trust 86 / 9, charity_appeal 94 / 5.
+
+**Trainer, operating point and freeze: v2.1's, unchanged.**
+- `QORGAN_LABEL_SPACE=v3 QORGAN_EMBED_BACKEND=device python -m qorgan.classifier.linear_train
+  --processed-dir data/cache/processed_v3 --out-dir models/linear_v3_device` on the device bridge.
+  `V2_MIN_OOF_POSITIVES` = 8 applies to every head; `_RISK_C` = 4.0; D30 thresholds.
+- enter = the lowest 0.01 step at which v3's validation FPs ≤ v1's on the v3 validation set at
+  0.59; exit = enter − 0.10.
+- The freeze commit records the sha256s, enter/exit and the validation table before the look.
+
+**The judge is `shift_local_4`.** 160 kk/ru calls (kk 96 / ru 64) by the local Qwen3.5-Kazakh
+model, plan seed 20261029, from the old briefs plus `configs/shift_local_briefs_v3.yaml` (15 scam
+briefs, three per v3 tactic, and 10 legitimate twins), disjoint from every earlier batch, never
+published. Nobody has read or scored it.
+
+**A5 / A6, all required; v1 stays on any fail.**
+- (a) FPR does not rise on the clean test / authored / ood subsets or on the styled copies.
+- (b) On `shift_local_4`, v3's false alarms ≤ v1's + 1, and v3's recall > v1's.
+- (c) Every new false alarm is an institutional look-alike, never a family or everyday call (the
+  child, partner and charity-of-a-parents'-committee twins count as family/everyday). Only those
+  rows are read, and they go into the inspection ledger.
+- After export: the browser gate with its assertions unchanged (tag-set Jaccard ≥ 0.9; v2.1's
+  0.899994 is a known risk, five more heads make it harder), the demo scenes, and the owner's
+  sign-off on the draft texts.
+- Reported, not criteria: v2.1 scored alongside; on `shift_local_4`, recall on the scams of the
+  v3 briefs for v1 / v2.1 / v3; per-tactic tag recall of the five new heads on those calls.
+  Nothing is re-tuned on what A5 shows.

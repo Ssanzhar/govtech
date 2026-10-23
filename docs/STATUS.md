@@ -5,6 +5,12 @@ day (what is shipped, the honest numbers, the strategy, who does what). Then rea
 (the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D70) and `docs/eval_report.md`
 (numbers, with intervals). The July sprint log below is kept as history._
 
+- **2026-10-24 — taxonomy v3 and its retrain, pre-registered (ADR D73).**
+  - Five new tactics chosen by the owner (minors, blackmail, survey pretext, romance, charity),
+    each with a legitimate twin, a scheme and DRAFT advice awaiting the owner's RU/KK review.
+  - 900 new Claude dialogues (Gemini credits exhausted; owner chose a second Claude run). Corpus
+    `processed_v3` (4fbc3363…). Judge: `shift_local_4`, 160 kk/ru calls, unread.
+  - v1 stays shipped; nothing is trained yet.
 - **2026-10-24 — scrubber v3: dictation over hesitations (ADR D72).**
   - An IIN or phone said with «эээ» / «...» in the middle was stored verbatim. Now it is masked
     (Python + JS, fixtures regenerated, `sw.js` → v13).
