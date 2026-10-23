@@ -1,11 +1,14 @@
-# Generation grid v3 (ADR D73): run `v3_gemini`, written by Gemini (`python -m qorgan.data.gen.gemini_writer`, writer `gemini_grid` in configs/gen_run_writers.yaml).
-# `python -m qorgan.data.gen manifest --run v3_gemini --size 450 --grid configs/gen_grid_v3_gemini.yaml`
+# Generation grid v3 (ADR D73): run `v3_claude_b`, written by Claude writer agents (spec only).
+# `python -m qorgan.data.gen manifest --run v3_claude_b --size 450 --grid configs/gen_grid_v3_claude_b.yaml`
 # The base grid (configs/gen_grid.yaml) with taxonomy v3 on: the five v3 schemes and their twins,
 # kk / ru / mixed registers, and a pinned child callee for minor_targeted and its twin.
+# The second Claude run replaces v3_gemini (Gemini prepaid credits exhausted, owner's choice
+# 2026-10-24). The callee is a school pupil only: v3_claude drew band and occupation apart and
+# produced "college student, 10-13" cells (written as young children).
 
 version: 2          # v2 (phase 2, 2026-10-09): persona coherence, role-consistent optional imp_*,
                     # stage vs core, base-rate scam share, twin-matched look-alike negatives
-seed: 20261028
+seed: 20261030
 
 registers:          # kk / ru / code-switched (D70: no English in voice)
   kk: 0.40
@@ -90,10 +93,10 @@ negative_roles:
 class_personas:
   minor_targeted:
     age_band: {"10-13": 0.4, "14-17": 0.6}
-    occupation: [school pupil, college student]
+    occupation: [school pupil]
   legit_child_call:
     age_band: {"10-13": 0.4, "14-17": 0.6}
-    occupation: [school pupil, college student]
+    occupation: [school pupil]
 
 # Share of hard negatives written to CONTAIN a phrase that sounds like a scam request but is
 # legitimate in context (a courier asks for the code shown in the recipient's own app at the
