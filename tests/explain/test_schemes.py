@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from qorgan.config import GEN_LABEL_SPACE
+
 from qorgan.explain.roles import load_role_lexicon
 from qorgan.explain.schemes import (
     SchemeError,
@@ -22,7 +24,7 @@ REAL = Path("data/taxonomy/schemes.yaml")
 
 def test_about_twenty_schemes_with_unique_ids():
     schemes = load_schemes(REAL)
-    assert 18 <= len(schemes.schemes) <= 24
+    assert 18 <= len(schemes.schemes) <= 30  # 21 v2 + 5 v3 (ADR D73)
     assert len({s.id for s in schemes.schemes}) == len(schemes.schemes)
 
 
@@ -38,11 +40,11 @@ def test_generation_spec_derives_back_to_its_own_scheme(scheme_id):
 
 def test_every_referenced_id_exists():
     taxonomy = get_taxonomy()
-    v2 = set(taxonomy.label_space("v2"))
+    space = set(taxonomy.label_space(GEN_LABEL_SPACE))  # v3 since ADR D73
     roles = {r.id for r in load_role_lexicon().roles}
     for scheme in load_schemes(REAL).schemes:
-        assert set(scheme.generation.core) <= v2
-        assert set(scheme.generation.optional) <= v2
+        assert set(scheme.generation.core) <= space
+        assert set(scheme.generation.optional) <= space
         assert set(scheme.generation.roles) <= roles
         assert scheme.generation.twin in taxonomy.negative_ids()
 
@@ -101,3 +103,12 @@ def test_unknown_tactic_in_rule_rejected(tmp_path):
     )
     with pytest.raises(SchemeError):
         load_schemes(bad)
+
+
+def test_within_keeps_only_schemes_expressible_in_a_space():
+    """ADR D73: a v2 grid never draws a v3 scheme; v3 keeps them all, in priority order."""
+    taxonomy, schemes = get_taxonomy(), load_schemes(REAL)
+    v2 = schemes.within(taxonomy.label_space("v2"))
+    assert {"minor_targeted", "blackmail", "survey_data_harvest", "romance_scam", "charity_fraud"}.isdisjoint(v2.ids())
+    assert len(v2.schemes) == 21
+    assert schemes.within(taxonomy.label_space("v3")).ids() == schemes.ids()

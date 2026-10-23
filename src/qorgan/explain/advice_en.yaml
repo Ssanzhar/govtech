@@ -84,6 +84,22 @@ tactic_advice:
   callback_instruction: >-
     Do not press keys or call back a number the caller gives you. Look up the organisation's
     official number yourself — on its website or your card.
+  # v3 (ADR D73) -- DRAFT pending the project owner's review
+  minor_targeting: >-
+    An adult stranger who asks a child to keep a secret, bring a parent's card, read out a
+    code or leave home is a scammer. Child: hang up and tell your parents right away.
+  blackmail_extortion: >-
+    Do not pay blackmailers: paying never deletes anything, it only raises the demand. Keep
+    the messages and the number and report it to the police (102).
+  survey_pretext: >-
+    Real surveys and the census never ask for your IIN, card number, bank or SMS codes. Stop
+    the “survey” and give nothing.
+  romance_trust: >-
+    A new acquaintance you have never met in person who needs money for a ticket, customs or
+    treatment is a classic scheme. Do not send money.
+  charity_appeal: >-
+    Real charities collect to an official account and never rush you. Do not send money to a
+    personal card; check the charity on its official website.
 
 verification_questions:
   - "Give me the case or request number, and your position."
@@ -161,3 +177,18 @@ scheme_advice:
   mule_recruitment: >-
     Receiving and forwarding other people's money for a cut is money-mule work and a crime.
     Say no.
+  # v3 (ADR D73) -- DRAFT pending the project owner's review
+  minor_targeted: >-
+    A call to a child about a secret, a parent's card or codes is a scheme aimed at children.
+    Talk to your child: no codes and no secrets from parents; when in doubt, hang up.
+  blackmail: >-
+    This is blackmail. Do not pay or keep talking; keep the evidence and report it to the
+    police (102).
+  survey_data_harvest: >-
+    A “survey” that moves on to your IIN, bank or codes is harvesting data for fraud. Hang up.
+  romance_scam: >-
+    A romance that ends with a request for money is a romance scam. Do not send money to
+    someone you have never met in person.
+  charity_fraud: >-
+    Collecting “for treatment” or “for victims” to a personal card is a common scheme. Give
+    only through the charity's official website.

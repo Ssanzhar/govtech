@@ -19,7 +19,7 @@ from typing import Any
 
 import yaml
 
-from qorgan.config import get_config
+from qorgan.config import GEN_LABEL_SPACE, get_config
 
 _LOCALES = ("ru", "kk", "en")
 _NODE_KEYS = frozenset({"all", "any", "tactic", "any_tactic", "role"})
@@ -60,6 +60,17 @@ class SchemeSet:
 
     def ids(self) -> tuple[str, ...]:
         return tuple(s.id for s in self.schemes)
+
+    def within(self, tactic_ids: Collection[str]) -> "SchemeSet":
+        """The schemes whose rule and generation spec use only `tactic_ids` (ADR D73: a v2 grid
+        never draws a scheme that needs a v3 tactic), in the same priority order."""
+        allowed = set(tactic_ids)
+
+        def fits(scheme: Scheme) -> bool:
+            tactics, _ = _referenced(scheme.rule)
+            return (tactics | set(scheme.generation.core) | set(scheme.generation.optional)) <= allowed
+
+        return SchemeSet(version=self.version, schemes=tuple(s for s in self.schemes if fits(s)))
 
 
 def evaluate_rule(node: Mapping[str, Any], tags: Collection[str], role: str | None) -> bool:
@@ -110,9 +121,9 @@ def load_schemes(path: Path | None = None) -> SchemeSet:
     if not isinstance(raw, dict) or raw.get("version") != 1 or not raw.get("schemes"):
         raise SchemeError(f"{resolved}: expected version 1 with a non-empty `schemes` list")
     taxonomy = get_taxonomy()
-    v2 = set(taxonomy.label_space("v2"))
+    space = set(taxonomy.label_space(GEN_LABEL_SPACE))
     roles = {r.id for r in get_role_lexicon().roles}
-    schemes = tuple(_parse(entry, resolved, v2, roles, set(taxonomy.negative_ids())) for entry in raw["schemes"])
+    schemes = tuple(_parse(entry, resolved, space, roles, set(taxonomy.negative_ids())) for entry in raw["schemes"])
     if len({s.id for s in schemes}) != len(schemes):
         raise SchemeError(f"{resolved}: duplicate scheme ids")
     return SchemeSet(version=1, schemes=schemes)

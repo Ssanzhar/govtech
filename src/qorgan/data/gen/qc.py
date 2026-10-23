@@ -27,6 +27,7 @@ from pathlib import Path
 
 import numpy as np
 
+from qorgan.config import GEN_LABEL_SPACE
 from qorgan.data.build_corpus import normalize_for_dedup
 from qorgan.data.gen.grid import GridCell, read_manifest
 from qorgan.data.gen.rows import RowCheck, check_row
@@ -242,7 +243,7 @@ def _schema_gate(cells, rows) -> tuple[list[RowCheck], dict]:
 
     taxonomy = get_taxonomy()
     by_cell = {c.cell_id: c for c in cells}
-    v2 = frozenset(taxonomy.label_space("v2"))
+    v2 = frozenset(taxonomy.label_space(GEN_LABEL_SPACE))  # the grid space (D73: v3 is a superset of v2)
     hard = frozenset(taxonomy.hard_negative_ids())
     checks: list[RowCheck] = []
     per_chunk: dict[str, dict] = {}

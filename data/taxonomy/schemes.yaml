@@ -21,6 +21,73 @@
 
 version: 1
 schemes:
+  # ---- v3 (ADR D73): five schemes keyed on a v3-only tactic, so they come first. Names and
+  # descriptions are DRAFTS pending the project owner's review.
+  - id: minor_targeted
+    names:
+      ru: «Звонок ребёнку» (схема против детей и подростков)
+      kk: «Балаға қоңырау» (балалар мен жасөспірімдерге қарсы схема)
+      en: '"A call to a child" (a scheme aimed at children and teenagers)'
+    description: A stranger talks a child or teenager into a secret, a parent's card or codes, paid "tasks" or leaving home.
+    rule: {tactic: minor_targeting}
+    generation:
+      core: [minor_targeting, secrecy]
+      optional: [credentials_request, otp_request, task_advance_fee, mule_recruitment, fear_threat, imp_law_enforcement, payment_redirect, prize_lottery]
+      roles: [police, relative_friend, telecom_operator]
+      twin: legit_child_call
+
+  - id: blackmail
+    names:
+      ru: «Шантаж» (компромат или «дело» за деньги)
+      kk: «Бопсалау» (ақша үшін компромат немесе «іс»)
+      en: '"Blackmail" (compromising material or a "case" for money)'
+    description: The caller threatens to publish compromising material, tell the family or employer, or open a case unless the victim pays.
+    rule: {tactic: blackmail_extortion}
+    generation:
+      core: [blackmail_extortion, fear_threat]
+      optional: [urgency, secrecy, payment_redirect, imp_law_enforcement]
+      roles: [police, knb, prosecutor]
+      twin: legit_debt_notice
+
+  - id: survey_data_harvest
+    names:
+      ru: «Опрос / перепись» ради данных
+      kk: Деректер үшін «сауалнама / санақ»
+      en: '"Survey / census" to harvest data'
+    description: A poll, census or quality check that moves on to the IIN, the bank, card details or codes.
+    rule: {tactic: survey_pretext}
+    generation:
+      core: [survey_pretext, credentials_request]
+      optional: [otp_request, prize_lottery, verification_ploy, imp_gov_service]
+      roles: [pollster, egov_con, pension_social]
+      twin: legit_survey
+
+  - id: romance_scam
+    names:
+      ru: «Брачный аферист» (романтика ради денег)
+      kk: «Неке алаяғы» (ақша үшін романтика)
+      en: '"Romance scam" (a relationship built for money)'
+    description: A new online acquaintance builds a romance, then needs money for a ticket, customs, treatment or a shared investment.
+    rule: {tactic: romance_trust}
+    generation:
+      core: [romance_trust, payment_redirect]
+      optional: [urgency, secrecy, investment_scam, imp_telecom_delivery_utility]
+      roles: []
+      twin: legit_partner_call
+
+  - id: charity_fraud
+    names:
+      ru: «Сбор пожертвований» на личную карту
+      kk: Жеке картаға «қайырымдылық» жинау
+      en: '"Donations" to a personal card'
+    description: Donations for a sick child, disaster victims or a fund, collected to a personal card or phone number.
+    rule: {tactic: charity_appeal}
+    generation:
+      core: [charity_appeal, payment_redirect]
+      optional: [urgency, imp_personal]
+      roles: [charity_fund]
+      twin: legit_charity_call
+
   - id: mirror_loan
     names:
       ru: «Зеркальный / защитный кредит»

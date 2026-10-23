@@ -20,10 +20,10 @@ from qorgan.taxonomy import get_taxonomy
 REAL = Path("data/lexicon/roles.yaml")
 
 
-def test_real_lexicon_has_the_nineteen_observed_roles():
+def test_real_lexicon_has_the_observed_roles():
     lexicon = load_role_lexicon(REAL)
-    assert len(lexicon.roles) == 19
-    assert len({r.id for r in lexicon.roles}) == 19
+    assert len(lexicon.roles) == 21  # 19 observed (D63) + pollster, charity_fund (D73)
+    assert len({r.id for r in lexicon.roles}) == 21
 
 
 def test_every_role_maps_to_a_v2_impersonation_tactic_or_none():

@@ -140,6 +140,9 @@ class GridConfig(BaseModel):
     occupation_age_bands: dict[str, tuple[str, ...]] = {}
     negative_scenarios: dict[str, tuple[Scenario, ...]] = {}
     scam_scenarios: tuple[ScamScenario, ...] = ()
+    # The label space the run is written in (ADR D73). A grid draws only schemes expressible in it,
+    # so every v2 grid (no key) still yields the manifest it always did.
+    label_space: Literal["v2", "v3"] = "v2"
 
     @model_validator(mode="after")
     def _registers_known(self) -> "GridConfig":
@@ -331,6 +334,7 @@ def build_manifest(cfg: GridConfig, *, run: str, size: int, schemes, taxonomy, r
         roles = get_role_lexicon()
     if size <= 0:
         raise GridError("size must be positive")
+    schemes = schemes.within(taxonomy.label_space(cfg.label_space))
     rng = random.Random(f"{cfg.seed}:{run}:{size}")
     n_scam = round(size * cfg.scam_share)
     scheme_counts = allocate(n_scam, {s.id: cfg.scheme_weights.get(s.id, 1.0) for s in schemes.schemes})

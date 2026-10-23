@@ -21,11 +21,13 @@ V2_NEW_IDS = {
     "loan_inducement", "cash_courier_handoff", "refund_request", "task_advance_fee",
     "callback_instruction",
 }
+V3_NEW_IDS = {"minor_targeting", "blackmail_extortion", "survey_pretext", "romance_trust", "charity_appeal"}
+V3_NEW_NEGATIVES = {"legit_child_call", "legit_debt_notice", "legit_survey", "legit_partner_call", "legit_charity_call"}
 
 
 def test_load_real_taxonomy_has_expected_tactic_count():
     taxonomy = load_taxonomy(REAL_TAXONOMY_PATH)
-    assert len(taxonomy.tactics) == 26  # 15 v1 + 11 v2-only (ADR D63)
+    assert len(taxonomy.tactics) == 31  # 15 v1 + 11 v2-only (ADR D63) + 5 v3-only (ADR D73)
     assert taxonomy.version == 2
 
 
@@ -57,7 +59,20 @@ def test_v2_label_space_replaces_the_three_impersonation_ids():
 
 def test_all_tactic_ids_cover_both_spaces():
     taxonomy = load_taxonomy(REAL_TAXONOMY_PATH)
-    assert set(taxonomy.all_tactic_ids()) == set(V1_IDS) | V2_NEW_IDS
+    assert set(taxonomy.all_tactic_ids()) == set(V1_IDS) | V2_NEW_IDS | V3_NEW_IDS
+
+
+def test_v3_label_space_is_v2_plus_five_tactics_and_five_twins():
+    """ADR D73: v3 keeps every v2 id (same order) and adds five; the cue block stays 5 columns."""
+    from qorgan.config import LABEL_SPACE_NEW_TACTICS
+
+    taxonomy = load_taxonomy(REAL_TAXONOMY_PATH)
+    v2, v3 = taxonomy.label_space("v2"), taxonomy.label_space("v3")
+    assert v3[: len(v2)] == v2 and set(v3) - set(v2) == V3_NEW_IDS
+    assert set(LABEL_SPACE_NEW_TACTICS["v3"]) == V3_NEW_IDS
+    assert taxonomy.hard_signal_ids("v3") == taxonomy.hard_signal_ids("v1")
+    assert set(taxonomy.negative_ids("v3")) == set(taxonomy.negative_ids("v2")) | V3_NEW_NEGATIVES
+    assert V3_NEW_NEGATIVES <= set(taxonomy.hard_negative_ids())
 
 
 def test_retired_ids_name_their_v2_successors():
@@ -137,7 +152,7 @@ def test_hard_signal_ids_match_expected_set():
 
 def test_negative_ids_and_hard_negative_ids():
     taxonomy = load_taxonomy(REAL_TAXONOMY_PATH)
-    assert len(taxonomy.negative_ids()) == 11
+    assert len(taxonomy.negative_ids()) == 16
     assert set(taxonomy.hard_negative_ids()) == {
         "legit_bank_call",
         "family_money_request",
@@ -148,6 +163,8 @@ def test_negative_ids_and_hard_negative_ids():
         "legit_employer_request",
         "legit_clinic_appointment",
         "legit_telecom_offer",
+        # v3 guardrails (ADR D73)
+        "legit_child_call", "legit_debt_notice", "legit_survey", "legit_partner_call", "legit_charity_call",
         "legit_utility_notice",
     }
 

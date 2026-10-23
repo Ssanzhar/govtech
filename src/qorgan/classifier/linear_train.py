@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -26,7 +26,7 @@ from sklearn.linear_model import LogisticRegression
 from qorgan.classifier import embed, labels
 from qorgan.classifier.cue_match import MATCHER_VERSION
 from qorgan.classifier.multilabel import MultiLabelHead, out_of_fold_proba  # MultiLabelHead re-exported: keep import path stable
-from qorgan.config import V2_MIN_OOF_POSITIVES, V2_NEW_TACTICS, get_config
+from qorgan.config import LABEL_SPACE_NEW_TACTICS, LABEL_SPACE_ORDER, V2_MIN_OOF_POSITIVES, V2_NEW_TACTICS, get_config
 from qorgan.data.schema import SCAM_RISK_THRESHOLD, Dialogue
 
 __all__ = ["MultiLabelHead", "LinearBundle", "train_linear", "train_and_export", "load_linear", "export_linear"]
@@ -244,6 +244,25 @@ def provenance_mask(
     return mask
 
 
+def label_space_mask(
+    dialogues: Sequence[Dialogue], label_space: Sequence[str], row_space: Mapping[str, str], *,
+    new_tactics_by_space: Mapping[str, Sequence[str]], order: Sequence[str],
+) -> np.ndarray:
+    """`(n, L)` bool, True = labelled. A row labelled in space S (`row_space`; absent = the
+    first, legacy space) is unlabelled for every tactic that a space after S introduced (ADR
+    D73, generalising the D63 writer mask)."""
+    rank = {space: i for i, space in enumerate(order)}
+    introduced = {t: rank[space] for space, tactics in new_tactics_by_space.items() for t in tactics}
+    columns = [(j, introduced[t]) for j, t in enumerate(label_space) if t in introduced]
+    mask = np.ones((len(dialogues), len(label_space)), dtype=bool)
+    for i, dialogue in enumerate(dialogues):
+        own = rank[row_space.get(dialogue.id, order[0])]
+        for j, since in columns:
+            if since > own:
+                mask[i, j] = False
+    return mask
+
+
 def labelled_positives(dialogues: Sequence[Dialogue], label_space: Sequence[str], mask: np.ndarray | None = None) -> dict[str, int]:
     """Positives per tactic over labelled rows only."""
     _, targets = _targets(dialogues, label_space)
@@ -414,22 +433,30 @@ def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - CLI (
     train_mask = val_mask = None
     report: dict = {}
     provenance_path = args.processed_dir / "provenance.json"
-    if provenance_path.exists() and set(V2_NEW_TACTICS) & set(label_space):
-        # Taxonomy v2 (ADR D63 phase 2): mask v1 rows out of the new heads, drop thin heads.
+    new_tactics = tuple(t for space in LABEL_SPACE_NEW_TACTICS.values() for t in space)
+    if provenance_path.exists() and set(new_tactics) & set(label_space):
+        # Taxonomy v2/v3 (ADR D63 phase 2, D73): mask rows out of the heads their space did not
+        # have yet, drop thin heads. A provenance without `row_label_space` predates D73.
         from qorgan.data.gen.fold import V2_LABELLED_GENERATORS
 
-        generator = json.loads(provenance_path.read_text(encoding="utf-8"))["generator"]
+        provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+        generator, row_space = provenance["generator"], provenance.get("row_label_space")
+
+        def one(rows, space):
+            if row_space is None:
+                return provenance_mask(rows, space, generator, new_tactics=V2_NEW_TACTICS, labelled_by=V2_LABELLED_GENERATORS)
+            return label_space_mask(rows, space, row_space, new_tactics_by_space=LABEL_SPACE_NEW_TACTICS, order=LABEL_SPACE_ORDER)
 
         def masks(space):
-            return (provenance_mask(train, space, generator, new_tactics=V2_NEW_TACTICS, labelled_by=V2_LABELLED_GENERATORS),
-                    provenance_mask(val, space, generator, new_tactics=V2_NEW_TACTICS, labelled_by=V2_LABELLED_GENERATORS))
+            return one(train, space), one(val, space)
 
         train_mask, val_mask = masks(label_space)
         positives = (labelled_positives(train, label_space, train_mask), labelled_positives(val, label_space, val_mask))
         dropped = thin_heads(*positives, minimum=V2_MIN_OOF_POSITIVES)
         label_space = tuple(t for t in label_space if t not in dropped)
         train_mask, val_mask = masks(label_space)
-        report = {"label_masking": {"new_tactics": list(V2_NEW_TACTICS), "masked_train_rows": int((~train_mask).any(axis=1).sum())},
+        masked = [t for t in new_tactics if t in label_space]
+        report = {"label_masking": {"new_tactics": masked, "masked_train_rows": int((~train_mask).any(axis=1).sum())},
                   "oof_positives": {t: positives[0][t] + positives[1][t] for t in positives[0]},
                   "dropped_thin_heads": list(dropped), "min_oof_positives": V2_MIN_OOF_POSITIVES}
     metadata = train_and_export(

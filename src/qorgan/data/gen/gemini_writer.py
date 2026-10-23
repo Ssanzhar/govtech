@@ -117,7 +117,7 @@ def _gemini_complete(model: str) -> Callable[[str], dict]:  # pragma: no cover -
 
 
 def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - CLI (live network)
-    from qorgan.config import get_config
+    from qorgan.config import GEN_LABEL_SPACE, get_config
     from qorgan.data.gen.__main__ import run_dir
     from qorgan.taxonomy import get_taxonomy
 
@@ -129,7 +129,7 @@ def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - CLI (
     directory = run_dir(args.run)
     chunks = args.chunk or sorted(p.name.removesuffix(".spec.json") for p in (directory / "chunks").glob("*.spec.json"))
     taxonomy = get_taxonomy()
-    v2, hard = frozenset(taxonomy.label_space("v2")), frozenset(taxonomy.hard_negative_ids())
+    v2, hard = frozenset(taxonomy.label_space(GEN_LABEL_SPACE)), frozenset(taxonomy.hard_negative_ids())
     complete = _gemini_complete(get_config().llm_model_quality)
     for chunk in chunks:
         summary = write_chunk(directory, chunk, complete=complete, v2=v2, hard_negative_ids=hard, attempts=args.attempts)
