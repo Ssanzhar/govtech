@@ -3045,3 +3045,37 @@ disjoint from `shift_local` and `shift_local_2`. A6 (b) applies on it: v2.2's fa
 + 1, and v2.2's recall > v1's.
 - `shift_local_2` and `shift_local` are reported only; both were seen.
 - The frozen v2.1 is scored alongside v2.2 for reference. It is not a criterion.
+
+#### D63 v2.2 — FREEZE: trained, operating point by rule (2026-10-23)
+_Committed before any held-out split is scored. Validation only, device embeddings, from
+`scripts/taxonomy_v2_dryrun_eval.py` (`models/linear_v22_device/val_report.json`). Training ran as
+pre-registered: no rerun, 23 heads, none dropped (the thinnest are task_advance_fee 105,
+cash_courier_handoff 116 and refund_request 119), 1,880 legacy rows masked._
+
+**Frozen model** (`models/linear_v22_device`, sha256):
+- `risk_clf.joblib` aefc76c09fd7e2059336f888e7a812d70594cf78d1d8b592d647a317b72e5e8a
+- `tactic_clf.joblib` 0e3c6cbfd1f38670c1fe54a7cff6414b05b6399942eb9f8ec8ce140478362ede
+- `web/weights.json` e08bcba041795e79881b46d87b3c2a1c1f55068898e1d33f5fe37d9404394aa6
+
+**Operating point (the rule).** v1 makes 5/251 validation FPs at 0.59, so **enter = 0.82,
+exit = 0.72**, with floors 84 / 84 (the same point as v2.1).
+
+| validation (device) | ROC-AUC / PR-AUC | FPR [95 % CP] | recall [95 % CP] |
+|---|---|---|---|
+| shipped v1 @ 0.59 | 0.867 / 0.867 | 5/251 = 0.020 [0.007, 0.046] | 96/214 = 0.449 [0.381, 0.518] |
+| v2.2 @ 0.59 (reference) | 0.957 / 0.961 | 18/251 = 0.072 [0.043, 0.111] | 187/214 = 0.874 [0.822, 0.915] |
+| **v2.2 @ 0.82 (rule)** | | **5/251 = 0.020 [0.007, 0.046]** | **158/214 = 0.738 [0.674, 0.796]** |
+
+By generator and language at the rule point, as v1 → v2.2 (FPs; caught scams):
+
+| rows | FPs | caught scams |
+|---|---|---|
+| Claude kk | 1/58 → 1/58 | 10/56 → 34/56 |
+| Claude mixed | 0/31 → 0/31 | 4/35 → 17/35 |
+| Claude ru | 3/58 → 4/58 | 15/42 → 33/42 |
+| Claude en | 0/16 → 0/16 | 4/14 → 11/14 |
+| gemini_grid | 0/11 → 0/11 | 5/9 → 6/9 |
+| legacy Gemini | 1/77 → 0/77 | 58/58 → 57/58 |
+
+The five validation FPs at 0.82 are p2_0864 (kk), p2_0955, p2_1105, p2_1248 and p2_1761 (ru). They
+are generated rows, not held-out.
