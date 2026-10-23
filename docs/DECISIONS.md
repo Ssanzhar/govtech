@@ -3079,3 +3079,62 @@ By generator and language at the rule point, as v1 → v2.2 (FPs; caught scams):
 
 The five validation FPs at 0.82 are p2_0864 (kk), p2_0955, p2_1105, p2_1248 and p2_1761 (ru). They
 are generated rows, not held-out.
+
+#### D63 v2.2 — the one look: (b) passes, (a) and (c) FAIL; v1 stays (2026-10-23)
+_One run on device embeddings, with the frozen weights of 782460a. Each arm ran at its own point: v1
+0.59 / 0.49, v2.2 and the frozen v2.1 0.82 / 0.72. Outputs are in
+`models/linear_v22_device/a5/{v1,v22,v21}.{run,styled}.txt` and `*.neg_rows.json` (ids and risks,
+no text). v2.1 is reference only._
+
+**The judge: `shift_local_3`** (129 calls, first look).
+
+| | FPR [95 % CP] | recall [95 % CP] | PR-AUC | kk FPR / recall | ru FPR / recall |
+|---|---|---|---|---|---|
+| v1 @ 0.59 | 6/65 = 0.092 [0.035, 0.190] | 32/64 = 0.500 [0.372, 0.628] | 0.878 | 0.125 / 0.450 | 0.040 / 0.583 |
+| **v2.2 @ 0.82** | **2/65 = 0.031 [0.004, 0.107]** | **43/64 = 0.672 [0.543, 0.784]** | 0.955 | 0.025 / 0.600 | 0.040 / 0.792 |
+| v2.1 @ 0.82 (ref.) | 2/65 = 0.031 [0.004, 0.107] | 42/64 = 0.656 [0.527, 0.771] | 0.950 | 0.025 / 0.575 | 0.040 / 0.792 |
+
+**Other held-out FPR** (clean subsets and styled copies):
+
+| split | v1 | v2.2 | v2.1 (ref.) |
+|---|---|---|---|
+| test (clean) | 0 | 0 | 0 |
+| authored (clean) | 0 | 0 | 0 |
+| ood (clean) | 0 | **1** | 0 |
+| test, styled | 0/60 | 0/60 | 0/60 |
+| authored, styled | 0/24 | 0/24 | 0/24 |
+| ood, styled | 1/74 | **2/74** | 1/74 |
+
+**A6 verdicts.**
+- **(a) fails.** ood (clean) FPR rises 0 → 1 (`ood_neg_legit_gov_service_kk_0`, 0.830), and ood
+  styled rises 1 → 2 (the same row, 0.829). v1 scores that row 0.057.
+- **(b) passes.** On `shift_local_3`, false alarms fall 6 → 2 and recall rises 32 → 43.
+- **(c) fails.** v2.2's new false alarms against v1:
+
+  | row | v2.2 risk | in the ledger? | what it is |
+  |---|---|---|---|
+  | `aug_neg_family_money_request_ru_1` (test, inspected) | 0.878 | since 2026-10-12 | a relative in hospital asks for money by Kaspi: **a family call** |
+  | `neg_general_conversation_mixed_21` (test) | 0.954 | yes | institutional |
+  | `ood_neg_general_conversation_ru_1` (ood) | 0.840 | yes | Kaspi support confirms a transfer: institutional |
+  | `ood_neg_legit_gov_service_mixed_2` (styled) | 0.838 | yes | institutional |
+  | `ood_neg_legit_gov_service_kk_0` | 0.830 | no | not read |
+  | `sl3_ru_legit_05` (judge) | 0.918 | no | not read |
+
+  The family row decides (c). The two unread rows are left unread: the verdict does not depend on
+  them, so the held-out sets stay unread.
+
+**Decision (rule): v1 stays shipped.** v2.2 was not exported, and the browser gate was not run.
+`models/linear_v22_device` is kept frozen. `shift_local_3` has now been looked at once.
+
+**What the three models show (indicative, not a decision).**
+- At the same 0.82 threshold, v2.2 adds held-out false alarms that v2.1 does not make:
+  - the family request (v2.1: 0.807);
+  - an eGov call (0.773);
+  - a Kaspi confirmation (0.818).
+- Both models make the same 2 errors on the new judge, and recall is 43 vs 42.
+- So the extra 250 rows did not buy measurable recall on the independent judge. They moved some
+  legitimate kk/ru look-alikes over the line.
+- **v2.1 now has two independent judges in its favour.**
+  - `shift_local_2` (its pre-registered look): 0/65 false alarms vs v1's 2, recall 38 vs 28.
+  - `shift_local_3` (reference, not pre-registered for it): 2/65 vs 6/65, 42 vs 32.
+  - Its only failed gate is the browser tag-set Jaccard, 0.899994 < 0.9.

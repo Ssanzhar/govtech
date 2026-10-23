@@ -5,6 +5,14 @@ day (what is shipped, the honest numbers, the strategy, who does what). Then rea
 (the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D70) and `docs/eval_report.md`
 (numbers, with intervals). The July sprint log below is kept as history._
 
+- **2026-10-23 (later) — v2.2 trained, judged and NOT shipped (D63 v2.2).**
+  - **Data:** about 250 kk/code-switched dialogues, written by Claude and by Gemini (new
+    `gemini_writer`). The new judge is `shift_local_3` (129 calls).
+  - **On the judge:** v2.2 makes 2/65 false alarms (v1 6/65) and catches 43/64 scams (v1 32/64).
+  - **Fails A6 (a) and (c):** ood clean FPR rises 0 → 1, and a family money request now alerts.
+    v1 stays shipped.
+  - **v2.1 is cleaner:** at the same point on the same rows it makes none of those errors, and
+    catches 42/64 on `shift_local_3`.
 - **2026-10-23 — v2.1 trained, judged and NOT shipped (D63 v2.1 A4–A6); v2.2 next.**
   - **v2.1 vs v1.** On the fresh judge `shift_local_2` v2.1 makes 0/65 false alarms (v1 2/65) and
     catches 38/65 scams (v1 28/65). Clean test / authored / ood and styled FPR are unchanged, and
