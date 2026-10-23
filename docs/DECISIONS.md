@@ -2853,3 +2853,55 @@ commit closes A4.
 - After export: the browser gate passes, and the demo scenes are right (the RU and KK scams alert,
   and the real bank call stays LOW).
 - **On a fail, v1 stays.** Nothing is re-tuned on what A5 shows.
+
+#### D63 v2.1 / A4 — FREEZE: trained, operating point by rule (2026-10-23)
+_Committed before any held-out split is scored. Validation only, device embeddings
+(transformers.js 3.8.1 / ORT-web wasm bridge). Numbers pasted from
+`scripts/taxonomy_v2_dryrun_eval.py` (`models/linear_v21_device/val_report.json`)._
+
+**Training ran as pre-registered:** no rerun and no setting changed.
+- 23 heads, none dropped. The thinnest are task_advance_fee 94, cash_courier_handoff 105 and
+  loan_inducement 108 OOF positives.
+- 1,880 Gemini train rows are masked for the new tactics.
+
+**Frozen model** (`models/linear_v21_device`, sha256):
+- `risk_clf.joblib` 16c6e450b812070ed33a2df641d4e90d969433a9d16bef43d8502f56209b27f7
+- `tactic_clf.joblib` 67996f602399be3e47629948d5487dcc0504e44adee91bfb3c7c3fe4c397104c
+- `web/weights.json` cd7b47bba7ab2bc4aff0666d316133b1ae4efa0cfea502de58f6ab58affe5e40
+
+**Operating point (the rule):**
+- Shipped v1 makes 5/230 false positives on the v2.1 validation set at 0.59.
+- **enter = 0.82** is the lowest 0.01 step at which v2.1 makes ≤ 5. **exit = 0.72**; the
+  single-shot `risk_threshold` is also 0.82.
+- The hard-signal floors from `live.meter.hard_signal_floors` are **84 / 84**.
+
+| validation (device) | ROC-AUC / PR-AUC | FPR [95 % CP] | recall [95 % CP] |
+|---|---|---|---|
+| shipped v1 @ 0.59 | 0.867 / 0.868 | 5/230 = 0.022 [0.007, 0.050] | 91/198 = 0.460 [0.389, 0.532] |
+| v2.1 @ 0.59 (for reference) | 0.958 / 0.962 | 18/230 = 0.078 [0.047, 0.121] | 177/198 = 0.894 [0.843, 0.933] |
+| **v2.1 @ 0.82 (rule)** | | **5/230 = 0.022 [0.007, 0.050]** | **147/198 = 0.742 [0.676, 0.802]** |
+| v1, Claude rows | 0.783 / 0.766 | 4/153 | 33/140 |
+| v2.1 @ 0.82, Claude rows | 0.930 / 0.939 | 4/153 | 90/140 |
+| v1, Gemini rows | 1.000 / 1.000 | 1/77 | 58/58 |
+| v2.1 @ 0.82, Gemini rows | 1.000 / 0.999 | 1/77 | 57/58 |
+
+v2.1 @ 0.82 by language (Claude rows), each as v1 → v2.1:
+
+| language | FPR | recall |
+|---|---|---|
+| kk | 1/52 → 1/52 | 10/54 → 34/54 |
+| ru | 3/58 → 3/58 | 15/42 → 33/42 |
+| mixed | 0/27 → 0/27 | 4/30 → 12/30 |
+
+**The five validation false positives at 0.82** (generated or augment rows, not held-out):
+- aug_neg_delivery_notification_ru_0 (Gemini, ru, 0.826)
+- p2_0864 (kk, 0.868)
+- p2_1105 (ru, 0.863)
+- p2_1248 (ru, 0.906)
+- p2_1761 (ru, 0.908)
+
+**Compared with v2 phase 2** (different validation sets, so indicative only): v2 needed 0.78 to
+match v1's FPs, and v2.1 needs 0.82. On Claude rows v2.1 ranks better than v2 (ROC-AUC 0.930 vs
+0.919). **Mixed-language recall at the rule point is the weak spot (12/30).**
+
+A4 is closed. Next is A5: one look, per the pre-registration above.
