@@ -148,7 +148,8 @@ def main() -> None:
     provenance = json.loads((args.processed_dir / "provenance.json").read_text(encoding="utf-8"))
     generator = provenance["generator"]
     truth = np.array([int(d.label.is_scam) for d in val])
-    bundle = load_linear(args.model_dir)
+    # D75: a fused browser weights file is scored exactly as the server would serve it.
+    bundle = load_linear_from_web(args.model_dir) if args.model_dir.suffix == ".json" else load_linear(args.model_dir)
     risk, tactic = score(bundle, val)
     labelled = None
     if "row_label_space" in provenance:  # D73: mask exactly as the trainer did

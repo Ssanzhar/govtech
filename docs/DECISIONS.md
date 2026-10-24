@@ -3524,3 +3524,62 @@ Nothing is re-tuned on this look, and `shift_local_5` cannot judge any retrain b
 - The next step needs a different lever, not more data of the same kind: for example, a gate
   on caller role or an institutional cue for scores between the old and new points, or keeping
   v1's risk head and adding only the new tactic heads. That needs its own ADR and a new judge.
+
+### D75 — a v1 + v3.1 risk ensemble. PRE-REGISTRATION (2026-10-24)
+_Committed before the ensemble was scored on any split (validation included) and before
+`shift_local_6` was generated._
+
+**User decision (2026-10-24).** After the D74 verdict, the user chose the recommended option
+"Ensemble v1 + v3.1" over "v1 risk + new tactic tags" and "park track A". v1 stays shipped until
+the ensemble passes; v2.1, v3 and v3.1 stay frozen, not exported.
+
+**Why.** Three retrains (v2.2, v3, v3.1) raised recall on the independent judges and each time
+made family money requests and everyday chat alert. v1 does not alert on those calls (D73, D74),
+and v3.1 catches the most scams. The two heads err on different calls, so their mean may keep
+most of v3.1's recall without its family and everyday false alarms.
+
+**The model: no new training.**
+- Risk = 0.5 · v1 + 0.5 · v3.1, both calibrated probabilities. The weight is fixed here, not
+  tuned. Both exported heads are "the mean over 3 calibrated CV members" and read the same
+  features (e5-base device embedding, cue matcher v2, hybrid-v1, identical embedded lexicons),
+  so the mix is the 6 members in one head.
+  - Built by `python -m qorgan.classifier.web_ensemble --base site/models/weights.json
+    --partner models/linear_v31_device/web/weights.json --out models/linear_v31e/web/weights.json`.
+    The module refuses heads whose inputs or member counts differ (`tests/classifier/test_web_ensemble.py`).
+  - `WebScorer` and `site/core/head.js` score that file unchanged, so the browser needs no code
+    change and parity holds by construction.
+  - Inputs, sha256: v1 `site/models/weights.json` f0659e7c1872e88c4104c1a7956ed540cf9e3fd126e82ba20809f73908a40bc5;
+    v3.1 `models/linear_v31_device/web/weights.json` 5d971fe427d3513ffc55988cec34c21adc40e6e61165a5994835af68981c94d5 (D74 freeze).
+  - Output: `models/linear_v31e/web/weights.json`, sha256 af82696cafbdbed9b89d976e9aaadb851f0f9e965604160cd1654e4672a739b9.
+- The tactic heads, their thresholds and the label space (v3, 28 heads) are v3.1's, unchanged.
+- It is served from the JSON (`QORGAN_LINEAR_WEIGHTS=web`, `QORGAN_WEB_WEIGHTS_PATH=` that file).
+
+**Operating point and freeze: D73's rule.**
+- enter = the lowest 0.01 step at which the ensemble's validation FPs ≤ v1's, both scored on
+  the v3.1 validation set (`data/cache/processed_v31`, 705 rows); exit = enter − 0.10.
+- Scored by `scripts/taxonomy_v2_dryrun_eval.py --model-dir models/linear_v31e/web/weights.json`;
+  the script now accepts a weights JSON.
+- The freeze commit records enter/exit and the validation table before the look.
+
+**What is NOT blind.**
+- The design was chosen after D74's look. Its per-row risks for v1 and v3.1 on test, authored,
+  ood and `shift_local_5` are on disk (`models/linear_v31_device/a5/*.neg_rows.json`), and the
+  ensemble's risk on those rows is their mean. So (a) and (c) on test / authored / ood are safety
+  checks here, not evidence. Nothing is computed from those files before the freeze.
+- `shift_local_6` is the only blind judge.
+
+**The judge is `shift_local_6`.** 160 kk/ru calls (kk 96 / ru 64) by the local Qwen3.5-Kazakh
+model, plan seed 20261103, prefix sl6. The fifth batch's briefs (21 slots from
+`shift_local_briefs_v31.yaml`, 80 scam slots). Disjoint from every earlier batch, never published.
+
+**A5 / A6, all required; v1 stays on any fail.** D74's, on the new judge:
+- (a) FPR does not rise on the clean test / authored / ood subsets or on the styled copies.
+- (b) On `shift_local_6`: the ensemble's false alarms ≤ v1's + 1, and its recall > v1's.
+- (c) Every new false alarm is an institutional look-alike, never a family or everyday call (the
+  twins and every `shift_local_briefs_v31` brief count as family/everyday). Only those rows are
+  read, and they go into the inspection ledger.
+- After export: the browser gate with its assertions unchanged, the demo scenes, and the owner's
+  sign-off on the D73 draft texts.
+- Reported, not criteria: v3.1 alone (0.84 / 0.74) and v1 alone on `shift_local_6`, recall on its
+  v3-brief scams, and the false alarms on its `shift_local_briefs_v31` calls. Nothing is re-tuned
+  on what A5 shows.
