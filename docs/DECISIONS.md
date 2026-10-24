@@ -3583,3 +3583,41 @@ model, plan seed 20261103, prefix sl6. The fifth batch's briefs (21 slots from
 - Reported, not criteria: v3.1 alone (0.84 / 0.74) and v1 alone on `shift_local_6`, recall on its
   v3-brief scams, and the false alarms on its `shift_local_briefs_v31` calls. Nothing is re-tuned
   on what A5 shows.
+
+#### D75 — FREEZE: operating point by rule (2026-10-24)
+_Validation only. No held-out split has been scored with the ensemble; `shift_local_6` is
+being generated._
+
+`QORGAN_LABEL_SPACE=v3 QORGAN_EMBED_BACKEND=device python scripts/taxonomy_v2_dryrun_eval.py
+--processed-dir data/cache/processed_v31 --model-dir models/linear_v31e/web/weights.json
+--baseline site/models/weights.json --out models/linear_v31e/val_report.json`, on cached device
+embeddings.
+
+**Operating point (the rule).** v1 makes 10/393 validation FPs at 0.59, so **enter = 0.66,
+exit = 0.56**. The fused file was then rebuilt with that point written into its `thresholds`
+(`web_ensemble --enter 0.66 --exit 0.56`). The risk head is unchanged by this.
+
+**Frozen model** `models/linear_v31e/web/weights.json`, sha256
+be546b6bda871a2b9d34eaaaa8a1917046d2d0750ae5a560203e353136c6a90c. It has 6 risk members (v1's 3
+and v3.1's 3, sources recorded in `risk_ensemble`), v3.1's 28 tactic heads and thresholds 0.66 / 0.66 / 0.56.
+
+| validation (device) | ROC-AUC / PR-AUC | FPR [95 % CP] | recall [95 % CP] |
+|---|---|---|---|
+| shipped v1 @ 0.59 | 0.828 / 0.808 | 10/393 = 0.025 [0.012, 0.046] | 106/312 = 0.340 [0.287, 0.395] |
+| ensemble @ 0.59 (reference) | 0.935 / 0.918 | 16/393 = 0.041 [0.023, 0.065] | 148/312 = 0.474 [0.418, 0.531] |
+| **ensemble @ 0.66 (rule)** | | **10/393 = 0.025 [0.012, 0.046]** | **127/312 = 0.407 [0.352, 0.464]** |
+| v3.1 alone @ 0.84 (D74) | 0.957 / 0.957 | 10/393 = 0.025 | 225/312 = 0.721 |
+
+At the rule point, v1 → ensemble (FPs; caught scams):
+
+| rows | FPs | caught scams |
+|---|---|---|
+| Claude kk | 2/118 → 2/118 | 14/102 → 21/102 |
+| Claude mixed | 0/73 → 2/73 | 11/72 → 12/72 |
+| Claude ru | 7/109 → 6/109 | 19/66 → 29/66 |
+| Claude en | 0/16 → 0/16 | 4/14 → 7/14 |
+| legacy Gemini | 1/77 → 0/77 | 58/58 → 58/58 |
+
+On validation the ensemble keeps much less of v3.1's recall than hoped: +21 scams over v1, against
+v3.1's +119. The tactic F1s are v3.1's (same head): minor_targeting 0.560, blackmail_extortion 0.818,
+survey_pretext 0.889, romance_trust 0.897, charity_appeal 0.710, mule_recruitment 0.714.

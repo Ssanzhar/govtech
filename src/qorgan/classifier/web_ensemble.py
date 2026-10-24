@@ -9,7 +9,8 @@ The base (the shipped v1) keeps the alert line calm on family and everyday calls
 partner (a retrain) brings the recall, and its tactic head and label space are kept whole.
 
     python -m qorgan.classifier.web_ensemble --base site/models/weights.json \\
-        --partner models/linear_v31_device/web/weights.json --out models/linear_v31e/web/weights.json
+        --partner models/linear_v31_device/web/weights.json --out models/linear_v31e/web/weights.json \\
+        --enter 0.66 --exit 0.56
 """
 
 from __future__ import annotations
@@ -33,11 +34,15 @@ class EnsembleMismatchError(ValueError):
     """The two weights files cannot be mixed member-for-member."""
 
 
-def fuse_risk_heads(base: Mapping[str, Any], partner: Mapping[str, Any], *, sources: Mapping[str, str]) -> dict[str, Any]:
+def fuse_risk_heads(
+    base: Mapping[str, Any], partner: Mapping[str, Any], *, sources: Mapping[str, str],
+    thresholds: Mapping[str, float] | None = None,
+) -> dict[str, Any]:
     """The partner's weights with the risk head replaced by the 50/50 mix of both heads.
 
     Returns a new dict; neither input is changed. `sources` names each input (e.g. its
-    sha256) and is recorded in the output."""
+    sha256) and is recorded in the output. `thresholds` (the ensemble's own operating point,
+    chosen on validation) replaces the partner's; by default the partner's are kept."""
     _check_compatible(base, partner)
     base_members = base["risk_head"]["members"]
     partner_members = partner["risk_head"]["members"]
@@ -48,6 +53,8 @@ def fuse_risk_heads(base: Mapping[str, Any], partner: Mapping[str, Any], *, sour
         "members": {"base": len(base_members), "partner": len(partner_members)},
         "sources": {"base": sources["base"], "partner": sources["partner"]},
     }
+    if thresholds is not None:
+        fused["thresholds"] = {k: float(v) for k, v in thresholds.items()}
     return fused
 
 
@@ -78,10 +85,16 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover - CLI
     parser.add_argument("--base", type=Path, required=True)
     parser.add_argument("--partner", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--enter", type=float, default=None, help="the ensemble's alert point (exit = --exit)")
+    parser.add_argument("--exit", type=float, default=None)
     args = parser.parse_args(argv)
+    if (args.enter is None) != (args.exit is None):
+        parser.error("--enter and --exit go together")
+    thresholds = None if args.enter is None else {"risk": args.enter, "enter": args.enter, "exit": args.exit}
     base = json.loads(args.base.read_text(encoding="utf-8"))
     partner = json.loads(args.partner.read_text(encoding="utf-8"))
-    fused = fuse_risk_heads(base, partner, sources={"base": _sha256(args.base), "partner": _sha256(args.partner)})
+    fused = fuse_risk_heads(base, partner, sources={"base": _sha256(args.base), "partner": _sha256(args.partner)},
+                            thresholds=thresholds)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     # Same serialisation as `web_bundle.write_web_bundle`.
     args.out.write_text(json.dumps(fused, sort_keys=True, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")

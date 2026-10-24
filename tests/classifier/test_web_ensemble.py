@@ -72,6 +72,13 @@ def test_records_its_sources_and_weights(base, partner):
                                       "sources": {"base": "sha-a", "partner": "sha-b"}}
 
 
+def test_carries_its_own_operating_point_when_given(base, partner):
+    kept = fuse_risk_heads(base, partner, sources={"base": "a", "partner": "b"})
+    assert kept["thresholds"] == partner["thresholds"]
+    own = fuse_risk_heads(base, partner, sources={"base": "a", "partner": "b"}, thresholds={"risk": 0.66, "enter": 0.66, "exit": 0.56})
+    assert own["thresholds"] == {"risk": 0.66, "enter": 0.66, "exit": 0.56}
+
+
 def test_inputs_are_not_mutated(base, partner):
     before = copy.deepcopy((base, partner))
     fuse_risk_heads(base, partner, sources={"base": "a", "partner": "b"})
