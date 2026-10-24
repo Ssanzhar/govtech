@@ -3621,3 +3621,54 @@ At the rule point, v1 → ensemble (FPs; caught scams):
 On validation the ensemble keeps much less of v3.1's recall than hoped: +21 scams over v1, against
 v3.1's +119. The tactic F1s are v3.1's (same head): minor_targeting 0.560, blackmail_extortion 0.818,
 survey_pretext 0.889, romance_trust 0.897, charity_appeal 0.710, mule_recruitment 0.714.
+
+#### D75 — the one look: (a) and (b) pass, (c) FAILS on two everyday calls; v1 stays (2026-10-24)
+_One run on device embeddings (bridge with 2 pages) with the frozen files of 15b510c: v1 0.59 / 0.49,
+the ensemble 0.66 / 0.56, and v3.1 alone at 0.84 / 0.74 for reference. Outputs are in
+`models/linear_v31e/a5/{v1,v31e,v31}.{run,styled}.txt`, `*.neg_rows.json` and `*.v3_scams.json`
+(ids, brief ids, risks and tag ids, no text). No row text was read, so the inspection ledger is unchanged._
+
+**The judge: `shift_local_6`** (157 calls, 78 scam / 79 legit, first look).
+
+| | FPR [95 % CP] | recall [95 % CP] | PR-AUC |
+|---|---|---|---|
+| v1 @ 0.59 | 0.025 [0.003, 0.088] | 0.436 [0.324, 0.553] | 0.833 |
+| **ensemble @ 0.66** | **0.013 [0.000, 0.069]** | **0.474 [0.360, 0.591]** | 0.910 |
+| v3.1 alone @ 0.84 (ref.) | 0.013 [0.000, 0.069] | 0.628 [0.511, 0.735] | 0.943 |
+
+(b) passes: 1 false alarm against v1's 2, and recall 0.474 > 0.436 (3 more scams caught).
+
+**(a) passes** for the first time since v2.1.
+
+| v1 → ensemble FPR | clean subset | styled copies |
+|---|---|---|
+| test | 0.000 → 0.000 | 0.000 → 0.000 |
+| authored_heldout | 0.000 → 0.000 | 0.000 → 0.000 |
+| ood | 0.000 → 0.000 | 0.014 → 0.000 |
+
+**(c) fails.** The ensemble's two new false alarms against v1 are both everyday calls:
+- `neg_general_conversation_mixed_21`: an inspected test row, so not in the clean subset; 0.754 clean. v3 and v3.1 also alerted on it.
+- `sl6_kk_legit_31`, from brief `l31_chat_phone_help`: its styled copy only (0.687; clean 0.585).
+
+Both arms alert on `sl6_ru_legit_27` (`l31_chat_scam_story`, two friends retelling a scam call),
+so it is not a new alarm. v1's own 0.59 alert on `sl6_kk_legit_08` (`l_bank_fraud_alert`) clears.
+
+**Report only.**
+- The v3 briefs' 31 scams on `shift_local_6`: v1 9/31, ensemble 11/31, v3.1 alone 19/31.
+- v3.1 alone has 12 new false alarms against v1 on test / ood / judge, the same family/everyday
+  pattern as D74.
+
+**Verdict.** v1 stays shipped. The ensemble is frozen in `models/linear_v31e`, not exported.
+Nothing is re-tuned on this look, and `shift_local_6` cannot judge anything built after it.
+
+**What it shows.**
+- Averaging v1 into v3.1 removes almost all of v3.1's family and everyday false alarms, from
+  12 new ones to 2, and for the first time a retrain passes (a). But it also gives back most of
+  v3.1's recall gain: +3 scams on the judge, against v3.1's +15.
+- The fixed 50/50 weight sits near the point where both effects cancel. A different weight would
+  have to be chosen on validation alone, and validation did not predict either D74 or this
+  result, so this look gives no basis for one.
+- The remaining everyday alarms are calls about scams or bank safety ("my neighbour was nearly
+  fooled", "never read SMS codes to anyone"). Every arm, v1 included, scores them high. They talk
+  about the scam vocabulary the risk head learns, which a different lever (a speaker-role or
+  narrative feature) would have to separate. That needs its own ADR.

@@ -5,6 +5,16 @@ day (what is shipped, the honest numbers, the strategy, who does what). Then rea
 (the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D70) and `docs/eval_report.md`
 (numbers, with intervals). The July sprint log below is kept as history._
 
+- **2026-10-24 (night) — v1 + v3.1 risk ensemble judged, NOT shipped (ADR D75).**
+  - A 50/50 mix of the two risk heads (6 calibrated members in one browser weights file, no
+    browser code change), alert point 0.66 / 0.56 by the validation rule.
+  - On the new judge `shift_local_6` (157 calls) it has 1 false alarm against v1's 2 and
+    catches 37/78 scams against v1's 34. It passes (a): no FPR rise on clean test / authored /
+    ood or their styled copies.
+  - It fails (c): two everyday calls about scam safety alert (an inspected test row and the
+    styled copy of a judge call). v1 stays; the ensemble is frozen in `models/linear_v31e`.
+  - Lesson: the mix trades almost all of v3.1's recall for v1's calm. The calls left over talk
+    about scams rather than run one, so they need a different feature, not another weight.
 - **2026-10-24 (evening) — v3.1 trained, judged and NOT shipped (ADR D74).**
   - The family/everyday hard-negative retrain. On the new judge `shift_local_5` (156 calls) it
     has 4 false alarms against v1's 5 and catches 47/76 scams against v1's 34; on the v3 scenarios
