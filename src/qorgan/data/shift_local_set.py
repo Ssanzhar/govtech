@@ -161,7 +161,7 @@ def provenance(
 ) -> dict:
     """The committed record of how the split was made: models, hashes, seeds, thresholds and
     rejection statistics. Ids and counts only -- never dialogue text. `extra_briefs_paths` are a
-    batch's further brief files (D73: `shift_local_4`), recorded only when present."""
+    batch's further brief files (D73: `shift_local_4`, D74: `shift_local_5`), recorded only when present."""
     spec = plan.LOCAL_SPLITS[split]
     briefs = plan.load_briefs(briefs_path) + tuple(b for p in extra_briefs_paths for b in plan.load_briefs(p))
     used = sorted({row["generator"] for row in attempts})

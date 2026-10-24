@@ -9,3 +9,4 @@ writers:
 label_spaces:
   v3_claude: v3
   v3_claude_b: v3
+  v31_claude: v3     # ADR D74

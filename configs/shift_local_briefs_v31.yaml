@@ -1,0 +1,58 @@
+# Scenario briefs added for the `shift_local_5` held-out split (ADR D74, the v3.1 judge):
+# ordinary family and everyday calls, the classes whose false alarms failed v2.2 and v3 (A6 (c)).
+# `shift_local_5` is planned from `shift_local_briefs.yaml` + `shift_local_briefs_v3.yaml` PLUS
+# this file; earlier batches' plans are unchanged.
+#
+# Written 2026-10-24, BEFORE the v3.1 training briefs (configs/gen_grid_v31_claude.yaml), from
+# ordinary life. Written WITHOUT opening the cue lexicons, the corpus, any generated row or any
+# evaluation split. The label of every generated call comes from its brief, never from a score.
+#
+# Track-2 rule: these briefs describe an evaluation split. Do not build training prompts,
+# grid cells or seed scenarios from this file.
+version: 1
+briefs:
+  # ---------------------------------------------------------------- family money, legitimate
+  - id: l31_family_tuition
+    label: legit
+    hard_negative: true
+    brief: "A father calls his son at university: the tuition instalment is due on Friday, the father has transferred half to the son's own card and asks him to pay the university through its official account himself and send a photo of the receipt."
+  - id: l31_family_grandma_pension
+    label: legit
+    hard_negative: true
+    brief: "A grandmother asks her granddaughter to come by on the weekend and help her pay the utility bills in the banking app, because the pension arrived and she does not trust herself with the buttons."
+  - id: l31_family_urgent_hospital
+    label: legit
+    hard_negative: true
+    brief: "A woman calls her brother in a hurry: their mother was admitted to the regional hospital, the doctor listed medicines to buy today, and she asks him to transfer money to her usual card; they talk about who will drive there tonight."
+  - id: l31_family_debt_return
+    label: legit
+    brief: "An uncle calls to say he finally sold his car and wants to return the money his nephew lent him in spring; he asks whether to send it to the card or bring cash at the family dinner."
+  - id: l31_family_kaspi_red
+    label: legit
+    hard_negative: true
+    brief: "A daughter asks her mother to make the monthly instalment on a phone she bought in instalments, from the mother's account, because her own salary is late; she promises to repay next week and they argue a little about money."
+  # ---------------------------------------------------------------- everyday conversation
+  - id: l31_chat_scam_story
+    label: legit
+    hard_negative: true
+    brief: "Two old friends chat; one tells how her neighbour was nearly fooled by a caller pretending to be from the bank and the police, what the caller said, and how the neighbour's son stopped her; they agree to warn their parents."
+  - id: l31_chat_new_job
+    label: legit
+    brief: "A young man tells his aunt about his new job at a logistics company: the salary, the boss, the night shifts, and that the company pays to a card it opened for him at a big bank."
+  - id: l31_chat_neighbour_police
+    label: legit
+    hard_negative: true
+    brief: "A neighbour who works as a district police officer calls to say the building's basement was broken into, asks whether the person saw anything last night, and says he will come by with a statement form tomorrow."
+  - id: l31_chat_trip_tickets
+    label: legit
+    brief: "Two colleagues plan a weekend trip to Burabay; one has bought the train tickets and the hotel online and tells the other how much his share is and where to send it, and they talk about what to pack."
+  - id: l31_chat_parent_school
+    label: legit
+    brief: "A mother calls another mother from her son's class to ask about tomorrow's homework and the class trip, and they gossip a little about the new teacher."
+  - id: l31_chat_phone_help
+    label: legit
+    hard_negative: true
+    brief: "A son walks his elderly father through updating the banking app on his phone over a call, step by step, and keeps repeating that he must never read codes from SMS to anyone who calls, not even to him."
+  - id: l31_chat_wedding_plans
+    label: legit
+    brief: "Two sisters plan their cousin's wedding: the restaurant, the guest list, the gift from the family, and who is collecting the money for it."

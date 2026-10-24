@@ -3344,3 +3344,83 @@ but for the second time in a row (v2.2, v3) adding scam data pushes family money
 everyday chat over the alert line at the rule point. The rule matches v1's validation FPs, and
 validation is mostly writer-matched rows, so it does not protect these classes. v2.1 remains the
 only retrain without such a false alarm.
+
+### D74 — v3.1: family and everyday hard negatives for the v3 retrain. PRE-REGISTRATION (2026-10-24)
+_Committed before any v3.1 model was trained and before `shift_local_5` was scored or read. The
+procedure is D73's with the changes listed here._
+
+**User decision (2026-10-24).** "Continue" after the D73 verdict, on the recommended option: keep
+the v3 data and add hard negatives for family money requests and everyday chat, with a fresh
+judge. v1 stays shipped; v2.1 and v3 stay frozen, not exported.
+
+**Why these classes.** v2.2 and v3 both failed A6 (c) on family money requests and general
+conversation (D73 one look). The class choice uses what A6 showed on test / ood — class ids only;
+no row text was read beyond the two rows already in the inspection ledger. So (a) and (c) on
+test / ood are no longer blind for these two classes; `shift_local_5` is.
+
+**New data: run `v31_claude`** (local-only; QC pass), `configs/gen_grid_v31_claude.yaml`, seed
+20261031, 800 cells, kk 320 / ru 240 / mixed 240, label space v3.
+- 436 legitimate: family_money_request 166, general_conversation 165, legit_child_call 35,
+  legit_partner_call 35, legit_charity_call 35. Every family and everyday cell carries one of 24
+  new briefs (12 per class), written after the judge briefs and kept apart from them and from
+  `v21_legit`'s; none was built from an evaluation row. 41 cells are look-alikes of
+  `relative_in_trouble`.
+- 364 scams, only the personal schemes those calls can be mistaken for: relative_in_trouble 101,
+  romance_scam 51, minor_targeted 51, charity_fraud 51, fake_boss 34, marketplace_seller_phish 34,
+  investment_broker 25, blackmail 17. Every other scheme has weight 0 in this run.
+- Scam share 0.455 keeps the Claude train block at the Gemini rate (D63 phase 2):
+  (1171 + 0.7 s) / (2430 + 0.7 · 800) = 0.4766 → s ≈ 357.
+- 16 Claude writer agents, two 25-cell chunks each, the D73 writer brief unchanged; every chunk
+  passed `gen check` on its first run.
+
+| QC (`data/synthetic/gen/v31_claude/qc_report.json`) | v31_claude |
+|---|---|
+| cells / accepted | 800 / 800 |
+| eval overlaps / near-dups / ROUGE-L flags | 0 / 0 / 0 |
+| scheme-rule agreement | 364/364 |
+| rows not a scrub fixed point (scrubbed on fold) | 36 |
+| cue-free scam share | 0.907 |
+| negatives containing a cue | 22 |
+| fingerprint AUC vs Gemini train, char / e5 | 0.9999 / 0.995 |
+| role-slot recall | 0.16 (most callers are private persons, no institutional role) |
+
+- Writers' notes: some scam rows annotate extra tactics the dialogue shows (allowed by the spec);
+  in 5 legitimate cells (`v31_claude_0442`, `_0539`, `_0570`, `_0634`, `_0635`) the writer changed
+  the relationship a brief names (e.g. "father") to fit the drawn callee's age and kept the
+  situation. Two writers produced their JSONL through a scratch script from hand-written text.
+  Kept.
+
+**Corpus.** `build_corpus --gen-run pilot --gen-run p2 --gen-run v21_legit --gen-run v21_scam
+--gen-run v3_claude --gen-run v3_claude_b --gen-run v31_claude --label-space v3 --processed-dir
+data/cache/processed_v31`. Content hash **8a10f6fea6e8…ae7** (`8a10f6fea6e801998237cbf720f11de185cd83fb50881d14fed825cc24afdae7`),
+scrubber v3.
+- Train 8,100 (3,868 scam / 4,232 legit; kk 2,846 / ru 2,456 / mixed 2,184 / en 614). P(scam)
+  Claude 2,972/6,220 = 0.4778, Gemini 896/1,880 = 0.4766.
+- Val 705 (312 scam / 393 legit). The new run adds 120 val rows: 26 family money requests,
+  26 general conversation, 19 child / partner / charity twins, 49 scams. Test and authored are
+  unchanged (143 / 42).
+
+**Trainer, operating point and freeze: D73's, unchanged.**
+- `QORGAN_LABEL_SPACE=v3 QORGAN_EMBED_BACKEND=device python -m qorgan.classifier.linear_train
+  --processed-dir data/cache/processed_v31 --out-dir models/linear_v31_device` on the device bridge.
+- enter = the lowest 0.01 step at which v3.1's validation FPs ≤ v1's on the v3.1 validation set at
+  0.59; exit = enter − 0.10.
+- The freeze commit records the sha256s, enter/exit and the validation table before the look.
+
+**The judge is `shift_local_5`.** 160 kk/ru calls (kk 96 / ru 64) by the local Qwen3.5-Kazakh
+model, plan seed 20261101, prefix sl5, from the `shift_local_4` briefs plus
+`configs/shift_local_briefs_v31.yaml` (12 legitimate family and everyday briefs), disjoint from
+every earlier batch, never published (`NEVER_PUBLISHED`, gitignored). Its build started before
+this entry; nobody has read or scored it.
+
+**A5 / A6, all required; v1 stays on any fail.** D73's, on the new judge:
+- (a) FPR does not rise on the clean test / authored / ood subsets or on the styled copies.
+- (b) On `shift_local_5`, v3.1's false alarms ≤ v1's + 1, and v3.1's recall > v1's.
+- (c) Every new false alarm is an institutional look-alike, never a family or everyday call (the
+  child, partner and charity-of-a-parents'-committee twins and every `shift_local_briefs_v31`
+  brief count as family/everyday). Only those rows are read, and they go into the inspection ledger.
+- After export: the browser gate with its assertions unchanged, the demo scenes, and the owner's
+  sign-off on the D73 draft texts.
+- Reported, not criteria: the frozen v3 (0.83 / 0.73) and v2.1 (0.82 / 0.72) scored alongside;
+  on `shift_local_5`, recall on the v3-brief scams for v1 / v2.1 / v3 / v3.1 and false alarms on
+  the `shift_local_briefs_v31` calls. Nothing is re-tuned on what A5 shows.

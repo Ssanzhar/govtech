@@ -7,7 +7,8 @@ seeing an output. The label of a slot comes from its brief.
 `LOCAL_SPLITS` registers every batch: `shift_local` (D65), `shift_local_2` (PLAN_2026-10 §4
 A3: same briefs, same model and sampling, a new seed, kk/ru only after D70) and `shift_local_3`
 (A7, the v2.2 judge: the second batch's design under another seed) and `shift_local_4` (ADR
-D73, the v3 judge: the same briefs plus `shift_local_briefs_v3.yaml`, 160 calls). A batch is
+D73, the v3 judge: the same briefs plus `shift_local_briefs_v3.yaml`, 160 calls) and
+`shift_local_5` (ADR D74, the v3.1 judge: those plus `shift_local_briefs_v31.yaml`). A batch is
 planned with `plan_for(name, load_split_briefs(name, configs_dir))`; the first batch's plan is
 pinned by a fingerprint test.
 
@@ -160,6 +161,9 @@ SHIFT_LOCAL_2_TARGETS: dict[str, int] = {
 # look-alikes next to the old briefs; kk-heavy like the second batch.
 SHIFT_LOCAL_4_SEED = 20261029
 SHIFT_LOCAL_4_TARGETS: Mapping[str, int] = {"kk": 96, "ru": 64, "mixed": 0, "en": 0}
+# ADR D74: the v3.1 judge. `shift_local_4` was looked at once by v3; same design and size, plus
+# family and everyday legitimate briefs (the classes A6 (c) failed on).
+SHIFT_LOCAL_5_SEED = 20261101
 LOCAL_SPLITS: Mapping[str, LocalSplit] = MappingProxyType({
     "shift_local": LocalSplit(
         name="shift_local", plan_seed=PLAN_SEED, slot_prefix="sl",
@@ -184,6 +188,14 @@ LOCAL_SPLITS: Mapping[str, LocalSplit] = MappingProxyType({
         generator_note=_NOTE.format(date="2026-10-24", name="shift_local_4"), adr="D73",
         prior=("shift_local", "shift_local_2", "shift_local_3"), near_duplicate_jaccard=0.7, plan_task="ADR D73",
         briefs_files=("shift_local_briefs.yaml", "shift_local_briefs_v3.yaml"),
+    ),
+    "shift_local_5": LocalSplit(
+        name="shift_local_5", plan_seed=SHIFT_LOCAL_5_SEED, slot_prefix="sl5",
+        language_targets=MappingProxyType(SHIFT_LOCAL_4_TARGETS),
+        generator_note=_NOTE.format(date="2026-10-24", name="shift_local_5"), adr="D74",
+        prior=("shift_local", "shift_local_2", "shift_local_3", "shift_local_4"), near_duplicate_jaccard=0.7,
+        plan_task="ADR D74",
+        briefs_files=("shift_local_briefs.yaml", "shift_local_briefs_v3.yaml", "shift_local_briefs_v31.yaml"),
     ),
 })
 

@@ -38,14 +38,15 @@ PUBLISHED_SPLITS: tuple[str, ...] = (
 DATASET_ALLOW_PATTERNS: tuple[str, ...] = (*PUBLISHED_SPLITS, "manifest.json", "shift.manifest.json")
 
 # Held-out splits that must NEVER reach the Hub (ADR D65). `shift_local` and its later batches
-# `shift_local_2` (PLAN_2026-10 A3), `shift_local_3` (A7, the v2.2 judge) and `shift_local_4` (D73,
-# the v3 judge) are the independent held-outs written by a local model: once
+# `shift_local_2` (PLAN_2026-10 A3), `shift_local_3` (A7, the v2.2 judge), `shift_local_4` (D73,
+# the v3 judge) and `shift_local_5` (D74, the v3.1 judge) are the independent held-outs written by a local model: once
 # public, the next training generator or a crawler can see them, and they stop being independent.
 # Kept in data/processed only for the harness.
 NEVER_PUBLISHED: tuple[str, ...] = (
     "shift_local.jsonl", "shift_local.manifest.json", "shift_local_2.jsonl", "shift_local_2.manifest.json",
     "shift_local_3.jsonl", "shift_local_3.manifest.json",
     "shift_local_4.jsonl", "shift_local_4.manifest.json",
+    "shift_local_5.jsonl", "shift_local_5.manifest.json",
 )
 
 
