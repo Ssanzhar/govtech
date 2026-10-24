@@ -3424,3 +3424,39 @@ this entry; nobody has read or scored it.
 - Reported, not criteria: the frozen v3 (0.83 / 0.73) and v2.1 (0.82 / 0.72) scored alongside;
   on `shift_local_5`, recall on the v3-brief scams for v1 / v2.1 / v3 / v3.1 and false alarms on
   the `shift_local_briefs_v31` calls. Nothing is re-tuned on what A5 shows.
+
+#### D74 — FREEZE: trained, operating point by rule (2026-10-24)
+_Committed before any held-out split is scored and before `shift_local_5` is finished. Validation
+only, device embeddings, numbers from `scripts/taxonomy_v2_dryrun_eval.py`
+(`models/linear_v31_device/val_report.json`, `val_eval.log`). Training ran as pre-registered: no
+rerun, 28 heads, none dropped. Out-of-fold positives of the v3 heads: minor_targeting 197,
+blackmail_extortion 128, survey_pretext 96, romance_trust 192, charity_appeal 193;
+mule_recruitment 189._
+
+**Frozen model** (`models/linear_v31_device`, sha256):
+- `risk_clf.joblib` a56f371b12001b6a242303806187a13ed5a76c9d4dd29849b1df5b0e083b8644
+- `tactic_clf.joblib` b3a9e32a54b9cfb0960b2d3d4d6022ee8de2937f659f0d26e6e6d3eafa8fed90
+- `web/weights.json` 5d971fe427d3513ffc55988cec34c21adc40e6e61165a5994835af68981c94d5
+
+**Operating point (the rule).** v1 makes 10/393 validation FPs at 0.59, so **enter = 0.84,
+exit = 0.74**.
+
+| validation (device) | ROC-AUC / PR-AUC | FPR [95 % CP] | recall [95 % CP] |
+|---|---|---|---|
+| shipped v1 @ 0.59 | 0.828 / 0.808 | 10/393 = 0.025 [0.012, 0.046] | 106/312 = 0.340 [0.287, 0.395] |
+| v3.1 @ 0.59 (reference) | 0.957 / 0.957 | 33/393 = 0.084 [0.059, 0.116] | 276/312 = 0.885 [0.844, 0.918] |
+| **v3.1 @ 0.84 (rule)** | | **10/393 = 0.025 [0.012, 0.046]** | **225/312 = 0.721 [0.668, 0.770]** |
+
+At the rule point, v1 → v3.1 (FPs; caught scams):
+
+| rows | FPs | caught scams |
+|---|---|---|
+| Claude kk | 2/118 → 2/118 | 14/102 → 64/102 |
+| Claude mixed | 0/73 → 2/73 | 11/72 → 43/72 |
+| Claude ru | 7/109 → 4/109 | 19/66 → 52/66 |
+| Claude en | 0/16 → 0/16 | 4/14 → 9/14 |
+| legacy Gemini | 1/77 → 2/77 | 58/58 → 57/58 |
+
+Validation per-tactic F1 of the v3 heads (labelled v3 rows only, support 8–14):
+minor_targeting 0.560, blackmail_extortion 0.818, survey_pretext 0.889, romance_trust 0.897,
+charity_appeal 0.710; mule_recruitment 0.714.
