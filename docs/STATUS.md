@@ -5,6 +5,14 @@ day (what is shipped, the honest numbers, the strategy, who does what). Then rea
 (the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D70) and `docs/eval_report.md`
 (numbers, with intervals). The July sprint log below is kept as history._
 
+- **2026-10-24 (evening) — v3.1 trained, judged and NOT shipped (ADR D74).**
+  - The family/everyday hard-negative retrain. On the new judge `shift_local_5` (156 calls) it
+    has 4 false alarms against v1's 5 and catches 47/76 scams against v1's 34; on the v3 scenarios
+    it catches 16/26 against 9/26.
+  - It fails A6 (a) and (c), worse than v3: family money requests and everyday chat alert on
+    test, ood and the new `l31_*` briefs. v1 stays; v3.1 is frozen in `models/linear_v31_device`.
+  - Lesson: more writer-matched hard negatives do not move the held-out family boundary, so the
+    next attempt needs a different lever (see D74).
 - **2026-10-24 (later) — v3 trained, judged and NOT shipped (ADR D73).**
   - On `shift_local_4` v3 keeps v1's false alarms (5/79) and catches 55/80 scams (v1 33/80);
     on the v3 scenarios it catches 19/30 (v1 9/30).

@@ -3460,3 +3460,67 @@ At the rule point, v1 → v3.1 (FPs; caught scams):
 Validation per-tactic F1 of the v3 heads (labelled v3 rows only, support 8–14):
 minor_targeting 0.560, blackmail_extortion 0.818, survey_pretext 0.889, romance_trust 0.897,
 charity_appeal 0.710; mule_recruitment 0.714.
+
+#### D74 — the one look: (b) passes, (a) and (c) FAIL again; v1 stays (2026-10-24)
+_One run on device embeddings with the frozen weights of dc16b7e, each arm at its own point: v1
+0.59 / 0.49, v3.1 0.84 / 0.74, and for reference the frozen v3 0.83 / 0.73 and v2.1 0.82 / 0.72.
+Outputs are in `models/linear_v31_device/a5/{v1,v31,v3,v21}.{run,styled}.txt`, `*.neg_rows.json`
+and `*.v3_scams.json` (ids, brief ids, risks and tag ids, no text). No row text was read for this
+look, so the inspection ledger is unchanged; the verdict rests on class ids and brief ids alone._
+
+**The judge: `shift_local_5`** (156 calls, 76 scam / 80 legit, first look).
+
+| | FPR [95 % CP] | recall [95 % CP] | PR-AUC |
+|---|---|---|---|
+| v1 @ 0.59 | 0.062 [0.021, 0.140] | 0.447 [0.333, 0.566] | 0.846 |
+| **v3.1 @ 0.84** | **0.050 [0.014, 0.123]** | **0.618 [0.500, 0.728]** | 0.927 |
+| v3 @ 0.83 (ref.) | 0.050 [0.014, 0.123] | 0.592 [0.473, 0.704] | 0.916 |
+| v2.1 @ 0.82 (ref.) | 0.050 [0.014, 0.123] | 0.539 [0.421, 0.655] | 0.911 |
+
+(b) passes: 4 false alarms against v1's 5, and recall 0.618 > 0.447.
+
+**(a) fails, and is worse than v3.**
+
+| v1 → v3.1 FPR | clean | styled |
+|---|---|---|
+| test | 0.000 → 0.050 (clean subset 0.000 → 0.017) | 0.000 → 0.033 |
+| authored_heldout | 0.000 → 0.000 | 0.000 → 0.000 |
+| ood | 0.000 → 0.027 (both rows already inspected) | 0.014 → 0.054 |
+
+**(c) fails.** v3.1's new false alarms against v1, by class or brief id:
+- **Family and everyday:**
+  - test: `neg_family_money_request_en_8` (0.879)
+  - test, inspected: `aug_neg_family_money_request_ru_1` (0.889) and `neg_general_conversation_mixed_21` (0.969)
+  - ood, inspected: `ood_neg_family_money_request_mixed_0` (0.848) and `ood_neg_general_conversation_ru_1` (0.957)
+  - ood, styled: `ood_neg_general_conversation_mixed_0` (0.840)
+  - test, styled: `aug_neg_general_conversation_mixed_1` (0.943)
+  - `shift_local_5`: `sl5_kk_legit_46`, from brief `l31_chat_neighbour_police` (0.963 clean), and `sl5_kk_legit_44`, from brief `l31_family_kaspi_red` (0.951 styled)
+- **Institutional:** `sl5_ru_legit_25` (`l_parcel_delivery`), plus the styled copies of `aug_neg_legit_gov_service_mixed_3`, `ood_neg_legit_gov_service_{kk_0,mixed_2}` and `ood_neg_delivery_notification_mixed_3`.
+
+**Report only.**
+- Of the 12 `shift_local_briefs_v31` brief calls (sl5), the arms alert on (clean or styled):
+  - v1: `l31_chat_scam_story`, `l31_chat_phone_help`
+  - v3.1, v3 and v2.1: the same two plus `l31_chat_neighbour_police` and `l31_family_kaspi_red`
+- The v3 briefs' 26 scams on `shift_local_5`:
+
+| caught | blackmail | charity | romance | survey | minors | total |
+|---|---|---|---|---|---|---|
+| v1 | 2/6 | 1/6 | 0/4 | 2/5 | 4/5 | 9/26 |
+| v2.1 | 3/6 | 1/6 | 1/4 | 2/5 | 5/5 | 12/26 |
+| v3 | 3/6 | 2/6 | 2/4 | 2/5 | 5/5 | 14/26 |
+| v3.1 | 4/6 | 3/6 | 2/4 | 2/5 | 5/5 | 16/26 |
+
+**Verdict.** v1 stays shipped. v3.1 stays frozen in `models/linear_v31_device` and is not exported.
+Nothing is re-tuned on this look, and `shift_local_5` cannot judge any retrain built after it.
+
+**What it shows.**
+- The family and everyday hard negatives did not work. 800 cells, 331 of them family or everyday,
+  left v3.1 with more family/everyday false alarms on test/ood than v3, not fewer. Recall on the
+  judge rose again, by 0.03.
+- The val-matched rule point is not the cause on its own: validation FPs were equal to v1's
+  (10/393), yet held-out family/everyday rows alert. More writer-matched hard negatives make
+  validation easier without moving the held-out family boundary.
+- Every retrain (v2.1, v3, v3.1) alerts on the same two `l31_*` everyday briefs as each other.
+- The next step needs a different lever, not more data of the same kind: for example, a gate
+  on caller role or an institutional cue for scores between the old and new points, or keeping
+  v1's risk head and adding only the new tactic heads. That needs its own ADR and a new judge.
