@@ -3672,3 +3672,38 @@ Nothing is re-tuned on this look, and `shift_local_6` cannot judge anything buil
   fooled", "never read SMS codes to anyone"). Every arm, v1 included, scores them high. They talk
   about the scam vocabulary the risk head learns, which a different lever (a speaker-role or
   narrative feature) would have to separate. That needs its own ADR.
+
+### D76 — track A is parked; v1 is the demo model; the headline is v1 on all six local judges (2026-10-25)
+
+**User decision (2026-10-25).** "Continue" after the D75 verdict, on the recommendation to park
+track A and move to the truth pass (PLAN_2026-10 track E) and deploy prep (track C).
+
+**What is parked.** Four retrains in a row (v2.2, v3, v3.1 and the v1 + v3.1 ensemble) beat v1's
+recall on their independent judges and failed A6 (c): family or everyday calls alerted each
+time. No new retrain is attempted before demo day.
+- The frozen candidates stay on the laptop, not exported: `models/linear_v21_device`,
+  `linear_v22_device`, `linear_v3_device`, `linear_v31_device`, `linear_v31e`.
+- The open lever is a feature that separates calls *about* scams ("my neighbour was nearly
+  fooled", "never read SMS codes to anyone") from calls that run one (D75). It needs its own ADR.
+
+**The headline number.** v1's weights (`site/models/weights.json`, last changed 2026-09-28 in
+e9917b2) predate every `shift_local*` batch (the first, 2026-10-10). Nothing was tuned on the
+batches for v1, so together they are one independent sample of 828 kk/ru calls.
+`QORGAN_CLASSIFIER_BACKEND=linear QORGAN_EMBED_BACKEND=device QORGAN_LINEAR_WEIGHTS=web python
+scripts/pooled_judges.py` (output `models/final_v1/pooled.txt`):
+
+| v1 @ 0.59, device embeddings | false alarms [95 % CP] | scams caught [95 % CP] | PR-AUC |
+|---|---|---|---|
+| **six local judges, kk + ru** | **22/417 = 0.053 [0.033, 0.079]** | **187/411 = 0.455 [0.406, 0.505]** | 0.852 |
+| Kazakh | 16/249 = 0.064 [0.037, 0.102] | 95/248 = 0.383 [0.322, 0.447] | 0.829 |
+| Russian | 6/168 = 0.036 [0.013, 0.076] | 92/163 = 0.564 [0.485, 0.642] | 0.885 |
+
+The per-split table from the same weights is in `models/final_v1/run.txt`. With the same
+generator as train (shared, so flattering): test 0.000 [0.000, 0.060] / 1.000; authored_heldout
+0.000 [0.000, 0.142] / 0.889; ood 0.000 [0.000, 0.049] / 0.932. `shift` (Claude-written, now
+validation-grade, D65): 0.000 [0.000, 0.106] / 0.455.
+
+**Where these go.** README, STATUS, `docs/eval_report.md`, `docs/PITCH_2MIN.md` and the HF cards
+quote this table and no other headline. The best retrain is reported as a measured result, not as a
+shipped one: v3.1 on `shift_local_5`, recall 0.447 → 0.618 at FPR 0.062 → 0.050, which failed on
+family false alarms (D74).
