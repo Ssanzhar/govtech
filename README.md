@@ -9,10 +9,10 @@
 для аналитика. Решение всегда принимает человек — система ничего не блокирует и никого не
 отключает.**
 
-**Три языка — казахский, русский и английский:** интерфейс, объяснения и советы, а также
-анализ звонка на всех трёх. Голосовой режим распознаёт казахскую и русскую речь, включая
-смешанную (переключение между ними посреди фразы), и английскую — в тестовом режиме (ADR D62),
-прямо на устройстве.
+**Звонки на казахском и русском**, включая смешанную речь (переключение между ними посреди
+фразы); голосовой режим распознаёт обе речи прямо на устройстве и помечает язык каждого слова.
+Интерфейс, объяснения и советы — на казахском, русском и английском (английский — для жюри и
+иностранных резидентов; как язык звонка он убран решением стейкхолдеров, ADR D70).
 
 Анализ Уровня 1 выполняется **на устройстве гражданина**: страница загружает
 `multilingual-e5-base` (int8 ONNX) и веса модели прямо в браузер. Ни один маршрут сервера
@@ -51,21 +51,37 @@ Qorğan закрывает именно этот разрыв: он работа
 
 ## 2. Что работает сегодня
 
-Измеримое состояние на 28.09.2026. Все числа — вывод тестового харнесса, с доверительными
-интервалами; основная метрика проекта — **FPR (доля ложных тревог)**, а не recall: ложная
-тревога на настоящем звонке из банка разрушает доверие к продукту.
+Измеримое состояние на 25.10.2026, модель v1 (веса от 28.09, ADR D76). Все числа — вывод
+тестового харнесса на эмбеддингах самого браузера, с доверительными интервалами; основная
+метрика проекта — **FPR (доля ложных тревог)**, а не recall: ложная тревога на настоящем
+звонке из банка разрушает доверие к продукту.
+
+**Главная цифра — независимые звонки.** Шесть наборов `shift_local*` написаны на нашем
+ноутбуке локальной казахской моделью другого семейства (ISSAI Qwen3.5-9B-Kazakh), которая не
+видела ни корпуса, ни промптов, ни словарей. Все шесть появились после того, как веса v1 были
+зафиксированы, поэтому для v1 это одна независимая выборка (`scripts/pooled_judges.py`):
+
+| 828 звонков kk + ru | Ложные тревоги [95% ДИ] | Пойманные мошенники [95% ДИ] |
+|---|---|---|
+| **Все вместе** | **22/417 = 0.053 [0.033, 0.079]** | **187/411 = 0.455 [0.406, 0.505]** |
+| Казахский | 16/249 = 0.064 [0.037, 0.102] | 95/248 = 0.383 [0.322, 0.447] |
+| Русский | 6/168 = 0.036 [0.013, 0.076] | 92/163 = 0.564 [0.485, 0.642] |
+
+Наборы, у которых генератор общий с обучением (поэтому цифры завышены):
 
 | Набор | FPR [95% ДИ] | Recall [95% ДИ] | N |
 |---|---|---|---|
 | `test` | 0.000 [0.000, 0.060] | 1.000 [0.957, 1.000] | 143¹ |
 | `authored_heldout` (ручной) | 0.000 [0.000, 0.142] | 0.889 [0.653, 0.986] | 42 |
 | `ood` (вне распределения) | 0.000 [0.000, 0.049] | 0.932 [0.813, 0.986] | 118 |
-| `shift` (**другой генератор**) | 0.030 [0.001, 0.158] | 0.455 [0.281, 0.636] | 66 |
+| `shift` (написан Claude; теперь валидация, D65) | 0.000 [0.000, 0.106] | 0.455 [0.281, 0.636] | 66 |
 
 ¹ Было 115 до сентября; рост — за счёт английских диалогов, добавленных на неделе 4.
 По языкам на `test`: kk, ru, mixed, en — везде FPR 0.000 / recall 1.000.
 Потоковый режим (звонок по репликам): ложная фиксация 3/60, срабатывание 0.988,
-медиана — 3 реплики до тревоги.
+медиана — 3 реплики до тревоги. На 47 реальных фразах мошенников из опубликованных
+приговоров (`court_quotes`, D68) модель признаёт рискованными 29/47, а словарь
+ключевых фраз срабатывает только на 1/47: реальная речь мошенников ловится смыслом, не словами.
 
 **Откуда взялся recall 1.000 на `test`.** Не подгонкой под ошибки теста. Дефект («SMS»
 латиницей в словаре против «СМС» кириллицей в живой речи) найден при разборе внешнего
@@ -73,15 +89,26 @@ Qorğan закрывает именно этот разрыв: он работа
 распознавателя в `data/asr_capture/` — то есть вне тестовой выборки. Исправление затронуло
 53 строки корпуса, из них 3 в `test` (ADR D51).
 
-**Честная оговорка, которую мы держим на виду.** `shift` — это 66 звонков, написанных
-*другим* генератором, который не видел ни нашего корпуса, ни промптов, ни словарей. Recall
-0.455 — и это настоящая цифра качества, а не 1.000 на `test`. Все остальные наборы делят
-генератор с обучающей выборкой. Настоящих записей звонков у нас пока нет (см. §6).
+**Честная оговорка, которую мы держим на виду.** Настоящая цифра качества — 0.455 на
+независимых звонках, а не 1.000 на `test`: модель ловит меньше половины мошеннических
+звонков, написанных чужим генератором, и на казахском слабее (0.383), чем на русском. В
+сентябре этой цифрой был `shift`, но его писал Claude, а Claude с октября пишет обучающие
+данные, поэтому `shift` стал валидацией (D65). В нём 0/33 ложных тревог, а не 1/33, как
+было 28.09: обновления очистки ПДн (D66, D72) изменили текст набора. Настоящих записей звонков у нас пока нет (см. §5).
+
+**Почему модель не обновлена в октябре.** Четыре переобучения подряд (v2.2, v3, v3.1 и
+смесь v1 + v3.1) ловили на независимых звонках больше мошенников, чем v1: лучшее, v3.1,
+поднимало долю пойманных с 0.447 до 0.618 при меньшем числе ложных тревог (D74). Но каждое
+из них начинало тревожить на обычных семейных просьбах о деньгах или бытовых разговорах о
+мошенниках. Мы заранее записали правило «новая ложная тревога — только на звонке,
+похожем на учреждение, никогда на семейном», и все четыре его не прошли. Поэтому на
+демо работает v1 (D76).
 
 **Что реализовано:**
 
 - **Уровень 1, на устройстве** — PWA: распознавание речи в браузере (два движка Vosk,
-  KK + RU, голосование по репликам), скользящее окно, калиброванная шкала подозрительности
+  KK + RU, с пометкой языка каждого слова в реальном времени; после каждой фразы её может
+  уточнить GigaAM, когда его сборка будет размещена, D64/D70), скользящее окно, калиброванная шкала подозрительности
   0–100, подсвеченные дословные триггер-фразы, теги тактик, объяснение и советы на
   KK / RU / EN, итог звонка и **редактируемое обращение с явным согласием**.
 - **Уровень 2, для аналитика** — очередь организаций по номерному графу, флаг новой схемы,
@@ -101,8 +128,9 @@ Qorğan закрывает именно этот разрыв: он работа
 - **Правовая оценка** — `docs/LEGAL_ASSESSMENT.md`: разбор ЗРК «О персональных данных»
   (ст. 7, 9, 12, 16, 17, 19-1), Закона об ИИ № 230-VIII и Цифрового кодекса применительно
   к нашим потокам данных, со списком разрывов до пилота.
-- **Качество**: 1329 тестов Python + 78 JS (включая пословную сверку браузерного и
-  серверного расчёта на золотых фикстурах), 59 решений, номера D1–D62 (D11, D15, D16 пропущены) в `docs/DECISIONS.md`.
+- **Качество**: 1790 тестов Python + 159 JS (включая пословную сверку браузерного и
+  серверного расчёта на золотых фикстурах), 72 решения, номера D1–D76 (D11, D15, D16, D69
+  пропущены) в `docs/DECISIONS.md`.
 
 ---
 
@@ -211,6 +239,35 @@ proposition, продумал product narrative. Сатжан провёл ау�
   ушла, новых нет). Английские мошеннические звонки через голос: 15 из 15 (без английской
   модели — 6 из 15).
 
+### Неделя 6 (8–12 октября) — независимый судья, реальные фразы, новая таксономия
+
+- **D65**: так как Claude стал генератором обучающих данных, «чужим» судьёй стал
+  `shift_local` — звонки, написанные на нашем ноутбуке локальной казахской моделью
+  ISSAI другого семейства, без доступа к корпусу. Данные никогда не публикуются.
+- **D68**: `court_quotes` — 47 реальных фраз мошенников из опубликованных российских
+  приговоров. Словарь ключевых фраз срабатывает на 1/47, модель — на 29/47.
+- **D63**: таксономия v2 (23 тактики, 6 ролей звонящего, 21 схема) и конвейер генерации
+  с проверками качества. Переобучение v2 подняло recall, но дало ложные тревоги на
+  семейных переводах — не выпущено.
+- **D64, D67**: пословная пометка языка в голосовом режиме; лёгкий режим для Android
+  WebView (eGov) — ещё не проверен на настоящем телефоне.
+- **D66**: очистка ПДн маскирует номера, произнесённые словами, ИИН, карты, IBAN и
+  представившиеся имена; SBOM и сканирование зависимостей.
+
+### Неделя 7 (21–25 октября) — казахский и русский; четыре переобучения, одно правило
+
+- **D70**: по решению стейкхолдеров английский убран как язык звонка (интерфейс на
+  английском остался). Исправлена ошибка: пометки языка слов терялись в конце фразы.
+- **D71**: заранее зарегистрированная проверка показала, что английские обучающие диалоги
+  помогают казахскому и русскому (без них 23 из 48 пойманных вместо 26), поэтому они остались.
+- **D63 v2.1 – D75**: четыре переобучения, каждое со своим свежим независимым судьёй,
+  настройками, зафиксированными *до* проверки, и одним взглядом на результат. Все поймали
+  больше мошенников, чем v1; все тревожили на семейных или бытовых звонках; ни одно не
+  выпущено. Пять новых тактик (вымогательство, звонки детям, «опрос», романтическая
+  схема, фальшивая благотворительность) готовы в данных и ждут модели, которая пройдёт правило.
+- **D72**: очистка ПДн не теряет номер, продиктованный с паузой («э-э»).
+- **D76**: главная цифра — v1 на всех шести независимых наборах (828 звонков).
+
 ---
 
 ## 5. Что известно о слабых местах
@@ -220,12 +277,15 @@ proposition, продумал product narrative. Сатжан провёл ау�
 1. **Настоящих записей звонков нет.** Все наборы — синтетика или ручные сценарии.
    Протокол приёма реальных данных готов (`docs/DATA_INTAKE.md`), правовой разбор сделан,
    но сами данные — за стейкхолдерами.
-2. **Английский не на уровне казахского и русского.** На `test` — 1.000, но это тот же
-   генератор, что и в обучении. На независимом генераторе: recall 0.739 при **FPR 0.227**.
-   Все 145 ложных тревог — легитимные «продающие» звонки (страхование, телемаркетинг),
-   которых нет в наших английских негативах. Задача понятна и оценена.
-3. **Перенос между генераторами** (`shift` 0.455) — главный открытый вопрос качества.
-4. **Правовые разрывы до пилота** перечислены в `docs/LEGAL_ASSESSMENT.md` §6 (M1–M11):
+2. **Меньше половины независимых мошеннических звонков ловится** (0.455), на казахском —
+   0.383. Это главный открытый вопрос качества.
+3. **Разговоры *о* мошенничестве похожи на мошенничество.** Звонок «соседку чуть не
+   обманули» или «никогда никому не диктуй код из СМС» тревожит все наши модели, включая v1:
+   они говорят тем же словарём. Переобучения на таких примерах это не исправили (D74, D75);
+   нужен признак, отличающий рассказ о схеме от самой схемы.
+4. **Голос на телефоне не проверен.** Лёгкий режим для Android WebView работает на
+   компьютере (~2,1 ГБ памяти), но ни разу не запускался на настоящем телефоне.
+5. **Правовые разрывы до пилота** перечислены в `docs/LEGAL_ASSESSMENT.md` §6 (M1–M11):
    основание для данных *звонящего*, хостинг в РК, уведомления, DPA с партнёром.
 
 ---
@@ -235,10 +295,10 @@ proposition, продумал product narrative. Сатжан провёл ау�
 | Приоритет | Работа |
 |---|---|
 | 1 | **Реальные звонки** (A3): приём от банка/Антифрод-центра по готовому протоколу; заблокированный held-out набор. Без этого все цифры остаются синтетическими. |
-| 2 | Английские негативы в «продающем» регистре — закрыть FPR 0.227. |
-| 3 | Перенос между генераторами: третий генератор для обучающих данных. |
+| 2 | Признак «рассказ о мошенничестве против самого мошенничества» — после него выпустить одно из готовых переобучений (лучшее, v3.1: 0.618 пойманных на независимом наборе). |
+| 3 | Измерение на настоящем Android-телефоне (память, задержка, звук громкой связи). |
 | 4 | Правовой блок M1–M11 до любого пилота (мнение адвоката по данным звонящего — на критическом пути). |
-| 5 | Мобильные устройства: бенчмарк Vosklet на Android. |
+| 5 | Размещение браузерной сборки GigaAM, чтобы демо получило уточнение фраз (D64). |
 
 ---
 
@@ -247,7 +307,7 @@ proposition, продумал product narrative. Сатжан провёл ау�
 | Документ | О чём |
 |---|---|
 | [`docs/STATUS.md`](docs/STATUS.md) | Текущее состояние и передача дел — читать первым |
-| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Решения D1–D68 (D11, D15, D16 пропущены), с датами и измерениями |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Решения D1–D76 (D11, D15, D16, D69 пропущены), с датами и измерениями |
 | [`docs/eval_report.md`](docs/eval_report.md) | Все числа с интервалами, источник истины |
 | [`docs/LEGAL_ASSESSMENT.md`](docs/LEGAL_ASSESSMENT.md) | Правовая оценка по законодательству РК |
 | [`docs/PLAN_2026-10.md`](docs/PLAN_2026-10.md) | **Рабочий план до демо-дня (октябрь 2026): что сделано, честные числа, стратегия, задачи команды** |
@@ -324,10 +384,11 @@ analysis** — it lands inside that organization.
 ## Evaluate
 
 ```bash
-# FPR-first tables, per language. `shift` is the cross-generator split -- the number to
-# lead with, and the reason the others read high (they share a generator with training).
+# FPR-first tables, per language. The shift_local* batches are the independent judges (local
+# only, never published); the other splits share a generator with training and read high.
 QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.run \
-    --split test --split authored_heldout --split ood --split shift --by-language
+    --split test --split authored_heldout --split ood --split shift --split shift_local --by-language
+QORGAN_CLASSIFIER_BACKEND=linear python scripts/pooled_judges.py   # the headline: all six judges, kk+ru
 
 # Streaming eval: false-latch rate (live FPR analog), time-to-alert
 QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.stream \
@@ -347,7 +408,7 @@ QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.adversarial --split adver
 # punctuation, numerals as words), paired; --drop-latin is the worst case for «SMS»/«CVV»
 QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.asr_realism [--drop-latin]
 
-pytest -q        # 1,329 tests, all offline
+pytest -q        # 1,790 tests, all offline
 npm test         # JS core parity with Python + the DEVICE gate (browser embeddings, seconds)
 npm run gate:browser   # re-capture the browser's embeddings of the gate set (headless Chromium;
                        # `npx playwright install chromium` once) after a model/runtime change
@@ -370,11 +431,15 @@ Three points that belong with the numbers rather than in the table:
   embeddings** (ADR D33), so the figures describe what the citizen's device decides, not a
   server approximation. The server's native runtime is a cosine-0.98 proxy and disagrees on
   6/200 borderline calls — reported, not hidden.
-- **`shift` is the number to lead with.** 66 calls written by a *second generator* that never
-  saw the corpus, the prompts or the lexicons. Every other split shares its generator with
-  training data, so their recall is largely that generator's register. Until real calls exist
-  (A3), the recall claim is "one generator's scams".
-- **The cloud tier is the accuracy tier, and it is off by default.** On those same 66 calls the
+- **The independent judges are the number to lead with.** The six `shift_local*` batches (828
+  kk/ru calls) were written offline by a local model from another family that never saw the
+  corpus, the prompts or the lexicons, all after v1's weights were frozen:
+  `python scripts/pooled_judges.py` gives FPR 22/417 = 0.053 [0.033, 0.079] and recall
+  187/411 = 0.455 [0.406, 0.505] (Kazakh 0.383, Russian 0.564; ADR D76). Every other split shares
+  its generator with training data. `shift` was written by Claude, which now writes training data,
+  so it is validation-grade (D65). Until real calls exist (A3), the recall claim is "another
+  generator's scams".
+- **The cloud tier is the accuracy tier, and it is off by default.** On the 66 `shift` calls the
   `llm` backend (Gemini 2.5 Pro) scores 33/33 recall at 0/33 FPR (ADR D38). It sends text
   abroad, so it requires `QORGAN_CLOUD_TIER=on` plus the citizen's per-request consent, is
   never cached and is refused outright on analyst routes (ADR D49). The gap between the device
@@ -383,14 +448,15 @@ Three points that belong with the numbers rather than in the table:
 ## Microphone mode (on-device speech recognition)
 
 On desktop browsers the live page can listen to a call directly: Kazakh and Russian Vosk
-models — plus English in test mode, ranked with a 0.15 handicap so it cannot take over kk/ru
-speech (ADR D62) — run in the browser (Vosklet/WASM, one instance each), the best hypothesis
-wins per utterance, and the transcript feeds the same on-device classifier and meter as replay —
-**no audio or text leaves the device** (ADR D26). Requirements the server already meets:
+models run in the browser (Vosklet/WASM, one instance each), each word gets a live kk/ru chip,
+the best hypothesis wins per utterance, and the transcript feeds the same on-device classifier
+and meter as replay — **no audio or text leaves the device** (ADR D26). English left the voice
+pipeline in ADR D70 (calls are kk/ru only). Where the self-built GigaAM browser runtime is
+hosted, each phrase is re-transcribed by it (D64); deployments run the Vosk vote until then. Requirements the server already meets:
 `/live.html`, `/core/*` and `/vendor/*` are served cross-origin isolated (COOP/COEP) because the
 recogniser needs SharedArrayBuffer; `python scripts/deploy_bootstrap.py` installs the
 hash-pinned Vosklet and transformers.js/onnxruntime-web runtimes under `site/vendor/` (ADR D61)
-and packages the three model tarballs (~147 MB, downloaded once by the browser) — nothing is
+and packages the model tarballs (downloaded once by the browser) — nothing is
 loaded live from a CDN, which Safari would block under COEP. Phones are disabled until the
 Android bench passes (`scripts/spikes/vosklet_bench/`).
 
@@ -497,6 +563,7 @@ The live-mic path is real (dual Vosk KK+RU streaming, per-utterance voting) but
 speakerphone-quality ASR — especially Kazakh — is the accuracy bottleneck; the meter's
 confidence weighting absorbs some of it. Transient mid-call latching on legitimate calls is
 measured by `eval.stream` rather than estimated: currently **3/60 on `test`** and **1/19 on the
-clean authored negatives**, with the inspected anchors reported separately. English is the
-weakest language and is **not at Russian/Kazakh quality** — see §5 above. Real call recordings
-do not exist yet (A3); every number is synthetic or author-written.
+clean authored negatives**, with the inspected anchors reported separately. The weakest call
+language on the independent judges is Kazakh (recall 0.383 vs Russian 0.564) — see
+§5 above. English is a UI locale only since ADR D70. Real call recordings do not exist yet (A3);
+every number is synthetic or author-written.

@@ -5,6 +5,14 @@ day (what is shipped, the honest numbers, the strategy, who does what). Then rea
 (the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D70) and `docs/eval_report.md`
 (numbers, with intervals). The July sprint log below is kept as history._
 
+- **2026-10-25 — track A parked; truth pass (ADR D76, PLAN track E).**
+  - v1 is the demo model. The headline, quoted everywhere, is v1 on all six independent
+    `shift_local*` judges: 828 kk/ru calls, false alarms 22/417 = 0.053 [0.033, 0.079], scams
+    caught 187/411 = 0.455 [0.406, 0.505] (kk 0.383, ru 0.564). Source: `scripts/pooled_judges.py`.
+  - README, `docs/PITCH_2MIN.md`, `docs/eval_report.md` (new last addendum) and `docs/hf/*`
+    carry it. The pitch no longer claims "0 false alarms", which was a same-generator number.
+    The HF cards are edited locally only; uploading them needs the owner's approval.
+  - Tests: 1790 Python + 159 JS, green.
 - **2026-10-24 (night) — v1 + v3.1 risk ensemble judged, NOT shipped (ADR D75).**
   - A 50/50 mix of the two risk heads (6 calibrated members in one browser weights file, no
     browser code change), alert point 0.66 / 0.56 by the validation rule.

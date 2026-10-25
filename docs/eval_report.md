@@ -1,5 +1,9 @@
 # Eval report — classifier backends
 
+> **2026-10-25 (ADR D76) — read the last addendum first.** It holds the final numbers of the
+> shipped v1: the headline is the six independent `shift_local*` judges (828 kk/ru calls, FPR
+> 0.053 [0.033, 0.079], recall 0.455 [0.406, 0.505]). Everything above it is history.
+
 > **2026-09-13 note (PLAN_2026-09 A1–A2).** The split formerly called `real_heldout` is now
 > **`authored_heldout`**: it is hand-written by the team (18 scam / 24 legit), not real calls,
 > and five of its negatives were *read* during feature engineering (see
@@ -1485,3 +1489,72 @@ Caveat on the probe itself: its legitimate calls are US-register, so part of tha
 distribution the product does not serve; the reassurance and sales-register gaps are real
 regardless.
 
+
+
+## Addendum (2026-10-25) — the final numbers of the shipped v1 (ADR D76, track E)
+
+Track A is parked (D76): four retrains in a row beat v1's recall on their independent judges and
+each made family or everyday calls alert (D63 v2.2, D73, D74, D75), so **v1 is the demo model**.
+Its weights (`site/models/weights.json`, last changed 2026-09-28 in e9917b2) predate every
+`shift_local*` batch, so for v1 the six batches are one independent sample. Everything below is
+device embeddings, threshold 0.59, pasted from the harness.
+
+### The headline: six local judges, kk + ru (`scripts/pooled_judges.py`, `models/final_v1/pooled.txt`)
+
+| Split | FPR [95% CI] | Precision | Recall [95% CI] | F1 | PR-AUC [95% CI] | N |
+|---|---|---|---|---|---|---|
+| shift_local_pooled (kk+ru) | 0.053 [0.033, 0.079] | 0.895 | 0.455 [0.406, 0.505] | 0.603 | 0.852 [0.815, 0.883] | 828 |
+| pooled kk | 0.064 [0.037, 0.102] | 0.856 | 0.383 [0.322, 0.447] | 0.529 | 0.829 [0.776, 0.873] | 497 |
+| pooled ru | 0.036 [0.013, 0.076] | 0.939 | 0.564 [0.485, 0.642] | 0.705 | 0.885 [0.833, 0.927] | 331 |
+
+```
+kk+ru        false alarms 22/417 [0.033, 0.079]   scams caught 187/411 [0.406, 0.505]
+kk           false alarms 16/249 [0.037, 0.102]   scams caught 95/248 [0.322, 0.447]
+ru           false alarms 6/168 [0.013, 0.076]   scams caught 92/163 [0.485, 0.642]
+```
+
+### Per split (`python -m qorgan.eval.run ... --by-language`, `models/final_v1/run.txt`)
+
+| Split | FPR [95% CI] | Precision | Recall [95% CI] | F1 | PR-AUC [95% CI] | N |
+|---|---|---|---|---|---|---|
+| test | 0.000 [0.000, 0.060] | 1.000 | 1.000 [0.957, 1.000] | 1.000 | 1.000 [1.000, 1.000] | 143 |
+| test (clean) | 0.000 [0.000, 0.062] | 1.000 | 1.000 [0.957, 1.000] | 1.000 | 1.000 [1.000, 1.000] | 141 |
+| test (inspected) | 0.000 [0.000, 0.842] | 0.000 | 0.000 [-] | 0.000 | 0.000 [-] | 2 |
+| authored_heldout | 0.000 [0.000, 0.142] | 1.000 | 0.889 [0.653, 0.986] | 0.941 | 1.000 [1.000, 1.000] | 42 |
+| authored_heldout (clean) | 0.000 [0.000, 0.176] | 1.000 | 0.889 [0.653, 0.986] | 0.941 | 1.000 [1.000, 1.000] | 37 |
+| authored_heldout (inspected) | 0.000 [0.000, 0.522] | 0.000 | 0.000 [-] | 0.000 | 0.000 [-] | 5 |
+| ood | 0.000 [0.000, 0.049] | 1.000 | 0.932 [0.813, 0.986] | 0.965 | 0.992 [0.978, 1.000] | 118 |
+| ood (clean) | 0.000 [0.000, 0.053] | 1.000 | 0.932 [0.813, 0.986] | 0.965 | 0.995 [0.984, 1.000] | 112 |
+| ood (inspected) | 0.000 [0.000, 0.459] | 0.000 | 0.000 [-] | 0.000 | 0.000 [-] | 6 |
+| shift | 0.000 [0.000, 0.106] | 1.000 | 0.455 [0.281, 0.636] | 0.625 | 0.916 [0.838, 0.971] | 66 |
+| shift (clean) | 0.000 [0.000, 0.112] | 1.000 | 0.455 [0.281, 0.636] | 0.625 | 0.946 [0.887, 0.983] | 64 |
+| shift (inspected) | 0.000 [0.000, 0.842] | 0.000 | 0.000 [-] | 0.000 | 0.000 [-] | 2 |
+| shift_local | 0.047 [0.010, 0.131] | 0.919 | 0.548 [0.417, 0.675] | 0.687 | 0.889 [0.818, 0.948] | 126 |
+| shift_local (clean) | 0.050 [0.010, 0.139] | 0.906 | 0.547 [0.404, 0.684] | 0.682 | 0.880 [0.803, 0.945] | 113 |
+| shift_local (inspected) | 0.000 [0.000, 0.602] | 1.000 | 0.556 [0.212, 0.863] | 0.714 | 0.960 [0.848, 1.000] | 13 |
+| shift_local_2 | 0.031 [0.004, 0.107] | 0.933 | 0.431 [0.308, 0.560] | 0.589 | 0.871 [0.798, 0.931] | 130 |
+| shift_local_3 | 0.092 [0.035, 0.190] | 0.842 | 0.500 [0.372, 0.628] | 0.627 | 0.878 [0.797, 0.942] | 129 |
+| shift_local_4 | 0.063 [0.021, 0.142] | 0.868 | 0.412 [0.304, 0.528] | 0.559 | 0.825 [0.736, 0.908] | 159 |
+| shift_local_5 | 0.062 [0.021, 0.140] | 0.872 | 0.447 [0.333, 0.566] | 0.591 | 0.846 [0.774, 0.909] | 156 |
+| shift_local_6 | 0.025 [0.003, 0.088] | 0.944 | 0.436 [0.324, 0.553] | 0.596 | 0.833 [0.738, 0.912] | 157 |
+
+`shift` is now FPR 0/33 where the 2026-09-28 run had 1/33: the scrubber updates (D66, D72)
+rewrote some of its text. `shift` is validation-grade since D65.
+
+### Streaming (`python -m qorgan.eval.stream --split test --split authored_heldout`, `models/final_v1/stream.txt`)
+
+| Split | False-Latch Rate [95% CI] | Alert-Hit Rate [95% CI] | Median Turns | P90 Turns | N+ | N- |
+|---|---|---|---|---|---|---|
+| test | 0.050 [0.010, 0.139] | 0.988 [0.935, 1.000] | 3.000 | 3.000 | 83 | 60 |
+| test (clean) | 0.052 [0.011, 0.144] | 0.988 [0.935, 1.000] | 3.000 | 3.000 | 83 | 58 |
+| test (inspected) | 0.000 [0.000, 0.842] | 0.000 [-] | - | - | 0 | 2 |
+| authored_heldout | 0.125 [0.027, 0.324] | 0.889 [0.653, 0.986] | 3.000 | 3.000 | 18 | 24 |
+| authored_heldout (clean) | 0.053 [0.001, 0.260] | 0.889 [0.653, 0.986] | 3.000 | 3.000 | 18 | 19 |
+| authored_heldout (inspected) | 0.400 [0.053, 0.853] | 0.000 [-] | - | - | 0 | 5 |
+
+### What did not ship, for the record
+
+The best retrain was v3.1 (D74). On `shift_local_5`, v1 → v3.1 moved FPR 0.062 → 0.050 and recall
+0.447 → 0.618, but it failed A6 (a) and (c) on family and everyday calls. The v1 + v3.1 ensemble
+(D75) passed (a) and (b) on `shift_local_6` (FPR 0.025 → 0.013, recall 0.436 → 0.474) and failed (c) on two
+everyday calls about scam safety. All candidates stay frozen and unexported.
