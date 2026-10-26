@@ -1,9 +1,29 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: **2026-10-24**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
+_Last updated: **2026-10-27**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
 day (what is shipped, the honest numbers, the strategy, who does what). Then read this file
 (the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D70) and `docs/eval_report.md`
 (numbers, with intervals). The July sprint log below is kept as history._
+
+- **2026-10-27 — phone-speed proxy for the light voice mode (PLAN C2 stand-in; no phone at hand).**
+  - **Setup:** `tests_js/tools/e2e_voice_modes.mjs --mobile --warm`, isolation off (the WebView
+    mode), the 4 demo scenes (`say` Milena/Aru + `cs_mix`). New `--ecores`: the renderer (page +
+    GigaAM/e5 workers) is moved to the M4's efficiency cores with `taskpolicy -b`. New
+    `--cpu-throttle N` exists but does **not** reach the workers (decode 1,103 vs 1,067 ms at 4×),
+    so it is not used. Moving the audio process too starves the fake microphone (0 phrases): an
+    artefact, so only renderers move. JSONs: `docs/research/2026-10/phone_proxy/`.
+  - **Results:** the outcome is unchanged: meters 98 / 97 / 19 / 97 and 22/22 phrases found in both runs.
+    Speed is not. GigaAM per phrase goes from 0.93–1.19 s (median per scene) to 4.6–6.3 s, and the
+    line appears 6.8–9.1 s (median) / up to 11.7 s after the phrase ends, vs 1.9–2.2 / 2.7 s at full
+    speed. The max is well above the median, so phrases queue: decoding is slower than speech.
+    Peak renderer memory is 2.0–2.2 GB in both runs.
+  - **Meaning:** on a slow phone the meter is still right but late by several phrases; on a long
+    call the backlog grows. The ~2.1 GB renderer is a risk on 3–4 GB phones. Real phones sit
+    somewhere between these two runs; only C2 (a real phone / Firebase Test Lab) will say where.
+  - **Not done:** no mitigation chosen. Candidates for an ADR after a real-phone number: skip the
+    GigaAM pass for phrases while one is still decoding, or a Vosk-only fallback on slow devices.
+  - Also new: `tests_js/tools/record_demo_video.mjs`, which records the live page listening to a
+    scene and muxes the audio back in (a backup video for the pitch; desktop layout by default). Three videos (RU scam 98, real bank call 19, KK scam 97, with audio) are in the gitignored `demo_video/`.
 
 - **2026-10-25 — track A parked; truth pass (ADR D76, PLAN track E).**
   - v1 is the demo model. The headline, quoted everywhere, is v1 on all six independent
