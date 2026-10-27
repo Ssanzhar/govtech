@@ -14,6 +14,7 @@ import json
 from collections.abc import Sequence
 from pathlib import Path
 
+from qorgan.config import GEN_LABEL_SPACE
 from qorgan.data.gen.grid import GridCell
 
 SPEC_VERSION = 2  # 2: look-alike negatives (`lookalike_of`), phase 2 of ADR D63
@@ -119,9 +120,9 @@ OUTPUT_SCHEMA = {
 
 def glossaries(taxonomy, schemes, roles) -> dict:
     """Names + descriptions only. No `examples_*`, no cue lists (the agent must not see a lexicon)."""
-    v2 = taxonomy.label_space("v2")
+    space = taxonomy.label_space(GEN_LABEL_SPACE)
     return {
-        "tactics": {t: {"name": taxonomy.get(t).en, "description": taxonomy.get(t).description} for t in v2},
+        "tactics": {t: {"name": taxonomy.get(t).en, "description": taxonomy.get(t).description} for t in space},
         "schemes": {s.id: {"name": s.names["en"], "description": s.description} for s in schemes.schemes},
         "roles": {r.id: r.names["en"] for r in roles.roles},
         "negative_classes": {n.id: n.note for n in taxonomy.negatives},

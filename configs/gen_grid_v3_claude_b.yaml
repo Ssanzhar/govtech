@@ -1,0 +1,202 @@
+# Generation grid v3 (ADR D73): run `v3_claude_b`, written by Claude writer agents (spec only).
+# `python -m qorgan.data.gen manifest --run v3_claude_b --size 450 --grid configs/gen_grid_v3_claude_b.yaml`
+# The base grid (configs/gen_grid.yaml) with taxonomy v3 on: the five v3 schemes and their twins,
+# kk / ru / mixed registers, and a pinned child callee for minor_targeted and its twin.
+# The second Claude run replaces v3_gemini (Gemini prepaid credits exhausted, owner's choice
+# 2026-10-24). The callee is a school pupil only: v3_claude drew band and occupation apart and
+# produced "college student, 10-13" cells (written as young children).
+
+version: 2          # v2 (phase 2, 2026-10-09): persona coherence, role-consistent optional imp_*,
+                    # stage vs core, base-rate scam share, twin-matched look-alike negatives
+seed: 20261030
+
+registers:          # kk / ru / code-switched (D70: no English in voice)
+  kk: 0.40
+  ru: 0.30
+  mixed: 0.30
+
+# ADR D73: the run is labelled in taxonomy v3, so the grid also draws the five v3 schemes.
+label_space: v3
+
+# Scam share of the run. Phase 2 sets it to the corpus base rate (train: 896 / 1880 = 0.477 scam,
+# ADR D63 phase 2 "style confound"): the Claude block must carry the same scam/legit balance as
+# the Gemini rows, or a head can learn "Claude style => scam". The pilot used 0.60.
+scam_share: 0.48    # negatives = 1 - scam_share (>= 35 % required by ADR D63)
+
+# Look-alike negatives (phase 2). `twin_share` of the negatives are allocated over the schemes in
+# proportion to each scheme's scam count; each such cell is the scheme's `twin` class from
+# schemes.yaml and carries `lookalike_of: <scheme>` -- a legitimate call with the SAME pretext
+# and none of the asks. The rest are allocated by `negative_weights` without a pretext.
+twin_share: 0.80
+
+# Within the scam share: schemes listed here get `weight` x the base allocation (the
+# low-arousal administrative pretexts the cross-generator recall loss points at, D63 §why).
+scheme_weights:
+  parcel_code: 1.4
+  benefits_recalc_and_clinic: 1.4
+  mirror_loan: 1.4
+  egov_eds_renewal: 1.4
+  cash_declaration_courier: 1.4
+  erroneous_transfer: 1.4
+  job_task_advance_fee: 1.4
+  telecom_contract_expiry: 1.4
+  two_stage_escalation: 1.4
+  # v3 (ADR D73): the five new schemes carry the new heads' only positives -- weight 8 gives each
+  # about 28 scams per 450-cell run. mule_recruitment is the weakest v2 head (val F1 0.50).
+  minor_targeted: 8.0
+  blackmail: 8.0
+  survey_data_harvest: 8.0
+  romance_scam: 8.0
+  charity_fraud: 8.0
+  mule_recruitment: 2.0
+
+# Within the negative share. The six v2 guardrail classes are the priority; the v1 classes keep
+# the old guardrails alive in the new generator's style.
+negative_weights:
+  legit_delivery_code: 1.5
+  legit_refund_request: 1.5
+  legit_employer_request: 1.5
+  legit_clinic_appointment: 1.5
+  legit_telecom_offer: 1.5
+  legit_utility_notice: 1.5
+  legit_bank_call: 1.5
+  legit_gov_service: 1.2
+  family_money_request: 1.2
+  delivery_notification: 0.6
+  general_conversation: 0.8
+  legit_child_call: 1.5
+  legit_debt_notice: 1.5
+  legit_survey: 1.5
+  legit_partner_call: 1.5
+  legit_charity_call: 1.5
+
+# The role a legitimate caller of each negative class actually is (null = a private person).
+negative_roles:
+  legit_delivery_code: [courier_post]
+  legit_refund_request: [null]
+  legit_employer_request: [employer]
+  legit_clinic_appointment: [clinic]
+  legit_telecom_offer: [telecom_operator]
+  legit_utility_notice: [utility]
+  legit_bank_call: [bank_security]
+  legit_gov_service: [egov_con, tax_kgd, pension_social, police]  # police: a district officer inviting a witness, no asks
+  family_money_request: [relative_friend]
+  delivery_notification: [courier_post]
+  general_conversation: [null]
+  legit_child_call: [relative_friend, null]   # a parent, a teacher or a coach
+  legit_debt_notice: [bank_security, null]    # a bank's collections desk, a collection agency
+  legit_survey: [pollster]
+  legit_partner_call: [null]
+  legit_charity_call: [charity_fund]
+
+# ADR D73: a call to a child is a call to a child -- the scam and its twin pin the callee.
+class_personas:
+  minor_targeted:
+    age_band: {"10-13": 0.4, "14-17": 0.6}
+    occupation: [school pupil]
+  legit_child_call:
+    age_band: {"10-13": 0.4, "14-17": 0.6}
+    occupation: [school pupil]
+
+# Share of hard negatives written to CONTAIN a phrase that sounds like a scam request but is
+# legitimate in context (a courier asks for the code shown in the recipient's own app at the
+# door; a bank says "never tell anyone the code"; HR asks to keep a reorganisation quiet).
+confusable_negative_share: 0.6
+
+# Share of scams whose key request is phrased INDIRECTLY (no stock wording; the ask is implied,
+# euphemised or spread over turns). Drives the lexicon-leak gate (>= 30 % cue-free positives).
+indirect_scam_share: 0.5
+
+# Stages a scam cell may show depend on its tactics: `hook_only` is allowed only when every
+# tactic of the cell is one a hook can show (no extraction ask). Optional tactics of a hook_only
+# cell are drawn from this set too.
+hook_compatible_tactics:
+  - imp_bank
+  - imp_law_enforcement
+  - imp_gov_service
+  - imp_regulator
+  - imp_telecom_delivery_utility
+  - imp_personal
+  - urgency
+  - fear_threat
+  - secrecy
+  - prize_lottery
+  - investment_scam
+  - mule_recruitment
+  - callback_instruction
+
+# Optional tactics drawn per scam cell, on top of the scheme's `core` (uniform in range).
+optional_tactics: {min: 0, max: 2}
+
+length_targets:     # utterances; weights
+  5: 0.15
+  7: 0.25
+  9: 0.25
+  12: 0.20
+  15: 0.15
+
+outcomes:
+  complies: 0.30
+  refuses: 0.30
+  hangs_up: 0.20
+  calls_back: 0.20
+
+channels:
+  cold_call: 0.45
+  call_after_sms: 0.25
+  messenger_then_call: 0.15
+  second_call: 0.15
+
+# Which stages of the scheme the call shows (scams); negatives use `none`.
+stages:
+  hook_only: 0.15
+  hook_escalation: 0.25
+  full: 0.45
+  extraction_handoff: 0.15
+
+persona:
+  age_band: {"18-25": 0.2, "26-40": 0.3, "41-60": 0.3, "61+": 0.2}
+  region:
+    - Almaty
+    - Astana
+    - Shymkent
+    - Karaganda
+    - Aktobe
+    - Atyrau
+    - Pavlodar
+    - Kostanay
+    - Oskemen
+    - Turkestan region (village)
+    - Kyzylorda
+    - Taraz
+  occupation:
+    - student
+    - schoolteacher
+    - pensioner
+    - sole trader (ИП)
+    - office worker
+    - nurse
+    - taxi driver
+    - accountant
+    - stay-at-home parent
+    - IT specialist
+    - bazaar vendor
+    - oil-field shift worker
+    - civil servant
+    - small-business owner
+
+# Which occupations fit which age band (phase 2; the pilot drew them independently and wrote a
+# "pensioner 18-25"). An occupation missing here fits every band.
+occupation_age_bands:
+  student: ["18-25", "26-40"]
+  pensioner: ["61+"]
+  stay-at-home parent: ["18-25", "26-40", "41-60"]
+  IT specialist: ["18-25", "26-40", "41-60"]
+  oil-field shift worker: ["18-25", "26-40", "41-60"]
+  nurse: ["18-25", "26-40", "41-60"]
+  taxi driver: ["26-40", "41-60", "61+"]
+  schoolteacher: ["26-40", "41-60", "61+"]
+  civil servant: ["26-40", "41-60"]
+  accountant: ["26-40", "41-60", "61+"]
+  small-business owner: ["26-40", "41-60", "61+"]
+  sole trader (ИП): ["26-40", "41-60", "61+"]

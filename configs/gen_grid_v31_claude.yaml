@@ -1,0 +1,221 @@
+# Generation grid v3.1 (ADR D74): run `v31_claude`, written by Claude writer agents (spec only).
+# `python -m qorgan.data.gen manifest --run v31_claude --size 800 --grid configs/gen_grid_v31_claude.yaml`
+#
+# Why: v2.2 and v3 both failed A6 (c) -- adding scam data pushed family money requests and
+# everyday chat over the alert line (D73 one look). v3.1 keeps the v3 corpus and adds those
+# calls as hard negatives, next to the personal scams they must be told apart from (a relative
+# in trouble, romance, a call to a child, charity, a fake boss, a marketplace "buyer").
+# The choice of classes uses what A6 showed on test / ood (class ids only; no row text was used),
+# so the judge is a new split, `shift_local_5`.
+#
+# Style confound (D63 phase 2): the scam share keeps the Claude train block at the Gemini rate.
+# Claude train (clean) 1,171 / 2,430; Gemini 0.4766; ~70 % of a run lands in train, so
+# (1171 + 0.7 s) / (2430 + 0.7 * 800) = 0.4766 -> s = 357, scam_share 0.455 (364 scams).
+# Everything from `class_personas` down is configs/gen_grid_v3_claude_b.yaml's.
+
+version: 2
+seed: 20261031
+
+registers:          # kk / ru / code-switched (D70: no English in voice)
+  kk: 0.40
+  ru: 0.30
+  mixed: 0.30
+
+label_space: v3
+
+scam_share: 0.455
+
+# Every negative is drawn by `negative_weights` with a brief from `negative_scenarios`; a twin
+# allocation would spread them over institutional twins this run does not target.
+twin_share: 0.0
+
+# Within the scam share: only the personal schemes that a family or everyday call can be
+# mistaken for (weight 0 = not drawn in this run).
+scheme_weights:
+  relative_in_trouble: 6.0
+  romance_scam: 3.0
+  minor_targeted: 3.0
+  charity_fraud: 3.0
+  fake_boss: 2.0
+  marketplace_seller_phish: 2.0
+  investment_broker: 1.5
+  blackmail: 1.0
+  survey_data_harvest: 0.0
+  mirror_loan: 0.0
+  cash_declaration_courier: 0.0
+  two_stage_escalation: 0.0
+  erroneous_transfer: 0.0
+  job_task_advance_fee: 0.0
+  egov_eds_renewal: 0.0
+  tax_kgd_business: 0.0
+  benefits_recalc_and_clinic: 0.0
+  parcel_code: 0.0
+  telecom_contract_expiry: 0.0
+  utility_code: 0.0
+  regulator_impersonation: 0.0
+  law_enforcement_threat: 0.0
+  bank_safe_account: 0.0
+  bank_card_phish: 0.0
+  prize_compensation: 0.0
+  mule_recruitment: 0.0
+
+negative_weights:
+  family_money_request: 0.38
+  general_conversation: 0.38
+  legit_child_call: 0.08
+  legit_partner_call: 0.08
+  legit_charity_call: 0.08
+
+# The role a legitimate caller of each negative class actually is (null = a private person).
+negative_roles:
+  family_money_request: [relative_friend]
+  general_conversation: [null]
+  legit_child_call: [relative_friend, null]   # a parent, a teacher or a coach
+  legit_partner_call: [null]
+  legit_charity_call: [charity_fund]
+
+# One brief per cell, every brief used evenly per class. English only (no ru/kk phrase reaches
+# the writer). Written 2026-10-24 after the judge briefs (configs/shift_local_briefs_v31.yaml) and
+# kept apart from them and from v21_legit's; none was built from an evaluation row.
+negative_scenarios:
+  family_money_request:
+    - brief: "A mother asks her grown-up son to send money urgently today because the bank is about to charge a penalty on her loan instalment; she is stressed, he asks how much exactly and sends it to her usual card while they talk about his kids."
+    - brief: "A younger brother working on a shift in Atyrau asks his sister to pay his rent to the landlord's card this month because his salary comes late; he names the landlord she already knows and says he will return it on the 10th."
+    - brief: "A wife calls her husband from the market: the card terminal there is broken, she asks him to transfer the money straight to the seller's phone number, which she reads out, and they argue about whether they really need a new carpet."
+      lookalike_of: relative_in_trouble
+    - brief: "A grandson calls his grandfather to say thank you for the money for his birthday, then asks if grandpa could also help with a driving-school fee; grandpa asks his mother first and agrees to send it next week."
+    - brief: "A friend calls from a new number because her phone was stolen yesterday; she proves who she is by talking about their shared past, does not ask for money at once, and only asks to borrow a little for a new SIM and a cheap phone, to her husband's card."
+      lookalike_of: relative_in_trouble
+    - brief: "A daughter asks her father to keep the money transfer a surprise from mum: they are collecting for mum's anniversary present and she tells him the amount and the brother's card where the family pools it."
+    - brief: "A cousin asks to borrow a larger sum for a down payment on a flat, explains the mortgage, the deadline at the bank on Monday, offers to sign a receipt; the callee says they must discuss it with their spouse first."
+    - brief: "An aunt in the village asks her niece in Almaty to pay for medicines online at a pharmacy and have them delivered, because the village pharmacy does not have them; she will pay back when the pension comes."
+    - brief: "A son studying abroad asks his parents to transfer money for a flight home for the holidays; they talk about the dates, the cheapest airline, and his mother scolds him for not calling more often."
+    - brief: "A colleague-friend who lent the callee money a month ago calls politely to remind them about it, because he needs it for his child's school uniform; the callee apologises and promises to send it tonight."
+    - brief: "A father asks his daughter to read him the balance and the last transactions in his banking app on her phone, because he gave her access when he was ill and wants to check if his pension arrived; he asks for no code."
+    - brief: "A sister calls in a panic: her son broke his arm at school, she is in the emergency room and her card is at home; she asks her brother to transfer money to her own phone number for the X-ray and he immediately agrees and asks which hospital."
+      lookalike_of: relative_in_trouble
+  general_conversation:
+    - brief: "Two friends chat about a scam call one of them got last week: the caller said he was from the bank's security service and asked her to move money to a safe account; she laughs at how she hung up, and they discuss how to recognise such calls."
+    - brief: "A woman tells her friend about her son's new job in the police: the training, the uniform, his first night patrol and a fraud case his unit is working on."
+    - brief: "Two neighbours discuss the building's chat: someone posted a warning about fake gas inspectors, another asked who has the plumber's number, and they agree to collect money for a new entrance door."
+    - brief: "A man calls a friend to ask for advice: he wants to invest his savings in a bank deposit or government bonds, and the friend, who works at a bank, explains the options and warns him about 'investment platforms' that promise too much."
+    - brief: "A young woman tells her mother that she opened a new card at another bank because it gives cashback, explains how she set up the app with a password and face login, and promises to show her how to do it too."
+    - brief: "Two classmates from school organise a reunion: the restaurant, the deposit each must pay to the organiser, who has married and who moved abroad."
+    - brief: "A taxi driver calls his brother to complain about a passenger who refused to pay, the police report he filed, and the fine he got for speeding the same day."
+    - brief: "A woman calls her friend to ask her to keep a secret: she is pregnant and has not told the family yet; they talk about names, doctors and how to tell her mother-in-law."
+    - brief: "A man and his old army friend talk on the phone for the first time in years: jobs, children, a loan he took for his car, and a promise to meet in Astana."
+    - brief: "Two colleagues talk about a strange message from 'the director' in a messenger asking to transfer money urgently; they both realised it was fake, laugh about it, and one says IT already warned everyone."
+    - brief: "A student calls her friend to complain about a court summons her family got over an old utility debt, the lawyer they hired, and that it was solved by paying the debt through eGov."
+    - brief: "A pensioner tells her neighbour about a lottery ticket her grandson bought her, the small win, and that she collected it herself at the official lottery kiosk with her ID."
+
+# ADR D73: a call to a child is a call to a child -- the scam and its twin pin the callee.
+class_personas:
+  minor_targeted:
+    age_band: {"10-13": 0.4, "14-17": 0.6}
+    occupation: [school pupil]
+  legit_child_call:
+    age_band: {"10-13": 0.4, "14-17": 0.6}
+    occupation: [school pupil]
+
+# Share of hard negatives written to CONTAIN a phrase that sounds like a scam request but is
+# legitimate in context (a courier asks for the code shown in the recipient's own app at the
+# door; a bank says "never tell anyone the code"; HR asks to keep a reorganisation quiet).
+confusable_negative_share: 0.6
+
+# Share of scams whose key request is phrased INDIRECTLY (no stock wording; the ask is implied,
+# euphemised or spread over turns). Drives the lexicon-leak gate (>= 30 % cue-free positives).
+indirect_scam_share: 0.5
+
+# Stages a scam cell may show depend on its tactics: `hook_only` is allowed only when every
+# tactic of the cell is one a hook can show (no extraction ask). Optional tactics of a hook_only
+# cell are drawn from this set too.
+hook_compatible_tactics:
+  - imp_bank
+  - imp_law_enforcement
+  - imp_gov_service
+  - imp_regulator
+  - imp_telecom_delivery_utility
+  - imp_personal
+  - urgency
+  - fear_threat
+  - secrecy
+  - prize_lottery
+  - investment_scam
+  - mule_recruitment
+  - callback_instruction
+
+# Optional tactics drawn per scam cell, on top of the scheme's `core` (uniform in range).
+optional_tactics: {min: 0, max: 2}
+
+length_targets:     # utterances; weights
+  5: 0.15
+  7: 0.25
+  9: 0.25
+  12: 0.20
+  15: 0.15
+
+outcomes:
+  complies: 0.30
+  refuses: 0.30
+  hangs_up: 0.20
+  calls_back: 0.20
+
+channels:
+  cold_call: 0.45
+  call_after_sms: 0.25
+  messenger_then_call: 0.15
+  second_call: 0.15
+
+# Which stages of the scheme the call shows (scams); negatives use `none`.
+stages:
+  hook_only: 0.15
+  hook_escalation: 0.25
+  full: 0.45
+  extraction_handoff: 0.15
+
+persona:
+  age_band: {"18-25": 0.2, "26-40": 0.3, "41-60": 0.3, "61+": 0.2}
+  region:
+    - Almaty
+    - Astana
+    - Shymkent
+    - Karaganda
+    - Aktobe
+    - Atyrau
+    - Pavlodar
+    - Kostanay
+    - Oskemen
+    - Turkestan region (village)
+    - Kyzylorda
+    - Taraz
+  occupation:
+    - student
+    - schoolteacher
+    - pensioner
+    - sole trader (ИП)
+    - office worker
+    - nurse
+    - taxi driver
+    - accountant
+    - stay-at-home parent
+    - IT specialist
+    - bazaar vendor
+    - oil-field shift worker
+    - civil servant
+    - small-business owner
+
+# Which occupations fit which age band (phase 2; the pilot drew them independently and wrote a
+# "pensioner 18-25"). An occupation missing here fits every band.
+occupation_age_bands:
+  student: ["18-25", "26-40"]
+  pensioner: ["61+"]
+  stay-at-home parent: ["18-25", "26-40", "41-60"]
+  IT specialist: ["18-25", "26-40", "41-60"]
+  oil-field shift worker: ["18-25", "26-40", "41-60"]
+  nurse: ["18-25", "26-40", "41-60"]
+  taxi driver: ["26-40", "41-60", "61+"]
+  schoolteacher: ["26-40", "41-60", "61+"]
+  civil servant: ["26-40", "41-60"]
+  accountant: ["26-40", "41-60", "61+"]
+  small-business owner: ["26-40", "41-60", "61+"]
+  sole trader (ИП): ["26-40", "41-60", "61+"]

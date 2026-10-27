@@ -17,10 +17,10 @@ def test_export_is_json_and_mirrors_python_sources():
     json.dumps(data, ensure_ascii=False)
     taxonomy = get_taxonomy()
     assert data["format_version"] == 1
-    assert [t["id"] for t in data["taxonomy"]["tactics"]] == list(taxonomy.all_tactic_ids())  # v1 + v2 (D63)
+    assert [t["id"] for t in data["taxonomy"]["tactics"]] == list(taxonomy.all_tactic_ids())  # v1 + v2 + v3 (D63, D73)
     assert data["taxonomy"]["hard_signal_ids"] == list(taxonomy.hard_signal_ids())
     assert data["taxonomy"]["active_label_space"] == taxonomy.active_label_space
-    assert len(data["roles"]) == 19 and all(set(r["names"]) == set(data["locales"]) for r in data["roles"])
+    assert len(data["roles"]) == 21 and all(set(r["names"]) == set(data["locales"]) for r in data["roles"])
     assert all(data["templates"][loc]["role_template"] for loc in data["locales"])
     by_id = {t["id"]: t for t in data["taxonomy"]["tactics"]}
     assert by_id["otp_request"]["names"]["ru"] == taxonomy.display_name("otp_request", "ru")

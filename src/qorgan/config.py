@@ -124,6 +124,15 @@ V2_MIN_OOF_POSITIVES = 8
 V2_NEW_TACTICS: tuple[str, ...] = (
     "loan_inducement", "cash_courier_handoff", "refund_request", "task_advance_fee", "callback_instruction",
 )
+# The five v3 tactics (ADR D73). Rows written before v3 are UNLABELLED for these, like v1 rows
+# for the v2 five: a row is unlabelled for every tactic a space LATER than its own introduced.
+V3_NEW_TACTICS: tuple[str, ...] = (
+    "minor_targeting", "blackmail_extortion", "survey_pretext", "romance_trust", "charity_appeal",
+)
+LABEL_SPACE_ORDER: tuple[str, ...] = ("v1", "v2", "v3")
+LABEL_SPACE_NEW_TACTICS: dict[str, tuple[str, ...]] = {"v2": V2_NEW_TACTICS, "v3": V3_NEW_TACTICS}
+# The space generation grids are written and QC'd in, and scheme rules may reference (D73).
+GEN_LABEL_SPACE = "v3"
 # Share of generated (Claude) rows that go to `val` instead of `train`, by seeded id hash. They
 # never go to `test`: the held-out for Claude-era models is built separately (ADR D63 §3.2).
 GEN_VAL_FRACTION = 0.15

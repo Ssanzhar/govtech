@@ -1,0 +1,167 @@
+{
+  "split": "shift_local_4",
+  "adr": "D73",
+  "generator_note": "generated 2026-10-24 offline with llama.cpp by local open-weights models from non-Gemini, non-Claude families (see data/provenance/shift_local_4.json); briefs from public scam descriptions; no access to the corpus, prompts or lexicons; accepted by automated checks only",
+  "llama_cpp": "version: 0.6.0 (build 11429, commit d81235049)",
+  "generators": {
+    "qwen35_kk": {
+      "repo": "mradermacher/Qwen3.5-9B-Kazakh-GGUF",
+      "revision": "b68107190e1e995f4d2576bccd8b4b1e27805956",
+      "file": "Qwen3.5-9B-Kazakh.Q4_K_M.gguf",
+      "sha256": "4e3ca9f6cb59d9ffb00d0301ae5dd59e47ee2a818153a7d5caa76c74f02021e2",
+      "base": "issai/Qwen3.5-9B-Kazakh (ISSAI, Qwen3.5 family, Kazakh continued pre-training + instruct)",
+      "licence": "apache-2.0",
+      "languages": [
+        "en",
+        "kk",
+        "mixed",
+        "ru"
+      ]
+    }
+  },
+  "briefs": {
+    "file": "shift_local_briefs.yaml",
+    "sha256": "bf01205a18a189e6a42abf9e70b9031ddc99aee059c4fb31ff351f91843dad2d",
+    "count": {
+      "scam": 39,
+      "legit": 34
+    },
+    "extra_files": [
+      {
+        "file": "shift_local_briefs_v3.yaml",
+        "sha256": "d713776d6bf8732778757aab04c2723919cabfdb57d4ddd2641ce4d89e3347f2"
+      }
+    ]
+  },
+  "sampling": {
+    "plan_seed": 20261029,
+    "temperature": 0.8,
+    "top_p": 0.95,
+    "max_tokens": 2200,
+    "max_attempts": 3,
+    "attempt_seed_stride": 100003,
+    "turn_range": [
+      8,
+      18
+    ],
+    "language_targets": {
+      "kk": 96,
+      "ru": 64,
+      "mixed": 0,
+      "en": 0
+    }
+  },
+  "acceptance": {
+    "reasons": [
+      "format",
+      "turn_count",
+      "speakers",
+      "turn_length",
+      "prompt_echo",
+      "language",
+      "degenerate",
+      "duplicate"
+    ],
+    "thresholds": {
+      "MIN_TURNS": 8,
+      "MAX_TURNS": 22,
+      "MIN_TURNS_PER_SPEAKER": 3,
+      "MAX_TURN_CHARS": 700,
+      "MAX_STRAY_LINES": 2,
+      "ECHO_NGRAM": 8,
+      "MAX_REPEATS_OF_ONE_TURN": 2,
+      "NEAR_DUP_JACCARD": 0.7,
+      "MIN_SCRIPT_SHARE": 0.9,
+      "KK_MIN_SPECIFIC_SHARE": 0.04,
+      "KK_MAX_RU_MARKER_TURNS": 0.34,
+      "RU_MAX_SPECIFIC_SHARE": 0.01,
+      "MIXED_MIN_SPECIFIC_SHARE": 0.01,
+      "MIXED_MIN_KK_TURNS": 2,
+      "MIXED_MIN_RU_TURNS": 2
+    },
+    "classifier_used_for_selection": false,
+    "near_duplicate_jaccard_across_splits": 0.7,
+    "duplicate_pool_includes": [
+      "shift_local",
+      "shift_local_2",
+      "shift_local_3"
+    ]
+  },
+  "attempts": {
+    "kk/legit": {
+      "slots": 48,
+      "attempts": 54,
+      "accepted": 48,
+      "slots_unfilled": 0,
+      "rejected": {
+        "format": 4,
+        "speakers": 1,
+        "turn_count": 1
+      },
+      "rejection_rate": 0.111
+    },
+    "kk/scam": {
+      "slots": 48,
+      "attempts": 57,
+      "accepted": 48,
+      "slots_unfilled": 0,
+      "rejected": {
+        "degenerate": 1,
+        "format": 3,
+        "turn_count": 5
+      },
+      "rejection_rate": 0.158
+    },
+    "ru/legit": {
+      "slots": 32,
+      "attempts": 41,
+      "accepted": 31,
+      "slots_unfilled": 1,
+      "rejected": {
+        "language": 10
+      },
+      "rejection_rate": 0.244
+    },
+    "ru/scam": {
+      "slots": 32,
+      "attempts": 42,
+      "accepted": 32,
+      "slots_unfilled": 0,
+      "rejected": {
+        "degenerate": 1,
+        "language": 8,
+        "turn_count": 1
+      },
+      "rejection_rate": 0.238
+    }
+  },
+  "split_counts": {
+    "total": 159,
+    "scam": 80,
+    "legit": 79,
+    "hard_negatives": 72,
+    "positives": 80,
+    "by_language": {
+      "kk": 96,
+      "ru": 63
+    }
+  },
+  "content_hash": "4fbae398fbaaa3540ffe89670b94cbef1c6cd8bd6f89e09cb0d9061af211700a",
+  "disjoint_from": [
+    "train",
+    "val",
+    "test",
+    "authored_heldout",
+    "ood",
+    "adversarial",
+    "adversarial_legit",
+    "shift",
+    "shift_local",
+    "shift_local_2",
+    "shift_local_3"
+  ],
+  "scrub_fixed_point": true,
+  "published": false,
+  "slot_prefix": "sl4",
+  "plan_task": "ADR D73"
+}

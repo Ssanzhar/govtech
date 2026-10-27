@@ -3,3 +3,10 @@
 # rows carry v2 labels and are NOT masked like the legacy v1 Gemini corpus (`gemini`).
 writers:
   v22_gemini: gemini_grid
+
+# The label space each run was written in (ADR D73). Unlisted runs are v2; a v3 run is
+# unmasked for the five v3 tactics, every earlier row is masked out of them.
+label_spaces:
+  v3_claude: v3
+  v3_claude_b: v3
+  v31_claude: v3     # ADR D74

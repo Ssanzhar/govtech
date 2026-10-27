@@ -94,3 +94,30 @@ def test_committed_run_writers_name_only_grid_writers():
     from qorgan.data.gen.fold import RUN_WRITERS, V2_LABELLED_GENERATORS, load_run_writers
 
     assert set(load_run_writers(get_config().repo_root / RUN_WRITERS).values()) <= set(V2_LABELLED_GENERATORS)
+
+
+def test_run_label_spaces_default_to_v2_and_validate(tmp_path):
+    """ADR D73: a run declares the label space its writers labelled (default v2: every run
+    before v3); only grid spaces (v2, v3) are allowed."""
+    from qorgan.data.gen.fold import load_run_label_spaces, run_label_space
+
+    assert load_run_label_spaces(tmp_path / "missing.yaml") == {}
+    path = tmp_path / "writers.yaml"
+    path.write_text("writers:\n  v3_gemini: gemini_grid\nlabel_spaces:\n  v3_gemini: v3\n  v3_claude: v3\n", encoding="utf-8")
+    spaces = load_run_label_spaces(path)
+    assert run_label_space("v3_claude", spaces) == "v3" and run_label_space("v21_legit", spaces) == "v2"
+    path.write_text("label_spaces:\n  bad: v1\n", encoding="utf-8")
+    with pytest.raises(ValueError):
+        load_run_label_spaces(path)
+
+
+def test_provenance_records_each_rows_label_space():
+    from qorgan.data.build_corpus import build_provenance
+    from qorgan.data.schema import Dialogue, Label, Utterance
+
+    def row(i):
+        return Dialogue(id=i, language="kk", utterances=(Utterance(speaker="caller", text="сәлем"),), label=Label(risk=0.02))
+
+    splits = {"train": [row("old_1"), row("a_1"), row("b_1"), row("b_1-asr")], "val": []}
+    prov = build_provenance(splits, {"a_1", "b_1"}, "v3", label_spaces={"b_1": "v3"})
+    assert prov["row_label_space"] == {"old_1": "v1", "a_1": "v2", "b_1": "v3", "b_1-asr": "v3"}

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from qorgan.config import GEN_LABEL_SPACE
 from qorgan.data.gen.grid import (
     GridError,
     allocate,
@@ -29,6 +30,11 @@ def pilot():
     return build_manifest(load_grid_config(GRID), run="t", size=120, schemes=get_schemes(), taxonomy=get_taxonomy())
 
 
+
+def _v2_schemes():
+    """The base grid is a v2 grid (no `label_space`): it draws only v2-expressible schemes (D73)."""
+    return get_schemes().within(get_taxonomy().label_space("v2"))
+
 def test_allocate_is_exact_and_largest_remainder():
     assert allocate(10, {"a": 1, "b": 1, "c": 1}) == {"a": 4, "b": 3, "c": 3}
     assert sum(allocate(7, {"x": 0.3, "y": 0.7}).values()) == 7
@@ -46,7 +52,7 @@ def test_manifest_hits_the_adr_shares(pilot):
     assert stats["size"] == 120
     assert stats["kind"]["legit"] / 120 >= 0.35
     assert stats["language"] == {"en": 18, "kk": 36, "mixed": 30, "ru": 36}
-    assert set(stats["scheme"]) == set(get_schemes().ids())  # every scheme present
+    assert set(stats["scheme"]) == set(_v2_schemes().ids())  # every scheme of the grid's space present
     v2_negatives = {"legit_delivery_code", "legit_refund_request", "legit_employer_request",
                     "legit_clinic_appointment", "legit_telecom_offer", "legit_utility_notice"}
     assert v2_negatives <= set(stats["negative_class"])
@@ -98,7 +104,7 @@ def test_chunk_spec_never_carries_a_russian_or_kazakh_lexicon_phrase(pilot):
     phrases += [c for cues in load_cue_lexicon().entries.values() for c in cues]
     leaked = [p for p in phrases if _cyrillic(p) and len(p) > 4 and p.lower() in blob]
     assert leaked == []
-    assert set(spec["glossary"]["tactics"]) == set(get_taxonomy().label_space("v2"))
+    assert set(spec["glossary"]["tactics"]) == set(get_taxonomy().label_space(GEN_LABEL_SPACE))
     assert "examples_ru" not in blob and "cues" not in blob
 
 
@@ -146,7 +152,7 @@ def test_scam_share_is_the_corpus_base_rate(big):
 
 
 def test_every_scheme_gets_twin_lookalike_negatives_in_proportion(big):
-    schemes = get_schemes()
+    schemes = _v2_schemes()
     cfg = load_grid_config(GRID)
     scams = {s: sum(1 for c in big if c.scheme == s) for s in schemes.ids()}
     looks = {s: [c for c in big if c.lookalike_of == s] for s in schemes.ids()}

@@ -6,8 +6,12 @@ seeing an output. The label of a slot comes from its brief.
 
 `LOCAL_SPLITS` registers every batch: `shift_local` (D65), `shift_local_2` (PLAN_2026-10 §4
 A3: same briefs, same model and sampling, a new seed, kk/ru only after D70) and `shift_local_3`
-(A7, the v2.2 judge: the second batch's design under another seed). A batch is planned
-with `plan_for(name, briefs)`; the first batch's plan is pinned by a fingerprint test.
+(A7, the v2.2 judge: the second batch's design under another seed) and `shift_local_4` (ADR
+D73, the v3 judge: the same briefs plus `shift_local_briefs_v3.yaml`, 160 calls) and
+`shift_local_5` (ADR D74, the v3.1 judge: those plus `shift_local_briefs_v31.yaml`) and
+`shift_local_6` (ADR D75, the ensemble judge: the fifth batch's design under a new seed). A batch is
+planned with `plan_for(name, load_split_briefs(name, configs_dir))`; the first batch's plan is
+pinned by a fingerprint test.
 
 The generator is a local open-weights model from a different family than the training data
 (Gemini) and the planned training generator (Claude); see `GENERATORS`.
@@ -138,6 +142,7 @@ class LocalSplit:
     prior: tuple[str, ...] = ()
     near_duplicate_jaccard: float | None = None
     plan_task: str | None = None
+    briefs_files: tuple[str, ...] = ("shift_local_briefs.yaml",)  # under configs/, concatenated in order
 
 
 _NOTE = (
@@ -153,6 +158,16 @@ SHIFT_LOCAL_3_SEED = 20261024
 SHIFT_LOCAL_2_TARGETS: dict[str, int] = {
     "kk": LANGUAGE_TARGETS["kk"] + LANGUAGE_TARGETS["en"], "ru": LANGUAGE_TARGETS["ru"], "mixed": 0, "en": 0,
 }
+# ADR D73: the v3 judge. 160 calls so each v3 tactic gets several scams and each twin several
+# look-alikes next to the old briefs; kk-heavy like the second batch.
+SHIFT_LOCAL_4_SEED = 20261029
+SHIFT_LOCAL_4_TARGETS: Mapping[str, int] = {"kk": 96, "ru": 64, "mixed": 0, "en": 0}
+# ADR D74: the v3.1 judge. `shift_local_4` was looked at once by v3; same design and size, plus
+# family and everyday legitimate briefs (the classes A6 (c) failed on).
+SHIFT_LOCAL_5_SEED = 20261101
+# ADR D75: the judge for the v1 + v3.1 risk ensemble. `shift_local_5` was looked at once by v3.1;
+# the fifth batch's briefs and size under a new seed.
+SHIFT_LOCAL_6_SEED = 20261103
 LOCAL_SPLITS: Mapping[str, LocalSplit] = MappingProxyType({
     "shift_local": LocalSplit(
         name="shift_local", plan_seed=PLAN_SEED, slot_prefix="sl",
@@ -170,6 +185,29 @@ LOCAL_SPLITS: Mapping[str, LocalSplit] = MappingProxyType({
         language_targets=MappingProxyType(SHIFT_LOCAL_2_TARGETS),
         generator_note=_NOTE.format(date="2026-10-23", name="shift_local_3"), adr="D65",
         prior=("shift_local", "shift_local_2"), near_duplicate_jaccard=0.7, plan_task="PLAN_2026-10 A7",
+    ),
+    "shift_local_4": LocalSplit(
+        name="shift_local_4", plan_seed=SHIFT_LOCAL_4_SEED, slot_prefix="sl4",
+        language_targets=MappingProxyType(SHIFT_LOCAL_4_TARGETS),
+        generator_note=_NOTE.format(date="2026-10-24", name="shift_local_4"), adr="D73",
+        prior=("shift_local", "shift_local_2", "shift_local_3"), near_duplicate_jaccard=0.7, plan_task="ADR D73",
+        briefs_files=("shift_local_briefs.yaml", "shift_local_briefs_v3.yaml"),
+    ),
+    "shift_local_5": LocalSplit(
+        name="shift_local_5", plan_seed=SHIFT_LOCAL_5_SEED, slot_prefix="sl5",
+        language_targets=MappingProxyType(SHIFT_LOCAL_4_TARGETS),
+        generator_note=_NOTE.format(date="2026-10-24", name="shift_local_5"), adr="D74",
+        prior=("shift_local", "shift_local_2", "shift_local_3", "shift_local_4"), near_duplicate_jaccard=0.7,
+        plan_task="ADR D74",
+        briefs_files=("shift_local_briefs.yaml", "shift_local_briefs_v3.yaml", "shift_local_briefs_v31.yaml"),
+    ),
+    "shift_local_6": LocalSplit(
+        name="shift_local_6", plan_seed=SHIFT_LOCAL_6_SEED, slot_prefix="sl6",
+        language_targets=MappingProxyType(SHIFT_LOCAL_4_TARGETS),
+        generator_note=_NOTE.format(date="2026-10-24", name="shift_local_6"), adr="D75",
+        prior=("shift_local", "shift_local_2", "shift_local_3", "shift_local_4", "shift_local_5"),
+        near_duplicate_jaccard=0.7, plan_task="ADR D75",
+        briefs_files=("shift_local_briefs.yaml", "shift_local_briefs_v3.yaml", "shift_local_briefs_v31.yaml"),
     ),
 })
 
@@ -189,6 +227,7 @@ class Brief:
     brief: str
     tactics: tuple[str, ...] = ()
     hard_negative: bool = True
+    persona: str | None = None  # pins the callee (D73: a call to a child); the draw still happens
 
 
 @dataclass(frozen=True)
@@ -220,6 +259,7 @@ def load_briefs(path: Path) -> tuple[Brief, ...]:
         Brief(
             id=b["id"], label=b["label"], brief=b["brief"].strip(),
             tactics=tuple(b.get("tactics", ())), hard_negative=bool(b.get("hard_negative", True)),
+            persona=b.get("persona"),
         )
         for b in data["briefs"]
     )
@@ -229,6 +269,15 @@ def load_briefs(path: Path) -> tuple[Brief, ...]:
     bad = [b.id for b in briefs if b.label not in _LABEL_NOTES or (b.label == "legit" and b.tactics)]
     if bad:
         raise ValueError(f"briefs with an unknown label or legit tactics: {bad}")
+    return briefs
+
+
+def load_split_briefs(split: str, configs_dir: Path) -> tuple[Brief, ...]:
+    """Every brief file of a registered batch, concatenated in order; ids stay unique."""
+    briefs = tuple(b for name in LOCAL_SPLITS[split].briefs_files for b in load_briefs(configs_dir / name))
+    ids = [b.id for b in briefs]
+    if len(set(ids)) != len(ids):
+        raise ValueError(f"{split}: duplicate brief ids across {LOCAL_SPLITS[split].briefs_files}")
     return briefs
 
 
@@ -247,11 +296,13 @@ def build_plan(
             rng.shuffle(order)
             outcomes = SCAM_OUTCOMES if label == "scam" else LEGIT_OUTCOMES
             for index in range(counts[label]):
+                brief = order[index % len(order)]
+                drawn = rng.choice(PERSONAS)  # always drawn, so a pinned persona moves no other slot
                 slots.append(Slot(
                     slot_id=f"{prefix}_{language}_{label}_{index + 1:02d}",
                     language=language,
-                    brief=order[index % len(order)],
-                    persona=rng.choice(PERSONAS),
+                    brief=brief,
+                    persona=brief.persona or drawn,
                     outcome=rng.choice(outcomes),
                     turns=rng.randint(*TURN_RANGE),
                     seed=rng.randrange(1, 2**31 - ATTEMPT_SEED_STRIDE * MAX_ATTEMPTS),

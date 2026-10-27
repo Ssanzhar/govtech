@@ -62,7 +62,9 @@ Counts generated from the files (`scam` / `legit` follow the labelled risk, cut 
 - **`adversarial`** — every scam in `test` + `ood` rewritten without its cue words;
   **`adversarial_legit`** — the same scams rewritten to *sound* legitimate. Both are scam-only.
 - **`shift`** — 66 dialogues by a **second author (Claude)** with no access to the corpus, its
-  prompts or lexicons: the only cross-generator test. Do not train on it.
+  prompts or lexicons. Since October 2026 Claude also writes training data in the code
+  repository, so `shift` is validation-grade there (ADR D65). The independent judges
+  (`shift_local*`, written by a local model) are deliberately never published. Do not train on it.
 - `manifest.json` / `shift.manifest.json` — counts and content hashes. Manifests written before
   2026-09-25 used `positives` for "not a hard negative"; it now equals `scam`.
 
@@ -106,7 +108,7 @@ separately. Please do the same: never tune thresholds or lexicons on `authored_h
 ## Limitations
 
 - **Synthetic.** High scores on splits from the training generator largely measure that
-  generator's style; on `shift` the shipped model's recall is 0.364 (see the model card).
+  generator's style. On independent calls the shipped model's recall is 0.455 (see the model card).
 - One generator family for train/val/test/ood/adversarial; `shift` is small (66 rows, recall
   interval ±0.17).
 - The Kazakh was produced by language models and one author; it has not been reviewed by a

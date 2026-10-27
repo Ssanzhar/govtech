@@ -68,25 +68,28 @@ The heads were trained on the **browser's own embeddings** (ADR D33). The bundle
 hashes must match the code's lexicons; always pair a code revision with the model revision
 published alongside it.
 
-## Evaluation (threshold 0.59, device embeddings, 2026-09-24)
+## Evaluation (threshold 0.59, device embeddings, 2026-10-25)
 
 False-positive rate first — a false alarm on a real bank call destroys trust. Intervals are
-Clopper–Pearson 95 %. Source: `docs/eval_report.md` (ADRs D42/D43), harness
-`python -m qorgan.eval.run`.
+Clopper–Pearson 95 %. The weights are those of `site/models/weights.json` (last changed
+2026-09-28, ADR D54). Source: ADR D76, harness `python -m qorgan.eval.run` and
+`scripts/pooled_judges.py`.
 
 | Split | What it is | FPR [95 % CI] | Recall [95 % CI] | N |
 |---|---|---|---|---|
-| `test` | same generator (Gemini) as train | 0.000 [0.000, 0.070] | 0.984 [0.916, 1.000] | 115 |
+| **`shift_local*` (6 batches, kk + ru)** | **written offline by a local model of another family (ISSAI Qwen3.5-9B-Kazakh) with no access to the corpus, prompts or lexicons; all written after these weights were frozen; private** | **0.053 [0.033, 0.079]** | **0.455 [0.406, 0.505]** | 828 |
+| — Kazakh | | 0.064 [0.037, 0.102] | 0.383 [0.322, 0.447] | 497 |
+| — Russian | | 0.036 [0.013, 0.076] | 0.564 [0.485, 0.642] | 331 |
+| `test` | same generator (Gemini) as train | 0.000 [0.000, 0.060] | 1.000 [0.957, 1.000] | 143 |
 | `authored_heldout` | hand-written, not real calls | 0.000 [0.000, 0.142] | 0.889 [0.653, 0.986] | 42 |
 | `ood` | disfluent, out-of-distribution | 0.000 [0.000, 0.049] | 0.932 [0.813, 0.986] | 118 |
-| `adversarial` | cue-free paraphrases (scams only) | — | 0.945 [0.884, 0.980] | 109 |
-| **`shift`** | **a second generator (Claude) with no access to the corpus** | **0.061 [0.007, 0.202]** | **0.364 [0.204, 0.549]** | 66 |
+| `shift` | written by Claude; validation-grade since Claude writes training data (ADR D65) | 0.000 [0.000, 0.106] | 0.455 [0.281, 0.636] | 66 |
 
-**Read the `shift` row as the honest number.** Every other split shares its generator with
-the training data, so its high recall largely measures one model's writing style. On calls
-written by a different author the device model finds about a third of the scams (weakest in
-Kazakh and code-switched calls). Both `shift` false positives are rows read during debugging;
-on the 64 never-read rows FPR is 0.000 [0.000, 0.112].
+**Read the `shift_local*` row as the honest number.** Every other split shares its generator
+with the training data, so its high recall largely measures one model's writing style. On calls
+written by an independent model, the device model finds a little under half of the scams, and
+fewer in Kazakh than in Russian. About 1 legitimate call in 19 raises an alert. The
+`shift_local*` batches are never published: once public, they stop being independent.
 
 Live meter (streaming): false-latch 0.125 [0.027, 0.324] on hand-written legit calls (0.053
 on the never-read subset), alert-hit 0.889, median 3 utterances to alert.
@@ -95,11 +98,13 @@ on the never-read subset), alert-hit 0.889, median 3 utterances to alert.
 
 - **No real calls.** All training and evaluation data is synthetic or hand-written. A locked
   real-call test set is designed (`docs/DATA_INTAKE.md`) but does not exist yet.
-- **Cross-generator recall is low** (0.364); Kazakh and code-switched calls are weakest.
+- **Cross-generator recall is low** (0.455 on 828 independent kk/ru calls); Kazakh is weakest (0.383).
+- **Calls *about* scams look like scams.** A friend retelling a scam call, or a son telling his
+  father never to read out SMS codes, can alert: they use the same vocabulary (ADR D75).
 - **Taxonomy gaps:** job, romance and tech-support scams have no dedicated tags.
 - **Open weights are an adversary's test bench.** Anyone can probe these heads offline for
   evasions; a stronger model, if one is built, belongs behind an API (ADR D15).
-- Thresholds were tuned on validation + hand-written sets only; never on `shift`.
+- Thresholds were tuned on validation + hand-written sets only; never on `shift` or `shift_local*`.
 
 ## Intended use and misuse
 

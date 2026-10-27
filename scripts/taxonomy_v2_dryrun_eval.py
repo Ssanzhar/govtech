@@ -111,13 +111,18 @@ def _breakdown(dialogues, generator, truth, alert) -> dict:
     return out
 
 
-def per_tactic(bundle, dialogues, generator, tactic_probs) -> dict:
+def per_tactic(bundle, dialogues, generator, tactic_probs, labelled=None) -> dict:
+    """Per-tactic F1 on labelled rows only. `labelled` is the trainer's `(n, L)` mask (D73: by each
+    row's label space); without it, the D63 rule (the v2 five only on Claude rows)."""
     from qorgan.classifier.labels import encode_tactics
 
     out = {}
     for j, tactic in enumerate(bundle.label_space):
         threshold = bundle.tactic_thresholds.get(tactic, bundle.tactic_threshold)
-        rows = [i for i, d in enumerate(dialogues) if tactic not in V2_NEW_TACTICS or generator.get(d.id) == "claude"]
+        if labelled is not None:
+            rows = [i for i in range(len(dialogues)) if labelled[i, j]]
+        else:
+            rows = [i for i, d in enumerate(dialogues) if tactic not in V2_NEW_TACTICS or generator.get(d.id) == "claude"]
         truth = np.array([encode_tactics([t.id for t in dialogues[i].label.tactic_tags], bundle.label_space)[j] for i in rows])
         pred = tactic_probs[rows, j] >= threshold
         tp, fp, fn = int((pred & (truth == 1)).sum()), int((pred & (truth == 0)).sum()), int((~pred & (truth == 1)).sum())
@@ -140,13 +145,22 @@ def main() -> None:
     args = parser.parse_args()
     threshold = get_config().risk_threshold
     val = list(load_split(args.processed_dir, "val"))
-    generator = json.loads((args.processed_dir / "provenance.json").read_text(encoding="utf-8"))["generator"]
+    provenance = json.loads((args.processed_dir / "provenance.json").read_text(encoding="utf-8"))
+    generator = provenance["generator"]
     truth = np.array([int(d.label.is_scam) for d in val])
-    bundle = load_linear(args.model_dir)
+    # D75: a fused browser weights file is scored exactly as the server would serve it.
+    bundle = load_linear_from_web(args.model_dir) if args.model_dir.suffix == ".json" else load_linear(args.model_dir)
     risk, tactic = score(bundle, val)
+    labelled = None
+    if "row_label_space" in provenance:  # D73: mask exactly as the trainer did
+        from qorgan.classifier.linear_train import label_space_mask
+        from qorgan.config import LABEL_SPACE_NEW_TACTICS, LABEL_SPACE_ORDER
+
+        labelled = label_space_mask(val, bundle.label_space, provenance["row_label_space"],
+                                    new_tactics_by_space=LABEL_SPACE_NEW_TACTICS, order=LABEL_SPACE_ORDER)
     report = {"split": "val", "threshold": threshold, "label_space": list(bundle.label_space),
               "v2_dryrun": _breakdown(val, generator, truth, risk >= threshold),
-              "per_tactic": per_tactic(bundle, val, generator, tactic)}
+              "per_tactic": per_tactic(bundle, val, generator, tactic, labelled)}
     report["v2_auc"] = auc_breakdown(val, generator, truth, risk)
     report["v2_false_positives"] = false_positive_table(bundle, val, generator, risk, tactic, threshold)
     if args.baseline:

@@ -155,11 +155,15 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def provenance(*, manifest: dict, attempts: list[dict], briefs_path: Path, llama_cpp: str, split: str = SPLIT_NAME) -> dict:
+def provenance(
+    *, manifest: dict, attempts: list[dict], briefs_path: Path, llama_cpp: str, split: str = SPLIT_NAME,
+    extra_briefs_paths: tuple[Path, ...] = (),
+) -> dict:
     """The committed record of how the split was made: models, hashes, seeds, thresholds and
-    rejection statistics. Ids and counts only -- never dialogue text."""
+    rejection statistics. Ids and counts only -- never dialogue text. `extra_briefs_paths` are a
+    batch's further brief files (D73: `shift_local_4`, D74: `shift_local_5`), recorded only when present."""
     spec = plan.LOCAL_SPLITS[split]
-    briefs = plan.load_briefs(briefs_path)
+    briefs = plan.load_briefs(briefs_path) + tuple(b for p in extra_briefs_paths for b in plan.load_briefs(p))
     used = sorted({row["generator"] for row in attempts})
     record = {
         "split": split,
@@ -170,6 +174,7 @@ def provenance(*, manifest: dict, attempts: list[dict], briefs_path: Path, llama
         "briefs": {
             "file": str(briefs_path.name), "sha256": _sha256(briefs_path),
             "count": dict(Counter(b.label for b in briefs)),
+            **({"extra_files": [{"file": p.name, "sha256": _sha256(p)} for p in extra_briefs_paths]} if extra_briefs_paths else {}),
         },
         "sampling": {
             "plan_seed": spec.plan_seed, "temperature": plan.TEMPERATURE, "top_p": plan.TOP_P,
@@ -221,10 +226,12 @@ def main() -> None:  # pragma: no cover - CLI
     attempts = [json.loads(l) for l in attempts_path.read_text(encoding="utf-8").splitlines() if l.strip()]
     version = subprocess.run(["llama-server", "--version"], capture_output=True, text=True, check=False)
     llama = " ".join(line for line in (version.stdout + version.stderr).splitlines() if line.startswith("version"))
+    configs = cfg.data_dir.parent / "configs"
+    first, *extra = plan.LOCAL_SPLITS[split].briefs_files
     record = provenance(
         manifest=manifest, attempts=attempts,
-        briefs_path=cfg.data_dir.parent / "configs" / "shift_local_briefs.yaml", llama_cpp=llama or "unknown",
-        split=split,
+        briefs_path=configs / first, llama_cpp=llama or "unknown",
+        split=split, extra_briefs_paths=tuple(configs / name for name in extra),
     )
     out = cfg.data_dir / "provenance" / f"{split}.json"
     out.parent.mkdir(parents=True, exist_ok=True)

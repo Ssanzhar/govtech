@@ -3170,3 +3170,540 @@ groups are masked only at a PII shape (16 / 12 / 10–11). `SCRUBBER_VERSION` 2 
 until the next corpus rebuild, which is the guard working as designed (D66 precedent). The shipped
 v1 model is not retrained for this: 1 of 1,880 training rows changes, and only inside a masked
 number.
+
+### D73 — Taxonomy v3: five more tactics, and the v3 retrain. PRE-REGISTRATION (2026-10-24)
+_Committed before any v3 model was trained and before `shift_local_4` was scored or read. The
+procedure is v2.1's (D63 v2.1 A4 above) with the changes listed here._
+
+**User decisions (2026-10-24).**
+1. "Let's improve. Also, let's widen the range of tactics we cover." v1 stays shipped and v2.1
+   stays frozen; neither is exported by this entry.
+2. Five new tactics, all chosen by the owner: `minor_targeting`, `blackmail_extortion`,
+   `survey_pretext`, `romance_trust`, `charity_appeal`. Evidence for the gap: keyword counts over
+   the 6,327 reports of `fraudlens-ru-v1` (CC-BY; 97 % Russia-grounded, so mechanism only):
+   children/teenagers 378 (phone 208), blackmail 191 (66), survey/poll 99 (46), romance 88 (41),
+   charity 38 (16). Voice-cloned relatives, SIM-contract expiry and marketplace "safe deal" were
+   already covered by schemes.
+3. The owner reviews every new RU / KK / EN name, example and advice line before any v3 export.
+   Until then they are marked DRAFT in `tactics.yaml`, `schemes.yaml`, `roles.yaml` and
+   `advice_{ru,kk,en}.yaml`.
+4. Gemini's prepaid credits are exhausted (402 RESOURCE_EXHAUSTED), so the planned Gemini run was
+   replaced by a second Claude run ("Claude only, double it").
+
+**Taxonomy v3** (6bb1965, 3e6f27c, 3a982de).
+- Label space `v3` = the 23 v2 ids + the five. Each new tactic has a legitimate twin
+  (`legit_child_call`, `legit_debt_notice`, `legit_survey`, `legit_partner_call`,
+  `legit_charity_call`), a scheme (`minor_targeted`, `blackmail`, `survey_data_harvest`,
+  `romance_scam`, `charity_fraud`) and advice. Two display-only roles: `pollster`, `charity_fund`.
+  The hard-signal cue block stays 5 columns and no lexicon is edited.
+- Masking: provenance records the label space of every row (legacy Gemini v1, every earlier grid
+  run v2, the two new runs v3). A row is unlabelled for every tactic a later space introduced.
+  On the v2.2 corpus this mask equals the D63 writer mask exactly; v2-era grids rebuild their
+  manifests identically (`v21_legit` up to its 37 recorded constraints).
+- A grid declares its label space (default v2) and may pin a class's callee (`class_personas`);
+  the minors scheme and its twin always get a child.
+
+**New data** (local-only; both QC pass).
+
+| QC | v3_claude | v3_claude_b |
+|---|---|---|
+| cells / accepted | 450 / 450 | 450 / 450 |
+| eval overlaps / near-dups / ROUGE-L flags | 0 / 0 / 0 | 0 / 0 / 0 |
+| scheme-rule agreement | 216/216 | 216/216 |
+| rows not a scrub fixed point (all `[NAME]`, scrubbed on fold) | 35 | 35 |
+| fingerprint AUC vs Gemini train, char / e5 | 0.9999 / 0.985 | 0.9998 / 0.984 |
+| role-slot recall | 0.53 | 0.51 |
+
+- Grids `configs/gen_grid_v3_claude{,_b}.yaml`: kk 0.40 / ru 0.30 / mixed 0.30, scam share 0.48,
+  the five v3 schemes at weight 8 (26–27 scams each per run), `mule_recruitment` 2.
+- 7 `v3_claude` cells pair "college student" with age 10–13 (band and occupation were drawn
+  apart); their writers wrote the callee as a young child. Kept. `v3_claude_b` pins school pupils.
+- Largest cross-run token Jaccard 0.304 (no pair ≥ 0.5).
+- **One writer family.** All v3 rows are Claude's. The five new heads see only v3 rows (every
+  earlier row is masked), so their positives and negatives share one style; the risk head keeps
+  the D63 balance (below).
+
+**Corpus.**
+- `build_corpus --gen-run pilot --gen-run p2 --gen-run v21_legit --gen-run v21_scam --gen-run
+  v3_claude --gen-run v3_claude_b --label-space v3 --processed-dir data/cache/processed_v3`.
+  Content hash **4fbc336362a7…f2e126b1**, scrubber v3.
+- **The v2.2 runs are left out.** They added no recall on `shift_local_3` (43 vs v2.1's 42) and
+  v2.2 failed A6 (a) and (c). That choice uses what `shift_local_3`, `ood` and A6 showed, which is
+  why the judge below is a new split.
+- Train 6,740 rows (kk 2,304 / ru 2,048 / mixed 1,774 / en 614); P(scam) Claude 2,342/4,860 =
+  0.482, Gemini 896/1,880 = 0.477. Val 585 (322 legit, 263 scam).
+- Calls carrying each v3 tactic (train incl. ASR copies / val): minor_targeting 96 / 6,
+  blackmail_extortion 92 / 6, survey_pretext 88 / 8, romance_trust 86 / 9, charity_appeal 94 / 5.
+
+**Trainer, operating point and freeze: v2.1's, unchanged.**
+- `QORGAN_LABEL_SPACE=v3 QORGAN_EMBED_BACKEND=device python -m qorgan.classifier.linear_train
+  --processed-dir data/cache/processed_v3 --out-dir models/linear_v3_device` on the device bridge.
+  `V2_MIN_OOF_POSITIVES` = 8 applies to every head; `_RISK_C` = 4.0; D30 thresholds.
+- enter = the lowest 0.01 step at which v3's validation FPs ≤ v1's on the v3 validation set at
+  0.59; exit = enter − 0.10.
+- The freeze commit records the sha256s, enter/exit and the validation table before the look.
+
+**The judge is `shift_local_4`.** 160 kk/ru calls (kk 96 / ru 64) by the local Qwen3.5-Kazakh
+model, plan seed 20261029, from the old briefs plus `configs/shift_local_briefs_v3.yaml` (15 scam
+briefs, three per v3 tactic, and 10 legitimate twins), disjoint from every earlier batch, never
+published. Nobody has read or scored it.
+
+**A5 / A6, all required; v1 stays on any fail.**
+- (a) FPR does not rise on the clean test / authored / ood subsets or on the styled copies.
+- (b) On `shift_local_4`, v3's false alarms ≤ v1's + 1, and v3's recall > v1's.
+- (c) Every new false alarm is an institutional look-alike, never a family or everyday call (the
+  child, partner and charity-of-a-parents'-committee twins count as family/everyday). Only those
+  rows are read, and they go into the inspection ledger.
+- After export: the browser gate with its assertions unchanged (tag-set Jaccard ≥ 0.9; v2.1's
+  0.899994 is a known risk, five more heads make it harder), the demo scenes, and the owner's
+  sign-off on the draft texts.
+- Reported, not criteria: v2.1 scored alongside; on `shift_local_4`, recall on the scams of the
+  v3 briefs for v1 / v2.1 / v3; per-tactic tag recall of the five new heads on those calls.
+  Nothing is re-tuned on what A5 shows.
+
+#### D73 — FREEZE: trained, operating point by rule (2026-10-24)
+_Committed before any held-out split is scored. Validation only, device embeddings, numbers from
+`scripts/taxonomy_v2_dryrun_eval.py` (`models/linear_v3_device/val_report.json`). Training ran as
+pre-registered: no rerun, 28 heads, none dropped, 5,254 train rows masked for at least one head.
+Out-of-fold positives of the new heads: minor_targeting 102, blackmail_extortion 98,
+survey_pretext 96, romance_trust 95, charity_appeal 99._
+
+**Frozen model** (`models/linear_v3_device`, sha256):
+- `risk_clf.joblib` 2892f7fff23d7174d419980c622b6b7cf9389145fd53f2b6b1be11793abb6506
+- `tactic_clf.joblib` 4cf905db60a16b813237a8a60b6a92987da325fd85dd7ee729e55271ad7631f5
+- `web/weights.json` b3bfef297bc91da616bb5725abb1b35172f9f34d185cbd8b6d3f9ed22f2a6666
+
+**Operating point (the rule).** v1 makes 7/322 validation FPs at 0.59, so **enter = 0.83,
+exit = 0.73**.
+
+| validation (device) | ROC-AUC / PR-AUC | FPR [95 % CP] | recall [95 % CP] |
+|---|---|---|---|
+| shipped v1 @ 0.59 | 0.837 / 0.831 | 7/322 = 0.022 [0.009, 0.044] | 101/263 = 0.384 [0.325, 0.446] |
+| v3 @ 0.59 (reference) | 0.955 / 0.957 | 25/322 = 0.078 [0.051, 0.113] | 233/263 = 0.886 [0.841, 0.922] |
+| **v3 @ 0.83 (rule)** | | **7/322 = 0.022 [0.009, 0.044]** | **187/263 = 0.711 [0.652, 0.765]** |
+
+At the rule point, as v1 → v3 (FPs; caught scams):
+
+| rows | FPs | caught scams |
+|---|---|---|
+| Claude kk | 1/89 → 0/89 | 11/82 → 48/82 |
+| Claude mixed | 0/54 → 1/54 | 10/56 → 29/56 |
+| Claude ru | 5/86 → 4/86 | 18/53 → 43/53 |
+| Claude en | 0/16 → 0/16 | 4/14 → 10/14 |
+| legacy Gemini | 1/77 → 2/77 | 58/58 → 57/58 |
+
+Validation per-tactic F1 of the new heads (labelled v3 rows only, support 5–9, so wide):
+minor_targeting 0.714, blackmail_extortion 0.667, survey_pretext 0.824, romance_trust 0.762,
+charity_appeal 0.462. mule_recruitment 0.718 (v2.1: 0.50).
+
+#### D73 — the one look: (b) passes, (a) and (c) FAIL; v1 stays (2026-10-24)
+_One run on device embeddings with the frozen weights of 96a1f64, each arm at its own point: v1
+0.59 / 0.49, v3 0.83 / 0.73, the frozen v2.1 0.82 / 0.72 (reference). Outputs in
+`models/linear_v3_device/a5/{v1,v3,v21}.{run,styled}.txt`, `*.neg_rows.json` and `*.v3_scams.json`
+(ids, risks and tag ids, no text). The first attempt stopped in a report-only script
+(`ScoreResult.tags`, not `tactic_tags`); the whole look was rerun unchanged and is deterministic._
+
+**The judge: `shift_local_4`** (159 calls, first look).
+
+| | FPR [95 % CP] | recall [95 % CP] | PR-AUC |
+|---|---|---|---|
+| v1 @ 0.59 | 0.063 [0.021, 0.142] | 0.412 [0.304, 0.528] | 0.825 |
+| **v3 @ 0.83** | **0.063 [0.021, 0.142]** | **0.688 [0.574, 0.787]** | 0.914 |
+| v2.1 @ 0.82 (ref.) | 0.063 [0.021, 0.142] | 0.562 [0.447, 0.673] | 0.901 |
+
+(b) passes: the same false alarms as v1, and recall 0.688 > 0.412.
+
+**(a) fails.**
+- test (clean): FPR 0.000 → 0.017, one new false alarm (`neg_family_money_request_en_8`).
+- ood styled copies: 1 → 2 false alarms (`ood_neg_legit_gov_service_kk_0`, the row that also failed v2.2).
+- authored and ood (clean) are unchanged at 0.
+
+**(c) fails.** v3's new false alarms against v1 include family and everyday calls, judged by
+their class ids: `neg_family_money_request_en_8` (test, 0.847), `aug_neg_family_money_request_ru_1`
+(test, inspected; the row that failed v2.2's (c), 0.899) and two general-conversation rows
+(`neg_general_conversation_mixed_21`, inspected, 0.966; `aug_neg_general_conversation_mixed_1`,
+styled, 0.845). The verdict does not depend on their text, so the three unread rows stay unread.
+
+**Report only: the v3 briefs' 30 scams on `shift_local_4`.**
+
+| caught | blackmail | charity | romance | survey | minors | total |
+|---|---|---|---|---|---|---|
+| v1 | 1/7 | 0/7 | 1/5 | 2/5 | 5/6 | 9/30 |
+| v2.1 | 4/7 | 1/7 | 0/5 | 1/5 | 6/6 | 12/30 |
+| v3 | 5/7 | 4/7 | 2/5 | 2/5 | 6/6 | 19/30 |
+
+v3's new tags on those calls: minor_targeting 4/6, romance_trust 3/5, charity_appeal 3/7,
+blackmail_extortion 1/7, survey_pretext 1/5.
+
+**Verdict.** v1 stays shipped; v3 stays frozen in `models/linear_v3_device`, not exported. Nothing
+is re-tuned on this look. `shift_local_4` has now been looked at once and cannot judge a retrain
+built after it.
+
+**What it shows.** v3 widens coverage (19/30 v3-brief scams vs v1's 9) and recall on the judge,
+but for the second time in a row (v2.2, v3) adding scam data pushes family money requests and
+everyday chat over the alert line at the rule point. The rule matches v1's validation FPs, and
+validation is mostly writer-matched rows, so it does not protect these classes. v2.1 remains the
+only retrain without such a false alarm.
+
+### D74 — v3.1: family and everyday hard negatives for the v3 retrain. PRE-REGISTRATION (2026-10-24)
+_Committed before any v3.1 model was trained and before `shift_local_5` was scored or read. The
+procedure is D73's with the changes listed here._
+
+**User decision (2026-10-24).** "Continue" after the D73 verdict, on the recommended option: keep
+the v3 data and add hard negatives for family money requests and everyday chat, with a fresh
+judge. v1 stays shipped; v2.1 and v3 stay frozen, not exported.
+
+**Why these classes.** v2.2 and v3 both failed A6 (c) on family money requests and general
+conversation (D73 one look). The class choice uses what A6 showed on test / ood — class ids only;
+no row text was read beyond the two rows already in the inspection ledger. So (a) and (c) on
+test / ood are no longer blind for these two classes; `shift_local_5` is.
+
+**New data: run `v31_claude`** (local-only; QC pass), `configs/gen_grid_v31_claude.yaml`, seed
+20261031, 800 cells, kk 320 / ru 240 / mixed 240, label space v3.
+- 436 legitimate: family_money_request 166, general_conversation 165, legit_child_call 35,
+  legit_partner_call 35, legit_charity_call 35. Every family and everyday cell carries one of 24
+  new briefs (12 per class), written after the judge briefs and kept apart from them and from
+  `v21_legit`'s; none was built from an evaluation row. 41 cells are look-alikes of
+  `relative_in_trouble`.
+- 364 scams, only the personal schemes those calls can be mistaken for: relative_in_trouble 101,
+  romance_scam 51, minor_targeted 51, charity_fraud 51, fake_boss 34, marketplace_seller_phish 34,
+  investment_broker 25, blackmail 17. Every other scheme has weight 0 in this run.
+- Scam share 0.455 keeps the Claude train block at the Gemini rate (D63 phase 2):
+  (1171 + 0.7 s) / (2430 + 0.7 · 800) = 0.4766 → s ≈ 357.
+- 16 Claude writer agents, two 25-cell chunks each, the D73 writer brief unchanged; every chunk
+  passed `gen check` on its first run.
+
+| QC (`data/synthetic/gen/v31_claude/qc_report.json`) | v31_claude |
+|---|---|
+| cells / accepted | 800 / 800 |
+| eval overlaps / near-dups / ROUGE-L flags | 0 / 0 / 0 |
+| scheme-rule agreement | 364/364 |
+| rows not a scrub fixed point (scrubbed on fold) | 36 |
+| cue-free scam share | 0.907 |
+| negatives containing a cue | 22 |
+| fingerprint AUC vs Gemini train, char / e5 | 0.9999 / 0.995 |
+| role-slot recall | 0.16 (most callers are private persons, no institutional role) |
+
+- Writers' notes: some scam rows annotate extra tactics the dialogue shows (allowed by the spec);
+  in 5 legitimate cells (`v31_claude_0442`, `_0539`, `_0570`, `_0634`, `_0635`) the writer changed
+  the relationship a brief names (e.g. "father") to fit the drawn callee's age and kept the
+  situation. Two writers produced their JSONL through a scratch script from hand-written text.
+  Kept.
+
+**Corpus.** `build_corpus --gen-run pilot --gen-run p2 --gen-run v21_legit --gen-run v21_scam
+--gen-run v3_claude --gen-run v3_claude_b --gen-run v31_claude --label-space v3 --processed-dir
+data/cache/processed_v31`. Content hash **8a10f6fea6e8…ae7** (`8a10f6fea6e801998237cbf720f11de185cd83fb50881d14fed825cc24afdae7`),
+scrubber v3.
+- Train 8,100 (3,868 scam / 4,232 legit; kk 2,846 / ru 2,456 / mixed 2,184 / en 614). P(scam)
+  Claude 2,972/6,220 = 0.4778, Gemini 896/1,880 = 0.4766.
+- Val 705 (312 scam / 393 legit). The new run adds 120 val rows: 26 family money requests,
+  26 general conversation, 19 child / partner / charity twins, 49 scams. Test and authored are
+  unchanged (143 / 42).
+
+**Trainer, operating point and freeze: D73's, unchanged.**
+- `QORGAN_LABEL_SPACE=v3 QORGAN_EMBED_BACKEND=device python -m qorgan.classifier.linear_train
+  --processed-dir data/cache/processed_v31 --out-dir models/linear_v31_device` on the device bridge.
+- enter = the lowest 0.01 step at which v3.1's validation FPs ≤ v1's on the v3.1 validation set at
+  0.59; exit = enter − 0.10.
+- The freeze commit records the sha256s, enter/exit and the validation table before the look.
+
+**The judge is `shift_local_5`.** 160 kk/ru calls (kk 96 / ru 64) by the local Qwen3.5-Kazakh
+model, plan seed 20261101, prefix sl5, from the `shift_local_4` briefs plus
+`configs/shift_local_briefs_v31.yaml` (12 legitimate family and everyday briefs), disjoint from
+every earlier batch, never published (`NEVER_PUBLISHED`, gitignored). Its build started before
+this entry; nobody has read or scored it.
+
+**A5 / A6, all required; v1 stays on any fail.** D73's, on the new judge:
+- (a) FPR does not rise on the clean test / authored / ood subsets or on the styled copies.
+- (b) On `shift_local_5`, v3.1's false alarms ≤ v1's + 1, and v3.1's recall > v1's.
+- (c) Every new false alarm is an institutional look-alike, never a family or everyday call (the
+  child, partner and charity-of-a-parents'-committee twins and every `shift_local_briefs_v31`
+  brief count as family/everyday). Only those rows are read, and they go into the inspection ledger.
+- After export: the browser gate with its assertions unchanged, the demo scenes, and the owner's
+  sign-off on the D73 draft texts.
+- Reported, not criteria: the frozen v3 (0.83 / 0.73) and v2.1 (0.82 / 0.72) scored alongside;
+  on `shift_local_5`, recall on the v3-brief scams for v1 / v2.1 / v3 / v3.1 and false alarms on
+  the `shift_local_briefs_v31` calls. Nothing is re-tuned on what A5 shows.
+
+#### D74 — FREEZE: trained, operating point by rule (2026-10-24)
+_Committed before any held-out split is scored and before `shift_local_5` is finished. Validation
+only, device embeddings, numbers from `scripts/taxonomy_v2_dryrun_eval.py`
+(`models/linear_v31_device/val_report.json`, `val_eval.log`). Training ran as pre-registered: no
+rerun, 28 heads, none dropped. Out-of-fold positives of the v3 heads: minor_targeting 197,
+blackmail_extortion 128, survey_pretext 96, romance_trust 192, charity_appeal 193;
+mule_recruitment 189._
+
+**Frozen model** (`models/linear_v31_device`, sha256):
+- `risk_clf.joblib` a56f371b12001b6a242303806187a13ed5a76c9d4dd29849b1df5b0e083b8644
+- `tactic_clf.joblib` b3a9e32a54b9cfb0960b2d3d4d6022ee8de2937f659f0d26e6e6d3eafa8fed90
+- `web/weights.json` 5d971fe427d3513ffc55988cec34c21adc40e6e61165a5994835af68981c94d5
+
+**Operating point (the rule).** v1 makes 10/393 validation FPs at 0.59, so **enter = 0.84,
+exit = 0.74**.
+
+| validation (device) | ROC-AUC / PR-AUC | FPR [95 % CP] | recall [95 % CP] |
+|---|---|---|---|
+| shipped v1 @ 0.59 | 0.828 / 0.808 | 10/393 = 0.025 [0.012, 0.046] | 106/312 = 0.340 [0.287, 0.395] |
+| v3.1 @ 0.59 (reference) | 0.957 / 0.957 | 33/393 = 0.084 [0.059, 0.116] | 276/312 = 0.885 [0.844, 0.918] |
+| **v3.1 @ 0.84 (rule)** | | **10/393 = 0.025 [0.012, 0.046]** | **225/312 = 0.721 [0.668, 0.770]** |
+
+At the rule point, v1 → v3.1 (FPs; caught scams):
+
+| rows | FPs | caught scams |
+|---|---|---|
+| Claude kk | 2/118 → 2/118 | 14/102 → 64/102 |
+| Claude mixed | 0/73 → 2/73 | 11/72 → 43/72 |
+| Claude ru | 7/109 → 4/109 | 19/66 → 52/66 |
+| Claude en | 0/16 → 0/16 | 4/14 → 9/14 |
+| legacy Gemini | 1/77 → 2/77 | 58/58 → 57/58 |
+
+Validation per-tactic F1 of the v3 heads (labelled v3 rows only, support 8–14):
+minor_targeting 0.560, blackmail_extortion 0.818, survey_pretext 0.889, romance_trust 0.897,
+charity_appeal 0.710; mule_recruitment 0.714.
+
+#### D74 — the one look: (b) passes, (a) and (c) FAIL again; v1 stays (2026-10-24)
+_One run on device embeddings with the frozen weights of dc16b7e, each arm at its own point: v1
+0.59 / 0.49, v3.1 0.84 / 0.74, and for reference the frozen v3 0.83 / 0.73 and v2.1 0.82 / 0.72.
+Outputs are in `models/linear_v31_device/a5/{v1,v31,v3,v21}.{run,styled}.txt`, `*.neg_rows.json`
+and `*.v3_scams.json` (ids, brief ids, risks and tag ids, no text). No row text was read for this
+look, so the inspection ledger is unchanged; the verdict rests on class ids and brief ids alone._
+
+**The judge: `shift_local_5`** (156 calls, 76 scam / 80 legit, first look).
+
+| | FPR [95 % CP] | recall [95 % CP] | PR-AUC |
+|---|---|---|---|
+| v1 @ 0.59 | 0.062 [0.021, 0.140] | 0.447 [0.333, 0.566] | 0.846 |
+| **v3.1 @ 0.84** | **0.050 [0.014, 0.123]** | **0.618 [0.500, 0.728]** | 0.927 |
+| v3 @ 0.83 (ref.) | 0.050 [0.014, 0.123] | 0.592 [0.473, 0.704] | 0.916 |
+| v2.1 @ 0.82 (ref.) | 0.050 [0.014, 0.123] | 0.539 [0.421, 0.655] | 0.911 |
+
+(b) passes: 4 false alarms against v1's 5, and recall 0.618 > 0.447.
+
+**(a) fails, and is worse than v3.**
+
+| v1 → v3.1 FPR | clean | styled |
+|---|---|---|
+| test | 0.000 → 0.050 (clean subset 0.000 → 0.017) | 0.000 → 0.033 |
+| authored_heldout | 0.000 → 0.000 | 0.000 → 0.000 |
+| ood | 0.000 → 0.027 (both rows already inspected) | 0.014 → 0.054 |
+
+**(c) fails.** v3.1's new false alarms against v1, by class or brief id:
+- **Family and everyday:**
+  - test: `neg_family_money_request_en_8` (0.879)
+  - test, inspected: `aug_neg_family_money_request_ru_1` (0.889) and `neg_general_conversation_mixed_21` (0.969)
+  - ood, inspected: `ood_neg_family_money_request_mixed_0` (0.848) and `ood_neg_general_conversation_ru_1` (0.957)
+  - ood, styled: `ood_neg_general_conversation_mixed_0` (0.840)
+  - test, styled: `aug_neg_general_conversation_mixed_1` (0.943)
+  - `shift_local_5`: `sl5_kk_legit_46`, from brief `l31_chat_neighbour_police` (0.963 clean), and `sl5_kk_legit_44`, from brief `l31_family_kaspi_red` (0.951 styled)
+- **Institutional:** `sl5_ru_legit_25` (`l_parcel_delivery`), plus the styled copies of `aug_neg_legit_gov_service_mixed_3`, `ood_neg_legit_gov_service_{kk_0,mixed_2}` and `ood_neg_delivery_notification_mixed_3`.
+
+**Report only.**
+- Of the 12 `shift_local_briefs_v31` brief calls (sl5), the arms alert on (clean or styled):
+  - v1: `l31_chat_scam_story`, `l31_chat_phone_help`
+  - v3.1, v3 and v2.1: the same two plus `l31_chat_neighbour_police` and `l31_family_kaspi_red`
+- The v3 briefs' 26 scams on `shift_local_5`:
+
+| caught | blackmail | charity | romance | survey | minors | total |
+|---|---|---|---|---|---|---|
+| v1 | 2/6 | 1/6 | 0/4 | 2/5 | 4/5 | 9/26 |
+| v2.1 | 3/6 | 1/6 | 1/4 | 2/5 | 5/5 | 12/26 |
+| v3 | 3/6 | 2/6 | 2/4 | 2/5 | 5/5 | 14/26 |
+| v3.1 | 4/6 | 3/6 | 2/4 | 2/5 | 5/5 | 16/26 |
+
+**Verdict.** v1 stays shipped. v3.1 stays frozen in `models/linear_v31_device` and is not exported.
+Nothing is re-tuned on this look, and `shift_local_5` cannot judge any retrain built after it.
+
+**What it shows.**
+- The family and everyday hard negatives did not work. 800 cells, 331 of them family or everyday,
+  left v3.1 with more family/everyday false alarms on test/ood than v3, not fewer. Recall on the
+  judge rose again, by 0.03.
+- The val-matched rule point is not the cause on its own: validation FPs were equal to v1's
+  (10/393), yet held-out family/everyday rows alert. More writer-matched hard negatives make
+  validation easier without moving the held-out family boundary.
+- Every retrain (v2.1, v3, v3.1) alerts on the same two `l31_*` everyday briefs as each other.
+- The next step needs a different lever, not more data of the same kind: for example, a gate
+  on caller role or an institutional cue for scores between the old and new points, or keeping
+  v1's risk head and adding only the new tactic heads. That needs its own ADR and a new judge.
+
+### D75 — a v1 + v3.1 risk ensemble. PRE-REGISTRATION (2026-10-24)
+_Committed before the ensemble was scored on any split (validation included) and before
+`shift_local_6` was generated._
+
+**User decision (2026-10-24).** After the D74 verdict, the user chose the recommended option
+"Ensemble v1 + v3.1" over "v1 risk + new tactic tags" and "park track A". v1 stays shipped until
+the ensemble passes; v2.1, v3 and v3.1 stay frozen, not exported.
+
+**Why.** Three retrains (v2.2, v3, v3.1) raised recall on the independent judges and each time
+made family money requests and everyday chat alert. v1 does not alert on those calls (D73, D74),
+and v3.1 catches the most scams. The two heads err on different calls, so their mean may keep
+most of v3.1's recall without its family and everyday false alarms.
+
+**The model: no new training.**
+- Risk = 0.5 · v1 + 0.5 · v3.1, both calibrated probabilities. The weight is fixed here, not
+  tuned. Both exported heads are "the mean over 3 calibrated CV members" and read the same
+  features (e5-base device embedding, cue matcher v2, hybrid-v1, identical embedded lexicons),
+  so the mix is the 6 members in one head.
+  - Built by `python -m qorgan.classifier.web_ensemble --base site/models/weights.json
+    --partner models/linear_v31_device/web/weights.json --out models/linear_v31e/web/weights.json`.
+    The module refuses heads whose inputs or member counts differ (`tests/classifier/test_web_ensemble.py`).
+  - `WebScorer` and `site/core/head.js` score that file unchanged, so the browser needs no code
+    change and parity holds by construction.
+  - Inputs, sha256: v1 `site/models/weights.json` f0659e7c1872e88c4104c1a7956ed540cf9e3fd126e82ba20809f73908a40bc5;
+    v3.1 `models/linear_v31_device/web/weights.json` 5d971fe427d3513ffc55988cec34c21adc40e6e61165a5994835af68981c94d5 (D74 freeze).
+  - Output: `models/linear_v31e/web/weights.json`, sha256 af82696cafbdbed9b89d976e9aaadb851f0f9e965604160cd1654e4672a739b9.
+- The tactic heads, their thresholds and the label space (v3, 28 heads) are v3.1's, unchanged.
+- It is served from the JSON (`QORGAN_LINEAR_WEIGHTS=web`, `QORGAN_WEB_WEIGHTS_PATH=` that file).
+
+**Operating point and freeze: D73's rule.**
+- enter = the lowest 0.01 step at which the ensemble's validation FPs ≤ v1's, both scored on
+  the v3.1 validation set (`data/cache/processed_v31`, 705 rows); exit = enter − 0.10.
+- Scored by `scripts/taxonomy_v2_dryrun_eval.py --model-dir models/linear_v31e/web/weights.json`;
+  the script now accepts a weights JSON.
+- The freeze commit records enter/exit and the validation table before the look.
+
+**What is NOT blind.**
+- The design was chosen after D74's look. Its per-row risks for v1 and v3.1 on test, authored,
+  ood and `shift_local_5` are on disk (`models/linear_v31_device/a5/*.neg_rows.json`), and the
+  ensemble's risk on those rows is their mean. So (a) and (c) on test / authored / ood are safety
+  checks here, not evidence. Nothing is computed from those files before the freeze.
+- `shift_local_6` is the only blind judge.
+
+**The judge is `shift_local_6`.** 160 kk/ru calls (kk 96 / ru 64) by the local Qwen3.5-Kazakh
+model, plan seed 20261103, prefix sl6. The fifth batch's briefs (21 slots from
+`shift_local_briefs_v31.yaml`, 80 scam slots). Disjoint from every earlier batch, never published.
+
+**A5 / A6, all required; v1 stays on any fail.** D74's, on the new judge:
+- (a) FPR does not rise on the clean test / authored / ood subsets or on the styled copies.
+- (b) On `shift_local_6`: the ensemble's false alarms ≤ v1's + 1, and its recall > v1's.
+- (c) Every new false alarm is an institutional look-alike, never a family or everyday call (the
+  twins and every `shift_local_briefs_v31` brief count as family/everyday). Only those rows are
+  read, and they go into the inspection ledger.
+- After export: the browser gate with its assertions unchanged, the demo scenes, and the owner's
+  sign-off on the D73 draft texts.
+- Reported, not criteria: v3.1 alone (0.84 / 0.74) and v1 alone on `shift_local_6`, recall on its
+  v3-brief scams, and the false alarms on its `shift_local_briefs_v31` calls. Nothing is re-tuned
+  on what A5 shows.
+
+#### D75 — FREEZE: operating point by rule (2026-10-24)
+_Validation only. No held-out split has been scored with the ensemble; `shift_local_6` is
+being generated._
+
+`QORGAN_LABEL_SPACE=v3 QORGAN_EMBED_BACKEND=device python scripts/taxonomy_v2_dryrun_eval.py
+--processed-dir data/cache/processed_v31 --model-dir models/linear_v31e/web/weights.json
+--baseline site/models/weights.json --out models/linear_v31e/val_report.json`, on cached device
+embeddings.
+
+**Operating point (the rule).** v1 makes 10/393 validation FPs at 0.59, so **enter = 0.66,
+exit = 0.56**. The fused file was then rebuilt with that point written into its `thresholds`
+(`web_ensemble --enter 0.66 --exit 0.56`). The risk head is unchanged by this.
+
+**Frozen model** `models/linear_v31e/web/weights.json`, sha256
+be546b6bda871a2b9d34eaaaa8a1917046d2d0750ae5a560203e353136c6a90c. It has 6 risk members (v1's 3
+and v3.1's 3, sources recorded in `risk_ensemble`), v3.1's 28 tactic heads and thresholds 0.66 / 0.66 / 0.56.
+
+| validation (device) | ROC-AUC / PR-AUC | FPR [95 % CP] | recall [95 % CP] |
+|---|---|---|---|
+| shipped v1 @ 0.59 | 0.828 / 0.808 | 10/393 = 0.025 [0.012, 0.046] | 106/312 = 0.340 [0.287, 0.395] |
+| ensemble @ 0.59 (reference) | 0.935 / 0.918 | 16/393 = 0.041 [0.023, 0.065] | 148/312 = 0.474 [0.418, 0.531] |
+| **ensemble @ 0.66 (rule)** | | **10/393 = 0.025 [0.012, 0.046]** | **127/312 = 0.407 [0.352, 0.464]** |
+| v3.1 alone @ 0.84 (D74) | 0.957 / 0.957 | 10/393 = 0.025 | 225/312 = 0.721 |
+
+At the rule point, v1 → ensemble (FPs; caught scams):
+
+| rows | FPs | caught scams |
+|---|---|---|
+| Claude kk | 2/118 → 2/118 | 14/102 → 21/102 |
+| Claude mixed | 0/73 → 2/73 | 11/72 → 12/72 |
+| Claude ru | 7/109 → 6/109 | 19/66 → 29/66 |
+| Claude en | 0/16 → 0/16 | 4/14 → 7/14 |
+| legacy Gemini | 1/77 → 0/77 | 58/58 → 58/58 |
+
+On validation the ensemble keeps much less of v3.1's recall than hoped: +21 scams over v1, against
+v3.1's +119. The tactic F1s are v3.1's (same head): minor_targeting 0.560, blackmail_extortion 0.818,
+survey_pretext 0.889, romance_trust 0.897, charity_appeal 0.710, mule_recruitment 0.714.
+
+#### D75 — the one look: (a) and (b) pass, (c) FAILS on two everyday calls; v1 stays (2026-10-24)
+_One run on device embeddings (bridge with 2 pages) with the frozen files of 15b510c: v1 0.59 / 0.49,
+the ensemble 0.66 / 0.56, and v3.1 alone at 0.84 / 0.74 for reference. Outputs are in
+`models/linear_v31e/a5/{v1,v31e,v31}.{run,styled}.txt`, `*.neg_rows.json` and `*.v3_scams.json`
+(ids, brief ids, risks and tag ids, no text). No row text was read, so the inspection ledger is unchanged._
+
+**The judge: `shift_local_6`** (157 calls, 78 scam / 79 legit, first look).
+
+| | FPR [95 % CP] | recall [95 % CP] | PR-AUC |
+|---|---|---|---|
+| v1 @ 0.59 | 0.025 [0.003, 0.088] | 0.436 [0.324, 0.553] | 0.833 |
+| **ensemble @ 0.66** | **0.013 [0.000, 0.069]** | **0.474 [0.360, 0.591]** | 0.910 |
+| v3.1 alone @ 0.84 (ref.) | 0.013 [0.000, 0.069] | 0.628 [0.511, 0.735] | 0.943 |
+
+(b) passes: 1 false alarm against v1's 2, and recall 0.474 > 0.436 (3 more scams caught).
+
+**(a) passes** for the first time since v2.1.
+
+| v1 → ensemble FPR | clean subset | styled copies |
+|---|---|---|
+| test | 0.000 → 0.000 | 0.000 → 0.000 |
+| authored_heldout | 0.000 → 0.000 | 0.000 → 0.000 |
+| ood | 0.000 → 0.000 | 0.014 → 0.000 |
+
+**(c) fails.** The ensemble's two new false alarms against v1 are both everyday calls:
+- `neg_general_conversation_mixed_21`: an inspected test row, so not in the clean subset; 0.754 clean. v3 and v3.1 also alerted on it.
+- `sl6_kk_legit_31`, from brief `l31_chat_phone_help`: its styled copy only (0.687; clean 0.585).
+
+Both arms alert on `sl6_ru_legit_27` (`l31_chat_scam_story`, two friends retelling a scam call),
+so it is not a new alarm. v1's own 0.59 alert on `sl6_kk_legit_08` (`l_bank_fraud_alert`) clears.
+
+**Report only.**
+- The v3 briefs' 31 scams on `shift_local_6`: v1 9/31, ensemble 11/31, v3.1 alone 19/31.
+- v3.1 alone has 12 new false alarms against v1 on test / ood / judge, the same family/everyday
+  pattern as D74.
+
+**Verdict.** v1 stays shipped. The ensemble is frozen in `models/linear_v31e`, not exported.
+Nothing is re-tuned on this look, and `shift_local_6` cannot judge anything built after it.
+
+**What it shows.**
+- Averaging v1 into v3.1 removes almost all of v3.1's family and everyday false alarms, from
+  12 new ones to 2, and for the first time a retrain passes (a). But it also gives back most of
+  v3.1's recall gain: +3 scams on the judge, against v3.1's +15.
+- The fixed 50/50 weight sits near the point where both effects cancel. A different weight would
+  have to be chosen on validation alone, and validation did not predict either D74 or this
+  result, so this look gives no basis for one.
+- The remaining everyday alarms are calls about scams or bank safety ("my neighbour was nearly
+  fooled", "never read SMS codes to anyone"). Every arm, v1 included, scores them high. They talk
+  about the scam vocabulary the risk head learns, which a different lever (a speaker-role or
+  narrative feature) would have to separate. That needs its own ADR.
+
+### D76 — track A is parked; v1 is the demo model; the headline is v1 on all six local judges (2026-10-25)
+
+**User decision (2026-10-25).** "Continue" after the D75 verdict, on the recommendation to park
+track A and move to the truth pass (PLAN_2026-10 track E) and deploy prep (track C).
+
+**What is parked.** Four retrains in a row (v2.2, v3, v3.1 and the v1 + v3.1 ensemble) beat v1's
+recall on their independent judges and failed A6 (c): family or everyday calls alerted each
+time. No new retrain is attempted before demo day.
+- The frozen candidates stay on the laptop, not exported: `models/linear_v21_device`,
+  `linear_v22_device`, `linear_v3_device`, `linear_v31_device`, `linear_v31e`.
+- The open lever is a feature that separates calls *about* scams ("my neighbour was nearly
+  fooled", "never read SMS codes to anyone") from calls that run one (D75). It needs its own ADR.
+
+**The headline number.** v1's weights (`site/models/weights.json`, last changed 2026-09-28 in
+e9917b2) predate every `shift_local*` batch (the first, 2026-10-10). Nothing was tuned on the
+batches for v1, so together they are one independent sample of 828 kk/ru calls.
+`QORGAN_CLASSIFIER_BACKEND=linear QORGAN_EMBED_BACKEND=device QORGAN_LINEAR_WEIGHTS=web python
+scripts/pooled_judges.py` (output `models/final_v1/pooled.txt`):
+
+| v1 @ 0.59, device embeddings | false alarms [95 % CP] | scams caught [95 % CP] | PR-AUC |
+|---|---|---|---|
+| **six local judges, kk + ru** | **22/417 = 0.053 [0.033, 0.079]** | **187/411 = 0.455 [0.406, 0.505]** | 0.852 |
+| Kazakh | 16/249 = 0.064 [0.037, 0.102] | 95/248 = 0.383 [0.322, 0.447] | 0.829 |
+| Russian | 6/168 = 0.036 [0.013, 0.076] | 92/163 = 0.564 [0.485, 0.642] | 0.885 |
+
+The per-split table from the same weights is in `models/final_v1/run.txt`. With the same
+generator as train (shared, so flattering): test 0.000 [0.000, 0.060] / 1.000; authored_heldout
+0.000 [0.000, 0.142] / 0.889; ood 0.000 [0.000, 0.049] / 0.932. `shift` (Claude-written, now
+validation-grade, D65): 0.000 [0.000, 0.106] / 0.455.
+
+**Where these go.** README, STATUS, `docs/eval_report.md`, `docs/PITCH_2MIN.md` and the HF cards
+quote this table and no other headline. The best retrain is reported as a measured result, not as a
+shipped one: v3.1 on `shift_local_5`, recall 0.447 → 0.618 at FPR 0.062 → 0.050, which failed on
+family false alarms (D74).

@@ -8,6 +8,8 @@
 # Version 2 (ADR D63, taxonomy v2): every tactic names the label space(s) it belongs to.
 #   v1 = the 15 ids the shipped heads were trained on (site/models/weights.json::label_space)
 #   v2 = 12 kept ids + 6 `imp_*` (replacing the three `impersonation_*`) + 5 new tactics
+#   v3 = v2 + 5 more tactics (ADR D73: minors, blackmail, survey pretext, romance, charity) and
+#        their 5 legitimate twins. Rows written before v3 are UNLABELLED for the five (masked).
 # `active_label_space` is what `Taxonomy.tactic_ids()` returns -- the space the classifier is
 # trained and evaluated on. It stays `v1` until the phase-2 retrain on v2-labelled data; that
 # retrain flips this one line. Retired v1 ids keep their names/advice so old reports, incidents
@@ -53,7 +55,7 @@ tactics:
     examples_kk: ["Нөміріңіз өшіріледі", "Қызмет көрсету шартын ұзарту қажет"]
 
   - id: urgency
-    label_spaces: [v1, v2]
+    label_spaces: [v1, v2, v3]
     ru: Искусственная срочность / давление временем
     kk: Жасанды жеделдік / уақытпен қысым
     en: Manufactured urgency / time pressure
@@ -63,7 +65,7 @@ tactics:
     examples_kk: ["Дәл қазір әрекет ету керек", "Сізде бес-ақ минут бар"]
 
   - id: fear_threat
-    label_spaces: [v1, v2]
+    label_spaces: [v1, v2, v3]
     ru: Запугивание (блокировка счёта, уголовное дело, утечка данных)
     kk: Қорқыту (шот бұғаттау, қылмыстық іс, дерек ағуы)
     en: Intimidation (account freeze, criminal case, data leak)
@@ -73,7 +75,7 @@ tactics:
     examples_kk: ["Ақшаңызға қауіп төніп тұр", "Растамасаңыз шот бұғатталады"]
 
   - id: secrecy
-    label_spaces: [v1, v2]
+    label_spaces: [v1, v2, v3]
     ru: Требование сохранять тайну ("никому не говорите")
     kk: Құпия сақтауды талап ету ("ешкімге айтпаңыз")
     en: Demands secrecy ("tell no one")
@@ -83,7 +85,7 @@ tactics:
     examples_kk: ["Ешкімге айтпаңыз, бұл құпия операция", "Банк қызметкерлеріне айтпаңыз"]
 
   - id: otp_request
-    label_spaces: [v1, v2]
+    label_spaces: [v1, v2, v3]
     ru: Просьба назвать код из SMS / push / приложения
     kk: SMS / push / қосымшадағы кодты сұрау
     en: Asks for the code from SMS / push / app
@@ -93,7 +95,7 @@ tactics:
     examples_kk: ["SMS-тегі кодты айтыңыз", "Push-хабарламадағы алты санды атаңыз"]
 
   - id: credentials_request
-    label_spaces: [v1, v2]
+    label_spaces: [v1, v2, v3]
     ru: Запрос реквизитов (номер карты, CVV, ИИН, логин/пароль)
     kk: Дерекқұжат сұрау (карта нөмірі, CVV, ЖСН, логин/құпиясөз)
     en: Asks for credentials (card number, CVV, IIN, login/password)
@@ -103,7 +105,7 @@ tactics:
     examples_kk: ["Карта нөмірі мен арт жағындағы үш санды айтыңыз", "ЖСН-іңізді айтыңыз"]
 
   - id: safe_account
-    label_spaces: [v1, v2]
+    label_spaces: [v1, v2, v3]
     ru: Перевод на "безопасный/резервный/страховой" счёт
     kk: Қауіпсіз/резервтік шотқа аудару
     en: Transfer to a "safe/reserve/insurance" account
@@ -113,7 +115,7 @@ tactics:
     examples_kk: ["Ақшаны қауіпсіз шотқа аударыңыз", "Бұл Ұлттық банктің резервтік шоты"]
 
   - id: payment_redirect
-    label_spaces: [v1, v2]
+    label_spaces: [v1, v2, v3]
     ru: Перевод/оплата через нестандартный канал (крипта, QR, терминал, перевод по номеру)
     kk: Стандартты емес арна арқылы төлеу (крипто, QR, терминал, нөмірге аудару)
     en: Payment via a non-standard channel (crypto, QR, terminal, transfer by number)
@@ -123,7 +125,7 @@ tactics:
     examples_kk: ["Терминал арқылы қолма-қол салыңыз", "Осы QR-код арқылы төлеңіз"]
 
   - id: remote_access
-    label_spaces: [v1, v2]
+    label_spaces: [v1, v2, v3]
     ru: Просьба установить приложение удалённого доступа (AnyDesk/TeamViewer)
     kk: Қашықтан қосылу қосымшасын орнатуды сұрау (AnyDesk/TeamViewer)
     en: Asks to install a remote-access app (AnyDesk/TeamViewer)
@@ -133,7 +135,7 @@ tactics:
     examples_kk: ["AnyDesk қосымшасын орнатыңыз", "Шотты қорғау бағдарламасын жүктеңіз"]
 
   - id: prize_lottery
-    label_spaces: [v1, v2]
+    label_spaces: [v1, v2, v3]
     ru: Выигрыш / компенсация / соцвыплата
     kk: Ұтыс / өтемақы / әлеуметтік төлем
     en: Prize / compensation / social payment
@@ -143,7 +145,7 @@ tactics:
     examples_kk: ["Сізге өтемақы тиесілі", "Сіз жүлде ұттыңыз, деректі растаңыз"]
 
   - id: investment_scam
-    label_spaces: [v1, v2]
+    label_spaces: [v1, v2, v3]
     ru: Инвестиции / трейдинг / гарантированный доход
     kk: Инвестиция / трейдинг / кепілді табыс
     en: Investment / trading / guaranteed returns
@@ -153,7 +155,7 @@ tactics:
     examples_kk: ["Айына 30% кепілді табыс", "Біздің талдаушы табыс табуға көмектеседі"]
 
   - id: mule_recruitment
-    label_spaces: [v1, v2]
+    label_spaces: [v1, v2, v3]
     ru: Вербовка дроппера ("подработка", "оформи карту/переведи деньги")
     kk: Дроппер жалдау ("қосымша табыс", "карта ашып бер/ақша аудар")
     en: Money-mule recruitment ("side job", "open a card / move money")
@@ -163,7 +165,7 @@ tactics:
     examples_kk: ["Оңай табыс, тек аударымды қабылда", "Сыйақыға өз атыңа карта аш"]
 
   - id: verification_ploy
-    label_spaces: [v1, v2]
+    label_spaces: [v1, v2, v3]
     ru: Ложное "подтверждение личности/операции"
     kk: Жалған "жеке басты/операцияны растау"
     en: Fake "identity or transaction confirmation"
@@ -178,7 +180,7 @@ tactics:
   # role ("Kaspi security", "ЦОН", "КГД") is Layer 2 (data/lexicon/roles.yaml), not a head.
 
   - id: imp_bank
-    label_spaces: [v2]
+    label_spaces: [v2, v3]
     ru: Выдаёт себя за банк / службу безопасности банка
     kk: Банк / банк қауіпсіздік қызметі атынан сөйлеу
     en: Poses as a bank / its security department
@@ -188,7 +190,7 @@ tactics:
     examples_kk: ["Бұл сіздің банкіңіздің қауіпсіздік қызметі", "Банктің несие бөлімінен хабарласып тұрмын"]
 
   - id: imp_law_enforcement
-    label_spaces: [v2]
+    label_spaces: [v2, v3]
     ru: Выдаёт себя за полицию / КНБ / прокуратуру / Антикор / суд
     kk: Полиция / ҰҚК / прокуратура / Антикор / сот атынан сөйлеу
     en: Poses as police / national security / prosecutor / anti-corruption / court
@@ -198,7 +200,7 @@ tactics:
     examples_kk: ["Сізді тергеуші мазалап тұр", "Мен ҰҚК қызметкерімін, сізге қатысты іс бар"]
 
   - id: imp_gov_service
-    label_spaces: [v2]
+    label_spaces: [v2, v3]
     ru: Выдаёт себя за госуслугу (eGov / ЦОН / КГД / пенсионный фонд / поликлиника)
     kk: Мемлекеттік қызмет атынан сөйлеу (eGov / ХҚКО / МКК / зейнетақы қоры / емхана)
     en: Poses as a public service (eGov / PSC / tax / pension fund / clinic)
@@ -208,7 +210,7 @@ tactics:
     examples_kk: ["ХҚКО-дан хабарласып тұрмын, ЭЦҚ мерзіміңіз бітіп жатыр", "Емханадан хабарласып тұрмыз, скринингке жазылдыңыз"]
 
   - id: imp_regulator
-    label_spaces: [v2]
+    label_spaces: [v2, v3]
     ru: Выдаёт себя за регулятора (Нацбанк / АРРФР / Антифрод-центр / АФМ)
     kk: Реттеуші орган атынан сөйлеу (Ұлттық банк / ҚНРДА / Антифрод орталығы / ҚМА)
     en: Poses as a regulator (National Bank / financial regulator / Antifraud Centre)
@@ -218,7 +220,7 @@ tactics:
     examples_kk: ["Ұлттық банктің Антифрод орталығынан хабарласып тұрмыз", "Дербес деректеріңіз ұрланды"]
 
   - id: imp_telecom_delivery_utility
-    label_spaces: [v2]
+    label_spaces: [v2, v3]
     ru: Выдаёт себя за оператора связи / почту / курьера / коммунальную службу
     kk: Байланыс операторы / пошта / курьер / коммуналдық қызмет атынан сөйлеу
     en: Poses as a telecom operator / post / courier / utility
@@ -228,7 +230,7 @@ tactics:
     examples_kk: ["Байланыс қызметтері шартының мерзімі аяқталды", "Сізге сәлемдеме келді"]
 
   - id: imp_personal
-    label_spaces: [v2]
+    label_spaces: [v2, v3]
     ru: Выдаёт себя за родственника / знакомого / руководителя
     kk: Туыс / таныс / басшы болып таныстыру
     en: Poses as a relative / friend / boss
@@ -240,7 +242,7 @@ tactics:
   # ---- v2: five new tactics ---------------------------------------------------------------
 
   - id: loan_inducement
-    label_spaces: [v2]
+    label_spaces: [v2, v3]
     ru: Склоняет оформить кредит («зеркальный / защитный кредит»)
     kk: Несие рәсімдеуге көндіру («айналы / қорғаныш несие»)
     en: Talks the victim into taking a loan ("mirror / protective loan")
@@ -250,7 +252,7 @@ tactics:
     examples_kk: ["Алаяқтардың өтінімін жабу үшін айналы несие рәсімдеу керек", "Несие мақұлданды, оны қорғалған шотқа аудару керек"]
 
   - id: cash_courier_handoff
-    label_spaces: [v2]
+    label_spaces: [v2, v3]
     ru: Передача наличных курьеру («задекларировать / сохранить наличные»)
     kk: Қолма-қол ақшаны курьерге беру («декларациялау / сақтау»)
     en: Cash handed to a courier ("declare / safeguard your cash")
@@ -260,7 +262,7 @@ tactics:
     examples_kk: ["Барлық қолма-қол ақшаны шешіп алыңыз, қызметкеріміз келіп алады", "Курьер кодтық сөзді айтады"]
 
   - id: refund_request
-    label_spaces: [v2]
+    label_spaces: [v2, v3]
     ru: Просьба вернуть «ошибочный перевод»
     kk: «Қате аударымды» қайтаруды сұрау
     en: Asks to return an "accidental transfer"
@@ -270,7 +272,7 @@ tactics:
     examples_kk: ["Сізге қателесіп ақша аударып жібердім, қайтарыңызшы", "Басқа картаға қайтарыңыз"]
 
   - id: task_advance_fee
-    label_spaces: [v2]
+    label_spaces: [v2, v3]
     ru: Подработка с «заданиями» и предоплатой
     kk: Алдын ала төлемі бар «тапсырмалы» жұмыс
     en: Paid "tasks" job that requires a deposit
@@ -280,7 +282,7 @@ tactics:
     examples_kk: ["Лайк басып табыс табасыз", "Табысты шығару үшін тапсырманы белсендіру жарнасын салу керек"]
 
   - id: callback_instruction
-    label_spaces: [v2]
+    label_spaces: [v2, v3]
     ru: Указание нажать кнопку или перезвонить на продиктованный номер
     kk: Батырманы басуды немесе айтылған нөмірге қайта хабарласуды нұсқау
     en: Tells the victim to press a key or call back a number the caller gives
@@ -289,6 +291,59 @@ tactics:
     examples_ru: ["Нажмите единицу, чтобы соединиться со специалистом", "Перезвоните по этому номеру, вас соединят со следователем"]
     examples_kk: ["Маманмен байланысу үшін бірді басыңыз", "Осы нөмірге қайта хабарласыңыз"]
 
+  # ---- v3 (ADR D73): five more tactics, grounded in fraudlens-ru-v1 mention counts ---------
+  # Names, descriptions and examples are DRAFTS pending the project owner's RU/KK review.
+
+  - id: minor_targeting
+    label_spaces: [v3]
+    ru: Обращается к ребёнку или подростку («не говори родителям»)
+    kk: Балаға немесе жасөспірімге жүгіну («ата-анаңа айтпа»)
+    en: Targets a child or teenager ("don't tell your parents")
+    description: Caller talks to a child or teenager and asks for a parent's card, codes or documents, sends them on "tasks", or tells them to leave home or hide the call from their parents.
+    hard_signal: false
+    examples_ru: ["Только родителям не говори, это сюрприз", "Принеси мамину карту и продиктуй цифры с обратной стороны"]
+    examples_kk: ["Ата-анаңа айтпа, бұл тосын сый", "Анаңның картасын әкеліп, артындағы сандарды айтып бер"]
+
+  - id: blackmail_extortion
+    label_spaces: [v3]
+    ru: Шантаж и вымогательство («заплатите, иначе опубликуем»)
+    kk: Бопсалау және ақша талап ету («төлемесеңіз, жариялаймыз»)
+    en: Blackmail / extortion ("pay or we publish it")
+    description: Threatens to publish compromising photos, videos or chats, to tell the family or employer, or to open a case unless the victim pays.
+    hard_signal: false
+    examples_ru: ["У нас есть ваши фото, заплатите, или их увидят все ваши контакты", "Дело можно закрыть, если сегодня внесёте сумму"]
+    examples_kk: ["Бізде сіздің суреттеріңіз бар, төлемесеңіз барлық контактілеріңіз көреді", "Бүгін ақша салсаңыз, істі жабуға болады"]
+
+  - id: survey_pretext
+    label_spaces: [v3]
+    ru: «Опрос» или «перепись» как повод выведать данные
+    kk: Деректерді білу үшін «сауалнама» немесе «санақ» сылтауы
+    en: A "survey" or "census" used to extract personal data
+    description: Caller runs a poll, census, rating or "quality check" that drifts into asking for the IIN, card details, the bank, codes or the family's details.
+    hard_signal: false
+    examples_ru: ["Мы проводим опрос, за участие начислим бонус, назовите ваш ИИН", "Это перепись, уточните, в каком банке у вас карта"]
+    examples_kk: ["Сауалнама жүргізіп жатырмыз, қатысқаныңыз үшін бонус береміз, ЖСН-іңізді айтыңыз", "Бұл санақ, картаңыз қай банкте екенін нақтылаңызшы"]
+
+  - id: romance_trust
+    label_spaces: [v3]
+    ru: Романтическое знакомство ради денег
+    kk: Ақша үшін романтикалық таныстық
+    en: A romance built up to ask for money
+    description: A new online acquaintance builds a romantic relationship and then needs money for a ticket, customs, treatment or a shared "investment".
+    hard_signal: false
+    examples_ru: ["Любимая, мне не хватает на билет, чтобы прилететь к тебе", "Посылку с подарком задержали на таможне, нужно оплатить пошлину"]
+    examples_kk: ["Жаным, саған ұшып келуге билетке ақшам жетпей тұр", "Сыйлығым бар сәлемдеме кеденде ұсталды, баж салығын төлеу керек"]
+
+  - id: charity_appeal
+    label_spaces: [v3]
+    ru: Сбор «пожертвований» от имени фонда или больного
+    kk: Қор немесе науқас атынан «қайырымдылық» жинау
+    en: Collects "donations" for a fund or a sick person
+    description: Caller collects donations for a sick child, disaster victims or a fund and asks for a transfer to a personal card or phone number, often with urgency.
+    hard_signal: false
+    examples_ru: ["Собираем на операцию ребёнку, переведите на эту карту, сколько не жалко", "Фонд помощи пострадавшим от паводка, переведите на номер куратора"]
+    examples_kk: ["Балаға отаға ақша жинап жатырмыз, осы картаға қанша болса да аударыңыз", "Су тасқынынан зардап шеккендерге көмек қоры, жетекшінің нөміріне аударыңыз"]
+
 # Negative / hard-negative categories — NOT scam. Used to balance the corpus and drive
 # down FPR. Labeled risk ≈ 0 with tactic_tags = []. Hard negatives look superficially
 # similar to scams (a real bank call, a relative asking for money) and are critical.
@@ -296,47 +351,69 @@ negatives:
   - id: legit_bank_call
     note: Real bank confirming a transaction WITHOUT asking for OTP/CVV or transfers.
     hard_negative: true
-    label_spaces: [v1, v2]
+    label_spaces: [v1, v2, v3]
   - id: family_money_request
     note: A relative genuinely asking for a transfer (urgency without scam tactics).
     hard_negative: true
-    label_spaces: [v1, v2]
+    label_spaces: [v1, v2, v3]
   - id: legit_gov_service
     note: Genuine e-gov / clinic / utility call (appointment, reminder).
     hard_negative: true
-    label_spaces: [v1, v2]
+    label_spaces: [v1, v2, v3]
   - id: delivery_notification
     note: Real delivery/courier coordination.
     hard_negative: false
-    label_spaces: [v1, v2]
+    label_spaces: [v1, v2, v3]
   - id: general_conversation
     note: Everyday KZ/RU/code-switch chit-chat.
     hard_negative: false
-    label_spaces: [v1, v2]
+    label_spaces: [v1, v2, v3]
   # v2 (ADR D63): the FPR guardrails for the v2 positives -- each is the legitimate twin of a
   # new scheme and is generated in the same registers, so a new tactic cannot be learnt from
   # "mentions a parcel / a refund / a loan" alone.
   - id: legit_delivery_code
     note: A real courier or post office asks for the code shown INSIDE the recipient's own app at hand-over (the twin of parcel_code).
     hard_negative: true
-    label_spaces: [v2]
+    label_spaces: [v2, v3]
   - id: legit_refund_request
     note: A person who really mistyped a transfer asks for it back and points to the bank's in-app return, never another card (the twin of erroneous_transfer).
     hard_negative: true
-    label_spaces: [v2]
+    label_spaces: [v2, v3]
   - id: legit_employer_request
     note: A real boss / HR / colleague asks for documents or a task with no money, codes or secrecy (the twin of fake_boss).
     hard_negative: true
-    label_spaces: [v2]
+    label_spaces: [v2, v3]
   - id: legit_clinic_appointment
     note: A real clinic reminds of or books a screening / appointment and asks for nothing (the twin of the clinic-code pretext).
     hard_negative: true
-    label_spaces: [v2]
+    label_spaces: [v2, v3]
   - id: legit_telecom_offer
     note: A real operator offers a tariff or renewal and sends the customer to the official app or shop (the twin of telecom_contract_expiry).
     hard_negative: true
-    label_spaces: [v2]
+    label_spaces: [v2, v3]
   - id: legit_utility_notice
     note: A real utility / housing company announces a meter check, outage or intercom upgrade and asks for nothing by phone.
     hard_negative: true
-    label_spaces: [v2]
+    label_spaces: [v2, v3]
+  # v3 (ADR D73): the FPR guardrails for the five v3 tactics, one legitimate twin each. DRAFT
+  # notes pending review, like the v3 tactics above.
+  - id: legit_child_call
+    note: A parent, teacher or coach calls a child about everyday matters and asks for no cards, codes, documents or secrecy from the other parent (the twin of minor_targeted).
+    hard_negative: true
+    label_spaces: [v3]
+  - id: legit_debt_notice
+    note: A real bank, collection agency or bailiff reminds of an actual debt and points to official channels (the bank app, eGov, the court's office); no threats to publish anything, no transfer to a person (the twin of blackmail).
+    hard_negative: true
+    label_spaces: [v3]
+  - id: legit_survey
+    note: A real pollster or statistics office asks opinion or household questions and never asks for the IIN, card, bank or codes (the twin of survey_data_harvest).
+    hard_negative: true
+    label_spaces: [v3]
+  - id: legit_partner_call
+    note: A real partner or date talks about plans, feelings or everyday costs; any money talk is ordinary, mutual and not urgent (the twin of romance_scam).
+    hard_negative: true
+    label_spaces: [v3]
+  - id: legit_charity_call
+    note: A registered charity calls a past donor, names itself and its official site, and asks nothing by phone beyond interest; never a personal card or pressure (the twin of charity_fraud).
+    hard_negative: true
+    label_spaces: [v3]

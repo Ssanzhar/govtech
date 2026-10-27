@@ -200,6 +200,7 @@ def build_corpus(
     label_space: str = "v1",
     review_decisions: Mapping[str, dict] | None = None,
     gen_writers: Mapping[str, str] | None = None,
+    gen_label_spaces: Mapping[str, str] | None = None,
 ) -> dict:
     """Assemble, clean, split, and persist the corpus; return the manifest.
 
@@ -283,7 +284,7 @@ def build_corpus(
     manifest["asr_style_fraction"] = active_asr_fraction
     manifest["adversarial_count"] = _copy_adversarial(cfg.data_dir / "adversarial", active_processed)
     if label_space != "v1" or generated_ids:
-        provenance = build_provenance(splits, generated_ids, label_space, gen_writers)
+        provenance = build_provenance(splits, generated_ids, label_space, gen_writers, gen_label_spaces)
         (active_processed / PROVENANCE_FILE).write_text(json.dumps(provenance, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
         manifest["label_space"] = label_space
         manifest["generator_balance"] = provenance["balance"]
@@ -299,16 +300,20 @@ _ASR_SUFFIX = "-asr"
 
 def build_provenance(
     splits: Mapping[str, Sequence[Dialogue]], generated_ids: set[str], label_space: str,
-    writers: Mapping[str, str] | None = None,
+    writers: Mapping[str, str] | None = None, label_spaces: Mapping[str, str] | None = None,
 ) -> dict:
     """Generator per train/val row (an `-asr` copy inherits its source's) and P(scam | generator)
     per split -- the style-confound check (ADR D63 phase 2). A generated row's generator is its
-    run's writer (`writers`, id -> writer; Claude when absent). Ids only, no text."""
-    from qorgan.data.gen.fold import GENERATOR_CLAUDE, GENERATOR_GEMINI
+    run's writer (`writers`, id -> writer; Claude when absent). `row_label_space` is the space each
+    row was labelled in (legacy corpus v1; a generated row its run's, `label_spaces`, else v2), which
+    the trainer masks by (ADR D73). Ids only, no text."""
+    from qorgan.data.gen.fold import DEFAULT_RUN_LABEL_SPACE, GENERATOR_CLAUDE, GENERATOR_GEMINI
 
     writers = writers or {}
+    label_spaces = label_spaces or {}
 
     generator: dict[str, str] = {}
+    row_label_space: dict[str, str] = {}
     balance: dict[str, dict] = {}
     for name in ("train", "val"):
         counts: dict[str, dict[str, int]] = {}
@@ -316,11 +321,12 @@ def build_provenance(
             base = d.id.removesuffix(_ASR_SUFFIX)
             source = writers.get(base, GENERATOR_CLAUDE) if base in generated_ids else GENERATOR_GEMINI
             generator[d.id] = source
+            row_label_space[d.id] = label_spaces.get(base, DEFAULT_RUN_LABEL_SPACE) if base in generated_ids else "v1"
             bucket = counts.setdefault(source, {"rows": 0, "scam": 0})
             bucket["rows"] += 1
             bucket["scam"] += int(d.label.is_scam)
         balance[name] = {g: {**c, "p_scam": round(c["scam"] / c["rows"], 4)} for g, c in sorted(counts.items())}
-    return {"label_space": label_space, "balance": balance, "generator": generator}
+    return {"label_space": label_space, "balance": balance, "generator": generator, "row_label_space": row_label_space}
 
 
 def _migrate_splits(splits, authored_heldout, label_space: str, decisions: Mapping[str, dict]):
@@ -329,7 +335,7 @@ def _migrate_splits(splits, authored_heldout, label_space: str, decisions: Mappi
     are never opened, ADR D35/D43)."""
     from qorgan.data.migrate_v2 import apply_review, migrate_dialogue
 
-    if label_space != "v2":
+    if label_space not in ("v2", "v3"):  # v3 = v2 + five ids no v1 tag maps to (ADR D73)
         raise ValueError(f"no migration to label space {label_space!r}")
 
     def migrate(rows):
@@ -375,27 +381,34 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
     parser.add_argument("--processed-dir", type=Path, default=None, help="Output dir (default data/processed)")
     parser.add_argument("--gen-run", action="append", default=[], help="QC'd generation run to fold in (repeatable, ADR D63)")
-    parser.add_argument("--label-space", default="v1", choices=("v1", "v2"), help="Label space of the written corpus")
+    parser.add_argument("--label-space", default="v1", choices=("v1", "v2", "v3"), help="Label space of the written corpus")
     args = parser.parse_args(argv)
 
     corpus_cfg = load_corpus_config(args.config)
     augment_dir = args.augment_dir or (get_config().data_dir / "augment")
     gen_dialogues: list[Dialogue] = []
     gen_writers: dict[str, str] = {}
+    gen_label_spaces: dict[str, str] = {}
     if args.gen_run:
         from qorgan.data.gen.__main__ import run_dir
         from qorgan.data.gen.fold import (
-            REVIEW_REJECTS, RUN_WRITERS, accepted_dialogues, load_review_rejects, load_run_writers, run_writer,
+            REVIEW_REJECTS, RUN_WRITERS, accepted_dialogues, load_review_rejects, load_run_label_spaces,
+            load_run_writers, run_label_space, run_writer,
         )
 
         rejected = load_review_rejects(get_config().repo_root / REVIEW_REJECTS)
         writers = load_run_writers(get_config().repo_root / RUN_WRITERS)
+        spaces = load_run_label_spaces(get_config().repo_root / RUN_WRITERS)
         for run in args.gen_run:
+            space = run_label_space(run, spaces)
+            if space == "v3" and args.label_space != "v3":
+                parser.error(f"run {run!r} is labelled in v3; build it with --label-space v3 (ADR D73)")
             run_rows = accepted_dialogues(run_dir(run), rejected=rejected)
             gen_dialogues += run_rows
             gen_writers.update({d.id: run_writer(run, writers) for d in run_rows})
+            gen_label_spaces.update({d.id: space for d in run_rows})
     decisions = None
-    if args.label_space == "v2":
+    if args.label_space in ("v2", "v3"):
         from qorgan.data.migrate_v2 import load_review_decisions
 
         decisions = load_review_decisions(get_config().repo_root / "data" / "taxonomy" / "migration_v2_review.json")
@@ -408,6 +421,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         label_space=args.label_space,
         review_decisions=decisions,
         gen_writers=gen_writers,
+        gen_label_spaces=gen_label_spaces,
     )
     print(json.dumps(manifest, ensure_ascii=False, indent=2))
 

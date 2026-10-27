@@ -6,7 +6,8 @@ Generated rows go to `train` or `val` by a seeded id hash and NEVER to `test`: t
 a model trained on Claude rows is built separately, from other generators (ADR D63 §3.2).
 Rows a person rejected on review (`REVIEW_REJECTS`, committed, with a reason) are dropped too.
 Each run has a writer (`RUN_WRITERS`, committed; default Claude). Every grid writer labels the
-v2 space, so only the legacy v1 corpus (`gemini`) is masked out of the new heads.
+v2 space, so only the legacy v1 corpus (`gemini`) is masked out of the new heads. A run written
+for v3 says so in the same file (`label_spaces`, ADR D73); unlisted runs are v2.
 """
 
 from __future__ import annotations
@@ -25,6 +26,8 @@ GENERATOR_CLAUDE = "claude"
 GENERATOR_GEMINI = "gemini"  # the legacy v1 corpus (generate.py), labelled for the v1 space only
 GENERATOR_GEMINI_GRID = "gemini_grid"  # Gemini writing grid chunk specs (D63 v2.2): v2 labels
 V2_LABELLED_GENERATORS: tuple[str, ...] = (GENERATOR_CLAUDE, GENERATOR_GEMINI_GRID)
+GRID_LABEL_SPACES: tuple[str, ...] = ("v2", "v3")  # the spaces a grid run can be labelled in
+DEFAULT_RUN_LABEL_SPACE = "v2"  # every run before ADR D73
 _HASH_BUCKETS = 1_000_000
 REVIEW_REJECTS = Path("configs") / "gen_review_rejects.yaml"
 RUN_WRITERS = Path("configs") / "gen_run_writers.yaml"
@@ -74,6 +77,21 @@ def load_run_writers(path: Path) -> dict[str, str]:
 
 def run_writer(run: str, writers: dict[str, str]) -> str:
     return writers.get(run, GENERATOR_CLAUDE)
+
+
+def load_run_label_spaces(path: Path) -> dict[str, str]:
+    """Run -> label space for runs NOT labelled in v2 (ADR D73; no file or key = all v2)."""
+    if not path.exists():
+        return {}
+    spaces = (yaml.safe_load(path.read_text(encoding="utf-8")) or {}).get("label_spaces") or {}
+    for run, space in spaces.items():
+        if space not in GRID_LABEL_SPACES:
+            raise ValueError(f"{path}: run {run!r} has label space {space!r}; expected one of {GRID_LABEL_SPACES}")
+    return {str(run): str(space) for run, space in spaces.items()}
+
+
+def run_label_space(run: str, spaces: dict[str, str]) -> str:
+    return spaces.get(run, DEFAULT_RUN_LABEL_SPACE)
 
 
 def accepted_dialogues(run_dir: Path, *, rejected: frozenset[str] = frozenset()) -> list[Dialogue]:

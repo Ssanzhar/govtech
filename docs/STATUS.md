@@ -5,6 +5,43 @@ day (what is shipped, the honest numbers, the strategy, who does what). Then rea
 (the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D70) and `docs/eval_report.md`
 (numbers, with intervals). The July sprint log below is kept as history._
 
+- **2026-10-25 — track A parked; truth pass (ADR D76, PLAN track E).**
+  - v1 is the demo model. The headline, quoted everywhere, is v1 on all six independent
+    `shift_local*` judges: 828 kk/ru calls, false alarms 22/417 = 0.053 [0.033, 0.079], scams
+    caught 187/411 = 0.455 [0.406, 0.505] (kk 0.383, ru 0.564). Source: `scripts/pooled_judges.py`.
+  - README, `docs/PITCH_2MIN.md`, `docs/eval_report.md` (new last addendum) and `docs/hf/*`
+    carry it. The pitch no longer claims "0 false alarms", which was a same-generator number.
+    The HF cards are edited locally only; uploading them needs the owner's approval.
+  - Tests: 1790 Python + 159 JS, green.
+- **2026-10-24 (night) — v1 + v3.1 risk ensemble judged, NOT shipped (ADR D75).**
+  - A 50/50 mix of the two risk heads (6 calibrated members in one browser weights file, no
+    browser code change), alert point 0.66 / 0.56 by the validation rule.
+  - On the new judge `shift_local_6` (157 calls) it has 1 false alarm against v1's 2 and
+    catches 37/78 scams against v1's 34. It passes (a): no FPR rise on clean test / authored /
+    ood or their styled copies.
+  - It fails (c): two everyday calls about scam safety alert (an inspected test row and the
+    styled copy of a judge call). v1 stays; the ensemble is frozen in `models/linear_v31e`.
+  - Lesson: the mix trades almost all of v3.1's recall for v1's calm. The calls left over talk
+    about scams rather than run one, so they need a different feature, not another weight.
+- **2026-10-24 (evening) — v3.1 trained, judged and NOT shipped (ADR D74).**
+  - The family/everyday hard-negative retrain. On the new judge `shift_local_5` (156 calls) it
+    has 4 false alarms against v1's 5 and catches 47/76 scams against v1's 34; on the v3 scenarios
+    it catches 16/26 against 9/26.
+  - It fails A6 (a) and (c), worse than v3: family money requests and everyday chat alert on
+    test, ood and the new `l31_*` briefs. v1 stays; v3.1 is frozen in `models/linear_v31_device`.
+  - Lesson: more writer-matched hard negatives do not move the held-out family boundary, so the
+    next attempt needs a different lever (see D74).
+- **2026-10-24 (later) — v3 trained, judged and NOT shipped (ADR D73).**
+  - On `shift_local_4` v3 keeps v1's false alarms (5/79) and catches 55/80 scams (v1 33/80);
+    on the v3 scenarios it catches 19/30 (v1 9/30).
+  - Fails A6 (a) and (c): a family money request and everyday chat now alert (test clean FPR
+    0 → 1, ood styled 1 → 2). Same failure as v2.2. v1 stays; v3 frozen in `models/linear_v3_device`.
+- **2026-10-24 — taxonomy v3 and its retrain, pre-registered (ADR D73).**
+  - Five new tactics chosen by the owner (minors, blackmail, survey pretext, romance, charity),
+    each with a legitimate twin, a scheme and DRAFT advice awaiting the owner's RU/KK review.
+  - 900 new Claude dialogues (Gemini credits exhausted; owner chose a second Claude run). Corpus
+    `processed_v3` (4fbc3363…). Judge: `shift_local_4`, 160 kk/ru calls, unread.
+  - v1 stays shipped; nothing is trained yet.
 - **2026-10-24 — scrubber v3: dictation over hesitations (ADR D72).**
   - An IIN or phone said with «эээ» / «...» in the middle was stored verbatim. Now it is masked
     (Python + JS, fixtures regenerated, `sw.js` → v13).

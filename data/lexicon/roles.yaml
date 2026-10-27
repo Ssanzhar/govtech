@@ -647,3 +647,34 @@ roles:
       - әскери комиссариат
       - enlistment office
       - draft office
+
+  # v3 (ADR D73): display-only roles for the survey and charity schemes. DRAFT pending review.
+  - id: pollster
+    imp_tactic: null
+    names:
+      ru: интервьюером социологической службы
+      kk: социологиялық қызмет сауалнамашысы
+      en: a pollster or census interviewer
+    cues:
+      - социологической службы
+      - социологический опрос
+      - центр изучения общественного мнения
+      - бюро национальной статистики
+      - социологиялық сауалнама
+      - ұлттық статистика бюросы
+      - polling company
+      - census bureau
+
+  - id: charity_fund
+    imp_tactic: null
+    names:
+      ru: представителем благотворительного фонда
+      kk: қайырымдылық қорының өкілі
+      en: a charity representative
+    cues:
+      - благотворительного фонда
+      - благотворительный фонд
+      - қайырымдылық қоры
+      - қайырымдылық қорынан
+      - charity foundation
+      - charitable fund
