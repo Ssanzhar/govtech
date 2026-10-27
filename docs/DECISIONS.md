@@ -3707,3 +3707,27 @@ validation-grade, D65): 0.000 [0.000, 0.106] / 0.455.
 quote this table and no other headline. The best retrain is reported as a measured result, not as a
 shipped one: v3.1 on `shift_local_5`, recall 0.447 → 0.618 at FPR 0.062 → 0.050, which failed on
 family false alarms (D74).
+
+### D77 — the GigaAM browser runtime is mirrored on our Hugging Face model repo (2026-10-27)
+
+**Context.** The deployed demo had no GigaAM endpoint pass: `deploy_bootstrap` installs the
+self-built single-threaded sherpa-onnx runtime (D64) only from a local build or a mirror
+(`QORGAN_SHERPA_WASM_URL`), and neither existed on Railway. So desktop voice fell back to the Vosk
+vote (WER kk 0.217 / ru 0.203 vs GigaAM 0.074 / 0.070) and the light mode (phones, WebView, D67)
+had no voice at all. PLAN item C1; the owner chose Hugging Face over a GitHub release.
+
+**Decision.** The three runtime files, built by `scripts/sherpa_wasm/build.sh` and matching the
+sha256 pins in `src/qorgan/asr/gigaam_web.py`, plus a NOTICE (build provenance, licences:
+sherpa-onnx Apache-2.0, ONNX Runtime MIT, Emscripten MIT/NCSA) are in `sanzh-ts/govtech` under
+`sherpa-onnx/1.13.8/`, commit f3297be1a042b7c6ed86f6c4d88ad563eadfea42. The deployment points at
+that **commit**, not `main`, so the URL cannot drift:
+
+    QORGAN_SHERPA_WASM_URL=https://huggingface.co/sanzh-ts/govtech/resolve/f3297be1a042b7c6ed86f6c4d88ad563eadfea42/sherpa-onnx/1.13.8
+
+**Evidence.** `ensure_sherpa_runtime(base_url=<that URL>)` into an empty directory downloaded and
+verified all three files. The runtime is still served from our own origin (the bootstrap copies it
+into `site/vendor/`), so the page never loads a live third-party script that sees microphone
+audio (D26 rule). The GigaAM model keeps coming from its own pinned HF revision (MIT).
+
+**Not changed.** Model cards, the dataset and the heads on HF are untouched; uploading them still
+needs the owner's approval.

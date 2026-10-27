@@ -5,6 +5,13 @@ day (what is shipped, the honest numbers, the strategy, who does what). Then rea
 (the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D70) and `docs/eval_report.md`
 (numbers, with intervals). The July sprint log below is kept as history._
 
+- **2026-10-27 — GigaAM runtime mirrored on HF; deploy pending one variable (ADR D77, PLAN C1).**
+  - The owner merged `feat/kkru-voice` (PR #17); Railway redeployed in ~4 min and serves `main`
+    (health: `linear`, 0.59, source `web`; weights sha f0659e7c…). Before this, `/models/gigaam/` was
+    404 on the demo: desktop voice used the Vosk vote, phones had no voice.
+  - The sherpa-onnx 1.13.8 runtime is now in `sanzh-ts/govtech` at commit f3297be1… and
+    hash-verified from there. **To do (owner, Railway):** set `QORGAN_SHERPA_WASM_URL` to the URL in
+    D77 / `.env.example`, redeploy, then check `/models/gigaam/` and the voice mode on the demo.
 - **2026-10-27 — phone-speed proxy for the light voice mode (PLAN C2 stand-in; no phone at hand).**
   - **Setup:** `tests_js/tools/e2e_voice_modes.mjs --mobile --warm`, isolation off (the WebView
     mode), the 4 demo scenes (`say` Milena/Aru + `cs_mix`). New `--ecores`: the renderer (page +
