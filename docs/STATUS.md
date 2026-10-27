@@ -5,6 +5,16 @@ day (what is shipped, the honest numbers, the strategy, who does what). Then rea
 (the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D70) and `docs/eval_report.md`
 (numbers, with intervals). The July sprint log below is kept as history._
 
+- **2026-10-27 — the slow-phone backlog was scoring, not speech recognition; fixed (ADR D78).**
+  - On efficiency cores a 16-phrase call fell further behind with every phrase (line delay 6.4 →
+    28.4 s) while GigaAM kept pace. Cause: each turn re-embedded every earlier utterance for the
+    evidence spans (phrase n = n+1 e5 runs). New `site/core/embed-cache.js` (exact: texts are
+    embedded one at a time) makes it 2 runs per turn: delay 6.2 s median / 8.1 s max, flat, with the
+    meter **bit-identical** at all 16 turns.
+  - `gigaam.js` now gives the worker one phrase at a time, so a queued phrase's timeout no
+    longer runs while it waits (light mode would have dropped it). Shell cache v14.
+  - Demo scenes on efficiency cores: 98 / 97 / 19 / 97, 22/22 phrases, unchanged; median line
+    delay 4.9–5.8 s (was 6.8–9.1). JS 171/171. A real phone (C2) is still the open number.
 - **2026-10-27 — GigaAM runtime mirrored on HF; deploy pending one variable (ADR D77, PLAN C1).**
   - The owner merged `feat/kkru-voice` (PR #17); Railway redeployed in ~4 min and serves `main`
     (health: `linear`, 0.59, source `web`; weights sha f0659e7c…). Before this, `/models/gigaam/` was

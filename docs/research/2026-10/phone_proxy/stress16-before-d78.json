@@ -1,0 +1,753 @@
+{
+ "label": "before",
+ "scene": "stress",
+ "base": "http://127.0.0.1:8410",
+ "warm_cache": true,
+ "mobile_webview_ua": true,
+ "cpu_throttle": 1,
+ "ecores": true,
+ "backgrounded_processes": 1,
+ "capture_at": 6033.0999999940395,
+ "listening_at": 6044.800000011921,
+ "cross_origin_isolated": false,
+ "mode": "light",
+ "mode_note": "mic.light_mode",
+ "audio_s": 82.412375,
+ "lines": [
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_scam_bank_ru_0.wav",
+   "start": 5,
+   "seconds": 4.0255625,
+   "speechStart": 5.000625,
+   "speechEnd": 9.000250000000001
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_scam_bank_ru_1.wav",
+   "start": 9.8255625,
+   "seconds": 4.0386875,
+   "speechStart": 9.8284375,
+   "speechEnd": 13.83925
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_scam_bank_ru_2.wav",
+   "start": 14.66425,
+   "seconds": 3.752375,
+   "speechStart": 14.667375,
+   "speechEnd": 18.3849375
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_scam_bank_ru_3.wav",
+   "start": 19.216625,
+   "seconds": 4.280625,
+   "speechStart": 19.2209375,
+   "speechEnd": 23.4753125
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_scam_bank_ru_4.wav",
+   "start": 24.29725,
+   "seconds": 3.52775,
+   "speechStart": 24.301812499999997,
+   "speechEnd": 27.794375
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_scam_bank_ru_5.wav",
+   "start": 28.625,
+   "seconds": 3.9904375,
+   "speechStart": 28.6325,
+   "speechEnd": 32.5860625
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_hard_negative_bank_ru_0.wav",
+   "start": 33.4154375,
+   "seconds": 4.0866875,
+   "speechStart": 33.417812500000004,
+   "speechEnd": 37.469437500000005
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_hard_negative_bank_ru_1.wav",
+   "start": 38.302125,
+   "seconds": 4.62875,
+   "speechStart": 38.3063125,
+   "speechEnd": 42.9048125
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_hard_negative_bank_ru_2.wav",
+   "start": 43.730875,
+   "seconds": 2.771375,
+   "speechStart": 43.73525,
+   "speechEnd": 46.477937499999996
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_hard_negative_bank_ru_3.wav",
+   "start": 47.30225,
+   "seconds": 5.8946875,
+   "speechStart": 47.3050625,
+   "speechEnd": 53.17125
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_scam_bank_ru_0.wav",
+   "start": 53.9969375,
+   "seconds": 4.0255625,
+   "speechStart": 53.9975625,
+   "speechEnd": 57.9971875
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_scam_bank_ru_1.wav",
+   "start": 58.8225,
+   "seconds": 4.0386875,
+   "speechStart": 58.825375,
+   "speechEnd": 62.836187499999994
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_scam_bank_ru_2.wav",
+   "start": 63.6611875,
+   "seconds": 3.752375,
+   "speechStart": 63.664312499999994,
+   "speechEnd": 67.381875
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_scam_bank_ru_3.wav",
+   "start": 68.2135625,
+   "seconds": 4.280625,
+   "speechStart": 68.21787499999999,
+   "speechEnd": 72.47224999999999
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_scam_bank_ru_4.wav",
+   "start": 73.2941875,
+   "seconds": 3.52775,
+   "speechStart": 73.29875000000001,
+   "speechEnd": 76.7913125
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_scam_bank_ru_5.wav",
+   "start": 77.6219375,
+   "seconds": 3.9904375,
+   "speechStart": 77.6294375,
+   "speechEnd": 81.583
+  }
+ ],
+ "listening_after_ms": 5891,
+ "gigaam": {
+  "status": "ready",
+  "loadMs": 2704.300000011921,
+  "fromCache": true,
+  "at": 5871
+ },
+ "rss_mb": {
+  "idle_page": {
+   "total": 313,
+   "browser": 82,
+   "gpu-process": 72,
+   "network.mojom.NetworkService": 41,
+   "renderer": 118
+  },
+  "listening": {
+   "total": 948,
+   "browser": 85,
+   "gpu-process": 64,
+   "network.mojom.NetworkService": 39,
+   "renderer": 705,
+   "audio.mojom.AudioService": 56
+  },
+  "end_of_audio": {
+   "total": 706,
+   "browser": 65,
+   "gpu-process": 43,
+   "network.mojom.NetworkService": 23,
+   "renderer": 533,
+   "audio.mojom.AudioService": 42
+  },
+  "peak_renderer": 752,
+  "peak_total": 915,
+  "median_renderer_in_call": 547,
+  "median_total_in_call": 724,
+  "renderer_per_second": [
+   397,
+   399,
+   400,
+   397,
+   397,
+   409,
+   410,
+   411,
+   411,
+   489,
+   520,
+   521,
+   531,
+   567,
+   694,
+   708,
+   708,
+   708,
+   709,
+   735,
+   752,
+   739,
+   712,
+   589,
+   630,
+   637,
+   681,
+   711,
+   716,
+   727,
+   729,
+   731,
+   732,
+   735,
+   737,
+   737,
+   476,
+   489,
+   469,
+   504,
+   505,
+   511,
+   512,
+   515,
+   517,
+   406,
+   420,
+   460,
+   461,
+   492,
+   501,
+   504,
+   561,
+   568,
+   571,
+   572,
+   573,
+   541,
+   543,
+   547,
+   547,
+   548,
+   549,
+   552,
+   552,
+   557,
+   558,
+   559,
+   560,
+   561,
+   561,
+   562,
+   564,
+   565,
+   565,
+   517,
+   507,
+   501,
+   378,
+   429,
+   455,
+   498,
+   493,
+   492,
+   498,
+   499,
+   531,
+   531,
+   532,
+   533
+  ]
+ },
+ "summary_score": "100 / 100",
+ "final_meter": 99.99718875799226,
+ "final_band": "critical",
+ "utterances": [
+  {
+   "seq": 0,
+   "text": "алло здравствуйте это служба безопасности вашего банка",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 4902.700000017881,
+   "latencyMs": 4919.4000000059605,
+   "meter": 49.63229558062118,
+   "band": "medium",
+   "at": 21458.30000001192,
+   "tags": "ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 1,
+   "text": "по вашей карте зафиксирована подозрительная операция на крупную сумму",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 4914.5,
+   "latencyMs": 4956.600000023842,
+   "meter": 74.79898658018163,
+   "band": "high",
+   "at": 26725,
+   "tags": "ru ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 2,
+   "text": "действовать нужно прямо сейчас у вас есть только пять минут",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 4443.9000000059605,
+   "latencyMs": 4895.0999999940395,
+   "meter": 87.37541982626281,
+   "band": "critical",
+   "at": 31542.90000000596,
+   "tags": "ru ru ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 3,
+   "text": "никому не говорите это секретная операция под контролем регулятора",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 5103.699999988079,
+   "latencyMs": 5105.800000011921,
+   "meter": 93.68340419063117,
+   "band": "critical",
+   "at": 37617.80000001192,
+   "tags": "ru ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 4,
+   "text": "продиктуйте код из смс чтобы мы отменили операцию",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 4506.5999999940395,
+   "latencyMs": 5302.700000017881,
+   "meter": 96.84167960162603,
+   "band": "critical",
+   "at": 42397,
+   "tags": "ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 5,
+   "text": "теперь переведите деньги на безопасный счет я продиктую реквизиты",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 4553.300000011921,
+   "latencyMs": 5072.5999999940395,
+   "meter": 98.42083972564453,
+   "band": "critical",
+   "at": 47986.09999999404,
+   "tags": "ru ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 6,
+   "text": "здравствуйте это оператор банка звоню по вашей заявке",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 5044.300000011921,
+   "latencyMs": 5269.0999999940395,
+   "meter": 99.21041902104247,
+   "band": "critical",
+   "at": 53385.59999999404,
+   "tags": "ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 7,
+   "text": "мы подтверждаем что перевод на пятнадцать тысяч тенге успешно проведен",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 5510.800000011921,
+   "latencyMs": 5512,
+   "meter": 99.60520762595638,
+   "band": "critical",
+   "at": 58584.19999998808,
+   "tags": "ru ru ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 8,
+   "text": "никакие коды и данные карты называть не нужно",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 2720.4000000059605,
+   "latencyMs": 4702.5,
+   "meter": 99.80257013516301,
+   "band": "critical",
+   "at": 62313.5,
+   "tags": "ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 9,
+   "text": "если вы не совершали эту операцию позвоните на официальный номер банка на обратной стороне карты",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 5770.300000011921,
+   "latencyMs": 5772.0999999940395,
+   "meter": 99.90113366906982,
+   "band": "critical",
+   "at": 71834.19999998808,
+   "tags": "ru ru ru ru ru ru ru ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 10,
+   "text": "алло здравствуйте это служба безопасности вашего банка",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 5153.9000000059605,
+   "latencyMs": 6145.899999976158,
+   "meter": 99.95017588390732,
+   "band": "critical",
+   "at": 78384.90000000596,
+   "tags": "ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 11,
+   "text": "по вашей карте зафиксирована подозрительная операция на крупную сумму",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 4907.5,
+   "latencyMs": 6224.0999999940395,
+   "meter": 99.97497344920694,
+   "band": "critical",
+   "at": 85525.69999998808,
+   "tags": "ru ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 12,
+   "text": "действовать нужно прямо сейчас у вас есть только пять минут",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 4789.799999982119,
+   "latencyMs": 6464.200000017881,
+   "meter": 99.98681845964093,
+   "band": "critical",
+   "at": 92241.69999998808,
+   "tags": "ru ru ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 13,
+   "text": "никому не говорите это секретная операция под контролем регулятора",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 5276.299999982119,
+   "latencyMs": 6631.5999999940395,
+   "meter": 99.99240401822148,
+   "band": "critical",
+   "at": 99372.59999999404,
+   "tags": "ru ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 14,
+   "text": "продиктуйте код из смс чтобы мы отменили операцию",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 4288.700000017881,
+   "latencyMs": 6596.4000000059605,
+   "meter": 99.99560989727576,
+   "band": "critical",
+   "at": 108053.30000001192,
+   "tags": "ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 15,
+   "text": "теперь переведите деньги на безопасный счет я продиктую реквизиты",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 3820.9000000059605,
+   "latencyMs": 5633.799999982119,
+   "meter": 99.99718875799226,
+   "band": "critical",
+   "at": 115968.40000000596,
+   "tags": "ru ru ru ru ru ru ru ru ru"
+  }
+ ],
+ "line_latency_ms": [
+  6424.95000001788,
+  6852.6500000059605,
+  7124.862500011921,
+  8109.387500017881,
+  8569.52500000596,
+  9366.9375,
+  9883.062499999993,
+  9646.28749999404,
+  9802.462500005968,
+  12629.84999999404,
+  14354.612500011921,
+  16656.41249999404,
+  18826.72499999404,
+  20867.250000000015,
+  25228.88750001788,
+  28352.30000001192
+ ],
+ "latency_ms": {
+  "n": 16,
+  "median": 9883,
+  "max": 28352
+ },
+ "decode_ms": {
+  "n": 16,
+  "median": 4908,
+  "max": 5770
+ },
+ "segmentation": {
+  "reference_lines": 16,
+  "segments": 16,
+  "lines_found": 16,
+  "lines_split": 0,
+  "segments_merging_lines": 0,
+  "spurious_segments": 0,
+  "one_to_one": 16,
+  "start_error_ms": {
+   "n": 16,
+   "median": 143,
+   "max": 166
+  },
+  "end_error_ms": {
+   "n": 16,
+   "median": 17,
+   "max": 37
+  },
+  "cuts": [
+   "pause",
+   "pause",
+   "pause",
+   "pause",
+   "pause",
+   "pause",
+   "pause",
+   "pause",
+   "pause",
+   "pause",
+   "pause",
+   "pause",
+   "pause",
+   "pause",
+   "pause",
+   "pause"
+  ]
+ },
+ "vad_close_after_speech_ms": {
+  "n": 16,
+  "median": 649,
+  "max": 684
+ },
+ "segments": [
+  {
+   "start": 4.84170000001788,
+   "end": 9.011700000017882,
+   "cut": "pause",
+   "closedAfterSpeechMs": 645,
+   "wallAt": 15678.300000011921
+  },
+  {
+   "start": 9.671700000017882,
+   "end": 13.871700000017881,
+   "cut": "pause",
+   "closedAfterSpeechMs": 676,
+   "wallAt": 20548
+  },
+  {
+   "start": 14.531700000017882,
+   "end": 18.401700000017883,
+   "cut": "pause",
+   "closedAfterSpeechMs": 640,
+   "wallAt": 25057.90000000596
+  },
+  {
+   "start": 19.091700000017884,
+   "end": 23.50170000001788,
+   "cut": "pause",
+   "closedAfterSpeechMs": 660,
+   "wallAt": 30168.90000000596
+  },
+  {
+   "start": 24.161700000017884,
+   "end": 27.82170000001788,
+   "cut": "pause",
+   "closedAfterSpeechMs": 651,
+   "wallAt": 34478.69999998808
+  },
+  {
+   "start": 28.48170000001788,
+   "end": 32.59170000001788,
+   "cut": "pause",
+   "closedAfterSpeechMs": 649,
+   "wallAt": 39268
+  },
+  {
+   "start": 33.281700000017885,
+   "end": 37.48170000001788,
+   "cut": "pause",
+   "closedAfterSpeechMs": 636,
+   "wallAt": 44138.09999999404
+  },
+  {
+   "start": 38.17170000001788,
+   "end": 42.94170000001788,
+   "cut": "pause",
+   "closedAfterSpeechMs": 680,
+   "wallAt": 49618.19999998808
+  },
+  {
+   "start": 43.60170000001788,
+   "end": 46.48170000001788,
+   "cut": "pause",
+   "closedAfterSpeechMs": 638,
+   "wallAt": 53148.69999998808
+  },
+  {
+   "start": 47.17170000001788,
+   "end": 53.20170000001788,
+   "cut": "pause",
+   "closedAfterSpeechMs": 684,
+   "wallAt": 59888.30000001192
+  },
+  {
+   "start": 53.86170000001788,
+   "end": 58.00170000001788,
+   "cut": "pause",
+   "closedAfterSpeechMs": 638,
+   "wallAt": 64668.30000001192
+  },
+  {
+   "start": 58.66170000001788,
+   "end": 62.83170000001788,
+   "cut": "pause",
+   "closedAfterSpeechMs": 629,
+   "wallAt": 69497.90000000596
+  },
+  {
+   "start": 63.52170000001788,
+   "end": 67.39170000001788,
+   "cut": "pause",
+   "closedAfterSpeechMs": 633,
+   "wallAt": 74048.09999999404
+  },
+  {
+   "start": 68.05170000001787,
+   "end": 72.49170000001789,
+   "cut": "pause",
+   "closedAfterSpeechMs": 652,
+   "wallAt": 79157.80000001192
+  },
+  {
+   "start": 73.15170000001787,
+   "end": 76.81170000001788,
+   "cut": "pause",
+   "closedAfterSpeechMs": 657,
+   "wallAt": 83481.90000000596
+  },
+  {
+   "start": 77.47170000001788,
+   "end": 81.58170000001788,
+   "cut": "pause",
+   "closedAfterSpeechMs": 649,
+   "wallAt": 88265.40000000596
+  }
+ ],
+ "dropped": [],
+ "errors": []
+}

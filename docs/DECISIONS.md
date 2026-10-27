@@ -3731,3 +3731,51 @@ audio (D26 rule). The GigaAM model keeps coming from its own pinned HF revision 
 
 **Not changed.** Model cards, the dataset and the heads on HF are untouched; uploading them still
 needs the owner's approval.
+
+### D78 — a live call no longer re-embeds every earlier utterance; GigaAM phrases go to the worker one at a time (2026-10-27)
+
+**Context.** The phone-speed proxy (D77's STATUS entry: renderers on the M4's efficiency cores,
+light voice mode) showed the line + meter appearing 6.8–9.1 s (median) after a phrase, with the
+delay growing through the call. A 16-phrase scene (the RU scam, the real bank call and the RU scam
+again, 0.8 s pauses) located it: GigaAM kept pace (5–6.6 s from the phrase closing to its text), but
+the line on screen fell further behind with every phrase, 6.4 s → 28.4 s. The cause is scoring:
+`score.js` embeds the rolling window **and every utterance in it** (the evidence spans) at every
+turn, so phrase n cost n+1 e5 runs and the work per phrase grew with the call. Separately,
+`gigaam.js` started each phrase's timeout when the phrase was posted, but the single-threaded worker
+decodes one at a time, so a phrase waiting in a queue spent its timeout waiting, and light mode
+drops a timed-out phrase. That drop never happened in these runs, but it would on a phone slower
+than real time.
+
+**Decision.**
+1. `site/core/embed-cache.js`: a bounded (256 texts, LRU) in-memory cache in front of the
+   embedder, wired in `device.js`. The worker embeds texts one at a time, never batched
+   (`embed-worker.js`, because int8 activation scales span the batch), so a vector depends only on
+   its text and a cached row equals a fresh one. A turn now costs 2 e5 runs (window + the new
+   utterance) at any call length. Never persisted; the texts are already in the page as the
+   transcript.
+2. `site/core/gigaam.js`: the client holds the queue and gives the worker the next phrase only
+   after the previous answer, so a phrase's timeout (unchanged: 4 s + 2 s per audio second) counts
+   its own decode only. `backlog` reports the phrases waiting.
+3. Service worker shell cache `qorgan-shell-v14` (new module in the precache list).
+
+No model, threshold, meter or Python change: this is a cache and a scheduler, not a decision
+rule.
+
+**Evidence** (`docs/research/2026-10/phone_proxy/`, Chromium, light mode, `--mobile --warm
+--ecores`):
+
+| run | lines found | meter path | line delay median / max |
+|---|---|---|---|
+| 16-phrase stress, before | 16/16 | — | 9.9 / 28.4 s (growing) |
+| 16-phrase stress, after | 16/16 | **bit-identical at all 16 turns**, same 16 texts | 6.2 / 8.1 s (flat) |
+| demo scenes RU / KK / cs_mix, after | 6/6, 5/5, 7/7 | final 98 / 97 / 97 (unchanged) | 5.3 / 5.1 / 4.9 s median (was 6.8 / 8.9 / 8.8) |
+| real bank call (RU), after | 4/4 | final 19 (unchanged) | 11.5 s, rerun 5.8 s (was 9.1) |
+
+The bank-call scene's first run had slow GigaAM decodes (4.1–7.5 s, three of four above 5.7 s, vs 2.9–5.0 s on the rerun); with
+fewer e5 runs this change can only remove CPU work, so that run is read as efficiency-core noise.
+Both runs are kept (`ecores-d78-*`, `ecores-d78-rerun-*`). GigaAM also got faster (stress median
+4.9 → 3.7 s) because e5 no longer competes with it for the CPU. JS tests: `embed-cache.test.mjs`
+(7) and `gigaam-client.test.mjs` (5), 171/171 overall.
+
+**Not changed.** On a phone slower than real time GigaAM still falls behind; that needs a
+real-phone number (PLAN C2) before any further step. The proxy is still a stand-in for a phone.

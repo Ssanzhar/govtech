@@ -3,6 +3,7 @@
    embedding worker, and exposes analyze()/session APIs built on the pure core modules.
    The only network traffic is fetching these static files (cached by the service worker). */
 
+import { cachedEmbed } from "./embed-cache.js";
 import { createWorkerEmbedder } from "./embedder.js";
 import { explain } from "./explain.js";
 import { createScorer } from "./score.js";
@@ -15,7 +16,8 @@ const WEIGHTS_URL = new URL("../models/weights.json", import.meta.url);
 export async function createDeviceRuntime({ onProgress } = {}) {
   const [config, weights] = await Promise.all([fetchJson(CONFIG_URL), fetchJson(WEIGHTS_URL)]);
   const embedder = createWorkerEmbedder({ onProgress, embedder: config.embedder });
-  const score = createScorer({ weights, config, embed: embedder.embed });
+  // Cached: a live turn re-embeds every earlier utterance for its evidence spans (ADR D78).
+  const score = createScorer({ weights, config, embed: cachedEmbed(embedder.embed) });
 
   return {
     config,
