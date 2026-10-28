@@ -3779,3 +3779,26 @@ Both runs are kept (`ecores-d78-*`, `ecores-d78-rerun-*`). GigaAM also got faste
 
 **Not changed.** On a phone slower than real time GigaAM still falls behind; that needs a
 real-phone number (PLAN C2) before any further step. The proxy is still a stand-in for a phone.
+
+### D79 — the GigaAM runtime mirror is a Docker build argument, pinned by default (2026-10-28)
+
+**Context.** After D77 the live demo still showed "Accurate phrase recognition is unavailable —
+using the quick transcript": `/vendor/sherpa-onnx/1.13.8/*` and `/models/gigaam/…` were 404. The
+runtime and model are fetched by `deploy_bootstrap.py` in the Dockerfile's **build** step, and the
+Dockerfile declared no `ARG QORGAN_SHERPA_WASM_URL`. A Railway service variable therefore never
+reached that step: D77's instruction ("set the variable on Railway and redeploy") could not work.
+
+**Decision.** The runtime stage declares
+`ARG QORGAN_SHERPA_WASM_URL=<the D77 commit-pinned HF URL>` right before the bootstrap `RUN`. Every
+build gets the runtime with no platform setting, and the files stay sha256-checked against
+`src/qorgan/asr/gigaam_web.py`. `--build-arg QORGAN_SHERPA_WASM_URL=` (empty) builds without it,
+and the page then falls back to the Vosk vote as before. `tests/test_dockerfile_portability.py` pins
+the ARG's place and its commit-pinned form. The Railway variable from D77 is not needed (it is
+harmless if set).
+
+**Evidence.** `ensure_sherpa_runtime(base_url=<default>)` into an empty directory: 3/3 files
+downloaded and verified. The GigaAM model and tokens at the pinned revision answer 200. The image
+was not built locally (Docker is not running on the dev Mac); the live check after the next deploy
+is `/vendor/sherpa-onnx/1.13.8/sherpa-onnx-asr.js` and
+`/models/gigaam/gigaam-multilingual-220m-ctc-int8/tokens.txt` → 200. The image grows by about
+240 MB (runtime 14 MB + model 225 MB).
