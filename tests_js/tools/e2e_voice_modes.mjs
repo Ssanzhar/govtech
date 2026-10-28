@@ -7,6 +7,7 @@
      node tests_js/tools/static_site.mjs --isolation on  --port 8411 &
      node tests_js/tools/e2e_voice_modes.mjs --base http://127.0.0.1:8410 --label light --out DIR \
           --scene NAME=a.wav,b.wav [--scene ...] [--gap 1.2] [--lead 5] [--voice full|light] [--warm] [--mobile]
+          [--cpu-throttle N] [--ecores]
 
    One WAV = one reference utterance. Per scene it writes DIR/<label>-<scene>.json with: the
    mode the page chose and `crossOriginIsolated`; every final utterance (text, source, meter);
@@ -16,12 +17,17 @@
    resident memory sampled every second (peak and end of audio, by process type; dedicated
    workers live in the renderer). Plus two screenshots. Timing caveat: file time 0 is taken as
    the moment getUserMedia resolved (Chromium starts the fake file then), so absolute times
-   carry the page's start-up jitter (tens of ms). */
+   carry the page's start-up jitter (tens of ms).
+
+   Phone-speed proxies (no phone at hand): `--cpu-throttle N` asks Chromium to run the page N times
+   slower (CDP Emulation.setCPUThrottlingRate on the page target; whether it reaches the workers
+   that run GigaAM and e5 shows in `decode_ms`), and `--ecores` moves the renderer processes to
+   the efficiency cores (macOS `taskpolicy -b`). Both are stand-ins, not a phone. */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { chromium } from "playwright";
-import { joinWavs, processTreeRssMb } from "./voice_e2e_lib.mjs";
+import { backgroundProcessTree, joinWavs, processTreeRssMb } from "./voice_e2e_lib.mjs";
 
 const args = process.argv.slice(2);
 const opt = (name, fallback) => { const i = args.indexOf(name); return i > -1 ? args[i + 1] : fallback; };
@@ -33,6 +39,9 @@ const WARM = args.includes("--warm"); // measure a second visit (models already 
 // `--mobile`: a phone viewport and an Android System WebView user agent ("; wv"), so the page's
 // own phone checks see what eGov Mobile's WebView reports. Still desktop Chromium underneath.
 const MOBILE = args.includes("--mobile");
+const CPU_THROTTLE = Number(opt("--cpu-throttle", "1"));
+const ECORES = args.includes("--ecores");
+if (!(CPU_THROTTLE >= 1)) throw new Error("--cpu-throttle takes a rate >= 1");
 const WEBVIEW_UA = "Mozilla/5.0 (Linux; Android 14; Pixel 7 Build/AP2A.240805.005; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/141.0.0.0 Mobile Safari/537.36";
 const GAP_S = Number(opt("--gap", "1.2"));
 const LEAD_S = Number(opt("--lead", "5"));
@@ -107,14 +116,23 @@ async function runScene(scene) {
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(`${BASE}/live.html?debug=asr${VOICE ? `&voice=${VOICE}` : ""}`);
+  if (CPU_THROTTLE > 1) await (await context.newCDPSession(page)).send("Emulation.setCPUThrottlingRate", { rate: CPU_THROTTLE });
+  const backgrounded = new Set();
+  const toEcores = () => (ECORES ? backgroundProcessTree(userDataDir, backgrounded) : 0);
+  toEcores();
   const isolated = await page.evaluate(() => globalThis.crossOriginIsolated === true);
   const rssIdle = await rss();
   await page.locator('label:has(input[name="lv-mode"][value="mic"])').click();
   const clicked = Date.now();
   await page.click("#lvMicStart");
+  const ecoreTimer = ECORES ? setInterval(toEcores, 1000) : null; // workers and utility processes start late
   await page.waitForFunction(() => ["mic.listening", "mic.light_unavailable", "mic.start_failed"].includes(document.querySelector("#lvMicNote")?.dataset.i18n), null, { timeout: 300000 });
   const note = await page.evaluate(() => document.querySelector("#lvMicNote")?.dataset.i18n);
-  if (note !== "mic.listening") throw new Error(`the microphone did not start: ${note} ${errors.join(" | ")}`);
+  if (note !== "mic.listening") {
+    if (ecoreTimer) clearInterval(ecoreTimer);
+    await context.close();
+    throw new Error(`the microphone did not start: ${note} ${errors.join(" | ")}`);
+  }
   const listeningAfterMs = Date.now() - clicked;
   const rssListening = await rss();
 
@@ -126,6 +144,7 @@ async function runScene(scene) {
   await page.locator("#lvCallWrap").screenshot({ path: join(OUT, `${LABEL}-${scene.name}-live.png`) });
   await page.waitForTimeout(Math.max(0, wav.seconds * 1000 - shotAt) + TAIL_S * 1000);
   clearInterval(sampler);
+  if (ecoreTimer) clearInterval(ecoreTimer);
   const rssEnd = await rss();
   await page.click("#lvMicStop");
   await page.waitForFunction(() => !document.querySelector("#lvSummaryWrap").hidden || document.querySelector("#lvMicNote")?.dataset.i18n === "mic.no_speech", null, { timeout: 120000 });
@@ -149,7 +168,7 @@ async function runScene(scene) {
   }
   const peakBy = (type) => Math.max(0, ...samples.map((r) => r[type] || 0));
   const result = {
-    label: LABEL, scene: scene.name, base: BASE, warm_cache: WARM, mobile_webview_ua: MOBILE, capture_at: trace.captureAt, listening_at: trace.listeningAt, cross_origin_isolated: isolated, mode: trace.mode, mode_note: modeNote,
+    label: LABEL, scene: scene.name, base: BASE, warm_cache: WARM, mobile_webview_ua: MOBILE, cpu_throttle: CPU_THROTTLE, ecores: ECORES, backgrounded_processes: backgrounded.size, capture_at: trace.captureAt, listening_at: trace.listeningAt, cross_origin_isolated: isolated, mode: trace.mode, mode_note: modeNote,
     audio_s: wav.seconds, lines: wav.offsets, listening_after_ms: listeningAfterMs,
     gigaam: (trace.endpoint || []).find((e) => e.status === "ready") ?? (trace.endpoint || []).at(-1) ?? null,
     rss_mb: {

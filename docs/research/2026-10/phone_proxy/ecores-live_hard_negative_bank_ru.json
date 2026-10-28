@@ -1,0 +1,278 @@
+{
+ "label": "ecores",
+ "scene": "live_hard_negative_bank_ru",
+ "base": "http://127.0.0.1:8410",
+ "warm_cache": true,
+ "mobile_webview_ua": true,
+ "cpu_throttle": 1,
+ "ecores": true,
+ "backgrounded_processes": 1,
+ "capture_at": 5646.199999988079,
+ "listening_at": 5652.0999999940395,
+ "cross_origin_isolated": false,
+ "mode": "light",
+ "mode_note": "mic.light_mode",
+ "audio_s": 27.1815,
+ "lines": [
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_hard_negative_bank_ru_0.wav",
+   "start": 5,
+   "seconds": 4.0866875,
+   "speechStart": 5.002375,
+   "speechEnd": 9.054
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_hard_negative_bank_ru_1.wav",
+   "start": 10.2866875,
+   "seconds": 4.62875,
+   "speechStart": 10.290875,
+   "speechEnd": 14.889375
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_hard_negative_bank_ru_2.wav",
+   "start": 16.1154375,
+   "seconds": 2.771375,
+   "speechStart": 16.1198125,
+   "speechEnd": 18.862499999999997
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-sanzhars-Documents-proga--govtech/f500a310-d6e4-4762-8fd4-93b962214340/scratchpad/audio/live_hard_negative_bank_ru_3.wav",
+   "start": 20.0868125,
+   "seconds": 5.8946875,
+   "speechStart": 20.089625,
+   "speechEnd": 25.9558125
+  }
+ ],
+ "listening_after_ms": 5525,
+ "gigaam": {
+  "status": "ready",
+  "loadMs": 2098.2999999821186,
+  "fromCache": true,
+  "at": 5500.4000000059605
+ },
+ "rss_mb": {
+  "idle_page": {
+   "total": 313,
+   "browser": 82,
+   "gpu-process": 72,
+   "network.mojom.NetworkService": 41,
+   "renderer": 118
+  },
+  "listening": {
+   "total": 2323,
+   "browser": 91,
+   "gpu-process": 74,
+   "network.mojom.NetworkService": 41,
+   "renderer": 2063,
+   "audio.mojom.AudioService": 54
+  },
+  "end_of_audio": {
+   "total": 1976,
+   "browser": 94,
+   "gpu-process": 70,
+   "network.mojom.NetworkService": 41,
+   "renderer": 1715,
+   "audio.mojom.AudioService": 55
+  },
+  "peak_renderer": 2093,
+  "peak_total": 2351,
+  "median_renderer_in_call": 2073,
+  "median_total_in_call": 2329,
+  "renderer_per_second": [
+   2064,
+   2064,
+   2065,
+   2065,
+   2066,
+   2067,
+   2068,
+   2068,
+   2069,
+   2074,
+   2073,
+   2074,
+   2074,
+   2074,
+   2075,
+   2079,
+   2082,
+   2082,
+   2083,
+   2083,
+   2083,
+   2083,
+   2092,
+   2093,
+   1731,
+   1725,
+   1730,
+   1733,
+   1733,
+   1720,
+   1720,
+   1718,
+   1716,
+   1716,
+   1715
+  ]
+ },
+ "summary_score": "19 / 100",
+ "final_meter": 18.711940558390317,
+ "final_band": "low",
+ "utterances": [
+  {
+   "seq": 0,
+   "text": "здравствуйте это оператор банка звоню по вашей заявке",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 5751.700000017881,
+   "latencyMs": 5756.699999988079,
+   "meter": 27.009267352261983,
+   "band": "low",
+   "at": 21989.09999999404,
+   "tags": "ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 1,
+   "text": "мы подтверждаем что перевод на пятнадцать тысяч тенге успешно проведен",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 6324.399999976158,
+   "latencyMs": 6326.300000011921,
+   "meter": 23.842303272824623,
+   "band": "low",
+   "at": 28987.09999999404,
+   "tags": "ru ru ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 2,
+   "text": "никакие коды и данные карты называть не нужно",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 4190.5,
+   "latencyMs": 6516.9000000059605,
+   "meter": 21.021617325674704,
+   "band": "low",
+   "at": 33652.19999998808,
+   "tags": "ru ru ru ru ru ru ru ru"
+  },
+  {
+   "seq": 3,
+   "text": "если вы не совершали эту операцию позвоните на официальный номер банка на обратной стороне карты",
+   "language": "ru",
+   "confidence": 1,
+   "source": "gigaam",
+   "fallback": null,
+   "vosk": {
+    "language": null,
+    "text": "",
+    "confidence": 1
+   },
+   "decodeMs": 7724.4000000059605,
+   "latencyMs": 7726.699999988079,
+   "meter": 18.711940558390317,
+   "band": "low",
+   "at": 43111.19999998808,
+   "tags": "ru ru ru ru ru ru ru ru ru ru ru ru ru ru ru"
+  }
+ ],
+ "line_latency_ms": [
+  7288.9000000059605,
+  8451.52500000596,
+  9143.500000000004,
+  11509.1875
+ ],
+ "latency_ms": {
+  "n": 4,
+  "median": 9144,
+  "max": 11509
+ },
+ "decode_ms": {
+  "n": 4,
+  "median": 6324,
+  "max": 7724
+ },
+ "segmentation": {
+  "reference_lines": 4,
+  "segments": 4,
+  "lines_found": 4,
+  "lines_split": 0,
+  "segments_merging_lines": 0,
+  "spurious_segments": 0,
+  "one_to_one": 4,
+  "start_error_ms": {
+   "n": 4,
+   "median": 164,
+   "max": 166
+  },
+  "end_error_ms": {
+   "n": 4,
+   "median": 12,
+   "max": 13
+  },
+  "cuts": [
+   "pause",
+   "pause",
+   "pause",
+   "pause"
+  ]
+ },
+ "vad_close_after_speech_ms": {
+  "n": 4,
+  "median": 670,
+  "max": 679
+ },
+ "segments": [
+  {
+   "start": 4.835900000005959,
+   "end": 9.06590000000596,
+   "cut": "pause",
+   "closedAfterSpeechMs": 679,
+   "wallAt": 15378.699999988079
+  },
+  {
+   "start": 10.145900000005959,
+   "end": 14.88590000000596,
+   "cut": "pause",
+   "closedAfterSpeechMs": 643,
+   "wallAt": 21178.69999998808
+  },
+  {
+   "start": 15.96590000000596,
+   "end": 18.875900000005963,
+   "cut": "pause",
+   "closedAfterSpeechMs": 670,
+   "wallAt": 25178.59999999404
+  },
+  {
+   "start": 19.925900000005964,
+   "end": 25.95590000000596,
+   "cut": "pause",
+   "closedAfterSpeechMs": 637,
+   "wallAt": 32238.59999999404
+  }
+ ],
+ "dropped": [],
+ "errors": []
+}

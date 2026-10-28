@@ -79,6 +79,10 @@ RUN pip install --no-deps --no-build-isolation --editable . \
 # and speech models checked (downloaded only when the clone lacks them; the
 # download caches are dropped in the same layer so the image holds each model once), the linear
 # backend probed on the committed browser weights.
+# The GigaAM browser runtime (ADR D77/D79): fetched here, at build time, from our commit-pinned HF
+# mirror and sha256-checked, so it must be a build ARG (a platform's runtime variable never
+# reaches this step). Override with --build-arg; empty = no runtime (the page uses the Vosk vote).
+ARG QORGAN_SHERPA_WASM_URL=https://huggingface.co/sanzh-ts/govtech/resolve/f3297be1a042b7c6ed86f6c4d88ad563eadfea42/sherpa-onnx/1.13.8
 RUN python scripts/deploy_bootstrap.py \
  && rm -rf /root/.cache/huggingface /root/.cache/vosk
 

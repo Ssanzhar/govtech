@@ -48,6 +48,23 @@ export function joinWavs(files, path, { leadS = 5, gapS = 1.2 } = {}) {
     descendants, by process type (`--type=` / `--utility-sub-type=` of each command line; the
     root is "browser"). Works without a CDP browser session (persistent contexts). */
 export function processTreeRssMb(userDataDir) {
+  const found = processTree(userDataDir);
+  if (!found) return null;
+  const { rows, root, tree } = found;
+  const byType = {};
+  let total = 0;
+  for (const r of rows) {
+    if (!tree.has(r.pid)) continue;
+    const type = r.pid === root.pid ? "browser" : (r.command.match(/--utility-sub-type=([\w.]+)/)?.[1] || r.command.match(/--type=([\w-]+)/)?.[1] || "other");
+    byType[type] = Math.round((byType[type] || 0) + r.kb / 1024);
+    total += r.kb / 1024;
+  }
+  return { total: Math.round(total), ...byType };
+}
+
+/** The browser started with `--user-data-dir=<userDataDir>` and all its descendants:
+    {rows (every process), root, tree (a Set of pids)}, or null when it is not running. */
+function processTree(userDataDir) {
   const rows = execFileSync("ps", ["-A", "-ww", "-o", "pid=,ppid=,rss=,command="], { encoding: "utf8" }).trim().split("\n").map((line) => {
     const m = line.trim().match(/^(\d+)\s+(\d+)\s+(\d+)\s+(.*)$/);
     return m ? { pid: Number(m[1]), ppid: Number(m[2]), kb: Number(m[3]), command: m[4] } : null;
@@ -59,15 +76,31 @@ export function processTreeRssMb(userDataDir) {
     grew = false;
     for (const r of rows) if (!tree.has(r.pid) && tree.has(r.ppid)) { tree.add(r.pid); grew = true; }
   }
-  const byType = {};
-  let total = 0;
-  for (const r of rows) {
-    if (!tree.has(r.pid)) continue;
-    const type = r.pid === root.pid ? "browser" : (r.command.match(/--utility-sub-type=([\w.]+)/)?.[1] || r.command.match(/--type=([\w-]+)/)?.[1] || "other");
-    byType[type] = Math.round((byType[type] || 0) + r.kb / 1024);
-    total += r.kb / 1024;
+  return { rows, root, tree };
+}
+
+/** macOS only: puts this browser's renderer processes (the page and its workers: GigaAM, e5)
+    in the background QoS band (`taskpolicy -b -p`), which keeps their threads on the efficiency
+    cores at a low clock -- a rough stand-in for a phone's CPU. The audio and browser processes
+    are left alone, as a phone keeps audio capture at high priority (moving them too starves the
+    fake microphone and nothing is heard). Returns how many processes were newly moved; call it
+    again for processes started later (pids already moved are skipped via `done`). */
+export function backgroundProcessTree(userDataDir, done) {
+  const found = processTree(userDataDir);
+  if (!found) return 0;
+  let moved = 0;
+  for (const r of found.rows) {
+    const pid = r.pid;
+    if (!found.tree.has(pid) || done.has(pid) || !r.command.includes("--type=renderer")) continue;
+    try {
+      execFileSync("taskpolicy", ["-b", "-p", String(pid)]);
+      done.add(pid);
+      moved += 1;
+    } catch (err) {
+      console.error(`taskpolicy -b -p ${pid} failed: ${err.message}`);
+    }
   }
-  return { total: Math.round(total), ...byType };
+  return moved;
 }
 
 /** Resident memory (MB) of every process of this browser, by type, as Chromium lists them. */

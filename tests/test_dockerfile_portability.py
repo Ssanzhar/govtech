@@ -49,3 +49,16 @@ def test_entrypoint_drops_root_after_taking_the_state_dir() -> None:
     assert script.index("chown -R", root_branch) < script.index("exec setpriv --reuid=", root_branch)
     # The server is started only after the privilege drop.
     assert script.index("exec setpriv", root_branch) < script.index("exec uvicorn")
+
+
+def test_bootstrap_build_step_gets_the_pinned_gigaam_runtime_mirror() -> None:
+    """The GigaAM runtime is fetched at build time, so the mirror URL must be a build ARG; a
+    Railway service variable alone never reached the RUN step and the page fell back (ADR D79)."""
+    lines = _instructions()
+    bootstrap = next(i for i, line in enumerate(lines) if line.startswith("RUN python scripts/deploy_bootstrap.py"))
+    last_from = max(i for i, line in enumerate(lines[:bootstrap]) if line.startswith("FROM"))
+    args = [line for line in lines[last_from:bootstrap] if line.startswith("ARG QORGAN_SHERPA_WASM_URL=")]
+    assert len(args) == 1, "declare ARG QORGAN_SHERPA_WASM_URL in the runtime stage, before the bootstrap"
+    url = args[0].split("=", 1)[1]
+    # Pinned to a commit (40 hex), never a moving branch; the files are also sha256-checked.
+    assert re.fullmatch(r"https://huggingface\.co/sanzh-ts/govtech/resolve/[0-9a-f]{40}/sherpa-onnx/1\.13\.8", url), url
