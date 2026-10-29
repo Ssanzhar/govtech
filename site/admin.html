@@ -3,43 +3,45 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="only light">
+<meta name="color-scheme" content="only dark">
 <!-- This page holds an analyst key: no inline or third-party script may run here. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Qorğan — analyst console</title>
 <meta name="description" content="Qorğan analyst console — scam organizations clustered from consented reports, a priority queue, novelty flags. A human always decides.">
-<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%230E0C13"/><g fill="%23E29B2E"><rect x="7" y="13" width="2.6" height="6"/><rect x="11.4" y="9" width="2.6" height="14"/><rect x="15.8" y="5" width="2.6" height="22"/><rect x="20.2" y="10" width="2.6" height="12"/><rect x="24.6" y="14" width="2.6" height="4"/></g></svg>'>
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="%23D6ADF2"/><g fill="%23141414"><rect x="7" y="13" width="2.6" height="6"/><rect x="11.4" y="9" width="2.6" height="14"/><rect x="15.8" y="5" width="2.6" height="22"/><rect x="20.2" y="10" width="2.6" height="12"/><rect x="24.6" y="14" width="2.6" height="4"/></g></svg>'>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- PT Serif carries Cyrillic (Russian/Kazakh) content: Fraunces has none. -->
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:wght@400;500&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<!-- Inter and IBM Plex Mono both cover Cyrillic Extended, so Kazakh letters never fall back. -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="admin.css">
 </head>
 <body>
-<div class="rails" aria-hidden="true"></div>
-
 <header class="nav">
   <a class="brand" href="index.html" aria-label="Qorğan — home">
-    <svg class="brand-glyph" viewBox="0 0 26 18" aria-hidden="true">
-      <rect x="0"  y="6.5" width="2.4" height="5"/>
-      <rect x="4.7" y="3.5" width="2.4" height="11"/>
-      <rect x="9.4" y="0.5" width="2.4" height="17"/>
-      <rect x="14.1" y="4.5" width="2.4" height="9"/>
-      <rect x="18.8" y="7"  width="2.4" height="4"/>
-    </svg>
-    <span class="brand-word">qorğan.</span>
+    <span class="brand-tile">
+      <svg class="brand-glyph" viewBox="0 0 26 18" aria-hidden="true">
+        <rect x="0"  y="6.5" width="2.4" height="5"/>
+        <rect x="4.7" y="3.5" width="2.4" height="11"/>
+        <rect x="9.4" y="0.5" width="2.4" height="17"/>
+        <rect x="14.1" y="4.5" width="2.4" height="9"/>
+        <rect x="18.8" y="7"  width="2.4" height="4"/>
+      </svg>
+    </span>
+    <span class="brand-word">Qorğan</span>
   </a>
-  <nav class="nav-links mono" data-i18n-attr="aria-label:nav.primary_aria" aria-label="Primary">
+  <nav class="nav-links" data-i18n-attr="aria-label:nav.primary_aria" aria-label="Primary">
     <a href="index.html#how" data-i18n="nav.how">How it works</a>
     <a href="admin.html" aria-current="page" data-i18n="nav.analyst">Analyst console</a>
     <a href="live.html" data-i18n="nav.live">Check a call</a>
   </nav>
-  <div class="lang-switch mono" role="radiogroup" aria-label="Тіл · Язык · Language">
-    <label class="lang-opt" lang="kk" title="Қазақша"><input type="radio" name="adm-lang" value="kk" aria-label="Қазақша"><span aria-hidden="true">ҚАЗ</span></label>
-    <label class="lang-opt" lang="ru" title="Русский"><input type="radio" name="adm-lang" value="ru" aria-label="Русский"><span aria-hidden="true">РУС</span></label>
-    <label class="lang-opt" lang="en" title="English"><input type="radio" name="adm-lang" value="en" aria-label="English" checked><span aria-hidden="true">ENG</span></label>
+  <div class="nav-right">
+    <div class="lang-switch mono" role="radiogroup" aria-label="Тіл · Язык · Language">
+      <label class="lang-opt" lang="kk" title="Қазақша"><input type="radio" name="adm-lang" value="kk" aria-label="Қазақша"><span aria-hidden="true">ҚАЗ</span></label>
+      <label class="lang-opt" lang="ru" title="Русский"><input type="radio" name="adm-lang" value="ru" aria-label="Русский"><span aria-hidden="true">РУС</span></label>
+      <label class="lang-opt" lang="en" title="English"><input type="radio" name="adm-lang" value="en" aria-label="English" checked><span aria-hidden="true">ENG</span></label>
+    </div>
   </div>
 </header>
 
@@ -126,13 +128,33 @@
 </div>
 
 <footer class="footer">
-  <div class="col foot-row mono">
-    <span>Qorğan &mdash; phone-scam pattern detection &middot; kk &middot; ru</span>
+  <div class="wrap foot-top">
+    <div class="foot-brand">
+      <a class="brand" href="index.html" aria-label="Qorğan — home">
+        <span class="brand-tile">
+          <svg class="brand-glyph" viewBox="0 0 26 18" aria-hidden="true">
+            <rect x="0"  y="6.5" width="2.4" height="5"/>
+            <rect x="4.7" y="3.5" width="2.4" height="11"/>
+            <rect x="9.4" y="0.5" width="2.4" height="17"/>
+            <rect x="14.1" y="4.5" width="2.4" height="9"/>
+            <rect x="18.8" y="7"  width="2.4" height="4"/>
+          </svg>
+        </span>
+        <span class="brand-word">Qorğan</span>
+      </a>
+      <p class="foot-statement">Qorğan &mdash; phone-scam pattern detection &middot; kk &middot; ru</p>
+    </div>
     <nav class="foot-links" aria-label="Footer">
-      <a href="index.html">Home</a>
-      <a href="live.html">Check a call</a>
-      <a href="index.html#eval">Evaluation</a>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="live.html">Check a call</a></li>
+        <li><a href="index.html#eval">Evaluation</a></li>
+      </ul>
     </nav>
+  </div>
+  <div class="wrap foot-bottom">
+    <span>© 2026 Qorğan</span>
+    <span class="foot-status mono"><i aria-hidden="true"></i><span>A human always decides</span></span>
   </div>
 </footer>
 

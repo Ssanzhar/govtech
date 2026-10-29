@@ -1,15 +1,18 @@
-/* Qorğan live call — page-specific rules only, loaded after styles.css.
-   The whole interactive stage sits inside the same night `.try-panel` as the
-   landing page's Try section, so every control below is styled for the dark card. */
+/* Qorğan live call — page-specific rules only, loaded after styles.css (the shared dark
+   openbot.run look, ADR D81). The interactive stage is one big `.try-panel` card; setup, the call
+   and the summary are darker wells inside it. */
 
-.lv-hero{padding-top:clamp(3rem,7vh,5.5rem)}
-.lv-stage-section{padding-top:clamp(3.5rem,8vh,6rem)}
+.lv-hero{padding-top:clamp(56px,9vh,96px)}
+.lv-stage-section{
+  width:min(var(--max),calc(100% - 2 * var(--gutter)));margin-inline:auto;
+  padding-top:clamp(56px,8vh,96px);
+}
 
 /* ── pipeline diagram (hero) — hairline signal chain, no arrows ── */
 .lv-pipeline{display:flex;align-items:flex-start;gap:.9rem;margin-top:1.4rem;max-width:44em}
 .lv-stage{display:flex;flex-direction:column;align-items:center;gap:.55rem;flex:0 0 auto}
 .lv-glyph{
-  width:24px;height:24px;stroke:var(--oxide);fill:none;
+  width:24px;height:24px;stroke:var(--lav);fill:none;
   stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;
 }
 .lv-stage-name{
@@ -33,8 +36,8 @@
 
 /* ── setup cards (dark) ── */
 .lv-setup{
-  margin-top:1.4rem;padding:1.3rem 1.4rem;border:1px solid var(--night-edge);
-  border-radius:12px;background:color-mix(in srgb,var(--night) 55%,#000);
+  margin-top:24px;padding:24px;border:1px solid var(--line);
+  border-radius:20px;background:var(--well);
 }
 .lv-setup-row{display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;font-size:.8rem}
 .lv-field{
@@ -42,27 +45,27 @@
   color:color-mix(in srgb,var(--paper) 60%,transparent);
 }
 .lv-field select{
-  font-family:var(--mono);font-size:.84rem;padding:.55rem .7rem;border-radius:8px;max-width:100%;min-width:0;
-  border:1px solid var(--night-edge);background:var(--night);color:var(--paper);
+  font-family:var(--mono);font-size:.84rem;height:40px;padding:0 14px;border-radius:999px;max-width:100%;min-width:0;
+  border:1px solid var(--line-2);background:var(--card);color:var(--paper);
 }
 .lv-script{
-  display:block;width:100%;margin-top:.5rem;padding:.9rem 1rem;border-radius:8px;
-  border:1px solid var(--night-edge);background:transparent;color:var(--paper);
+  display:block;width:100%;margin-top:.5rem;padding:16px 18px;border-radius:16px;
+  border:1px solid var(--line-2);background:transparent;color:var(--paper);
   resize:vertical;min-height:7rem;font-size:.84rem;line-height:1.7;
 }
 .lv-script::placeholder{color:color-mix(in srgb,var(--paper) 50%,transparent)}
 .lv-script:focus-visible{outline:none;box-shadow:inset 0 0 0 1px var(--amber)}
 .lv-setup-actions{display:flex;align-items:center;gap:1rem;margin-top:1.1rem;flex-wrap:wrap}
 .lv-note{font-size:.8rem;line-height:1.6;color:color-mix(in srgb,var(--paper) 62%,transparent)}
-.lv-note.is-error{color:#E06A4C}
+.lv-note.is-error{color:var(--alarm)}
 .lv-mic-copy{
   font-size:.84rem;line-height:1.8;
   color:color-mix(in srgb,var(--paper) 62%,transparent);max-width:44em;
 }
 
 /* ── live call panel ── */
-.lv-panel{width:100%;margin-top:1.4rem}
-.lv-body{padding:1.2rem 1.3rem 1.4rem}
+.lv-panel{width:100%;margin-top:24px;box-shadow:none}
+.lv-body{padding:24px}
 
 .lv-meter-track{
   height:14px;border-radius:999px;overflow:hidden;
@@ -70,22 +73,22 @@
 }
 .lv-meter-fill{
   height:100%;width:0%;border-radius:999px;
-  background:var(--band-color,#67B98C);
+  background:var(--band-color,var(--green));
   transition:width .5s ease,background .4s ease;
 }
 .lv-band-row{display:flex;align-items:center;gap:.8rem;margin-top:.9rem;flex-wrap:wrap}
 .lv-band-pill{
   padding:.35rem .85rem;border-radius:999px;font-size:.8rem;letter-spacing:.03em;line-height:1.45;
-  border:1px solid var(--band-color,#67B98C);color:var(--band-color,#67B98C);
+  border:1px solid var(--band-color,var(--green));color:var(--band-color,var(--green));
 }
-.band-low{--band-color:#67B98C}
-.band-medium{--band-color:var(--amber)}
-.band-high{--band-color:#E06A4C}
+.band-low{--band-color:var(--green)}
+.band-medium{--band-color:var(--yellow)}
+.band-high{--band-color:var(--alarm)}
 .band-critical{--band-color:var(--magenta)}
 .lv-tags{display:flex;gap:.4rem;flex-wrap:wrap}
 
 .lv-advice{
-  margin-top:1rem;padding:.85rem 1rem;border-radius:8px;font-size:.82rem;line-height:1.6;
+  margin-top:16px;padding:16px 20px;border-radius:16px;font-size:.82rem;line-height:1.6;
   border:1px solid color-mix(in srgb,var(--oxide) 55%,transparent);
   background:color-mix(in srgb,var(--oxide) 16%,transparent);
   color:color-mix(in srgb,var(--paper) 92%,transparent);
@@ -96,7 +99,7 @@
   font-size:.85rem;line-height:1.7;
 }
 .lv-line{
-  padding:.7rem .9rem;border-radius:8px;
+  padding:12px 16px;border-radius:12px;
   background:color-mix(in srgb,var(--paper) 5%,transparent);
   color:color-mix(in srgb,var(--paper) 80%,transparent);
 }
@@ -137,16 +140,15 @@
 /* ── post-call summary + report (dark) ── */
 .lv-summary-wrap{margin-top:1.4rem}
 .lv-summary{
-  margin-top:1.4rem;border:1px solid var(--night-edge);border-radius:12px;
-  background:color-mix(in srgb,var(--night) 55%,#000);
-  padding:1.6rem 1.75rem;color:var(--paper);
+  margin-top:24px;border:1px solid var(--line);border-radius:20px;
+  background:var(--well);padding:32px;color:var(--paper);
 }
 .lv-summary-eyebrow{margin-bottom:0}
 .lv-summary-head{
   display:flex;align-items:baseline;justify-content:space-between;
   gap:1rem;flex-wrap:wrap;margin-top:.4rem;
 }
-.lv-summary-score{font-family:var(--serif);font-size:2.4rem;font-weight:560}
+.lv-summary-score{font-size:56px;font-weight:500;line-height:1;letter-spacing:-.05em}
 .lv-summary-band{margin-top:.7rem;display:inline-block}
 .lv-summary-tags{margin-top:.5rem}
 .lv-summary-actions{margin-top:.3rem;padding-left:1.2rem}
@@ -163,8 +165,8 @@
 .lv-report-title{color:color-mix(in srgb,var(--paper) 80%,transparent)}
 .lv-report-row{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:.8rem}
 .lv-report-phone{
-  flex:1 1 14rem;padding:.6rem .8rem;border-radius:8px;
-  border:1px solid var(--night-edge);background:transparent;color:var(--paper);
+  flex:1 1 14rem;height:44px;padding:0 18px;border-radius:999px;
+  border:1px solid var(--line-2);background:transparent;color:var(--paper);
   font-size:.8rem;
 }
 .lv-report-phone::placeholder{color:color-mix(in srgb,var(--paper) 50%,transparent)}
@@ -173,8 +175,8 @@
   margin-top:.8rem;line-height:1.7;
   color:color-mix(in srgb,var(--paper) 50%,transparent);
 }
-.lv-report-note.is-success{color:#67B98C}
-.lv-report-note.is-error{color:#E06A4C}
+.lv-report-note.is-success{color:var(--green)}
+.lv-report-note.is-error{color:var(--alarm)}
 .lv-report-note a{color:inherit}
 .lv-report-form{margin-top:1rem}
 .lv-report-label{margin-top:1.1rem;color:color-mix(in srgb,var(--paper) 70%,transparent)}
@@ -197,28 +199,32 @@
    (the landing uses them too). */
 
 /* hero promises: the three things a citizen must know before starting */
+/* three feature cards, like the landing's steps; each glyph sits on a lavender tile */
 .lv-promises{
-  list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:1.6rem 2.2rem;
-  margin-top:2.4rem;padding-top:1.9rem;border-top:1px solid var(--hairline);
+  list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:48px;
 }
-.lv-promise{display:flex;gap:.85rem;align-items:flex-start}
-.lv-promise .lv-glyph{flex:0 0 auto;margin-top:.15rem}
-.lv-promise-title{font-weight:600;font-size:1.06rem;line-height:1.35}
-.lv-promise-body{
-  margin-top:.4rem;font-size:.97rem;line-height:1.62;
-  color:color-mix(in srgb,var(--ink) 80%,var(--paper));
+.lv-promise{
+  display:flex;flex-direction:column;gap:40px;padding:32px;
+  background:var(--card);border:1px solid var(--line);border-radius:28px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
 }
+.lv-promise .lv-glyph{
+  flex:0 0 auto;width:44px;height:44px;padding:10px;border-radius:12px;
+  background:var(--lav);stroke:var(--on-light);box-shadow:inset 0 1px 0 rgba(255,255,255,.35);
+}
+.lv-promise-title{font-weight:600;font-size:22px;line-height:1.2;letter-spacing:-.03em}
+.lv-promise-body{margin-top:10px;font-size:15px;line-height:1.6;color:rgba(255,255,255,.72)}
 
 /* "how it works" keeps the technical detail off the main path */
-.lv-how{margin-top:2rem;border:1px solid var(--hairline);border-radius:10px;padding:0 1.2rem}
+.lv-how{
+  margin-top:16px;padding:0 28px;border:1px solid var(--line);border-radius:20px;background:var(--card);
+}
 .lv-how summary{
-  cursor:pointer;padding:.95rem 0;font-size:.82rem;letter-spacing:.03em;color:var(--ink-soft);
+  cursor:pointer;padding:20px 0;font-size:13px;letter-spacing:.02em;color:var(--fg-2);
 }
 .lv-how summary:hover{color:var(--ink)}
 .lv-how[open] summary{border-bottom:1px solid var(--hairline)}
 .lv-how-steps{
-  margin:1.4rem 0 1.4rem 1.3rem;font-size:.95rem;line-height:1.65;
-  color:color-mix(in srgb,var(--ink) 80%,var(--paper));
+  margin:24px 0 24px 20px;font-size:15px;line-height:1.65;color:var(--fg-2);
 }
 .lv-how-steps li+li{margin-top:.55rem}
 
@@ -247,7 +253,7 @@
 .lv-tags .tw-tag{line-height:1.45;overflow-wrap:anywhere}
 .lv-tags:not(:empty){margin-top:.8rem}
 .lv-advice-title{
-  font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);
+  font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--alarm);
 }
 .lv-advice-text{
   margin-top:.35rem;font-family:var(--serif);font-size:1.1rem;line-height:1.55;color:var(--paper);
@@ -281,7 +287,8 @@
 .lv-report-consent:has(input:focus-visible){outline:2px solid var(--amber);outline-offset:2px}
 
 @media (max-width:52rem){
-  .lv-promises{grid-template-columns:1fr;gap:1.3rem}
+  .lv-promises{grid-template-columns:minmax(0,1fr)}
+  .lv-promise{gap:24px;padding:24px}
 }
 .lv-panel .p-right{white-space:nowrap}
 .foot-links{flex-wrap:wrap;gap:.6rem 1.6rem}
@@ -291,10 +298,9 @@
   .lv-nav{gap:1rem}
   /* wrapped chips read better as soft rectangles than as stretched capsules */
   .lv-band-pill,.lv-tags .tw-tag,.lv-report-tactic{border-radius:12px}
-  .lv-stage-section{padding-inline:.6rem}
-  .lv-stage-panel{padding:1.8rem 1.1rem}
-  .lv-setup{padding:1rem}
-  .lv-body{padding:1rem}
-  .lv-summary{padding:1.3rem 1.1rem}
-  .lv-how{padding:0 .9rem}
+  .lv-stage-panel{padding:24px 16px;border-radius:20px}
+  .lv-setup{padding:16px}
+  .lv-body{padding:16px}
+  .lv-summary{padding:20px 16px}
+  .lv-how{padding:0 16px}
 }
