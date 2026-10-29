@@ -3802,3 +3802,67 @@ was not built locally (Docker is not running on the dev Mac); the live check aft
 is `/vendor/sherpa-onnx/1.13.8/sherpa-onnx-asr.js` and
 `/models/gigaam/gigaam-multilingual-220m-ctc-int8/tokens.txt` → 200. The image grows by about
 240 MB (runtime 14 MB + model 225 MB).
+
+### D80 — the landing page takes the openbot.run look (2026-10-29)
+
+**Context.** The owner asked for the landing (`site/index.html`) to copy the design of
+https://openbot.run/, and nothing more. The unmerged `design/ui-refresh` branch (D69) restyled all
+three pages; this change starts again from `main` and touches only the landing.
+
+**Decision.** The landing is a dark page with its own stylesheet, `site/landing.css`:
+- Inter 500 set tight (−0.06 em) for the headlines, IBM Plex Mono for machine text (both cover
+  Kazakh letters);
+- background #1A1A1A, #212121 cards with a 28 px radius, white and glass pill buttons;
+- one lavender (#D6ADF2) card with a grid for the evidence readout;
+- a CSS light beam behind the hero (hidden on phones, where it crossed the text);
+- the analyzer figure drawn as an app window, the steps as three cards, the evaluation table as a
+  hairline list, and a footer with a large statement.
+
+What stays the same: every text and i18n key, every id and class that `main.js`, `try.js` and
+`landing.js` address, and the eval numbers (still the D54 harness output). `live.html` and
+`admin.html` keep `styles.css` and stay light. The pages test now expects `only dark` on the
+landing. The service worker precaches `/landing.css` (shell v15).
+
+**Evidence.**
+- JS 171/171.
+- No horizontal overflow at 390, 768, 1024 or 1440 px (kk/ru/en).
+- In installed Chrome the analyzer loop runs, and the try widget scores the Russian scam sample on
+  the device (risk 1.00 / threshold 0.59) with no console errors.
+- Screenshots: `_design/openbot/shots/` (outside git).
+
+### D81 — every page takes the landing's openbot.run look; one shared dark base (2026-10-29)
+
+**Context.** After D80 the owner asked for every page to follow the new landing. The live page and
+the analyst console still used the light paper theme, so the site had two looks.
+
+**Decision.** `site/styles.css` is now the shared dark base for all three pages. It holds:
+- the tokens;
+- the header: lavender brand tile, pill nav, glass language switch;
+- pill buttons, type, the panel card, chips and tags, the readout bars and the hairline table;
+- the openbot-style footer.
+
+`landing.css` keeps only the landing's own rules and loads after it. The live page and the console
+get the same header and footer markup.
+
+The names `live.css` and `admin.css` were written with keep working, but their values change:
+- `--paper` and `--ink` are both light text colours now;
+- `--night` is a #212121 card;
+- `--amber` is the lavender accent and `--oxide` is the alarm coral.
+
+Only the rules that assumed a light page changed:
+- the paper backgrounds of the key, search and select inputs;
+- the #FAF8F2 cards;
+- the serif numbers;
+- the meter bands, which are now green / yellow / coral / raspberry.
+
+Unchanged: text, i18n keys, ids, the classes the scripts generate, and the admin CSP (it already
+allows Google Fonts).
+
+**Evidence.**
+- JS 171/171; `test_api_limits.py` + `test_architecture.py` 45/45.
+- The page test now requires `only dark` and the shared stylesheet on every page.
+- No horizontal overflow at 390 and 768 px on any page.
+- In installed Chrome, against `python -m qorgan.api`:
+  - the live page replays the Russian bank scam to the summary (98/100) with no console errors;
+  - the console signs in, ranks 6 organizations and opens a case.
+- Screenshots: `_design/openbot/pages/` (outside git).

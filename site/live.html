@@ -3,43 +3,45 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="only light">
+<meta name="color-scheme" content="only dark">
 <title data-i18n="meta.title">Qorğan — проверка звонка</title>
 <meta name="description" data-i18n-attr="content:meta.description" content="Проверьте, не звонят ли вам мошенники. Анализ идёт на вашем устройстве, решение всегда за вами.">
-<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%230E0C13"/><g fill="%23E29B2E"><rect x="7" y="13" width="2.6" height="6"/><rect x="11.4" y="9" width="2.6" height="14"/><rect x="15.8" y="5" width="2.6" height="22"/><rect x="20.2" y="10" width="2.6" height="12"/><rect x="24.6" y="14" width="2.6" height="4"/></g></svg>'>
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="%23D6ADF2"/><g fill="%23141414"><rect x="7" y="13" width="2.6" height="6"/><rect x="11.4" y="9" width="2.6" height="14"/><rect x="15.8" y="5" width="2.6" height="22"/><rect x="20.2" y="10" width="2.6" height="12"/><rect x="24.6" y="14" width="2.6" height="4"/></g></svg>'>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Fraunces has no Cyrillic: PT Serif (ParaType, covers Kazakh letters) carries the Russian/Kazakh text. -->
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:wght@400;500&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" crossorigin="anonymous">
+<!-- Inter and IBM Plex Mono both cover Cyrillic Extended, so Kazakh letters never fall back. -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" crossorigin="anonymous">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="live.css">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#0E0C13">
+<meta name="theme-color" content="#1A1A1A">
 </head>
 <body>
-<div class="rails" aria-hidden="true"></div>
-
 <header class="nav lv-nav">
   <a class="brand" href="index.html" data-i18n-attr="aria-label:nav.home_aria" aria-label="Qorğan — на главную">
-    <svg class="brand-glyph" viewBox="0 0 26 18" aria-hidden="true">
-      <rect x="0"  y="6.5" width="2.4" height="5"/>
-      <rect x="4.7" y="3.5" width="2.4" height="11"/>
-      <rect x="9.4" y="0.5" width="2.4" height="17"/>
-      <rect x="14.1" y="4.5" width="2.4" height="9"/>
-      <rect x="18.8" y="7"  width="2.4" height="4"/>
-    </svg>
-    <span class="brand-word">qorğan.</span>
+    <span class="brand-tile">
+      <svg class="brand-glyph" viewBox="0 0 26 18" aria-hidden="true">
+        <rect x="0"  y="6.5" width="2.4" height="5"/>
+        <rect x="4.7" y="3.5" width="2.4" height="11"/>
+        <rect x="9.4" y="0.5" width="2.4" height="17"/>
+        <rect x="14.1" y="4.5" width="2.4" height="9"/>
+        <rect x="18.8" y="7"  width="2.4" height="4"/>
+      </svg>
+    </span>
+    <span class="brand-word">Qorğan</span>
   </a>
-  <nav class="nav-links mono" data-i18n-attr="aria-label:nav.primary_aria" aria-label="Основное меню">
+  <nav class="nav-links" data-i18n-attr="aria-label:nav.primary_aria" aria-label="Основное меню">
     <a href="index.html#how" data-i18n="nav.how">Как это работает</a>
     <a href="admin.html" data-i18n="nav.analyst">Кабинет аналитика</a>
     <a href="live.html" aria-current="page" data-i18n="nav.live">Проверка звонка</a>
   </nav>
-  <!-- One control for the whole page; its name stays trilingual so anyone can find it. -->
-  <div class="lang-switch mono" role="radiogroup" aria-label="Тіл · Язык · Language">
-    <label class="lang-opt" lang="kk" title="Қазақша"><input type="radio" name="lv-lang" value="kk" aria-label="Қазақша"><span aria-hidden="true">ҚАЗ</span></label>
-    <label class="lang-opt" lang="ru" title="Русский"><input type="radio" name="lv-lang" value="ru" aria-label="Русский" checked><span aria-hidden="true">РУС</span></label>
-    <label class="lang-opt" lang="en" title="English"><input type="radio" name="lv-lang" value="en" aria-label="English"><span aria-hidden="true">ENG</span></label>
+  <div class="nav-right">
+    <!-- One control for the whole page; its name stays trilingual so anyone can find it. -->
+    <div class="lang-switch mono" role="radiogroup" aria-label="Тіл · Язык · Language">
+      <label class="lang-opt" lang="kk" title="Қазақша"><input type="radio" name="lv-lang" value="kk" aria-label="Қазақша"><span aria-hidden="true">ҚАЗ</span></label>
+      <label class="lang-opt" lang="ru" title="Русский"><input type="radio" name="lv-lang" value="ru" aria-label="Русский" checked><span aria-hidden="true">РУС</span></label>
+      <label class="lang-opt" lang="en" title="English"><input type="radio" name="lv-lang" value="en" aria-label="English"><span aria-hidden="true">ENG</span></label>
+    </div>
   </div>
 </header>
 
@@ -219,13 +221,33 @@
 </main>
 
 <footer class="footer">
-  <div class="col foot-row mono">
-    <span data-i18n="footer.tagline">Qorğan — распознавание приёмов телефонных мошенников · қаз · рус</span>
+  <div class="wrap foot-top">
+    <div class="foot-brand">
+      <a class="brand" href="index.html" data-i18n-attr="aria-label:nav.home_aria" aria-label="Qorğan — на главную">
+        <span class="brand-tile">
+          <svg class="brand-glyph" viewBox="0 0 26 18" aria-hidden="true">
+            <rect x="0"  y="6.5" width="2.4" height="5"/>
+            <rect x="4.7" y="3.5" width="2.4" height="11"/>
+            <rect x="9.4" y="0.5" width="2.4" height="17"/>
+            <rect x="14.1" y="4.5" width="2.4" height="9"/>
+            <rect x="18.8" y="7"  width="2.4" height="4"/>
+          </svg>
+        </span>
+        <span class="brand-word">Qorğan</span>
+      </a>
+      <p class="foot-statement" data-i18n="footer.tagline">Qorğan — распознавание приёмов телефонных мошенников · қаз · рус</p>
+    </div>
     <nav class="foot-links" data-i18n-attr="aria-label:footer.aria" aria-label="Нижнее меню">
-      <a href="index.html" data-i18n="footer.home">Главная</a>
-      <a href="admin.html" data-i18n="nav.analyst">Кабинет аналитика</a>
-      <a href="index.html#eval" data-i18n="footer.eval">Оценка качества</a>
+      <ul>
+        <li><a href="index.html" data-i18n="footer.home">Главная</a></li>
+        <li><a href="admin.html" data-i18n="nav.analyst">Кабинет аналитика</a></li>
+        <li><a href="index.html#eval" data-i18n="footer.eval">Оценка качества</a></li>
+      </ul>
     </nav>
+  </div>
+  <div class="wrap foot-bottom">
+    <span>© 2026 Qorğan</span>
+    <span class="foot-status mono"><i aria-hidden="true"></i><span data-i18n="footer.promise">Анализ на вашем устройстве · без вашего согласия ничего не отправляется · решение всегда за вами</span></span>
   </div>
 </footer>
 

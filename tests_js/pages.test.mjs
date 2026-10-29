@@ -20,9 +20,10 @@ test("the analyst console keeps its script lockdown", () => {
 
 test("every page declares the one deliberate theme", () => {
   for (const page of PAGES) {
-    assert.match(read(page), /<meta name="color-scheme" content="only light">/, page);
+    assert.match(read(page), /<meta name="color-scheme" content="only dark">/, page);
+    assert.match(read(page), /<link rel="stylesheet" href="styles.css">/, `${page} loads the shared base`);
   }
-  assert.match(read("styles.css"), /color-scheme:only light/);
+  assert.match(read("styles.css"), /color-scheme:only dark/);
 });
 
 test("in-page and cross-page anchors point at elements that exist", () => {

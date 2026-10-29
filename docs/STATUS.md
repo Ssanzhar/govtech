@@ -1,10 +1,19 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: **2026-10-27**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
+_Last updated: **2026-10-29**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
 day (what is shipped, the honest numbers, the strategy, who does what). Then read this file
 (the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D70) and `docs/eval_report.md`
 (numbers, with intervals). The July sprint log below is kept as history._
 
+- **2026-10-29 — the whole site takes the openbot.run design (ADRs D80, D81).**
+  - Every page is dark: Inter headlines, pill buttons, rounded #212121 cards, lavender as the one
+    accent. The landing also has a lavender evidence card and a light beam behind the hero.
+  - `site/styles.css` is the shared base; `landing.css`, `live.css` and `admin.css` hold page rules.
+  - Text, i18n keys and script hooks are unchanged. Shell cache v15.
+  - Verified:
+    - JS 171/171 and Python page/architecture tests 45/45;
+    - no overflow at 390–1440 px;
+    - in Chrome, the try widget, a replayed live call and the analyst console all work.
 - **2026-10-28 — why the demo still said "quick transcript"; fixed in the Dockerfile (ADR D79).**
   - The GigaAM runtime is downloaded at Docker **build** time, and the Dockerfile had no
     `ARG QORGAN_SHERPA_WASM_URL`, so D77's Railway variable could never reach it (live: runtime and
