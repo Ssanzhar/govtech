@@ -5,6 +5,12 @@ day (what is shipped, the honest numbers, the strategy, who does what). Then rea
 (the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D70) and `docs/eval_report.md`
 (numbers, with intervals). The July sprint log below is kept as history._
 
+- **2026-10-29 — landing metrics brought up to the D76 headline.**
+  - The landing table still showed the D54 (2026-09-28) numbers. It now quotes shipped v1 from
+    `models/final_v1/run.txt` (test, authored, ood, shift: shift FPR is now 0.000 [0.000, 0.106])
+    and adds the honest last row from `scripts/pooled_judges.py`, re-run today with identical output:
+    six independent judges, kk + ru, n=828, FPR 0.053 [0.033, 0.079], recall 0.455 [0.406, 0.505].
+  - kk / ru / en text updated (new key `landing.eval_row_independent`). JS 171/171.
 - **2026-10-29 — the whole site takes the openbot.run design (ADRs D80, D81).**
   - Every page is dark: Inter headlines, pill buttons, rounded #212121 cards, lavender as the one
     accent. The landing also has a lavender evidence card and a light beam behind the hero.

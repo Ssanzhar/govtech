@@ -153,14 +153,15 @@
   </section>
 
   <!-- ── Evaluation ─────────────────────────────────────
-       Pasted from harness output: docs/eval_report.md, addendum 2026-09-28 (ADR D54), device
-       backend, threshold 0.59. Update from the next harness run, never by hand. -->
+       Pasted from harness output: docs/eval_report.md, last addendum (ADR D76): shipped v1, device
+       backend, threshold 0.59; rows from models/final_v1/run.txt, last row from pooled.txt
+       (scripts/pooled_judges.py). Update from the next harness run, never by hand. -->
   <section id="eval" class="block wrap">
     <div class="faq">
       <div class="faq-copy">
         <p class="eyebrow" data-i18n="footer.eval">Оценка качества</p>
         <h2 class="display-2" data-i18n-html="landing.eval_title_html">Ложные тревоги — <em>в первую очередь</em>.</h2>
-        <p class="body-copy" data-i18n="landing.eval_body">Детектор, который часто поднимает ложную тревогу, отключают. Qorğan настроен прежде всего на минимум ложных тревог, и у каждого числа есть 95-процентный интервал: 0,000 на маленькой выборке — ещё не ноль. Настоящих звонков здесь пока нет: наборы синтетические или написаны командой. Самое честное число — в последней строке: звонки от второго, независимого генератора.</p>
+        <p class="body-copy" data-i18n="landing.eval_body">Детектор, который часто поднимает ложную тревогу, отключают. Qorğan настроен прежде всего на минимум ложных тревог, и у каждого числа есть 95-процентный интервал: 0,000 на маленькой выборке — ещё не ноль. Настоящих звонков здесь пока нет: наборы синтетические или написаны командой. Самое честное число — в последней строке: 828 казахских и русских звонков в шести наборах, которые написала независимая модель, дообученная на казахском. Она не видела ни наших данных, ни подсказок, ни списков слов.</p>
       </div>
       <div class="faq-list">
         <div class="table-scroll" tabindex="0" role="region" data-i18n-attr="aria-label:landing.eval_caption" aria-label="Качество модели на устройстве при пороге 0,59">
@@ -173,11 +174,12 @@
               <tr><th scope="row" data-i18n="landing.eval_row_test">test (синтетика, n=143)</th><td class="mono hot">0.000&nbsp;[0.000, 0.060]</td><td class="mono">1.000&nbsp;[0.957, 1.000]</td></tr>
               <tr><th scope="row" data-i18n="landing.eval_row_authored">authored_heldout (написан вручную, n=42)</th><td class="mono hot">0.000&nbsp;[0.000, 0.142]</td><td class="mono">0.889&nbsp;[0.653, 0.986]</td></tr>
               <tr><th scope="row" data-i18n="landing.eval_row_ood">ood (шум распознавания, n=118)</th><td class="mono hot">0.000&nbsp;[0.000, 0.049]</td><td class="mono">0.932&nbsp;[0.813, 0.986]</td></tr>
-              <tr class="eval-honest"><th scope="row" data-i18n="landing.eval_row_shift">shift (второй генератор, n=66)</th><td class="mono hot">0.030&nbsp;[0.001, 0.158]</td><td class="mono">0.455&nbsp;[0.281, 0.636]</td></tr>
+              <tr><th scope="row" data-i18n="landing.eval_row_shift">shift (второй генератор, n=66)</th><td class="mono hot">0.000&nbsp;[0.000, 0.106]</td><td class="mono">0.455&nbsp;[0.281, 0.636]</td></tr>
+              <tr class="eval-honest"><th scope="row" data-i18n="landing.eval_row_independent">6 независимых наборов (каз + рус, n=828)</th><td class="mono hot">0.053&nbsp;[0.033, 0.079]</td><td class="mono">0.455&nbsp;[0.406, 0.505]</td></tr>
             </tbody>
           </table>
         </div>
-        <p class="table-note mono"><span data-i18n="landing.eval_note">порог 0,59 · откалибровано · точные интервалы Клоппера — Пирсона · модель на устройстве, 28.09.2026 (ADR D54) · пересчёт:</span> <code>python -m qorgan.eval.run</code></p>
+        <p class="table-note mono"><span data-i18n="landing.eval_note">порог 0,59 · откалибровано · точные интервалы Клоппера — Пирсона · модель на устройстве, 25.10.2026 (ADR D76) · пересчёт:</span> <code>python -m qorgan.eval.run</code></p>
       </div>
     </div>
   </section>
