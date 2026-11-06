@@ -13,8 +13,6 @@ from qorgan.asr.stream import CommittedUtterance
 from qorgan.data.schema import validate_verbatim_spans
 from qorgan.live.session import advance, initial_session
 from qorgan.live.summary import (
-    CallSummary,
-    ReportDraft,
     build_report,
     report_to_incident,
     submit_report,

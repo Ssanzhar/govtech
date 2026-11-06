@@ -121,6 +121,7 @@ def test_prefilter_is_sound_on_every_lexicon_cue_and_corpus_text():
     import yaml
 
     from qorgan.classifier import cue_match
+    from qorgan.data.anchors import build_anchor_dialogues
 
     repo = Path(__file__).resolve().parents[2]
     capture = repo / "data/asr_capture/pairs.jsonl"
@@ -128,10 +129,8 @@ def test_prefilter_is_sound_on_every_lexicon_cue_and_corpus_text():
         pytest.skip("ASR capture corpus not present")
     cues = yaml.safe_load((repo / "data/lexicon/hard_signal_cues.yaml").read_text(encoding="utf-8"))["cues"]
     phrases = [c for cue_list in cues.values() for c in cue_list]
-    texts = []
-    for line in (repo / "data/processed/authored_heldout.jsonl").read_text(encoding="utf-8").splitlines():
-        if line.strip():
-            texts.append("\n".join(u["text"] for u in json.loads(line)["utterances"]))
+    # The committed anchors, not data/processed/ (gitignored): this runs on a fresh clone.
+    texts = [dialogue.transcript() for dialogue in build_anchor_dialogues()]
     for line in capture.read_text(encoding="utf-8").splitlines()[:60]:
         if line.strip():
             texts.append(json.loads(line)["hypothesis"])

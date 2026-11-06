@@ -20,7 +20,7 @@ const TYPES = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8", ".json": "application/json", ".webmanifest": "application/manifest+json",
   ".wasm": "application/wasm", ".onnx": "application/octet-stream", ".gz": "application/gzip", ".txt": "text/plain; charset=utf-8",
-  ".png": "image/png", ".svg": "image/svg+xml", ".ico": "image/x-icon",
+  ".png": "image/png", ".svg": "image/svg+xml", ".ico": "image/x-icon", ".woff2": "font/woff2",
 };
 
 export function startStaticSite({ port = 8410, isolation = "off", host = "127.0.0.1" } = {}) {

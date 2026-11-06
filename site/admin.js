@@ -5,10 +5,17 @@
    investigator with a stated purpose, which the server writes to its tamper-evident audit
    log before answering (PLAN C4). Every request carries the analyst key (X-Analyst-Key);
    the key lives in sessionStorage (this tab only) and a 401 returns to the sign-in panel.
-   All list management is client-side. */
-(() => {
-  "use strict";
+   All list management is client-side. The console speaks kk / ru / en (site/i18n-admin.js), from
+   one control shared with the other pages; what the server returns (tactic names, reasons) is
+   asked for in the same language. */
 
+import { DEFAULT_LOCALE, LOCALES, pickLocale } from "./i18n.js";
+import { markSpans } from "./core/highlight.js";
+import { adminText } from "./i18n-admin.js";
+import { browserLanguages, localize, readStoredLocale, renderEl, storeLocale } from "./i18n-dom.js";
+
+(() => {
+  const demoNoteEl = document.getElementById("admDemoNote");
   const kpisEl = document.getElementById("admKpis");
   const novelEl = document.getElementById("admNovelWrap");
   const queueWrap = document.getElementById("admQueueWrap");
@@ -37,33 +44,45 @@
   const signinNote = document.getElementById("admSigninNote");
   if (!kpisEl || !queueWrap || !ddEl || !modal || !consoleEl || !signinForm) return;
 
-  // A deployed server seeds the demo in the background after it starts (ADR D60); a local
-  // checkout seeds by hand.
-  const SEED_HINT =
-    "A freshly started server prepares the demo data in the background — refresh in a few " +
-    "minutes. Running locally: <code>python scripts/demo_seed.py</code> then " +
-    "<code>python -m qorgan.analytics.pipeline</code>.";
+  let lang = pickLocale({ stored: readStoredLocale(), languages: browserLanguages() });
+  const locale = () => lang;
+  const tr = (key, params = null) => adminText.t(lang, key, params);
+  const trHtml = (key, params = null) => adminText.tHtml(lang, key, params);
+
+  /** Bind an element to a string, so it follows a language switch; a null key clears it. */
+  const bind = (el, key, params = null) => {
+    if (!key) {
+      delete el.dataset.i18n;
+      delete el.dataset.i18nParams;
+      el.textContent = "";
+      return;
+    }
+    el.dataset.i18n = key;
+    if (params) el.dataset.i18nParams = JSON.stringify(params);
+    else delete el.dataset.i18nParams;
+    renderEl(el, lang, adminText);
+  };
 
   const KPI_LABELS = [
-    ["incidents", "incidents analyzed"],
-    ["organizations", "organizations"],
-    ["novel_schemes", "new schemes"],
-    ["pending_reports", "pending reports"],
+    ["incidents", "admin.kpi_incidents"],
+    ["organizations", "admin.kpi_organizations"],
+    ["novel_schemes", "admin.kpi_novel"],
+    ["pending_reports", "admin.kpi_pending"],
   ];
 
   // dir: 1 ascending, -1 descending. Text columns default ascending, numeric descending.
   const QUEUE_COLUMNS = [
-    { key: "name", label: "organization", value: (o) => o.name.toLowerCase(), dir: 1 },
-    { key: "priority", label: "priority", value: (o) => o.priority, dir: -1 },
-    { key: "incidents", label: "incidents", value: (o) => o.incidents, dir: -1 },
-    { key: "numbers", label: "numbers", value: (o) => o.numbers.length, dir: -1 },
-    { key: "last_activity", label: "last activity", value: (o) => o.last_activity || "", dir: -1 },
+    { key: "name", label: "admin.col_organization", value: (o) => o.name.toLowerCase(), dir: 1 },
+    { key: "priority", label: "admin.col_priority", value: (o) => o.priority, dir: -1 },
+    { key: "incidents", label: "admin.col_incidents", value: (o) => o.incidents, dir: -1 },
+    { key: "numbers", label: "admin.col_numbers", value: (o) => o.numbers.length, dir: -1 },
+    { key: "last_activity", label: "admin.col_last_activity", value: (o) => o.last_activity || "", dir: -1 },
   ];
   const CALL_COLUMNS = [
-    { key: "date", label: "date", value: (c) => c.date || "", dir: -1 },
-    { key: "number", label: "number", value: (c) => c.number || "", dir: 1 },
-    { key: "risk", label: "risk", value: (c) => c.risk, dir: -1 },
-    { key: "excerpt", label: "excerpt" }, // not sortable
+    { key: "date", label: "admin.col_date", value: (c) => c.date || "", dir: -1 },
+    { key: "number", label: "admin.col_number", value: (c) => c.number || "", dir: 1 },
+    { key: "risk", label: "admin.col_risk", value: (c) => c.risk, dir: -1 },
+    { key: "excerpt", label: "admin.col_excerpt" }, // not sortable
   ];
 
   let orgs = [];
@@ -81,10 +100,9 @@
   // ── session: the analyst key lives in sessionStorage (this tab only), never localStorage ──
 
   const KEY_STORE = "qorgan.analystKey";
-  const PURPOSE_LABELS = {
-    pattern_review: "pattern review — confirm or dismiss this scheme or verdict",
-    citizen_request: "citizen request — the reporter asked about their report",
-    partner_request: "partner request — a bank or Anti-Fraud Center case query",
+  const purposeLabel = (code) => {
+    const label = tr(`admin.purpose_${code}`);
+    return label === `admin.purpose_${code}` ? code : label; // a code this page does not know yet
   };
   const readStoredKey = () => {
     try { return sessionStorage.getItem(KEY_STORE) || ""; } catch { return ""; }
@@ -106,7 +124,7 @@
     const headers = { ...(opts.headers || {}), ...(analystKey ? { "X-Analyst-Key": analystKey } : {}) };
     const res = await fetch(path, { ...opts, headers, cache: "no-store" });
     if (res.status === 401) {
-      endSession("Your key is no longer accepted — sign in again.", "error");
+      endSession("admin.err_key_revoked", "error");
       throw new AuthError("signed out");
     }
     return res;
@@ -115,9 +133,9 @@
   const errorDetail = async (res) => {
     try {
       const body = await res.json();
-      return typeof body.detail === "string" ? body.detail : `API returned ${res.status}`;
+      return typeof body.detail === "string" ? body.detail : tr("admin.err_api", { status: res.status });
     } catch {
-      return `API returned ${res.status}`;
+      return tr("admin.err_api", { status: res.status });
     }
   };
 
@@ -125,25 +143,12 @@
     String(s ?? "").replace(/[&<>"']/g, (ch) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
 
-  const locale = () => document.querySelector('input[name="adm-loc"]:checked')?.value || "ru";
-
   const showEmpty = (target, html) => {
     target.className = "data-empty";
     target.innerHTML = html;
   };
 
-  // Offset-based span highlighting (spans are validated verbatim server-side).
-  const highlightSpans = (text, spans) => {
-    const sorted = [...spans].sort((a, b) => a.start - b.start);
-    let html = "";
-    let cur = 0;
-    for (const s of sorted) {
-      if (s.start < cur || s.end > text.length) continue;
-      html += esc(text.slice(cur, s.start)) + "<mark>" + esc(text.slice(s.start, s.end)) + "</mark>";
-      cur = s.end;
-    }
-    return html + esc(text.slice(cur));
-  };
+  const highlightSpans = (text, spans) => markSpans(text, spans, esc);
 
   const sortedBy = (items, columns, sort) => {
     const col = columns.find((c) => c.key === sort.key);
@@ -160,13 +165,13 @@
   const headerRow = (columns, sort) =>
     columns
       .map((c) => {
-        if (!c.value) return `<th scope="col">${esc(c.label)}</th>`;
+        if (!c.value) return `<th scope="col">${esc(tr(c.label))}</th>`;
         const active = c.key === sort.key;
         const ind = active ? (sort.dir === 1 ? "▲" : "▼") : "▼";
         const ariaSort = active ? ` aria-sort="${sort.dir === 1 ? "ascending" : "descending"}"` : "";
         return (
           `<th scope="col" class="sortable${active ? " is-sorted" : ""}" data-key="${esc(c.key)}"${ariaSort}>` +
-          `<button type="button" class="adm-sortbtn" data-sort="${esc(c.key)}">${esc(c.label)}` +
+          `<button type="button" class="adm-sortbtn" data-sort="${esc(c.key)}">${esc(tr(c.label))}` +
           `<span class="sort-ind" aria-hidden="true">${ind}</span></button></th>`
         );
       })
@@ -186,6 +191,11 @@
     root.querySelector(`[data-${name}="${CSS.escape(value)}"]`)?.focus();
   };
 
+  const roleName = (role) => {
+    const name = tr(`admin.role_${role}`);
+    return name === `admin.role_${role}` ? role : name;
+  };
+
   const toggleSort = (sort, columns, key) => {
     const col = columns.find((c) => c.key === key);
     if (!col || !col.value) return sort;
@@ -199,7 +209,7 @@
     kpisEl.innerHTML = KPI_LABELS.map(
       ([key, label]) =>
         `<div class="kpi-card"><div class="kpi-value">${esc(kpis[key])}</div>` +
-        `<div class="kpi-label">${esc(label)}</div></div>`
+        `<div class="kpi-label">${esc(tr(label))}</div></div>`
     ).join("");
   };
 
@@ -210,10 +220,10 @@
       return;
     }
     const items = novel
-      .map((o) => `<li>${esc(o.name)} &middot; ${o.incidents} incidents</li>`)
+      .map((o) => `<li>${esc(tr("admin.novel_item", { name: o.name, n: o.incidents }))}</li>`)
       .join("");
     novelEl.innerHTML =
-      `<div class="novel-banner mono"><b>NEW SCHEME${novel.length > 1 ? "S" : ""} DETECTED</b>` +
+      `<div class="novel-banner mono"><b>${esc(tr("admin.novel_title"))}</b>` +
       `<ul>${items}</ul></div>`;
   };
 
@@ -235,16 +245,16 @@
   const renderQueue = () => {
     if (!orgs.length) {
       queueCount.textContent = "";
-      showEmpty(queueWrap, `No organizations to display yet. ${SEED_HINT}`);
+      showEmpty(queueWrap, `${esc(tr("admin.queue_empty"))} ${trHtml("admin.seed_hint_html")}`);
       return;
     }
     const visible = visibleOrgs();
     queueCount.textContent =
       visible.length === orgs.length
-        ? `${orgs.length} organizations`
-        : `${visible.length} of ${orgs.length} organizations`;
+        ? tr("admin.queue_count", { n: orgs.length })
+        : tr("admin.queue_count_filtered", { shown: visible.length, n: orgs.length });
     if (!visible.length) {
-      showEmpty(queueWrap, "No organizations match — clear the search or filter.");
+      showEmpty(queueWrap, esc(tr("admin.queue_no_match")));
       return;
     }
     const focused = focusedControl(queueWrap);
@@ -254,7 +264,7 @@
       .map(
         (o) => `<tr data-org="${esc(o.id)}" class="${o.id === selectedId ? "is-selected" : ""}">` +
           `<td><button type="button" class="adm-rowbtn" data-open-org="${esc(o.id)}">${esc(o.name)}</button>` +
-          `${o.is_novel ? '<span class="queue-badge">NEW</span>' : ""}${feedbackBadge(o.feedback)}</td>` +
+          `${o.is_novel ? `<span class="queue-badge">${esc(tr("admin.badge_new"))}</span>` : ""}${feedbackBadge(o.feedback)}</td>` +
           `<td>${o.priority.toFixed(2)}</td>` +
           `<td>${o.incidents}</td>` +
           `<td>${o.numbers.length}</td>` +
@@ -263,7 +273,7 @@
       .join("");
     queueWrap.className = "";
     queueWrap.innerHTML =
-      `<div class="table-scroll" tabindex="0" role="region" aria-label="Priority queue table"><table class="eval-table queue-table mono"><thead><tr>` +
+      `<div class="table-scroll" tabindex="0" role="region" aria-label="${esc(tr("admin.queue_table_aria"))}"><table class="eval-table queue-table mono"><thead><tr>` +
       headerRow(QUEUE_COLUMNS, queueSort) +
       `</tr></thead><tbody>${rows}</tbody></table></div>`;
     restoreFocus(queueWrap, focused);
@@ -310,17 +320,17 @@
   // ── drill-down (inside the modal): org header + searchable calls table ───────
 
   const renderDrilldown = () => {
-    const badge = detail.is_novel ? '<span class="queue-badge">NEW SCHEME</span>' : "";
+    const badge = detail.is_novel ? `<span class="queue-badge">${esc(tr("admin.badge_new_scheme"))}</span>` : "";
     const numbers = detail.numbers.length
       ? detail.numbers.map((n) => `<span class="tw-tag">${esc(n)}</span>`).join("")
-      : '<span class="tw-dim">none linked</span>';
+      : `<span class="tw-dim">${esc(tr("admin.none_linked"))}</span>`;
     const tactics = detail.tactics.length
       ? detail.tactics
           .map((t) => `<span class="tw-tag" lang="${locale()}">${esc(t.name)}&nbsp;&middot;&nbsp;${t.count}</span>`)
           .join("")
-      : '<span class="tw-dim">none</span>';
+      : `<span class="tw-dim">${esc(tr("admin.none"))}</span>`;
     const script = detail.representative_script
-      ? `<div class="dd-section-label mono">representative script</div>` +
+      ? `<div class="dd-section-label mono">${esc(tr("admin.dd_script"))}</div>` +
         `<div class="dd-script">${esc(detail.representative_script)}</div>`
       : "";
 
@@ -328,29 +338,29 @@
     const mergeOptions = others.map((o) => `<option value="${esc(o.id)}">${esc(o.name)} (${o.incidents})</option>`).join("");
     const feedback =
       `<div class="dd-feedback mono">` +
-      `<span class="dd-feedback-label">analyst verdict${detail.feedback ? ` · <b>${esc(detail.feedback)}</b>` : ""}</span>` +
-      `<button type="button" class="btn dd-fb-btn" data-fb="confirm">Confirm</button>` +
-      `<button type="button" class="btn dd-fb-btn" data-fb="dismiss">Dismiss</button>` +
+      `<span class="dd-feedback-label">${esc(tr("admin.dd_verdict"))}${detail.feedback ? ` · <b>${esc(feedbackName(detail.feedback))}</b>` : ""}</span>` +
+      `<button type="button" class="btn dd-fb-btn" data-fb="confirm">${esc(tr("admin.fb_confirm"))}</button>` +
+      `<button type="button" class="btn dd-fb-btn" data-fb="dismiss">${esc(tr("admin.fb_dismiss"))}</button>` +
       (others.length
-        ? `<label class="dd-fb-merge">merge into <select id="ddMergeTarget">${mergeOptions}</select>` +
-          `<button type="button" class="btn dd-fb-btn" data-fb="merge">Merge</button></label>`
+        ? `<label class="dd-fb-merge">${esc(tr("admin.fb_merge_into"))} <select id="ddMergeTarget">${mergeOptions}</select>` +
+          `<button type="button" class="btn dd-fb-btn" data-fb="merge">${esc(tr("admin.fb_merge"))}</button></label>`
         : "") +
-      `<span class="dd-fb-note tw-dim">logged as ${esc(me ? me.id : "")}; a dismissed operation drops to 20 % priority</span>` +
+      `<span class="dd-fb-note tw-dim">${esc(tr("admin.fb_note", { id: me ? me.id : "" }))}</span>` +
       `</div>`;
 
-    modalTitle.textContent = `organization · ${detail.id}`;
+    modalTitle.textContent = tr("admin.dd_title", { id: detail.id });
     modalDot.className = `p-dot${detail.is_novel ? "" : " tone-moss"}`;
     ddEl.innerHTML =
       `<div class="dd-title">${esc(detail.name)} ${badge}${feedbackBadge(detail.feedback)}</div>` +
-      `<div class="dd-meta mono">priority ${detail.priority.toFixed(2)}</div>` +
+      `<div class="dd-meta mono">${esc(tr("admin.dd_priority", { p: detail.priority.toFixed(2) }))}</div>` +
       feedback +
-      `<div class="dd-section-label mono">linked numbers</div><div class="dd-chips">${numbers}</div>` +
-      `<div class="dd-section-label mono">tactic profile</div><div class="dd-chips">${tactics}</div>` +
+      `<div class="dd-section-label mono">${esc(tr("admin.dd_numbers"))}</div><div class="dd-chips">${numbers}</div>` +
+      `<div class="dd-section-label mono">${esc(tr("admin.dd_tactics"))}</div><div class="dd-chips">${tactics}</div>` +
       script +
-      `<div class="dd-section-label mono">calls</div>` +
+      `<div class="dd-section-label mono">${esc(tr("admin.dd_calls"))}</div>` +
       `<div class="dd-call-tools mono">` +
       `<input id="ddCallSearch" class="dd-call-search" type="search" ` +
-      `placeholder="search excerpt or number…" aria-label="Search calls" value="${esc(callQuery)}">` +
+      `placeholder="${esc(tr("admin.calls_search_placeholder"))}" aria-label="${esc(tr("admin.calls_search_aria"))}" value="${esc(callQuery)}">` +
       `<span class="dd-call-note" id="ddCallNote"></span>` +
       `</div>` +
       `<div id="ddCalls"></div>`;
@@ -380,9 +390,9 @@
     const cached = analysisCache.get(`${incidentId}|${locale()}`);
     let inner;
     if (!cached) {
-      inner = `<div class="dd-loading">scoring with the model&hellip;</div>`;
+      inner = `<div class="dd-loading">${esc(tr("admin.scoring"))}</div>`;
     } else if (cached.error) {
-      inner = `<div class="dd-loading">could not analyze — ${esc(cached.error)}</div>`;
+      inner = `<div class="dd-loading">${esc(tr("admin.analysis_failed", { error: cached.error }))}</div>`;
     } else {
       const a = cached;
       const maxWeight = Math.max(...a.tags.map((t) => t.weight), 0.0001);
@@ -395,24 +405,24 @@
                 `<span class="ec-val">${t.weight.toFixed(2)}</span></div>`
             )
             .join("")
-        : '<p class="tw-dim">no tactic signals detected</p>';
+        : `<p class="tw-dim">${esc(tr("admin.no_signals"))}</p>`;
       const verdict = a.flagged
         ? '<span class="tone-oxide">"scam_risk"</span>'
         : '<span class="tone-moss">"clear"</span>';
       inner =
-        `<div class="dd-analysis-head mono">model verdict ${verdict}` +
-        `&nbsp;&middot;&nbsp;risk ${a.risk.toFixed(2)} / threshold ${a.threshold.toFixed(2)}` +
-        `&nbsp;&middot;&nbsp;backend ${esc(a.backend)}${a.fallback ? " (fallback)" : ""}</div>` +
+        `<div class="dd-analysis-head mono">${esc(tr("admin.model_verdict"))} ${verdict}` +
+        `&nbsp;&middot;&nbsp;${esc(tr("admin.risk_threshold", { risk: a.risk.toFixed(2), threshold: a.threshold.toFixed(2) }))}` +
+        `&nbsp;&middot;&nbsp;${esc(tr("admin.backend", { backend: a.backend }))}${a.fallback ? ` ${esc(tr("admin.backend_fallback"))}` : ""}</div>` +
         `<div class="dd-rank">${rank}</div>` +
         (a.transcript
-          ? `<div class="dd-section-label mono">full transcript &middot; trigger phrases &middot; ` +
-            `<span class="tone-moss">opened by ${esc(a.opened_by || "")} &middot; ${esc(a.opened_for || "")} &middot; logged</span></div>` +
+          ? `<div class="dd-section-label mono">${esc(tr("admin.transcript_label"))} &middot; ` +
+            `<span class="tone-moss">${esc(tr("admin.opened_by", { by: a.opened_by || "", purpose: a.opened_for || "" }))}</span></div>` +
             `<div class="dd-script dd-analysis-script">${highlightSpans(a.transcript, a.spans)}</div>`
-          : `<div class="dd-section-label mono">excerpt &middot; trigger phrases</div>` +
+          : `<div class="dd-section-label mono">${esc(tr("admin.excerpt_label"))}</div>` +
             `<div class="dd-script dd-analysis-script">${esc(a.excerpt)}</div>` +
-            `<div class="dd-spans">${a.spans.map((sp) => `<mark>${esc(sp.text)}</mark>`).join(" ") || '<span class="tw-dim">no trigger phrases in the excerpt</span>'}</div>` +
+            `<div class="dd-spans">${a.spans.map((sp) => `<mark>${esc(sp.text)}</mark>`).join(" ") || `<span class="tw-dim">${esc(tr("admin.no_spans"))}</span>`}</div>` +
             (a.withheld_spans
-              ? `<p class="dd-withheld mono">${a.withheld_spans} more trigger phrase${a.withheld_spans > 1 ? "s" : ""} beyond the excerpt &mdash; counted, not quoted, until the case is opened</p>`
+              ? `<p class="dd-withheld mono">${esc(tr("admin.withheld", { n: a.withheld_spans }))}</p>`
               : "") +
             openControls(a.incident_id)) +
         `<p class="dd-analysis-reason">${esc(a.reason)}</p>` +
@@ -425,25 +435,22 @@
   // and for the analyst role the whole control is visibly locked with the reason.
   const openControls = (incidentId) => {
     const allowed = Boolean(me && me.can_open_cases);
-    const who = me ? `<b>${esc(me.id)}</b> (${esc(me.role)})` : "";
+    const who = { id: me ? me.id : "", role: me ? roleName(me.role) : "" };
     const purposes = ((me && me.open_purposes) || [])
-      .map((p) => `<option value="${esc(p)}">${esc(PURPOSE_LABELS[p] || p)}</option>`)
+      .map((p) => `<option value="${esc(p)}">${esc(purposeLabel(p))}</option>`)
       .join("");
     const locked = allowed ? "" : " disabled";
-    const fine = allowed
-      ? `Logged as ${who} with this incident and the purpose you choose. The note must not carry numbers or call text.`
-      : `Opening a full transcript needs the <b>investigator</b> role. You are signed in as ${who}; ` +
-        `the excerpt and trigger phrases above are what your role sees.`;
+    const fine = trHtml(allowed ? "admin.open_fine_html" : "admin.open_locked_html", who);
     const msg = openNotes.get(incidentId);
     return (
       `<div class="dd-open${allowed ? "" : " is-locked"}">` +
-      `<div class="dd-section-label mono">open the full transcript &middot; audited</div>` +
+      `<div class="dd-section-label mono">${esc(tr("admin.open_title"))}</div>` +
       `<div class="dd-open-row">` +
-      `<select class="dd-open-purpose mono" aria-label="Purpose for opening the full transcript"${locked}>` +
-      `<option value="">choose a purpose…</option>${purposes}</select>` +
-      `<input class="dd-open-note mono" type="text" maxlength="160" aria-label="Note for the audit log (optional)" ` +
-      `placeholder="note (optional) — e.g. a ticket reference"${locked}>` +
-      `<button type="button" class="btn dd-open-btn" data-open="${esc(incidentId)}" disabled>Open full transcript</button>` +
+      `<select class="dd-open-purpose mono" aria-label="${esc(tr("admin.open_purpose_aria"))}"${locked}>` +
+      `<option value="">${esc(tr("admin.open_choose"))}</option>${purposes}</select>` +
+      `<input class="dd-open-note mono" type="text" maxlength="160" aria-label="${esc(tr("admin.open_note_aria"))}" ` +
+      `placeholder="${esc(tr("admin.open_note_placeholder"))}"${locked}>` +
+      `<button type="button" class="btn dd-open-btn" data-open="${esc(incidentId)}" disabled>${esc(tr("admin.open_button"))}</button>` +
       `</div>` +
       `<p class="dd-open-fine mono">${fine}</p>` +
       (msg ? `<p class="dd-open-msg mono${msg.tone === "error" ? " is-error" : ""}" role="status">${esc(msg.text)}</p>` : "") +
@@ -458,10 +465,10 @@
     const total = detail.sample_incidents.length;
     const visible = visibleCalls();
     noteEl.textContent =
-      (visible.length === total ? `${total} calls` : `${visible.length} of ${total} calls`) +
-      " · select a call for the model analysis";
+      (visible.length === total ? tr("admin.calls_count", { n: total }) : tr("admin.calls_count_filtered", { shown: visible.length, n: total })) +
+      ` · ${tr("admin.calls_hint")}`;
     if (!visible.length) {
-      callsEl.innerHTML = '<p class="tw-dim mono">no calls match</p>';
+      callsEl.innerHTML = `<p class="tw-dim mono">${esc(tr("admin.calls_no_match"))}</p>`;
       return;
     }
     const focused = focusedControl(callsEl);
@@ -474,13 +481,13 @@
           `<tr data-incident="${esc(c.id)}" data-has-transcript="${c.has_transcript === false ? "0" : "1"}" class="${expanded ? "is-expanded" : ""}">` +
           `<td>${c.has_transcript === false ? date : `<button type="button" class="adm-rowbtn" data-expand="${esc(c.id)}" aria-expanded="${expanded}">${date}</button>`}</td>` +
           `<td>${esc(c.number || "—")}</td>` +
-          `<td>${(c.risk * 100).toFixed(0)}%</td><td>${c.has_transcript === false ? '<span class="tw-dim">signals only — partner report without a transcript</span>' : esc(c.excerpt)}</td></tr>` +
+          `<td>${(c.risk * 100).toFixed(0)}%</td><td>${c.has_transcript === false ? `<span class="tw-dim">${esc(tr("admin.signals_only"))}</span>` : esc(c.excerpt)}</td></tr>` +
           (expanded ? analysisBlock(c.id) : "")
         );
       })
       .join("");
     callsEl.innerHTML =
-      `<div class="table-scroll" tabindex="0" role="region" aria-label="Calls of this organization"><table class="dd-samples mono"><thead><tr>` +
+      `<div class="table-scroll" tabindex="0" role="region" aria-label="${esc(tr("admin.calls_table_aria"))}"><table class="dd-samples mono"><thead><tr>` +
       headerRow(CALL_COLUMNS, callSort) +
       `</tr></thead><tbody>${rows}</tbody></table></div>`;
     restoreFocus(callsEl, focused);
@@ -523,14 +530,14 @@
         { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
       );
       if (!res.ok) {
-        openNotes.set(incidentId, { tone: "error", text: `not opened — ${await errorDetail(res)}` });
+        openNotes.set(incidentId, { tone: "error", text: tr("admin.open_failed", { error: await errorDetail(res) }) });
       } else {
         openNotes.delete(incidentId);
         analysisCache.set(key, { ...(await res.json()), opened_by: me ? me.id : "", opened_for: purpose });
       }
     } catch (e) {
       if (e instanceof AuthError) return;
-      openNotes.set(incidentId, { tone: "error", text: `not opened — ${e.message || e}` });
+      openNotes.set(incidentId, { tone: "error", text: tr("admin.open_failed", { error: e.message || e }) });
     }
     if (expandedCall === incidentId) renderCalls();
   };
@@ -562,27 +569,39 @@
 
   // ── analyst feedback (PLAN C6): confirm / dismiss / merge, applied server-side ──
 
+  const feedbackName = (state) => {
+    const name = tr(`admin.fb_state_${state}`);
+    return name === `admin.fb_state_${state}` ? state : name;
+  };
   const feedbackBadge = (state) =>
-    state ? `<span class="queue-badge fb-${esc(state)}">${esc(state.toUpperCase())}</span>` : "";
+    state ? `<span class="queue-badge fb-${esc(state)}">${esc(feedbackName(state).toUpperCase())}</span>` : "";
 
   const sendFeedback = async (orgId, action) => {
-    const body = { action };
+    const body = { action, fingerprint: detail?.fingerprint };
     if (action === "merge") {
       const target = document.getElementById("ddMergeTarget")?.value;
       if (!target) return;
       body.target_org_id = target;
+      body.target_fingerprint = orgs.find((o) => o.id === target)?.fingerprint;
     }
     try {
       const res = await api(`/api/admin/organizations/${encodeURIComponent(orgId)}/feedback?locale=${locale()}`, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
+      if (res.status === 409) {
+        // Reports arrived or left while this was open: nothing was saved; show the queue as it is now.
+        await load();
+        ingestNote.className = "adm-note is-error";
+        bind(ingestNote, "admin.fb_stale");
+        return;
+      }
       if (!res.ok) throw new Error(await errorDetail(res));
       const shown = await res.json();
       await load(); // the queue, KPIs and stats all change; re-read everything
       selectOrg(shown.id);
     } catch (e) {
       if (e instanceof AuthError) return;
-      ddEl.insertAdjacentHTML("afterbegin", `<div class="dd-loading">feedback failed — ${esc(e.message || e)}</div>`);
+      ddEl.insertAdjacentHTML("afterbegin", `<div class="dd-loading">${esc(tr("admin.fb_failed", { error: e.message || e }))}</div>`);
     }
   };
 
@@ -595,9 +614,9 @@
       tr.classList.toggle("is-selected", tr.dataset.org === orgId);
     });
     openModal();
-    modalTitle.textContent = `organization · ${orgId}`;
+    modalTitle.textContent = tr("admin.dd_title", { id: orgId });
     modalDot.className = "p-dot";
-    ddEl.innerHTML = '<div class="dd-loading">loading&hellip;</div>';
+    ddEl.innerHTML = `<div class="dd-loading">${esc(tr("admin.loading"))}</div>`;
     try {
       const res = await api(
         `/api/admin/organizations/${encodeURIComponent(orgId)}?locale=${locale()}`
@@ -609,8 +628,7 @@
       renderDrilldown();
     } catch (e) {
       if (e instanceof AuthError) return;
-      ddEl.innerHTML =
-        `<div class="dd-loading">Could not load this organization — ${esc(e.message || e)}</div>`;
+      ddEl.innerHTML = `<div class="dd-loading">${esc(tr("admin.org_failed", { error: e.message || e }))}</div>`;
     }
   };
 
@@ -636,7 +654,7 @@
         novelEl.innerHTML = "";
         queueCount.textContent = "";
         statsSection.hidden = true;
-        showEmpty(queueWrap, `No Level-2 analysis yet. ${SEED_HINT}`);
+        showEmpty(queueWrap, `${esc(tr("admin.analysis_empty"))} ${trHtml("admin.seed_hint_html")}`);
         return;
       }
 
@@ -650,11 +668,7 @@
       kpisEl.innerHTML = "";
       novelEl.innerHTML = "";
       statsSection.hidden = true;
-      showEmpty(
-        queueWrap,
-        `Dashboard offline &mdash; ${esc(e.message || e)}. Serve the page through the API: ` +
-          "<code>python -m qorgan.api</code>."
-      );
+      showEmpty(queueWrap, trHtml("admin.offline_html", { error: e.message || e }));
     } finally {
       if (!stale()) kpisEl.removeAttribute("aria-busy");
     }
@@ -664,7 +678,7 @@
   const loadStats = async (stale = () => false) => {
     try {
       const res = await api(`/api/admin/stats?locale=${locale()}`);
-      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      if (!res.ok) throw new Error(tr("admin.err_api", { status: res.status }));
       const body = await res.json();
       if (!stale()) renderStats(body);
     } catch {
@@ -697,7 +711,7 @@
       .map((p) => {
         const height = p.count ? Math.max(3, (p.count / maxCount) * 100).toFixed(1) : 0;
         return (
-          `<div class="st-bar-slot" data-tip="${esc(p.date)} · ${p.count} calls">` +
+          `<div class="st-bar-slot" data-tip="${esc(tr("admin.stats_tip", { date: p.date, n: p.count }))}">` +
           `<div class="st-bar" style="height:${height}%"></div></div>`
         );
       })
@@ -705,34 +719,34 @@
     const t = s.trend;
     const trendHtml =
       t.delta_pct === null
-        ? `<span class="st-delta">${t.this_week} this week</span>`
-        : `<span class="st-delta">${t.this_week} this week&nbsp;&middot;&nbsp;` +
-          `${t.delta_pct >= 0 ? "▲" : "▼"}&nbsp;${Math.abs(t.delta_pct).toFixed(0)}% vs prior week</span>`;
+        ? `<span class="st-delta">${esc(tr("admin.trend_week", { n: t.this_week }))}</span>`
+        : `<span class="st-delta">${esc(tr("admin.trend_week", { n: t.this_week }))}&nbsp;&middot;&nbsp;` +
+          `${esc(tr("admin.trend_delta", { arrow: t.delta_pct >= 0 ? "▲" : "▼", pct: Math.abs(t.delta_pct).toFixed(0) }))}</span>`;
     const first = s.activity[0]?.date || "";
     const last = s.activity[s.activity.length - 1]?.date || "";
     const activityCard =
       `<div class="st-card st-card--wide">` +
-      `<div class="st-card-head mono"><span>incidents recorded · last 30 days</span>${trendHtml}</div>` +
-      `<div class="st-bars" role="img" aria-label="Incidents per day over the last 30 days">${bars}</div>` +
+      `<div class="st-card-head mono"><span>${esc(tr("admin.stats_activity"))}</span>${trendHtml}</div>` +
+      `<div class="st-bars" role="img" aria-label="${esc(tr("admin.stats_activity_aria"))}">${bars}</div>` +
       `<div class="st-axis mono"><span>${esc(first)}</span><span>${esc(last)}</span></div>` +
       `</div>`;
 
     const r = s.reports;
     const rate = r.submitted ? Math.round((r.ingested / r.submitted) * 100) : null;
     const strip = r.submitted
-      ? `<div class="st-strip" role="img" aria-label="${r.ingested} ingested, ${r.pending} pending">` +
+      ? `<div class="st-strip" role="img" aria-label="${esc(tr("admin.stats_strip_aria", { ingested: r.ingested, pending: r.pending }))}">` +
         (r.ingested ? `<span class="st-seg st-seg--done" style="flex-grow:${r.ingested}"></span>` : "") +
         (r.pending ? `<span class="st-seg st-seg--pending" style="flex-grow:${r.pending}"></span>` : "") +
         `</div>` +
         `<div class="st-legend mono">` +
-        `<span><i class="st-dot st-dot--done"></i>ingested ${r.ingested}</span>` +
-        `<span><i class="st-dot st-dot--pending"></i>pending ${r.pending}</span></div>`
-      : `<p class="st-empty mono">no citizen reports yet — they arrive from the live-call page</p>`;
+        `<span><i class="st-dot st-dot--done"></i>${esc(tr("admin.stats_ingested", { n: r.ingested }))}</span>` +
+        `<span><i class="st-dot st-dot--pending"></i>${esc(tr("admin.stats_pending", { n: r.pending }))}</span></div>`
+      : `<p class="st-empty mono">${esc(tr("admin.stats_no_reports"))}</p>`;
     const reportsCard =
       `<div class="st-card">` +
-      `<div class="st-card-head mono"><span>citizen reports processed</span></div>` +
+      `<div class="st-card-head mono"><span>${esc(tr("admin.stats_reports"))}</span></div>` +
       `<div class="st-hero">${r.ingested}` +
-      `<span class="st-hero-sub">&nbsp;of ${r.submitted} ingested${rate === null ? "" : ` · ${rate}%`}</span></div>` +
+      `<span class="st-hero-sub">&nbsp;${esc(tr("admin.stats_of", { n: r.submitted }))}${rate === null ? "" : ` · ${rate}%`}</span></div>` +
       strip +
       `</div>`;
 
@@ -741,14 +755,14 @@
       .map(
         (o) =>
           `<div class="st-org-row">` +
-          `<span class="st-org-name">${esc(o.name)}${o.is_novel ? '<span class="queue-badge">NEW</span>' : ""}</span>` +
+          `<span class="st-org-name" title="${esc(o.name)}">${esc(o.name)}${o.is_novel ? `<span class="queue-badge">${esc(tr("admin.badge_new"))}</span>` : ""}</span>` +
           `<span class="st-org-bar"><i style="--w:${((o.incidents / maxIncidents) * 100).toFixed(0)}%"></i></span>` +
           `<span class="st-org-val">${o.incidents}</span></div>`
       )
       .join("");
     const topCard =
       `<div class="st-card">` +
-      `<div class="st-card-head mono"><span>largest organizations · incidents</span></div>` +
+      `<div class="st-card-head mono"><span>${esc(tr("admin.stats_largest"))}</span></div>` +
       `<div class="st-orgs">${orgRows}</div>` +
       `</div>`;
 
@@ -775,42 +789,46 @@
   const runIngest = async () => {
     if (!ingestBtn) return;
     ingestBtn.disabled = true;
-    ingestBtn.textContent = "ingesting…";
+    bind(ingestBtn, "admin.ingesting");
     ingestNote.className = "adm-note";
-    ingestNote.textContent = "embedding new reports…";
+    bind(ingestNote, "admin.ingest_embedding");
     try {
       const res = await api(`/api/admin/ingest?locale=${locale()}`, { method: "POST" });
       if (!res.ok) throw new Error(await errorDetail(res));
       const body = await res.json();
       ingestNote.className = "adm-note is-success";
-      if (!body.ingested) {
-        ingestNote.textContent = "no pending reports to ingest";
+      if (body.skipped) {
+        ingestNote.className = "adm-note is-error";
+        bind(ingestNote, "admin.ingest_skipped", { n: body.ingested, skipped: body.skipped });
+      } else if (!body.ingested) {
+        bind(ingestNote, "admin.ingest_none");
       } else {
         const placed = body.placements
-          .map((p) => `${p.org_name}${p.org_is_novel ? " (new scheme)" : ""}`)
+          .map((p) => `${p.org_name}${p.org_is_novel ? ` (${tr("admin.ingest_new_scheme")})` : ""}`)
           .join("; ");
-        ingestNote.textContent = `ingested ${body.ingested} · ${placed}`;
+        bind(ingestNote, "admin.ingest_done", { n: body.ingested, placed });
       }
       await load();
     } catch (e) {
       if (e instanceof AuthError) return;
       ingestNote.className = "adm-note is-error";
-      ingestNote.textContent = `ingest failed — ${e.message || e}`;
+      bind(ingestNote, "admin.ingest_failed", { error: String(e.message || e) });
     } finally {
       ingestBtn.disabled = false;
-      ingestBtn.textContent = "ingest reports";
+      bind(ingestBtn, "admin.ingest");
     }
   };
 
   // ── sign-in / sign-out ─────────────────────────────────────────────────────────
 
-  const showSignin = (message = "", tone = "") => {
+  const showSignin = (key = null, tone = "", params = null) => {
     consoleEl.hidden = true;
     toolbarEl.hidden = true;
     sessionEl.hidden = true;
+    demoNoteEl.hidden = true;
     signinSection.hidden = false;
     signinNote.className = `adm-note${tone ? ` is-${tone}` : ""}`;
-    signinNote.textContent = message;
+    bind(signinNote, key, params);
     keyInput.value = "";
     keyInput.focus();
   };
@@ -822,20 +840,28 @@
     sessionEl.hidden = false;
     const keyless = !analystKey;
     if (signOutBtn) signOutBtn.hidden = keyless;
+    // Keyless means the public demo (ADR D59): say plainly that nothing here is a real person's.
+    demoNoteEl.hidden = !keyless;
+    const role = `<span class="adm-role adm-role--${esc(me.role)}">${esc(roleName(me.role))}</span>`;
     whoEl.innerHTML =
       (keyless
-        ? `open demo access <span class="adm-role adm-role--${esc(me.role)}">${esc(me.role)}</span>` +
-          ' <span class="adm-who-note">no sign-in on this demo server; every action is still audited as ' +
-          `<b>${esc(me.id)}</b></span>`
-        : `signed in as <b>${esc(me.id)}</b> <span class="adm-role adm-role--${esc(me.role)}">${esc(me.role)}</span>`) +
-      (me.can_open_cases ? "" : ' <span class="adm-who-note">aggregates &amp; excerpts; opening a transcript needs an investigator</span>');
+        ? `${esc(tr("admin.who_open"))} ${role} <span class="adm-who-note">${trHtml("admin.who_open_note_html", { id: me.id })}</span>`
+        : `${trHtml("admin.who_signed_in_html", { id: me.id })} ${role}`) +
+      (me.can_open_cases ? "" : ` <span class="adm-who-note">${esc(tr("admin.who_limited"))}</span>`);
   };
 
+  const RATE_LIMIT_RETRY_MS = 60_000;
   // A server with open demo access (QORGAN_ADMIN_OPEN_ACCESS, ADR D59) admits a keyless visitor
   // as `public-demo`; anywhere else this answers 401 and the sign-in stays.
   const tryOpenAccess = async () => {
     try {
       const res = await fetch("/api/admin/session", { cache: "no-store" });
+      if (res.status === 429) {
+        // The demo's request budget, not a missing key: say so, and come back by itself.
+        showSignin("admin.too_many_requests", "error");
+        setTimeout(() => { if (!me && !analystKey) tryOpenAccess(); }, RATE_LIMIT_RETRY_MS);
+        return;
+      }
       const body = res.ok ? await res.json() : null;
       if (!body?.open_access) {
         showSignin();
@@ -850,7 +876,7 @@
   };
 
   // Forget the key and everything rendered with it.
-  const endSession = (message, tone) => {
+  const endSession = (key, tone) => {
     analystKey = "";
     me = null;
     forgetKey();
@@ -865,25 +891,28 @@
     statsEl.innerHTML = "";
     statsSection.hidden = true;
     queueCount.textContent = "";
-    ingestNote.textContent = "";
-    showSignin(message, tone);
+    bind(ingestNote, null);
+    showSignin(key, tone);
   };
 
   // GET /api/admin/session checks the key and names who is signed in (an audited session start).
   const startSession = async (key) => {
     signinBtn.disabled = true;
     signinNote.className = "adm-note";
-    signinNote.textContent = "checking the key…";
+    bind(signinNote, "admin.checking");
     try {
       const res = await fetch("/api/admin/session", { headers: { "X-Analyst-Key": key }, cache: "no-store" });
       if (!res.ok) {
-        const why =
-          res.status === 401 ? "That key was not accepted."
-          : res.status === 429 ? "Too many failed attempts from this address — wait a minute."
-          : await errorDetail(res);
         analystKey = "";
         forgetKey();
-        showSignin(why, "error");
+        if (res.status === 401) showSignin("admin.key_rejected", "error");
+        else if (res.status === 429) showSignin("admin.too_many", "error");
+        else {
+          // The server's own reason (a console closed for want of keys): shown as it was written.
+          const detail = await errorDetail(res);
+          showSignin(null, "error");
+          signinNote.textContent = detail;
+        }
         return;
       }
       me = await res.json();
@@ -893,7 +922,7 @@
       await load();
     } catch (e) {
       analystKey = "";
-      showSignin(`Could not reach the server — ${e.message || e}. Serve the page through the API: python -m qorgan.api`, "error");
+      showSignin("admin.unreachable", "error", { error: String(e.message || e) });
     } finally {
       signinBtn.disabled = false;
     }
@@ -905,13 +934,13 @@
     ev.preventDefault();
     const key = keyInput.value.trim();
     if (!key) {
-      showSignin("Paste the analyst key issued to you.", "error");
+      showSignin("admin.key_missing", "error");
       return;
     }
     startSession(key);
   });
   signOutBtn?.addEventListener("click", () =>
-    endSession("Signed out — the key was removed from this tab.", "success"));
+    endSession("admin.signed_out", "success"));
 
   searchInput?.addEventListener("input", (ev) => {
     queueQuery = ev.target.value;
@@ -923,12 +952,24 @@
       renderQueue();
     })
   );
-  document
-    .querySelectorAll('input[name="adm-loc"]')
-    // admin-lang.js fires this on page load; before sign-in there is nothing to reload (and a
-    // keyless request would read as a revoked key). A session in progress loads in the
-    // language checked when it completes.
-    .forEach((radio) => radio.addEventListener("change", () => { if (me) load(); }));
+  // One language control for the page, the same stored choice as the other pages (i18n-dom.js).
+  // Names and reasons come from the server in the language asked for, so a session reloads; before
+  // sign-in there is nothing to reload, and a keyless request would read as a revoked key.
+  const applyLanguage = (next, { persist = true } = {}) => {
+    lang = LOCALES.includes(next) ? next : DEFAULT_LOCALE;
+    if (persist) storeLocale(lang);
+    document.documentElement.lang = lang;
+    document.querySelectorAll('input[name="adm-lang"]').forEach((radio) => { radio.checked = radio.value === lang; });
+    localize(document, lang, adminText);
+    if (me) {
+      showConsole();
+      load();
+    }
+  };
+  document.querySelectorAll('input[name="adm-lang"]').forEach((radio) =>
+    radio.addEventListener("change", () => { if (radio.checked) applyLanguage(radio.value); })
+  );
+
   refreshBtn?.addEventListener("click", load);
   ingestBtn?.addEventListener("click", runIngest);
   modalClose.addEventListener("click", closeModal);
@@ -937,6 +978,7 @@
     if (ev.key === "Escape") closeModal();
   });
 
+  applyLanguage(lang, { persist: false });
   if (analystKey) startSession(analystKey);
   else tryOpenAccess();
 })();

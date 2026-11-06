@@ -15,6 +15,7 @@
    from the worklet to this module to the GigaAM worker by postMessage, and no module on that
    path has a network primitive (tests/test_architecture.py). */
 
+import { startAudioContext } from "./audio-context.js";
 import { createEndpointPass } from "./endpoint-runtime.js";
 import { createGigaamClient } from "./gigaam.js";
 import { createVad } from "./vad.js";
@@ -94,7 +95,7 @@ export function createLightPass({ endpoint, tagText, pageUrl = globalThis.locati
 /** The browser runtime: same shape as `createDeviceAsr` (asr.js) so the page drives both alike.
     `wordLevel` = site/core/asr-wordlevel.json (the word LID tags GigaAM's words), `endpoint` =
     `asr.endpoint` of qorgan-config.json. `onStatus(message, {code})`: listening | stopped. */
-export async function createLightAsr({ endpoint, wordLevel, onUtterance, onDropped, onSpeech, onStatus = () => {}, onEndpointStatus = () => {}, createClient = undefined }) {
+export async function createLightAsr({ endpoint, wordLevel, onUtterance, onDropped, onSpeech, onStatus = () => {}, onEndpointStatus = () => {}, onInterrupted = () => {}, createClient = undefined }) {
   const lid = wordLevel ? createWordLid(wordLevel.lid) : null;
   const pass = createLightPass({
     endpoint,
@@ -120,14 +121,21 @@ export async function createLightAsr({ endpoint, wordLevel, onUtterance, onDropp
     languages: lid ? ["kk", "ru"] : [],
     get segments() { return pass.segments; },
     async start(stream) {
-      ctx = new AudioContext();
-      await ctx.audioWorklet.addModule(CAPTURE_WORKLET_URL);
-      node = new AudioWorkletNode(ctx, CAPTURE_PROCESSOR, { numberOfInputs: 1, numberOfOutputs: 0, channelCount: 1 });
-      pass.reset(ctx.sampleRate); // VAD times and the audio ring both count from here
-      node.port.onmessage = (event) => pass.push(event.data);
-      source = ctx.createMediaStreamSource(stream);
-      source.connect(node);
-      onStatus("listening — audio stays on this device", { code: "listening" });
+      ctx = await startAudioContext(onInterrupted);
+      try {
+        await ctx.audioWorklet.addModule(CAPTURE_WORKLET_URL);
+        node = new AudioWorkletNode(ctx, CAPTURE_PROCESSOR, { numberOfInputs: 1, numberOfOutputs: 0, channelCount: 1 });
+        pass.reset(ctx.sampleRate); // VAD times and the audio ring both count from here
+        node.port.onmessage = (event) => pass.push(event.data);
+        source = ctx.createMediaStreamSource(stream);
+        source.connect(node);
+        onStatus("listening — audio stays on this device", { code: "listening" });
+      } catch (err) {
+        try { await ctx.close(); } catch {} // a failed start must not leave a running context
+        ctx = null;
+        node = null;
+        throw err;
+      }
     },
     async stop() {
       try { source?.disconnect(); } catch {}

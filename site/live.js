@@ -22,6 +22,7 @@ const $ = (id) => document.getElementById(id);
 const scenarioSel = $("lvScenario");
 const scriptArea = $("lvScript");
 const startBtn = $("lvStart");
+const stopBtn = $("lvStop");
 const setupNote = $("lvSetupNote");
 const setupReplay = $("lvSetupReplay");
 const setupMic = $("lvSetupMic");
@@ -59,7 +60,8 @@ const TURN_DELAY_MS = 1200;
 // One-time downloads, disclosed before they start (site/models/): e5-base int8 ONNX 279 MB +
 // tokenizer 17 MB; the two Vosk tarballs 60 MB (kk) + 46 MB (ru).
 const MODEL_MB = 300;
-const SPEECH_MB = 147; // kk 60 + ru 46 + en 41 MB tarballs (ADR D62)
+const SPEECH_MB = 106; // kk 60 + ru 46 MB tarballs (English left the voice pipeline, ADR D70)
+const MAX_CONSECUTIVE_DROPS = 3; // light mode: phrases in a row before the decoder counts as broken
 const ENDPOINT_MB = 239; // GigaAM 225 MB + its sherpa-onnx runtime 14 MB (ADR D64), downloaded once
 // `live.html?debug=asr` keeps a per-utterance trace on window.__qorganVoice (evidence runs, D64).
 const VOICE_TRACE = new URLSearchParams(location.search).get("debug") === "asr";
@@ -78,8 +80,16 @@ const MIC_REASON = {
   secure_context: "mic.reason_browser",
   audio_worklet: "mic.reason_browser",
   capture: "mic.reason_capture",
-  phone: "mic.reason_phone",
   wasm: "mic.reason_browser",
+};
+// What a refused or failed getUserMedia means to the person at the microphone.
+const MIC_ERRORS = {
+  NotAllowedError: "mic.err_denied",
+  SecurityError: "mic.err_denied",
+  NotFoundError: "mic.err_no_device",
+  OverconstrainedError: "mic.err_no_device",
+  NotReadableError: "mic.err_busy",
+  AbortError: "mic.err_busy",
 };
 const ASR_STATUS = { runtime: "mic.loading_runtime", model: "mic.loading_model", model_skipped: "mic.model_skipped", listening: "mic.listening", stopped: "mic.stopped" };
 
@@ -101,6 +111,16 @@ class UiError extends Error {
   }
 }
 const reasonOf = (e) => (e instanceof UiError ? { $: e.key, params: e.params } : errText(e));
+
+/** getUserMedia, its refusals in the page's words. Only its own: an AbortError from anywhere else
+    (a worklet that did not load) does not mean another program holds the microphone. */
+const openMicrophone = async (constraints) => {
+  try {
+    return await navigator.mediaDevices.getUserMedia(constraints);
+  } catch (e) {
+    throw MIC_ERRORS[e?.name] ? new UiError(MIC_ERRORS[e.name]) : e;
+  }
+};
 
 /** Render one element / a subtree from its data-i18n* keys (i18n-dom.js) in the current language. */
 const renderEl = (el) => renderElIn(el, locale);
@@ -198,6 +218,10 @@ let progressNote = setupNote; // the note of the mode that asked for the model
 
 const deviceRuntime = (noteEl = null) => {
   if (noteEl) progressNote = noteEl;
+  if (runtime && !runtime.alive()) { // its worker died: the next check starts a new one
+    runtime = null;
+    runtimePromise = null;
+  }
   if (!runtimePromise) {
     runtimePromise = (async () => {
       const { createDeviceRuntime } = await import("./core/device.js");
@@ -230,12 +254,34 @@ const deviceRuntime = (noteEl = null) => {
 // ── the live panel (rendered from `call`) ─────────────────────────────────────
 
 let running = false;
+let sending = false; // a report is on its way
+let replayStopped = false;
 let call = null; // {turn, score, band, tags, advice: {tags, confidence} | null}
 let lastState = null; // the finished on-device session: summary + report
 let liveState = null; // the replay session in progress
 let reportDraft = null; // the draft the review started from; edits can only remove from it
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** One check at a time: while one runs, the other mode's start button could only do nothing. */
+const setRunning = (value) => {
+  running = value;
+  document.querySelectorAll('input[name="lv-mode"]').forEach((radio) => {
+    radio.disabled = value || (radio.value === "mic" && micChip.classList.contains("is-disabled"));
+  });
+};
+
+/** Copy `text`, and say so on the button itself for a moment. */
+const copyWithFeedback = async (button, text, idleKey) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    bind(button, "summary.copied");
+  } catch {
+    bind(button, "summary.copy_failed");
+  }
+  setTimeout(() => bind(button, idleKey), 2500);
+};
+
 const mode = () => document.querySelector('input[name="lv-mode"]:checked')?.value || "replay";
 
 const bandParams = (band) => ({ band: { $: `band.${band}` }, desc: { $: `band.${band}_desc` } });
@@ -401,7 +447,25 @@ const renderSummaryContent = () => {
     `<p class="lv-summary-label mono">${esc(tr("summary.actions"))}</p>` +
     actions +
     (locale === content ? "" : `<p class="lv-fallback mono">${esc(tr("call.content_fallback"))}</p>`) +
-    `<p class="lv-summary-note" lang="${content}">${esc(summary.human_note)} ${esc(templates.caveat)}</p>`;
+    `<p class="lv-summary-note" lang="${content}">${esc(summary.human_note)} ${esc(templates.caveat)}</p>` +
+    `<button type="button" id="lvSummaryCopy" class="btn btn-ghost lv-summary-copy" data-i18n="summary.copy"></button>`;
+  localize(summaryContent);
+};
+
+/** The summary as plain text, to pass on to a relative or the bank. Signs and advice only: never
+    the call's words, which leave this device only through the reviewed report. */
+const summaryText = () => {
+  const content = cl();
+  const summary = runtime.summarize({ ...lastState, locale: content });
+  const score = summary.final_score.toFixed(0);
+  return [
+    tr("summary.copy_note"),
+    tr("summary.copy_score", { score, band: { $: `band.${summary.band}` } }),
+    `${tr("summary.signs")}: ${summary.tactic_names.join("; ") || tr("summary.none")}.`,
+    ...(summary.recommended_actions.length
+      ? [`${tr("summary.actions")}:`, ...summary.recommended_actions.map((action) => `- ${action}`)]
+      : [tr("summary.safe_tip")]),
+  ].join("\n");
 };
 
 const showSummary = () => {
@@ -479,17 +543,24 @@ const openReportReview = async () => {
 /** The review's status line: `data-state` (sent | deleted | error) is the stable hook for tests. */
 const showReportNote = (note, state, key = null, params = null) => {
   note.dataset.state = state;
-  note.className = `lv-report-note${state === "sent" ? " is-success" : state === "error" ? " is-error" : ""}`;
+  note.className = `lv-report-note${state === "sent" || state === "deleted" ? " is-success" : state === "error" ? " is-error" : ""}`;
   bind(note, key, params); // a null key also drops any earlier binding
 };
 
 const sendReport = async () => {
   const btn = $("lvReportSend");
   const note = $("lvReportNote");
-  if (!lastState || !reportDraft) return;
+  const fields = $("lvReportForm").querySelectorAll("textarea, input");
+  if (!lastState || !reportDraft || sending) return;
+  // One send at a time, with nothing editable and no new call meanwhile: a second POST, or a form
+  // wiped under a pending one, stored a report whose receipt the citizen never saw.
+  sending = true;
   btn.disabled = true;
+  startBtn.disabled = true;
+  micStartBtn.disabled = true;
+  fields.forEach((el) => { el.disabled = true; });
   try {
-    const { finalizeReport } = await import("./core/report.js");
+    const { finalizeReport, rejectionKey } = await import("./core/report.js");
     const payload = finalizeReport(reportDraft, {
       transcript: $("lvReportText").value,
       phoneNumber: $("lvReportPhone").value,
@@ -502,38 +573,80 @@ const sendReport = async () => {
       // The server stores which consent wording was ticked, as proof of what was agreed to.
       body: JSON.stringify({ ...payload, consent_version: CONSENT_VERSION }),
     });
-    if (res.status === 422) throw new UiError("report.err_rejected", { detail: String((await res.json()).detail || res.status) });
+    if (res.status === 422) throw new UiError(rejectionKey(await res.json().catch(() => null)));
     if (res.status === 503) throw new UiError("report.err_numbers");
     if (res.status === 429) throw new UiError("report.err_rate");
     if (!res.ok) throw new UiError("report.err_status", { status: res.status });
     const body = await res.json();
-    $("lvReportForm").querySelectorAll("textarea, input").forEach((el) => { el.disabled = true; });
     showReportNote(note, "sent");
     note.innerHTML =
       `<p data-i18n-html="report.sent_html"></p>` +
       `<pre class="lv-stored mono"></pre>` +
       `<p data-i18n-html="report.queued_html"></p>` +
-      `<button type="button" id="lvReportDelete" class="btn btn-ghost" data-i18n="report.delete"></button>`;
+      `<div class="lv-report-row">` +
+      `<button type="button" id="lvReportCopy" class="btn btn-ghost" data-i18n="report.copy_receipt"></button>` +
+      `<button type="button" id="lvReportDelete" class="btn btn-ghost" data-i18n="report.delete"></button>` +
+      `</div>` +
+      `<p class="lv-report-note is-error" id="lvReportDeleteNote" role="status"></p>`;
     note.firstElementChild.dataset.i18nParams = JSON.stringify({ receipt: body.receipt_id, prefix: body.number_prefix || "—" });
     note.querySelector("pre").textContent = body.stored_transcript;
     localize(note);
+    $("lvReportCopy").addEventListener("click", (ev) => copyWithFeedback(ev.currentTarget, body.receipt_id, "report.copy_receipt"));
     $("lvReportDelete").addEventListener("click", () => deleteReport(body.receipt_id, note));
   } catch (e) {
+    fields.forEach((el) => { el.disabled = false; });
     btn.disabled = false;
     showReportNote(note, "error", "report.send_failed", { error: reasonOf(e) });
+  } finally {
+    sending = false;
+    startBtn.disabled = running;
+    micStartBtn.disabled = running || micChip.classList.contains("is-disabled");
   }
 };
 
 const deleteReport = async (receiptId, note) => {
+  const btn = $("lvReportDelete");
+  btn.disabled = true;
   try {
     const res = await fetch(`/api/reports/${encodeURIComponent(receiptId)}`, { method: "DELETE" });
     if (res.status === 404) throw new UiError("report.err_gone");
     if (!res.ok) throw new UiError("report.err_status", { status: res.status });
     showReportNote(note, "deleted", "report.deleted");
   } catch (e) {
-    showReportNote(note, "error", "report.delete_failed", { error: reasonOf(e) });
+    // Beside the receipt, not over it: the receipt is what the retry needs.
+    btn.disabled = false;
+    bind($("lvReportDeleteNote"), "report.delete_failed", { error: reasonOf(e) });
   }
 };
+
+// A report sent earlier, on any device: the receipt is all it takes (invariant 6; nothing else
+// identifies the citizen).
+const forgetForm = $("lvForgetForm");
+forgetForm.addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const input = $("lvForgetReceipt");
+  const btn = $("lvForgetSend");
+  const note = $("lvForgetNote");
+  const { normalizeReceipt } = await import("./core/report.js");
+  const receipt = normalizeReceipt(input.value);
+  if (!receipt) {
+    showReportNote(note, "error", "forget.invalid");
+    input.focus();
+    return;
+  }
+  btn.disabled = true;
+  try {
+    const res = await fetch(`/api/reports/${receipt}`, { method: "DELETE" });
+    if (res.status === 404) throw new UiError("forget.not_found");
+    if (!res.ok) throw new UiError("report.err_status", { status: res.status });
+    input.value = "";
+    showReportNote(note, "deleted", "report.deleted");
+  } catch (e) {
+    showReportNote(note, "error", "report.delete_failed", { error: reasonOf(e) });
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 // ── replay mode ──────────────────────────────────────────────────────────────
 
@@ -568,9 +681,14 @@ scenarioSel.addEventListener("change", () => {
   const chosen = scenarios.find((s) => s.id === scenarioSel.value);
   scriptArea.value = chosen ? chosen.lines.join("\n") : "";
 });
+// An edited example is no longer that example: the selector says "your own text" from then on.
+scriptArea.addEventListener("input", () => {
+  const chosen = scenarios.find((s) => s.id === scenarioSel.value);
+  if (chosen && chosen.lines.join("\n") !== scriptArea.value) scenarioSel.value = "";
+});
 
 const runReplay = async () => {
-  if (running) return;
+  if (running || sending) return;
   const lines = scriptArea.value
     .split("\n")
     .map((line) => line.trim())
@@ -580,7 +698,8 @@ const runReplay = async () => {
     return;
   }
 
-  running = true;
+  setRunning(true);
+  replayStopped = false;
   startBtn.disabled = true;
   bind(startBtn, "replay.running");
   setNote(setupNote, null);
@@ -589,25 +708,34 @@ const runReplay = async () => {
   try {
     const rt = await deviceRuntime(setupNote);
     liveState = rt.newSession(cl());
+    stopBtn.hidden = false;
     for (const line of lines) {
       await sleep(TURN_DELAY_MS);
+      if (replayStopped) break;
       const out = await rt.advance(liveState, line, 1);
       liveState = { ...out.state, locale: cl() }; // the language may have changed while scoring
       applyUpdate(out.update, liveState, line);
     }
-    lastState = liveState;
-    showSummary();
+    // Stopped before the first phrase: there is no call to sum up.
+    if (liveState.utterances.length) {
+      lastState = liveState;
+      showSummary();
+    } else {
+      callWrap.hidden = true;
+    }
   } catch (e) {
     setNote(setupNote, "replay.failed", { error: errText(e) }, true);
   } finally {
     liveState = null;
-    running = false;
+    setRunning(false);
+    stopBtn.hidden = true;
     startBtn.disabled = false;
     bind(startBtn, "replay.start");
   }
 };
 
 startBtn.addEventListener("click", runReplay);
+stopBtn.addEventListener("click", () => { replayStopped = true; });
 
 // ── microphone mode (on-device speech recognition, PLAN B9) ──────────────────
 
@@ -615,6 +743,9 @@ let asr = null; // the running recogniser
 let micStream = null;
 let micState = null; // the live session while the microphone runs
 let micQueue = Promise.resolve(); // utterances are scored one at a time, in order
+let consecutiveDrops = 0; // light mode: phrases in a row the decoder failed on
+let micStopping = false;
+let micInterrupted = false; // the browser is getting no sound right now
 
 /** Turn the voice mode off with `key` (params) as the reason; paste and replay stay available. */
 const disableVoice = (key, params, isError = false) => {
@@ -657,7 +788,7 @@ const checkMicCapability = async () => {
   disableVoice("mic.unavailable", { reasons });
 };
 
-// In `asr.order` (kk, ru, en -- ADR D62): the JSON's keys are sorted, and the first language is
+// In `asr.order` (kk, ru -- ADR D70): the JSON's keys are sorted, and the first language is
 // the recogniser's initial preference for ties and the first partial shown.
 const modelSpecs = (cfg) => {
   const models = cfg.asr?.models || {};
@@ -674,6 +805,7 @@ const modelSpecs = (cfg) => {
     the session and the meter ever see (ADR D64). */
 const onMicUtterance = (utterance, info = {}) => {
   const { text, confidence, language } = utterance;
+  consecutiveDrops = 0;
   showLiveWords([]);
   showPartial("");
   micQueue = micQueue
@@ -741,30 +873,69 @@ const createLightRecogniser = async (rt) => {
       onDropped: (dropped) => {
         showActivity(null);
         setNote(endpointNote, "mic.light_dropped");
+        // Silence or noise decodes to nothing, which is normal; a broken decoder fails every phrase.
+        consecutiveDrops = dropped.reason === "empty" ? 0 : consecutiveDrops + 1;
+        if (consecutiveDrops >= MAX_CONSECUTIVE_DROPS && micState) stopMic("mic.light_failing");
         if (VOICE_TRACE) window.__qorganVoice.dropped.push({ ...dropped, at: performance.now() });
       },
       onStatus: (_message, info = {}) => {
         const key = ASR_STATUS[info.code];
         if (key) setNote(micNote, key);
       },
+      onInterrupted: onMicInterrupted,
     });
   } catch (e) {
     endpointNote.hidden = true; // its "loading" line is stale now
-    disableVoice("mic.light_unavailable", { error: errText(e) }, true);
+    // A missing model will not come back by trying again; a dropped connection might.
+    if (/\bHTTP 4\d\d\b/.test(errText(e))) disableVoice("mic.light_unavailable", { error: errText(e) }, true);
+    else setNote(micNote, "mic.light_load_failed", { error: errText(e) }, true);
     return null;
   }
 };
 
+/** Ask for the microphone before any download: a refusal must not cost several hundred MB. */
+const ensureMicPermission = async () => {
+  try {
+    const { state } = await navigator.permissions.query({ name: "microphone" });
+    if (state === "granted") return;
+  } catch { /* Firefox and Safari cannot query it: asking is the only way to know */ }
+  setNote(micNote, "mic.permission");
+  const probe = await openMicrophone({ audio: true });
+  for (const track of probe.getTracks()) track.stop();
+};
+
+/** While the browser gets no sound (another app took the microphone, the system interrupted), the
+    page must not keep saying "listening": a low meter over silence reads as reassurance. */
+const onMicInterrupted = (interrupted) => {
+  micInterrupted = interrupted;
+  if (micState) setNote(micNote, interrupted ? "mic.interrupted" : "mic.listening", null, interrupted);
+};
+
+/** A microphone that is gone for good (unplugged, permission revoked) ends the call. `ended` does
+    not fire for our own `track.stop()`. */
+const watchMicrophone = (stream) => {
+  for (const track of stream.getAudioTracks()) {
+    track.addEventListener("ended", () => { if (micState) stopMic("mic.lost"); });
+    track.addEventListener("mute", () => onMicInterrupted(true));
+    track.addEventListener("unmute", () => onMicInterrupted(false));
+  }
+};
+
 const startMic = async () => {
-  if (running) return;
-  running = true;
+  if (running || sending) return;
+  setRunning(true);
   micStartBtn.disabled = true;
   resetCallUi();
   try {
+    await ensureMicPermission();
     const rt = await deviceRuntime(micNote);
     if (!asr && voice.mode === "light") {
       asr = await createLightRecogniser(rt);
-      if (!asr) { running = false; return; } // GigaAM could not load: the voice mode is now off, paste/replay stay
+      if (!asr) { // GigaAM could not load: paste/replay stay, and Start is back unless voice is now off
+        setRunning(false);
+        micStartBtn.disabled = micChip.classList.contains("is-disabled");
+        return;
+      }
     }
     const { createDeviceAsr } = await import("./core/asr.js");
     if (!asr) {
@@ -792,31 +963,42 @@ const startMic = async () => {
           if (key) setNote(micNote, key, info.language ? { language: { $: `lang_name.${info.language}` } } : null);
         },
         onError: (e) => setNote(micNote, "mic.recognition_error", { error: errText(e) }, true),
+        onInterrupted: onMicInterrupted,
       });
     }
     setNote(micNote, "mic.permission");
-    micStream = await navigator.mediaDevices.getUserMedia({
+    micStream = await openMicrophone({
       audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
     });
     if (VOICE_TRACE) window.__qorganVoice.captureAt = performance.now();
     micState = rt.newSession(cl());
+    watchMicrophone(micStream);
+    consecutiveDrops = 0;
+    micInterrupted = false;
     await asr.start(micStream);
+    if (micInterrupted) onMicInterrupted(true); // the runtime's "listening" must not cover it
     if (VOICE_TRACE) window.__qorganVoice.listeningAt = performance.now();
     micStopBtn.hidden = false;
     micStartBtn.hidden = true;
   } catch (e) {
-    running = false;
+    setRunning(false);
     micStartBtn.disabled = false;
-    setNote(micNote, "mic.start_failed", { error: errText(e) }, true);
+    setNote(micNote, "mic.start_failed", { error: reasonOf(e) }, true);
     stopTracks();
   }
 };
 
-const stopMic = async () => {
+/** End the call. `reasonKey`: why, when it was not the citizen who ended it; said last, so it stays. */
+const stopMic = async (reasonKey = null) => {
+  if (micStopping) return;
+  micStopping = true;
   micStopBtn.disabled = true;
+  // The microphone goes off first, whatever happens next: on a slow phone the phrases still being
+  // decoded took 20 s after the click, with the microphone open all that time.
+  stopTracks();
+  setNote(micNote, "mic.finishing");
   try {
     if (asr) await asr.stop();
-    stopTracks();
     await micQueue; // let the last utterance finish scoring
     if (micState && micState.meter?.turn_index > 0) {
       lastState = micState;
@@ -824,21 +1006,45 @@ const stopMic = async () => {
     } else {
       setNote(micNote, "mic.no_speech");
     }
+    if (reasonKey) setNote(micNote, reasonKey, null, true);
   } catch (e) {
     setNote(micNote, "mic.stop_failed", { error: errText(e) }, true);
   } finally {
     micState = null;
-    running = false;
-    micStopBtn.hidden = true;
-    micStopBtn.disabled = false;
-    micStartBtn.hidden = false;
-    micStartBtn.disabled = false;
+    micStopping = false;
+    setRunning(false);
+    resetMicButtons();
   }
 };
 
+const resetMicButtons = () => {
+  micStopBtn.hidden = true;
+  micStopBtn.disabled = false;
+  micStartBtn.hidden = false;
+  micStartBtn.disabled = micChip.classList.contains("is-disabled");
+};
+
+summaryContent.addEventListener("click", (ev) => {
+  const copy = ev.target.closest("#lvSummaryCopy");
+  if (copy) copyWithFeedback(copy, summaryText(), "summary.copy");
+});
 micStartBtn.addEventListener("click", startMic);
-micStopBtn.addEventListener("click", stopMic);
-window.addEventListener("pagehide", () => { stopTracks(); asr?.dispose(); });
+micStopBtn.addEventListener("click", () => stopMic());
+// Leaving releases the microphone and the recogniser. A page restored from the back/forward cache
+// keeps its objects, so a disposed recogniser must not stay in `asr`: the next Start rebuilds it.
+window.addEventListener("pagehide", () => {
+  stopTracks();
+  asr?.dispose();
+  asr = null;
+});
+window.addEventListener("pageshow", (event) => {
+  if (!event.persisted || !micState) return;
+  micState = null;
+  micStopping = false;
+  setRunning(false);
+  resetMicButtons();
+  setNote(micNote, "mic.stopped");
+});
 
 // ── mode toggle + start ──────────────────────────────────────────────────────
 

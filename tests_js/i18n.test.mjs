@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { REPO } from "./helpers.mjs";
+import { ADMIN_STRINGS } from "../site/i18n-admin.js";
 import {
   CONTENT_LOCALES, DEFAULT_LOCALE, LOCALES, STRINGS, contentLocale, pickLocale, placeholdersOf, t, tHtml,
 } from "../site/i18n.js";
@@ -125,8 +126,8 @@ test("t() fills params, resolves key params, escapes only in tHtml, and falls ba
   assert.equal(t("ru", "call.head", { n: 3 }), "Звонок · фраз: 3");
   assert.equal(t("kk", "mic.loading_model", { language: { $: "lang_name.kk" } }), "Сөз моделі жүктелуде (қазақ тілі) — тек алғаш рет…");
   assert.equal(
-    t("ru", "mic.unavailable", { reasons: [{ $: "mic.reason_capture" }, { $: "mic.reason_phone" }] }),
-    `Микрофон здесь недоступен: ${STRINGS.ru["mic.reason_capture"]}; ${STRINGS.ru["mic.reason_phone"]}.`
+    t("ru", "mic.unavailable", { reasons: [{ $: "mic.reason_capture" }, { $: "mic.reason_browser" }] }),
+    `Микрофон здесь недоступен: ${STRINGS.ru["mic.reason_capture"]}; ${STRINGS.ru["mic.reason_browser"]}.`
   );
   assert.equal(tHtml("en", "report.sent_html", { receipt: "<x>", prefix: "+7 700 ***" }).includes("<b>&lt;x&gt;</b>"), true);
   assert.equal(t("en", "report.err_status", { status: "<b>" }), "the server answered with error <b>");
@@ -146,4 +147,46 @@ test("every voice-mode language has a full and a short name in every locale", ()
       }
     }
   }
+});
+
+// ── the analyst console's own dictionary (site/i18n-admin.js) ────────────────────────────────
+
+test("the console's strings follow the same conventions", () => {
+  const ruKeys = Object.keys(ADMIN_STRINGS.ru).sort();
+  assert.ok(ruKeys.every((key) => key.startsWith("admin.")));
+  const allowed = /^<\/?(em|b|code)>$/;
+  for (const locale of LOCALES) {
+    assert.deepEqual(Object.keys(ADMIN_STRINGS[locale]).sort(), ruKeys, locale);
+    for (const [key, value] of Object.entries(ADMIN_STRINGS[locale])) {
+      assert.ok(value.trim().length > 0 && value === value.trim(), `${locale}:${key}`);
+      assert.deepEqual(placeholdersOf(value), placeholdersOf(ADMIN_STRINGS.ru[key]), `${locale}:${key} placeholders`);
+      const tags = value.match(/<[^>]*>/g) || [];
+      if (!key.endsWith("_html")) assert.deepEqual(tags, [], `${locale}:${key} has markup`);
+      for (const tag of tags) assert.match(tag, allowed, `${locale}:${key}: ${tag}`);
+    }
+  }
+  const copied = ruKeys.filter((key) => ADMIN_STRINGS.kk[key] === ADMIN_STRINGS.ru[key] && key !== "admin.backend"); // a technical term
+  assert.deepEqual(copied, [], "Kazakh is translated, not copied from Russian");
+});
+
+test("every key the console uses exists, and none is unused", () => {
+  const html = read("site", "admin.html");
+  const js = read("site", "admin.js");
+  const used = new Set();
+  for (const m of html.matchAll(/data-i18n(?:-html)?="([^"]+)"/g)) used.add(m[1]);
+  for (const m of html.matchAll(/data-i18n-attr="([^"]+)"/g)) for (const pair of m[1].split(";")) used.add(pair.split(":")[1]);
+  for (const m of js.matchAll(/"(admin\.[a-z0-9_]+)"/g)) used.add(m[1]);
+  const known = { ...STRINGS.ru, ...ADMIN_STRINGS.ru };
+  assert.deepEqual([...used].filter((key) => !(key in known)), []);
+  // Built at run time: the purpose, role and feedback-state codes the server returns.
+  const dynamic = /^admin\.(purpose|role|fb_state)_/;
+  assert.deepEqual(Object.keys(ADMIN_STRINGS.ru).filter((key) => !used.has(key) && !dynamic.test(key)), [], "strings nothing renders");
+});
+
+test("every code the server can return has a console label", () => {
+  const purposes = read("src", "qorgan", "audit.py").match(/AccessPurpose = Literal\[([^\]]+)\]/)?.[1].match(/[a-z_]+/g) || [];
+  assert.ok(purposes.length >= 3, "the server's purposes are readable");
+  for (const purpose of purposes) assert.ok(`admin.purpose_${purpose}` in ADMIN_STRINGS.ru, purpose);
+  for (const role of ["analyst", "investigator"]) assert.ok(`admin.role_${role}` in ADMIN_STRINGS.ru, role);
+  for (const state of ["confirmed", "dismissed", "merged"]) assert.ok(`admin.fb_state_${state}` in ADMIN_STRINGS.ru, state);
 });

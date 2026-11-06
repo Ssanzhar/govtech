@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import functools
 import hashlib
+import logging
+import zipfile
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
@@ -33,11 +35,14 @@ from qorgan.analytics.pipeline import (
     write_organizations_jsonl,
 )
 from qorgan.data.incident_seed import load_incidents_jsonl, write_incidents_jsonl
-from qorgan.data.schema import Incident
+from qorgan.data.schema import Incident, Organization
+from qorgan.jsonl import count_records
 from qorgan.reports.model import StoredReport, report_to_incident
 from qorgan.reports.store import REPORTS_LOCK, load_reports, remove_report
 
 _ID_HASH_CHARS = 10
+_REPORT_INCIDENT_PREFIX = "report-"
+_LOGGER = logging.getLogger(__name__)
 _T = TypeVar("_T")
 
 
@@ -74,6 +79,7 @@ class IngestSummary(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     ingested: int = Field(ge=0)
+    skipped: int = Field(default=0, ge=0)  # rows that could not become incidents; they stay pending
     placements: tuple[Placement, ...] = ()
     organizations_total: int = Field(ge=0)
 
@@ -87,7 +93,7 @@ def report_incident_id(report: StoredReport) -> str:
     content = report.transcript or f"{','.join(report.tactic_ids)}|{report.number_hash or ''}"
     # An id, not a security function (bandit B324): same digest, flagged as non-cryptographic.
     digest = hashlib.sha1(f"{content}|{report.timestamp.isoformat()}".encode(), usedforsecurity=False).hexdigest()
-    return f"report-{digest[:_ID_HASH_CHARS]}"
+    return f"{_REPORT_INCIDENT_PREFIX}{digest[:_ID_HASH_CHARS]}"
 
 
 def load_report_drafts(reports_path: Path) -> list[StoredReport]:
@@ -136,10 +142,19 @@ def ingest_pending(
         )
         return IngestSummary(ingested=0, placements=(), organizations_total=len(organizations))
 
-    new_incidents = [
-        _normalize_timestamp(report_to_incident(draft, incident_id=report_incident_id(draft)))
-        for draft in drafts
-    ]
+    new_incidents: list[Incident] = []
+    skipped = 0
+    for draft in drafts:
+        try:
+            new_incidents.append(_normalize_timestamp(report_to_incident(draft, incident_id=report_incident_id(draft))))
+        except ValueError as exc:  # one bad row stays pending; it must not hold back the others
+            skipped += 1
+            _LOGGER.warning("a report could not become an incident (%s); it stays pending", type(exc).__name__)
+    if not new_incidents:
+        organizations = (
+            load_organizations_jsonl(organizations_path) if organizations_path.exists() else []
+        )
+        return IngestSummary(ingested=0, skipped=skipped, placements=(), organizations_total=len(organizations))
     all_incidents = [*incidents, *new_incidents]
 
     embeddings = _extend_or_rebuild_embeddings(
@@ -164,6 +179,7 @@ def ingest_pending(
     )
     return IngestSummary(
         ingested=len(new_incidents),
+        skipped=skipped,
         placements=placements,
         organizations_total=len(organizations),
     )
@@ -199,44 +215,184 @@ def forget_report(
     re-embedding is needed, because deletion only ever shrinks the stream. Analyst feedback
     (`org_feedback.jsonl`, next to the organizations by default) loses the incident id and,
     unless another incident or report still carries it, the number digest.
+
+    The report row goes last: if anything before it fails, the receipt still works and the
+    deletion can simply be repeated. Every copy of the report from the same sender goes with it
+    (a retried POST stored a second row whose receipt the citizen never saw).
     """
-    report = remove_report(receipt_id, reports_path)
+    reports = load_reports(reports_path, skip_corrupt=True)
+    report = next((r for r in reports if r.receipt_id == receipt_id), None)
     if report is None:
         return None
     incident_id = report_incident_id(report)
-    incidents = load_incidents_jsonl(incidents_path) if incidents_path.exists() else []
+    copies = [
+        r for r in reports
+        if r.source == report.source and r.partner_id == report.partner_id and report_incident_id(r) == incident_id
+    ]
+    removed, organizations_total = _forget_incident(
+        incident_id,
+        number_hashes=[r.number_hash for r in copies],
+        surviving_reports=[r for r in reports if r not in copies],
+        incidents_path=incidents_path,
+        organizations_path=organizations_path,
+        embeddings_path=embeddings_path,
+        feedback_path=feedback_path,
+        now=now,
+    )
+    for copy in copies:
+        remove_report(copy.receipt_id, reports_path)
+    return ForgetSummary(receipt_id=receipt_id, incident_removed=removed, organizations_total=organizations_total)
+
+
+@_serialised
+def forget_orphan_incidents(
+    *,
+    reports_path: Path,
+    incidents_path: Path,
+    organizations_path: Path,
+    embeddings_path: Path,
+    now: datetime | None = None,
+    feedback_path: Path | None = None,
+) -> list[str]:
+    """Remove incidents that came from a report which no longer exists. No receipt can reach
+    them, so retention has to (an older build could strand one when a deletion failed halfway)."""
+    if not incidents_path.exists():
+        return []
+    reports = load_reports(reports_path)
+    backed = {report_incident_id(report) for report in reports}
+    orphans = [i for i in load_incidents_jsonl(incidents_path) if i.id.startswith(_REPORT_INCIDENT_PREFIX) and i.id not in backed]
+    for orphan in orphans:
+        _forget_incident(
+            orphan.id,
+            number_hashes=[],
+            surviving_reports=reports,
+            incidents_path=incidents_path,
+            organizations_path=organizations_path,
+            embeddings_path=embeddings_path,
+            feedback_path=feedback_path,
+            now=now,
+        )
+    return [orphan.id for orphan in orphans]
+
+
+def _forget_incident(
+    incident_id: str,
+    *,
+    number_hashes: Sequence[str | None],
+    surviving_reports: Sequence[StoredReport],
+    incidents_path: Path,
+    organizations_path: Path,
+    embeddings_path: Path,
+    feedback_path: Path | None,
+    now: datetime | None,
+) -> tuple[bool, int]:
+    """Take one incident out of every derived store. Returns (it was present, organizations left).
+    Safe to repeat: each step is a no-op once done. A line that cannot be parsed is left out rather
+    than stopping the deletion. `number_hashes`: those of the reports it came from; the incident's
+    own goes too."""
+    incidents = load_incidents_jsonl(incidents_path, skip_corrupt=True) if incidents_path.exists() else []
     remaining = [incident for incident in incidents if incident.id != incident_id]
     live_numbers = {i.number_hash for i in remaining if i.number_hash} | {
-        r.number_hash for r in load_reports(reports_path) if r.number_hash
+        r.number_hash for r in surviving_reports if r.number_hash
     }
-    forget_in_feedback(
-        feedback_path or organizations_path.parent / FEEDBACK_FILENAME,
-        incident_id=incident_id,
-        number_hash=report.number_hash,
-        live_numbers=live_numbers,
-    )
-    organizations = load_organizations_jsonl(organizations_path) if organizations_path.exists() else []
-    if len(remaining) == len(incidents):
-        return ForgetSummary(receipt_id=receipt_id, incident_removed=False, organizations_total=len(organizations))
+    own = [i.number_hash for i in incidents if i.id == incident_id]
+    # Dropping the id once is enough; each digest needs its own pass. At least one pass runs for the id.
+    for number_hash in dict.fromkeys([*number_hashes, *own]) or [None]:
+        forget_in_feedback(
+            feedback_path or organizations_path.parent / FEEDBACK_FILENAME,
+            incident_id=incident_id,
+            number_hash=number_hash,
+            live_numbers=live_numbers,
+        )
+    organizations = load_organizations_jsonl(organizations_path, skip_corrupt=True) if organizations_path.exists() else []
+    present = len(remaining) != len(incidents)
+    if not present and not any(incident_id in org.members for org in organizations):
+        # Nothing to take out; the stores are still rewritten if a corrupt line had to be left out.
+        _rewrite_if_corrupt(incidents, incidents_path, organizations, organizations_path)
+        return False, len(organizations)
 
     embeddings = _drop_cached_row(incidents, remaining, embeddings_path)
-    organizations = analyze_incidents(remaining, embeddings=embeddings, now=now or datetime.now()) if remaining else []
+    organizations = _reanalysed_without(incident_id, organizations, remaining, embeddings, now=now or datetime.now())
     write_incidents_jsonl(remaining, incidents_path)
     write_organizations_jsonl(organizations, organizations_path)
     if embeddings is not None:
         save_embeddings_npz([i.id for i in remaining], embeddings, embeddings_path)
-    return ForgetSummary(receipt_id=receipt_id, incident_removed=True, organizations_total=len(organizations))
+    return True, len(organizations)
+
+
+def _rewrite_if_corrupt(
+    incidents: Sequence[Incident], incidents_path: Path, organizations: Sequence[Organization], organizations_path: Path
+) -> None:
+    """Drop what `skip_corrupt` left out from the files too: it may hold what was being forgotten."""
+    if incidents_path.exists() and len(incidents) != count_records(incidents_path):
+        write_incidents_jsonl(incidents, incidents_path)
+    if organizations_path.exists() and len(organizations) != count_records(organizations_path):
+        write_organizations_jsonl(organizations, organizations_path)
+
+
+def _reanalysed_without(
+    incident_id: str,
+    organizations: Sequence[Organization],
+    remaining: Sequence[Incident],
+    embeddings: np.ndarray | None,
+    *,
+    now: datetime,
+) -> list[Organization]:
+    """The analysis without the incident. Without cached rows that takes the embedding model; a
+    deletion does not wait for one, so if it cannot run the incident simply leaves its organization
+    and the next ingest re-clusters."""
+    if not remaining:
+        return []
+    try:
+        return analyze_incidents(remaining, embeddings=embeddings, now=now)
+    except Exception as exc:  # noqa: BLE001 -- any embedder failure; the promise is the deletion
+        _LOGGER.warning("re-clustering after a deletion failed (%s); removing the member only", type(exc).__name__)
+    by_id = {incident.id: incident for incident in remaining}
+    kept: list[Organization] = []
+    for org in organizations:
+        if incident_id not in org.members:
+            kept.append(org)
+            continue
+        members = tuple(member for member in org.members if member != incident_id)
+        if members:
+            kept.append(org.model_copy(update={
+                "members": members,
+                "numbers": tuple(sorted({n for m in members if m in by_id and (n := by_id[m].number_hash)})),
+                "representative_script": by_id[members[0]].transcript if members[0] in by_id else None,
+            }))
+    return kept
+
+
+def _readable_cache(embeddings_path: Path) -> tuple[list[str], np.ndarray] | None:
+    """The embedding cache, or `None` if there is none worth reading. It is only a cache: a damaged
+    file (a crash mid-write on an older build) or a zero-width matrix (a first ingest of
+    signals-only reports) is deleted and counts as a miss, never as a failure."""
+    if not embeddings_path.exists():
+        return None
+    try:
+        ids, rows = load_embeddings_npz(embeddings_path)
+    except (OSError, ValueError, EOFError, KeyError, zipfile.BadZipFile) as exc:
+        _LOGGER.warning("the embedding cache is unreadable (%s); it will be rebuilt", type(exc).__name__)
+        embeddings_path.unlink(missing_ok=True)
+        return None
+    if rows.ndim != 2 or (len(rows) and rows.shape[1] == 0):
+        embeddings_path.unlink(missing_ok=True)
+        return None
+    return ids, rows
 
 
 def _drop_cached_row(
     incidents: Sequence[Incident], remaining: Sequence[Incident], embeddings_path: Path
 ) -> np.ndarray | None:
-    """Cached embedding rows for `remaining`, or `None` when the cache is absent/misaligned
-    (the next ingest then rebuilds it -- correctness over speed)."""
-    if not embeddings_path.exists():
+    """Cached embedding rows for `remaining`, or `None` when the cache is absent or misaligned. A
+    misaligned file is deleted, because it may still hold the row being forgotten (the next ingest
+    rebuilds it -- correctness over speed)."""
+    cache = _readable_cache(embeddings_path)
+    if cache is None:
         return None
-    cached_ids, cached = load_embeddings_npz(embeddings_path)
+    cached_ids, cached = cache
     if cached_ids != [incident.id for incident in incidents] or len(cached) != len(incidents):
+        embeddings_path.unlink(missing_ok=True)
         return None
     keep = {incident.id for incident in remaining}
     rows = [row for incident_id, row in zip(cached_ids, cached) if incident_id in keep]
@@ -264,8 +420,9 @@ def _extend_or_rebuild_embeddings(
 ) -> np.ndarray:
     """Cached rows + embeddings of only the new transcripts, or a full re-embed when the
     cache is absent or does not match the current incident stream exactly."""
-    if embeddings_path.exists():
-        cached_ids, cached = load_embeddings_npz(embeddings_path)
+    cache = _readable_cache(embeddings_path)
+    if cache is not None:
+        cached_ids, cached = cache
         if cached_ids == [incident.id for incident in incidents] and len(cached) == len(incidents):
             new_vectors = embed_transcripts(
                 [incident.transcript for incident in new_incidents], embedder=embedder

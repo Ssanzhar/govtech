@@ -7,13 +7,10 @@
 <title data-i18n="landing.meta_title">Qorğan — знайте, что задумал звонящий</title>
 <meta name="description" data-i18n-attr="content:landing.meta_description" content="Qorğan замечает приёмы телефонных мошенников в звонках на казахском и русском — прямо на вашем устройстве — и показывает фразы, на которых основана оценка. Решает всегда человек.">
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="%23D6ADF2"/><g fill="%23141414"><rect x="7" y="13" width="2.6" height="6"/><rect x="11.4" y="9" width="2.6" height="14"/><rect x="15.8" y="5" width="2.6" height="22"/><rect x="20.2" y="10" width="2.6" height="12"/><rect x="24.6" y="14" width="2.6" height="4"/></g></svg>'>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Inter and IBM Plex Mono both cover Cyrillic Extended, so Kazakh letters never fall back. -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="landing.css">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="theme-color" content="#1A1A1A">
 </head>
 <body>
@@ -59,7 +56,7 @@
       <a class="btn btn-fill" href="live.html" data-i18n="landing.cta_check">Проверить звонок</a>
       <a class="btn btn-line" href="#try" data-i18n="landing.cta_try">Проверить текст разговора</a>
     </div>
-    <p class="tagline mono" data-i18n="landing.tagline">открытые модели · интервалы, а не точечные оценки · работает на вашем устройстве</p>
+    <p class="tagline mono" data-i18n="landing.tagline">публичные веса модели · интервалы, а не точечные оценки · работает на вашем устройстве</p>
   </section>
 
   <!-- ── Live analyzer, drawn as an app window (decorative, described by its caption) ── -->
@@ -101,7 +98,7 @@
         <span class="step-num mono">01</span>
         <div>
           <h3 data-i18n="landing.step1_title">Слушает</h3>
-          <p data-i18n="landing.step1_body">Включите громкую связь рядом с компьютером или воспроизведите либо вставьте текст разговора. Речь распознаётся в браузере, на казахском и русском; звук никогда не покидает устройство. Режим микрофона пока работает в Chrome на компьютере.</p>
+          <p data-i18n="landing.step1_body">Включите громкую связь рядом с компьютером или воспроизведите либо вставьте текст разговора. Речь распознаётся в браузере, на казахском и русском; звук никогда не покидает устройство. Режим микрофона лучше всего работает на компьютере; на телефоне он облегчённый и пока не проверен на настоящих устройствах.</p>
         </div>
       </div>
       <div class="step">
@@ -130,15 +127,16 @@
         <p class="body-copy" data-i18n="landing.ev_body1">Оценкам, которые не могут себя объяснить, либо не верят, либо — что хуже — верят слепо. Qorğan показывает доказательства по каждому звонку: какие приёмы найдены и какие именно фразы за ними стоят, — чтобы человек мог согласиться или возразить.</p>
         <p class="body-copy" data-i18n="landing.ev_body2">Каждая выделенная фраза — дословный фрагмент разговора, привязанный к названному приёму. Языковая модель ничего не пересказывает своими словами.</p>
       </div>
-      <!-- A machine readout (tactic ids, verbatim Russian phrases); its label is localised. -->
+      <!-- A machine readout (tactic ids, verbatim Russian phrases); its label is localised. Weights:
+           the scene as one text, docs/research/2026-11/demo_scene_numbers.json. -->
       <div class="evidence-card mono" role="img" data-i18n-attr="aria-label:landing.ev_card_aria" aria-label="Пример объяснения: приёмы и фразы, на которых основана оценка «мошенничество»">
         <div class="ec-head"><span class="ec-pill">evidence&nbsp;·&nbsp;live_scam_bank_ru</span></div>
-        <div class="ec-tag">"scam_risk"&nbsp;@&nbsp;0.93</div>
+        <div class="ec-tag">"scam_risk"&nbsp;@&nbsp;1.00</div>
         <div class="ec-row"><span class="ec-name">otp_request&nbsp;«Продиктуйте код из SMS»</span><span class="ec-bar"><i style="--w:100%"></i></span><span class="ec-val">1.00</span></div>
         <div class="ec-row"><span class="ec-name">secrecy&nbsp;«Никому не говорите»</span><span class="ec-bar"><i style="--w:100%"></i></span><span class="ec-val">1.00</span></div>
         <div class="ec-row"><span class="ec-name">safe_account&nbsp;«на безопасный счёт»</span><span class="ec-bar"><i style="--w:100%"></i></span><span class="ec-val">1.00</span></div>
-        <div class="ec-row"><span class="ec-name">urgency&nbsp;«только пять минут»</span><span class="ec-bar"><i style="--w:72%"></i></span><span class="ec-val">0.72</span></div>
-        <div class="ec-row"><span class="ec-name">impersonation_bank</span><span class="ec-bar"><i style="--w:64%"></i></span><span class="ec-val">0.64</span></div>
+        <div class="ec-row"><span class="ec-name">impersonation_bank</span><span class="ec-bar"><i style="--w:92%"></i></span><span class="ec-val">0.92</span></div>
+        <div class="ec-row"><span class="ec-name">urgency&nbsp;«только пять минут»</span><span class="ec-bar"><i style="--w:88%"></i></span><span class="ec-val">0.88</span></div>
         <div class="ec-foot" data-i18n="landing.ev_card_foot">// веса приёмов — от модели, фразы — дословно · решает человек</div>
       </div>
     </div>
@@ -149,7 +147,7 @@
     <p class="eyebrow" data-i18n="landing.bi_eyebrow">Два языка, одна модель</p>
     <p class="bi-line" lang="kk"><span class="bi-tag mono">kk</span><em>«Әуелі тексер, сосын сен.»</em></p>
     <p class="bi-line" lang="ru"><span class="bi-tag mono">ru</span><em>«Верить или проверить?»</em></p>
-    <p class="bi-note" data-i18n="landing.bi_note">Одна модель для казахского, русского и всего, что между ними, — включая смешанную речь. Звонки на английском тоже разбираются, но хуже: пока не на уровне казахского и русского.</p>
+    <p class="bi-note" data-i18n="landing.bi_note">Одна модель для казахского, русского и всего, что между ними, — включая смешанную речь. На звонки на других языках Qorğan не рассчитан.</p>
   </section>
 
   <!-- ── Evaluation ─────────────────────────────────────
@@ -207,6 +205,8 @@
       <div id="twResult" class="tw-result mono" aria-live="polite" hidden></div>
     </div>
 
+    <p class="try-note mono" data-i18n="promise.human_body">Qorğan только подсказывает. Он сам не кладёт трубку, ничего не блокирует и никому не сообщает. Оценку даёт искусственный интеллект — он может ошибаться.</p>
+
     <div class="cta-row">
       <a class="btn btn-paper" href="live.html" data-i18n="landing.cta_check">Проверить звонок</a>
       <a class="btn btn-ghost" href="/docs" data-i18n="landing.try_api">Документация API</a>
@@ -249,7 +249,7 @@
   </div>
   <div class="wrap foot-bottom">
     <span>© 2026 Qorğan</span>
-    <span class="foot-status mono"><i aria-hidden="true"></i><span data-i18n="landing.tagline">открытые модели · интервалы, а не точечные оценки · работает на вашем устройстве</span></span>
+    <span class="foot-status mono"><i aria-hidden="true"></i><span data-i18n="landing.tagline">публичные веса модели · интервалы, а не точечные оценки · работает на вашем устройстве</span></span>
   </div>
 </footer>
 

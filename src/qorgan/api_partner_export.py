@@ -16,7 +16,8 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from qorgan.analytics.pipeline import load_organizations_jsonl
-from qorgan.analytics.presentation import last_activity, org_display_name, org_tactic_profile
+from qorgan.analytics.feedback import FEEDBACK_FILENAME, apply_feedback, load_feedback
+from qorgan.analytics.presentation import last_activity, org_display_names, org_tactic_profile
 from qorgan.api_partner import record_partner_action, require_partner
 from qorgan.config import get_config
 from qorgan.data.incident_seed import load_incidents_jsonl
@@ -60,10 +61,11 @@ def organizations(locale: Locale = "ru", partner: Partner = Depends(require_part
 
     orgs, incidents = loaded
     by_id = {incident.id: incident for incident in incidents}
+    names = org_display_names(orgs, by_id, locale=locale)
     rows = [
         OrganizationAggregateOut(
             id=org.id,
-            name=org_display_name(org, by_id, locale=locale),
+            name=names[org.id],
             incidents=len(org.members),
             tactics=[TacticCountOut(id=tid, count=n) for tid, n in org_tactic_profile(org, by_id).items()],
             last_activity=_iso_date(last_activity(org, by_id)),
@@ -88,7 +90,12 @@ def _load_analysis() -> tuple[list[Organization], list[Incident]] | None:
         incidents = []
     except ValueError:
         return None
-    return organizations, incidents
+    try:
+        events = load_feedback(processed / FEEDBACK_FILENAME)
+    except ValueError:  # a corrupt feedback line must not take the export down
+        events = []
+    # What the analyst's overview shows: a dismissed operation is not exported at full priority.
+    return apply_feedback(organizations, events), incidents
 
 
 def _iso_date(value: datetime | None) -> str | None:

@@ -15,7 +15,6 @@ from qorgan.live.meter import (
     DOUBLE_HARD_SIGNAL_FLOOR,
     HARD_SIGNAL_CONFIDENCE_FLOOR,
     SINGLE_HARD_SIGNAL_FLOOR,
-    MeterState,
     band,
     initial_state,
     update,

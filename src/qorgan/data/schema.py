@@ -98,7 +98,7 @@ def spans_from_phrases(phrases: Sequence[str], transcript: str) -> tuple[Span, .
     """
     spans: list[Span] = []
     for phrase in phrases:
-        if not isinstance(phrase, str) or not phrase:
+        if not isinstance(phrase, str) or not phrase.strip():  # a blank span says nothing
             continue
         start = transcript.find(phrase)
         if start == -1:

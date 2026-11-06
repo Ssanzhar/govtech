@@ -8,6 +8,7 @@ import { MATCHER_VERSION } from "./cue-match.js";
 import { compileReassurance, hardSignalFeatures, matchCues, reassuranceFeature } from "./lexicon.js";
 
 export const BACKEND = "linear";
+const MAX_CACHED_FEATURES = 256;
 
 /** Bind weights + config once; returns an async `score(transcript)`. */
 export function createScorer({ weights, config, embed }) {
@@ -25,10 +26,25 @@ export function createScorer({ weights, config, embed }) {
   const join = config.window.join;
   const { attribution_top_k: topK, attribution_min_score: minScore } = config.scoring;
 
+  // Pure in the text, and a live call rescores every earlier utterance each turn: at the full window
+  // this was a third of a second on the main thread per phrase. Same bounds as embed-cache.js.
+  const features = new Map();
+  const featuresOf = (text) => {
+    let found = features.get(text);
+    if (found) {
+      features.delete(text); // re-inserted: the Map's order is the eviction order
+    } else {
+      found = { cues: hardSignalFeatures(text, weights.lexicon.cues, hardIds), reassurance: reassuranceFeature(text, matcher) };
+      if (features.size >= MAX_CACHED_FEATURES) features.delete(features.keys().next().value);
+    }
+    features.set(text, found);
+    return found;
+  };
   const featureRows = (texts, embeddings) =>
-    texts.map((text, i) =>
-      hybridRow(embeddings[i], hardSignalFeatures(text, weights.lexicon.cues, hardIds), reassuranceFeature(text, matcher)),
-    );
+    texts.map((text, i) => {
+      const { cues, reassurance } = featuresOf(text);
+      return hybridRow(embeddings[i], cues, reassurance);
+    });
 
   return async function score(transcript) {
     const utterances = transcript.split(join);

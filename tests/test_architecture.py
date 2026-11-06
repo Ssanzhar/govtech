@@ -201,7 +201,7 @@ def test_on_device_asr_module_makes_no_network_calls():
 # Every module the word-level voice mode passes audio or transcripts through (ADR D64), and the
 # WebView-safe light mode's capture worklet, VAD and wiring (ADR D67).
 _AUDIO_MODULES = (
-    "asr.js", "audio-ring.js", "endpoint.js", "endpoint-runtime.js", "gigaam.js", "span-vote.js", "word-lid.js",
+    "asr.js", "audio-context.js", "audio-ring.js", "endpoint.js", "endpoint-runtime.js", "gigaam.js", "span-vote.js", "word-lid.js",
     "capture-worklet.js", "vad.js", "voice-light.js",
 )
 

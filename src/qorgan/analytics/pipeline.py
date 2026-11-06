@@ -22,10 +22,11 @@ from qorgan.analytics import novelty as novelty_mod
 from qorgan.analytics import rank as rank_mod
 from qorgan.analytics.embed import embed_incidents
 from qorgan.config import get_config
+from qorgan.jsonl import read_records
 from qorgan.data.incident_seed import load_incidents_jsonl
 from qorgan.data.schema import Incident, Organization
 from qorgan.eval import metrics
-from qorgan.atomic import write_text_atomic
+from qorgan.atomic import write_binary_atomic, write_text_atomic
 
 _RECENT_WINDOW_DAYS = 7.0
 # Novelty tuned to real e5 scale: established scam families sit ~0.03 cosine-distance apart,
@@ -104,8 +105,7 @@ def save_embeddings_npz(ids: Sequence[str], embeddings: np.ndarray, path: Path) 
     """Persist the incident-embedding matrix keyed by incident ids."""
     if len(ids) != len(embeddings):
         raise ValueError(f"ids/embeddings length mismatch: {len(ids)} vs {len(embeddings)}")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(path, ids=np.array(list(ids)), embeddings=embeddings)
+    write_binary_atomic(path, lambda handle: np.savez_compressed(handle, ids=np.array(list(ids)), embeddings=embeddings))
 
 
 def load_embeddings_npz(path: Path) -> tuple[list[str], np.ndarray]:
@@ -121,10 +121,10 @@ def write_organizations_jsonl(organizations: Sequence[Organization], path: Path)
     write_text_atomic(path, "\n".join(o.model_dump_json() for o in organizations) + "\n")
 
 
-def load_organizations_jsonl(path: Path) -> list[Organization]:
+def load_organizations_jsonl(path: Path, *, skip_corrupt: bool = False) -> list[Organization]:
     if not path.exists():
         raise FileNotFoundError(f"Organizations not found: {path}. Run `python -m qorgan.analytics.pipeline`.")
-    return [Organization.model_validate_json(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return read_records(path, Organization.model_validate_json, skip_corrupt=skip_corrupt)
 
 
 def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - CLI (real embeddings)

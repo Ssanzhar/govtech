@@ -19,7 +19,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
@@ -36,6 +36,7 @@ from qorgan.api_limits import (
 from qorgan.api_live import router as live_router
 from qorgan.api_partner import router as partner_router
 from qorgan.api_partner_export import router as partner_export_router
+from qorgan.api_ratelimit import SlidingWindowLimiter, client_key
 from qorgan.api_reports import router as reports_router
 from qorgan.classifier import predict
 from qorgan.cloud_tier import is_cloud, require_cloud_consent
@@ -45,6 +46,12 @@ from qorgan.reports.purge import PurgeSchedule
 
 _SITE_DIR = Path(os.environ.get("QORGAN_SITE_DIR", Path(__file__).resolve().parents[2] / "site"))
 _MAX_TRANSCRIPT_CHARS = 20_000
+# Each line is embedded on its own for the evidence spans, so lines are what a request costs
+# (10,000 one-letter lines took a minute of CPU on one anonymous request, ADR D85).
+_MAX_TRANSCRIPT_LINES = 400
+# Per client address: a person trying the widget, not a load test. The citizen's real path is on
+# the device and never comes here.
+_ANALYZE_LIMITER = SlidingWindowLimiter(max_requests=30, window_seconds=60.0)
 
 def _configure_logging(level: str) -> None:
     """Uvicorn configures only its own loggers, so `qorgan.*` INFO lines (a purge run, a weights
@@ -140,6 +147,9 @@ def health() -> dict[str, object]:
         "configured_backend": cfg.classifier_backend,
         "threshold": cfg.risk_threshold,
     }
+    # Which build answers: the platform's commit, when it names one (scripts/preflight.py prints it).
+    if commit := os.environ.get("RAILWAY_GIT_COMMIT_SHA", "").strip():
+        body["commit"] = commit[:12]
     if cfg.classifier_backend == "linear":
         # Which heads score here: the trained bundle, the committed browser weights, or none
         # (then /api/analyze degrades to `mock` and says so per response).
@@ -151,9 +161,13 @@ def health() -> dict[str, object]:
 
 
 @app.post("/api/analyze", response_model=AnalyzeResponse)
-def analyze(req: AnalyzeRequest) -> AnalyzeResponse:
+def analyze(req: AnalyzeRequest, request: Request) -> AnalyzeResponse:
+    if not _ANALYZE_LIMITER.allow(client_key(request)):
+        raise HTTPException(status_code=429, detail="too many checks from this client; try again in a minute")
     if not req.transcript.strip():
         raise HTTPException(status_code=422, detail="transcript must not be blank")
+    if req.transcript.count("\n") >= _MAX_TRANSCRIPT_LINES:
+        raise HTTPException(status_code=422, detail=f"transcript must not exceed {_MAX_TRANSCRIPT_LINES} lines")
 
     cfg = get_config()
     if is_cloud(req.backend, cfg):
@@ -200,7 +214,16 @@ app.include_router(reports_router)
 app.include_router(partner_router)
 app.include_router(partner_export_router)
 
+
+
+@app.get("/api/{unknown:path}", include_in_schema=False)
+def unknown_api_path(unknown: str) -> None:
+    """The site's 404 page is for people: an unknown API path still answers JSON."""
+    raise HTTPException(status_code=404, detail="Not Found")
+
+
 if _SITE_DIR.is_dir():
+    # html=True also serves site/404.html for a path that does not exist.
     app.mount("/", StaticFiles(directory=_SITE_DIR, html=True), name="site")
 
 

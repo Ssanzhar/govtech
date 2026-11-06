@@ -1,7 +1,8 @@
 /* Qorğan analyzer — an illustrative call-activity view (seeded canvas art) looping the two
    demo scenes: a scam script that trips the hard-signal cues, and a real bank call that
    does not. The log lines are the real feature names; the verdicts are the real demo
-   outputs. Pure canvas, no assets, no network. */
+   outputs (docs/research/2026-11/demo_scene_numbers.json, tests_js/tools/demo_numbers.mjs).
+   Pure canvas, no assets, no network. */
 (() => {
   "use strict";
 
@@ -10,10 +11,10 @@
       seed: 7,
       bursts: [[0.05, 0.32], [0.40, 0.57], [0.65, 0.96]],
       drift: 0.6, breaths: [], hif: 0.05,
-      log: ["// turn 4 of 6 · rolling window", "$ embed · multilingual-e5 int8, on device",
+      log: ["// turn 6 of 6 · rolling window", "$ embed · multilingual-e5 int8, on device",
             "cue otp_request: «Продиктуйте код из SMS»", "cue secrecy: «Никому не говорите»",
             "cue safe_account: «на безопасный счёт»", "reassurance: none", "// calibrating…"],
-      verdict: { label: '"scam_risk"', p: "0.93", reason: "meter 90 · critical", time: "0.6 s", tone: "oxide" },
+      verdict: { label: '"scam_risk"', p: "1.00", reason: "meter 98 · critical", time: "0.2 s", tone: "oxide" },
     },
     {
       seed: 21,
@@ -22,7 +23,7 @@
       log: ["// turn 4 of 4 · rolling window", "$ embed · multilingual-e5 int8, on device",
             "cues: none of 5", "reassurance: «коды … называть не нужно»",
             "hard-signal floor: not raised", "// calibrating…"],
-      verdict: { label: '"clear"', p: "0.05", reason: "meter 5 · low", time: "0.6 s", tone: "moss" },
+      verdict: { label: '"clear"', p: "0.00", reason: "meter 26 · low", time: "0.2 s", tone: "moss" },
     },
   ];
 

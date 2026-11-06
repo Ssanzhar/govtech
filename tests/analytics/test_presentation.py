@@ -181,3 +181,73 @@ def test_dashboard_kpis_is_frozen():
     kpis = dashboard_kpis([], [], pending_reports=0)
     with pytest.raises(Exception):
         kpis.incidents_total = 99  # type: ignore[misc]
+
+
+# --- names an analyst can read and tell apart ---------------------------------------------------
+
+
+@pytest.mark.parametrize("locale", ["ru", "kk", "en"])
+def test_every_active_tactic_has_a_clean_short_name(locale):
+    """The live queue showed `Ложное "подтверждение личности` and `SMS`: a truncation at the first
+    slash cut inside a quotation and, in Kazakh, off the verb. Short names are written, not cut."""
+    from qorgan.analytics.presentation import short_tactic_name
+    from qorgan.taxonomy import get_taxonomy
+
+    for tactic_id in get_taxonomy().tactic_ids():
+        name = short_tactic_name(tactic_id, locale=locale)
+        assert name and "/" not in name and "(" not in name, (tactic_id, name)
+        assert name.count('"') % 2 == 0 and name.count("«") == name.count("»"), (tactic_id, name)
+        assert name != "SMS", tactic_id
+
+
+def test_truncating_fallback_never_leaves_an_open_quote():
+    from qorgan.analytics.presentation import _short_name
+
+    assert _short_name('Ложное "подтверждение личности/операции"') == 'Ложное "подтверждение личности"'
+    assert _short_name("Ложное «подтверждение личности/операции»") == "Ложное «подтверждение личности»"
+    assert _short_name('Требование тайны ("никому")') == "Требование тайны"
+
+
+def _named_org(org_id: str, members: tuple[str, ...]) -> Organization:
+    return Organization(id=org_id, members=members)
+
+
+def _clashing_orgs() -> tuple[list[Organization], dict[str, Incident]]:
+    """Two operations with the same two dominant tactics; only the impersonated role differs."""
+    shared = ("fear_threat", "verification_ploy")
+    incidents = {
+        **{f"a{i}": _incident(f"a{i}", tags=(*shared, "impersonation_bank")) for i in range(3)},
+        **{f"b{i}": _incident(f"b{i}", tags=(*shared, "impersonation_gov_police")) for i in range(3)},
+        "c0": _incident("c0", tags=("urgency",)),
+    }
+    orgs = [
+        _named_org("org_0", ("a0", "a1", "a2")),
+        _named_org("org_1", ("b0", "b1", "b2")),
+        _named_org("org_2", ("c0",)),
+    ]
+    return orgs, incidents
+
+
+@pytest.mark.parametrize("locale", ["ru", "kk", "en"])
+def test_queue_names_are_unique_and_name_what_differs(locale):
+    from qorgan.analytics.presentation import org_display_names, short_tactic_name
+
+    orgs, incidents = _clashing_orgs()
+    assert org_display_name(orgs[0], incidents, locale=locale) == org_display_name(orgs[1], incidents, locale=locale)
+
+    names = org_display_names(orgs, incidents, locale=locale)
+
+    assert len(set(names.values())) == 3
+    assert short_tactic_name("impersonation_bank", locale=locale) in names["org_0"]
+    assert short_tactic_name("impersonation_gov_police", locale=locale) in names["org_1"]
+    assert names["org_2"] == org_display_name(orgs[2], incidents, locale=locale), "no clash, no suffix"
+
+
+def test_identical_operations_fall_back_to_their_ids():
+    from qorgan.analytics.presentation import org_display_names
+
+    incidents = {"a": _incident("a", tags=("urgency",)), "b": _incident("b", tags=("urgency",))}
+    names = org_display_names([_named_org("org_0", ("a",)), _named_org("org_1", ("b",))], incidents, locale="ru")
+
+    assert names["org_0"] != names["org_1"]
+    assert "org_0" in names["org_0"] and "org_1" in names["org_1"]

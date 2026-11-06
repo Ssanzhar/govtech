@@ -3866,3 +3866,162 @@ allows Google Fonts).
   - the live page replays the Russian bank scam to the summary (98/100) with no console errors;
   - the console signs in, ranks 6 organizations and opens a case.
 - Screenshots: `_design/openbot/pages/` (outside git).
+
+### D82 — a queue label is written, not cut; no two organizations read the same (2026-11-06)
+
+**Context.** The live console showed `Запугивание + Ложное "подтверждение личности`: the short name
+was the full tactic name cut at its first slash, inside a quotation. In Kazakh the same cut left
+`SMS` and `Банк` as whole names. The two largest seeded operations also had the same two dominant
+tactics, so the queue and the merge list showed two identical labels.
+
+**Decision.**
+- `data/taxonomy/tactics.yaml` gets an optional `short: {ru, kk, en}`, written for the 15 tactics of the
+  active label space. A tactic without one is still cut, with any open quotation closed.
+- `analytics.presentation.org_display_names` names a whole queue: on a clash it appends the tactic that most
+  sets the operation apart (largest lead in share over its rivals), and failing that its id. Every
+  route that shows a name uses it (overview, detail, stats, partner export, ingest placements).
+
+`qorgan-config.json` is unchanged: the browser never reads these. The Kazakh short names are new
+text and need the same native review as the rest of the D69 list.
+
+**Evidence.** `tests/analytics/test_presentation.py`. Fresh seeds through the real embedder:
+`Запугивание + Ложное подтверждение личности · Запрос реквизитов` and `… · Искусственная срочность`.
+
+### D83 — the citizen page keeps its smaller promises; no third party hears about a visit (2026-11-06)
+
+**Context.** Walking the citizen page as a user found promises it did not keep, and one measurement:
+on this machine's unstable network `live.html` took **26.6 s** to fire `load`, entirely waiting on Google
+Fonts (`net::ERR_NETWORK_CHANGED`), against a server on localhost.
+
+**Decision.**
+- **Fonts are self-hosted** (`site/fonts/`, Inter and IBM Plex Mono, OFL-1.1, 352 KB, subsets by
+  `unicode-range`). Every page opened with a request that told Google a citizen was checking a call, and a slow
+  CDN could hold the page up on venue Wi-Fi. The console's CSP loses its two font exceptions. A test now
+  fails if any page or stylesheet fetches from another origin.
+- **Delete by receipt, later.** The page told citizens to keep a receipt to delete a report later, and
+  offered no way to use it after a reload. There is now a form on `live.html`. Plus: copy the receipt, copy
+  the summary (signs and advice only, never the call's words), and stop a replay.
+- **Refusals in the page's words.** A FastAPI list-shaped 422 read "сервер отклонил сообщение: [object
+  Object]". A refused microphone reads as what to do about it, and is asked for *before* any download, so
+  a refusal no longer costs 300 MB.
+- **What a report may carry.** A flagged phrase over 300 characters, or more than 50 of them, made the whole
+  report a 422 no edit of the visible text could fix: the client now drops them (dropped, never cut).
+- **Truthful copy.** The disclosure said 147 MB for 106 MB of speech models; the landing's figure and evidence
+  card quoted numbers from September, now measured (`docs/research/2026-11/demo_scene_numbers.json`,
+  `tests_js/tools/demo_numbers.mjs`); English calls and "desktop Chrome only" were gone since D70 and D67.
+  The landing's try widget gives a verdict, so it now carries the AI disclosure (AI law, Art. 21). "Open
+  models" became "public model weights": there is no licence yet. A test keeps the markup's Russian equal to
+  `site/i18n.js`.
+- **Small polish.** A 404 page for people (an unknown `/api/` path still answers JSON), app icons in the current
+  palette (maskable), `commit` in `/api/health` on Railway.
+
+**Evidence.** `tests_js/tools/e2e_citizen_flows.mjs` in Chrome (stop, edit, copy, refusal, send, delete
+from a new page, refused microphone with no model request). axe-core 4.14 on all pages at 1280 px and the live
+page at 390 px: 0 violations. Semgrep (`p/javascript`, `p/owasp-top-ten`, 74 rules, 54 files in `site/`): 0
+findings, which closes the PLAN track D leftover.
+
+### D84 — the analyst console speaks kk / ru / en, from one control (2026-11-06)
+
+**Context.** With Russian chosen, the console's nav and tactic names were Russian and everything else
+English, with a second "content language" control beside the header's. D69 listed this as a follow-up.
+
+**Decision.** `site/i18n-admin.js` holds the console's words (a separate file, so citizen pages do not download
+them), under the same tested conventions; `admin.js` is a module and the header's switch is the only
+control. `admin-lang.js` and the `adm-loc` chips are gone. The public demo now says plainly that **every
+organization, number and call there is fabricated**. The audit log stores purpose *codes*, so translating their labels
+changes nothing that was reviewed or recorded; the wording awaits the same legal review as before, and the
+Kazakh awaits native review.
+
+**Evidence.** `tests_js/i18n.test.mjs` (keys, placeholders, no unused key, a label for every code the server
+can return); `e2e_admin_auth.mjs` switches kk → ru → en while signed in.
+
+### D85 — one report or one damaged file must not hurt anyone else's (audit, 2026-11-06)
+
+**Context.** An audit of the backend, with each finding reproduced on a scratch data directory. The worst:
+one anonymous `POST /api/reports` could stop deletes, retention, ingest and the partner API.
+
+**Decision.**
+- **Stores.** `qorgan.jsonl.read_records` is the one reader: only `\n` ends a record (`str.splitlines` also breaks
+  on U+2028, U+2029 and U+0085, which JSON leaves unescaped), and a corrupt line is refused by number, never
+  quoted. Ingest errors no longer put stored text in responses or logs. Existing poisoned stores become readable.
+- **Blank phrases and bad rows.** A whitespace-only flagged phrase blocked all ingest; it is dropped on both
+  sides, and a row that cannot become an incident now stays pending without holding back the others.
+- **Deletion finishes or can be repeated.** The report row goes last, every copy of a retried POST goes with it (and
+  every copy's number digest), and when no model can load the incident simply leaves its organization instead of
+  the deletion failing. A line that cannot be parsed is left out rather than blocking it, because losing it is the safe
+  direction; a store that is *mostly* unreadable (more than 2 lines or 1 %, a schema mismatch) raises, so a deletion can never
+  wipe it. One report that cannot be forgotten does not stop the purge of the others, and retention also removes
+  `report-*` incidents an older build stranded.
+- **The embedding file is a cache.** Unreadable, misaligned or zero-width means a miss, and it is written atomically.
+- **Scrubber v4** (Python + JS, fixtures regenerated, 124 cases): `7011234567`, `(701) 123-45-67`, `701.123.45.67`,
+  and `+<country> ` with 8–15 digits are `[PHONE]`; an amount in tenge stays a number. A scrub that needs two passes
+  is stored, not refused as "caller number not understood". A `partner_reference` or partner id that is personal
+  data is refused. **On this machine's corpus the v4 rules alone change 0 of 2,313 stored rows** in any
+  split, so no retrain and no FPR question; the corpus rebuild before the next upload was already pending (D72).
+- **`/api/analyze`** was anonymous, unlimited, and 10,000 one-letter lines cost a minute of CPU: 30 requests a
+  minute per client, 400 lines per transcript. A chunked body can no longer hide behind a small Content-Length.
+- **Verdicts.** A merge erased every earlier confirm and dismiss. `org_<n>` is positional, so a verdict from a stale view
+  could land on another operation: the console now sends a fingerprint of what it showed, and a mismatch answers 409.
+  The audit subject carries it too, in letters only (a hex digit run can read as a phone number, and the audit log would
+  refuse it). The partner export now follows the analyst's verdicts.
+- **Order and scope.** Ingest is audited before it changes anything, and waits while first-start seeding runs.
+  `REPORTS_LOCK` now also holds across processes (`flock`, falling back to the thread lock on a volume without locks),
+  because a cron purge lost appends. An excerpt is always shorter than the call: a short call shown whole passed the
+  investigator's gate. Ingest reports how many rows it could not take, instead of "nothing pending".
+- **The open demo and the limits.** Everyone is the one identity `public-demo`, so its budgets are now per visitor, and
+  a 429 says so instead of showing a sign-in form. `QORGAN_TRUSTED_PROXY_HOPS` (1 on Railway, set by the entrypoint)
+  takes the client's address that many entries from the right of `X-Forwarded-For`; uvicorn's
+  `FORWARDED_ALLOW_IPS=*` was rejected because it believes the leftmost entry, which a client can write. Railway's
+  hop count is not verified: if it is more than one, the key is an edge address and the budget is shared as before.
+  A limiter now forgets idle clients once it holds 10,000.
+
+**Known, not fixed.** Deleting a partner report refunds its quota (a contracted partner could game it).
+
+**Evidence.** `tests/test_store_robustness.py`, written failing first. Reproduction scripts for each finding are in
+`_design/finalize/audit-repro/` (outside git). A review of the whole change found 10 more issues in it, all fixed here and
+in D86 (among them a verdict refused for 0.2 % of organizations, and `.env` advice that broke Compose). No invariant in
+`tests/test_architecture.py` changed.
+
+### D86 — a returning device keeps its models, and the replay works with no network (2026-11-06)
+
+**Context.** An audit of the browser code, with most findings reproduced in Chrome. The worst: every update of `sw.js`
+deleted `transformers-cache` and `Vosklet`, so each deploy cost a returning device **384 MB**, venue Wi-Fi
+included. "Offline after first load" (PLAN B4) did not hold either: `.wasm` files bypass the worker, so a reload
+without a server failed with "no available backend found".
+
+**Decision.**
+- **Service worker (shell v16).** Activation keeps every store a runtime keeps its models in. This must ship in the
+  same deploy as v16, because the incoming worker's `activate` is the one that runs; devices that update from
+  v15 keep their models. Runtimes under `/vendor/` still go to the network the first time and are never
+  streamed through the worker (D61), but a copy is kept on the side, and from then on that local read answers.
+  GigaAM's tokens are stored with its model. `weights.json` takes the network first and is revalidated: a stale
+  copy next to new code would fail every run.
+- **Microphone.** Stop turns it off at once (it stayed open up to 22 s while a slow device decoded). It is asked
+  for before any download. A microphone that disconnects ends the call and says so, and one that goes silent (another
+  app, an interruption) says so instead of "listening": a low meter over silence read as reassurance
+  (`core/audio-context.js`). Back from the back/forward cache works; it used to throw a deleted-object error until a
+  reload. A failed start closes what it opened (each leaked Vosklet module held ~315 MB).
+- **Slow devices.** One GigaAM timeout no longer takes the next phrases with it: a phrase's clock starts when the
+  worker says it started. Three failed decodes in a row end the call with the reason, and a dropped connection
+  during the first GigaAM download no longer turns voice off until a reload. The embedder never leaves a promise
+  unsettled (Stop used to hang on a dead worker), its patience is per text, so a long call on a slow phone is not
+  mistaken for a hang, and a dead worker is replaced at the next check. Per-utterance features are memoised, because at the full window they
+  blocked the main thread a third of a second per phrase; they are pure, and parity is unchanged. An iPad counts as a
+  phone.
+- **A report.** One send at a time, with nothing editable meanwhile: a second POST stored a report whose receipt the
+  citizen never saw. A failed delete keeps the receipt on screen.
+- **The demo's new scheme.** Its weight (0.6 against hundreds) almost never drew it, so the console's "new schemes" was
+  empty on every seed while the pitch promised one. The last 3 seeded incidents are now that family.
+
+**Not changed.** No weights, thresholds, meter or lexicon: `site/models/weights.json` and `qorgan-config.json` are
+byte-identical, and all three demo scenes score exactly as before (`docs/research/2026-11/demo_scene_numbers.json`).
+
+**Evidence.**
+- `tests_js/tools/e2e_offline.mjs` in Chrome: 87/100 online, 87/100 with the server stopped, 87/100 with the
+  server stopped and the browser restarted.
+- Real voice, Chrome, `say` Milena/Aru through the fake microphone, warm start: light mode 98 / 19 / 97 with 15/15
+  phrases (exactly D78); full mode 96 / 20 / 96. In full mode Vosk's endpointer joins two phrases at the 1.2 s gap,
+  and the code before this change gives the same 96 / 21 on the two scenes re-run. At a 2 s gap it finds all 15 phrases and
+  gives 98 / 19 / 97, the same as light mode. No word is lost.
+- Fresh seeds through the real embedder: 6 organizations, 1 novel, purity 1.0, ARI 1.0.
+- A real phone remains the open number (PLAN C2).

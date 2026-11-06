@@ -18,7 +18,7 @@ from qorgan.analytics.presentation import (
     dashboard_kpis,
     last_activity,
     org_activity_by_day,
-    org_display_name,
+    org_display_names,
     org_tactic_profile,
     short_tactic_name,
 )
@@ -52,7 +52,7 @@ def render_analyst_tab() -> None:
     incidents = load_incidents_jsonl(incidents_path) if incidents_path.exists() else []
     by_id = {incident.id: incident for incident in incidents}
     locale = cfg.default_locale
-    names = {org.id: org_display_name(org, by_id, locale=locale) for org in organizations}
+    names = org_display_names(organizations, by_id, locale=locale)
 
     reports_path = cfg.data_dir / "processed" / "citizen_reports.jsonl"
     pending = pending_reports(reports_path, incidents)

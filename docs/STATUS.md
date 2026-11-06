@@ -1,10 +1,24 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: **2026-10-29**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
+_Last updated: **2026-11-06**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
 day (what is shipped, the honest numbers, the strategy, who does what). Then read this file
-(the dated log), `docs/DECISIONS.md` (ADRs; October = D63–D70) and `docs/eval_report.md`
-(numbers, with intervals). The July sprint log below is kept as history._
+(the dated log), `docs/DECISIONS.md` (ADRs; newest first) and `docs/eval_report.md` (numbers, with
+intervals). For the show itself: `docs/DEMO_RUNBOOK.md`. The July sprint log below is kept as history._
 
+- **2026-11-06 — finalization pass: three audits, every finding fixed or listed (ADRs D82–D86).**
+  - **Not changed:** the model. `weights.json` and `qorgan-config.json` are byte-identical and the demo scenes score
+    exactly as before, so no eval number moved and D76 stays the headline.
+  - **Worst fixed:** one anonymous report could stop deletes, retention and ingest (D85); every `sw.js` update
+    made returning devices re-download 384 MB (D86). The D86 fix must ship with shell v16, in the same deploy.
+  - **New:** the replay works with no network after one visit; fonts are self-hosted; a report can be deleted later by
+    receipt; the console speaks kk/ru/en; `scripts/preflight.py` checks a deployment read-only; CI; a demo runbook.
+  - **Tests:** Python 1851 passed, 16 skipped, 2 xfailed; JS 206/206. On a clean copy with no corpus, models or
+    secrets: Python 1848 passed, 20 skipped, 1 xfailed, JS 205 + 1 skipped (5 Python tests used to fail there). In Chrome:
+    report review, live i18n, citizen flows, admin auth, offline, and the voice modes with real GigaAM and Vosk.
+  - **Needs the owner:** a deploy (the live demo's data is 8 days old, and its "new schemes" is empty until then);
+    uploading the HF cards, heads and dataset (HF heads and dataset are from 2026-09-24); a LICENSE (pyproject says
+    Proprietary, the repo is public); the TWA host and signing key; native review of the new Kazakh strings.
+  - **Still open:** a real phone (C2), real calls (A3), the Kotlin scrubber is behind D72/D85 (`android/CORE_SPIKE.md`).
 - **2026-10-29 — landing metrics brought up to the D76 headline.**
   - The landing table still showed the D54 (2026-09-28) numbers. It now quotes shipped v1 from
     `models/final_v1/run.txt` (test, authored, ood, shift: shift FPR is now 0.000 [0.000, 0.106])

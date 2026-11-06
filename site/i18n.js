@@ -74,6 +74,7 @@ const ru = {
   "replay.script_placeholder": "Например: Это служба безопасности вашего банка…",
   "replay.start": "Начать проверку",
   "replay.running": "Идёт проверка…",
+  "replay.stop": "Остановить",
   "replay.empty": "Выберите пример или напишите хотя бы одну фразу.",
   "replay.failed": "Проверка не удалась ({error}). Возможно, модель ещё загружается — попробуйте ещё раз.",
   "replay.scenarios_failed": "Не удалось загрузить примеры ({error}). Вставьте свой текст.",
@@ -85,21 +86,28 @@ const ru = {
   "model.preparing": "Готовим модель анализа…",
   "model.ready": "Модель готова. Разговор анализируется только на этом устройстве.",
 
-  "mic.copy": "Включите на телефоне громкую связь и положите его рядом с компьютером. Qorğan слушает через микрофон компьютера и распознаёт казахскую и русскую речь (английскую — в тестовом режиме) прямо здесь — звук никуда не отправляется и не записывается. Пока это работает только в браузере на компьютере.",
+  "mic.copy": "Включите на телефоне громкую связь и положите его рядом с этим устройством. Qorğan слушает через его микрофон и распознаёт казахскую и русскую речь прямо здесь — звук никуда не отправляется и не записывается. Лучше всего это работает в браузере на компьютере.",
   "mic.start": "Включить микрофон",
   "mic.stop": "Завершить звонок",
   "mic.ready": "Распознавание речи работает на этом устройстве — звук не покидает браузер.",
   "mic.unavailable": "Микрофон здесь недоступен: {reasons}.",
   "mic.reason_browser": "этот браузер не умеет распознавать речь на устройстве — откройте страницу в Chrome на компьютере",
   "mic.reason_capture": "у браузера нет доступа к микрофону",
-  "mic.reason_phone": "на телефонах этот режим пока выключен — мы ещё не проверили, как он там работает",
   "mic.loading_runtime": "Загружаем распознавание речи…",
   "mic.loading_model": "Загружаем модель речи ({language}) — только в первый раз…",
   "mic.listening": "Слушаем. Звук остаётся на этом устройстве.",
   "mic.stopped": "Микрофон выключен.",
+  "mic.finishing": "Микрофон выключен. Дорасшифровываем последние фразы…",
+  "mic.interrupted": "Звук с микрофона не поступает — возможно, его заняло другое приложение. Пока он не вернётся, мы ничего не слышим.",
+  "mic.lost": "Микрофон отключился, проверка остановлена. Итог учитывает только то, что было услышано до этого.",
+  "mic.light_failing": "Распознавание речи перестало работать на этом устройстве, проверка остановлена. Итог учитывает только то, что было услышано до этого.",
+  "mic.light_load_failed": "Модель распознавания речи не загрузилась ({error}). Проверьте соединение и нажмите «Включить микрофон» ещё раз.",
   "mic.model_skipped": "Модель речи ({language}) не загрузилась — продолжаем без неё.",
   "mic.permission": "Разрешите доступ к микрофону в окне браузера…",
   "mic.start_failed": "Не удалось включить микрофон ({error}).",
+  "mic.err_denied": "нет разрешения на микрофон — разрешите его в настройках браузера и попробуйте снова",
+  "mic.err_no_device": "микрофон не найден — подключите его и попробуйте снова",
+  "mic.err_busy": "микрофон занят другой программой — закройте её и попробуйте снова",
   "mic.no_speech": "Речь не распознана. Проверьте громкость и попробуйте ещё раз.",
   "mic.analysis_failed": "Не удалось проанализировать фразу ({error}).",
   "mic.recognition_error": "Ошибка распознавания речи ({error}).",
@@ -122,8 +130,6 @@ const ru = {
   "call.live_label": "Сейчас звучит (предварительно)",
   "call.line_meta_src": "{language} · {source}",
   "call.source_gigaam": "точная расшифровка",
-  "call.source_vosk": "быстрая расшифровка",
-  "call.provisional": "предварительно",
 
   "lang_name.kk": "казахский",
   "lang_name.ru": "русский",
@@ -157,6 +163,11 @@ const ru = {
   "summary.why": "Почему такая оценка",
   "summary.actions": "Что делать",
   "summary.safe_tip": "Если сомневаетесь, положите трубку и сами перезвоните в организацию по официальному номеру.",
+  "summary.copy": "Скопировать итог",
+  "summary.copied": "Скопировано",
+  "summary.copy_failed": "Не удалось скопировать — выделите текст вручную",
+  "summary.copy_score": "Уровень подозрения: {score} из 100 — {band}.",
+  "summary.copy_note": "Итог проверки звонка, Qorğan. Оценку даёт искусственный интеллект, он может ошибаться; решение за человеком.",
 
   "report.title": "Сообщить об этом звонке?",
   "report.intro": "Сообщения помогают аналитикам находить группы мошенников. Мы ничего не отправим, пока вы не проверите сообщение и сами не нажмёте «Отправить». Любую часть можно удалить, а отправленное сообщение — удалить позже по номеру квитанции.",
@@ -175,11 +186,20 @@ const ru = {
   "report.deleted": "Сообщение удалено: его больше нет ни в очереди, ни в анализе.",
   "report.send_failed": "Не удалось отправить ({error}).",
   "report.delete_failed": "Не удалось удалить ({error}).",
-  "report.err_rejected": "сервер отклонил сообщение: {detail}",
   "report.err_numbers": "сервер сейчас не принимает номера телефонов — уберите номер и отправьте снова",
   "report.err_rate": "слишком много сообщений с этого устройства — попробуйте через минуту",
   "report.err_status": "сервер ответил ошибкой {status}",
   "report.err_gone": "сообщение уже удалено",
+  "report.err_number": "номер звонившего не распознан: нужен номер телефона, не меньше 7 цифр",
+  "report.err_too_long": "текст слишком длинный — сократите его и отправьте снова",
+  "report.err_invalid": "сервер не принял сообщение — проверьте текст и номер и попробуйте снова",
+  "report.copy_receipt": "Скопировать номер квитанции",
+  "forget.summary": "Уже отправили сообщение? Удалить его по квитанции",
+  "forget.body": "Введите номер квитанции, который вы получили при отправке. Сообщение исчезнет и из очереди аналитика, и из анализа.",
+  "forget.label": "Номер квитанции",
+  "forget.submit": "Удалить сообщение",
+  "forget.invalid": "Номер квитанции — это 24 символа: цифры и латинские буквы от a до f.",
+  "forget.not_found": "сообщения с таким номером нет — возможно, оно уже удалено",
 
   "footer.promise": "Анализ на вашем устройстве · без вашего согласия ничего не отправляется · решение всегда за вами",
   "footer.tagline": "Qorğan — распознавание приёмов телефонных мошенников · қаз · рус",
@@ -194,7 +214,7 @@ const ru = {
   "landing.eyebrow": "Приёмы мошенников в звонках · каз · рус",
   "landing.title_html": "Знайте, <em>что задумал звонящий</em>",
   "landing.lede": "Qorğan следит за разговором по ходу звонка и отмечает приёмы мошенников — просьбу назвать код из СМС, «безопасный счёт», «никому не говорите» — на казахском и русском языках. Анализ идёт на вашем устройстве, и у каждой оценки видны точные фразы, на которых она основана.",
-  "landing.tagline": "открытые модели · интервалы, а не точечные оценки · работает на вашем устройстве",
+  "landing.tagline": "публичные веса модели · интервалы, а не точечные оценки · работает на вашем устройстве",
   "landing.fig_aria": "Иллюстрация: как анализ следит за звонком",
   "landing.fig_title": "qorğan · звонок",
   "landing.fig_right": "на устройстве",
@@ -202,7 +222,7 @@ const ru = {
   "landing.fig_caption": "рис. 1 — условная картина звонка · модель читает текст разговора, а не звук · оценка каждой фразы меньше чем за 1 с",
   "landing.how_title_html": "Слова на входе, <em>оценка</em> на выходе.",
   "landing.step1_title": "Слушает",
-  "landing.step1_body": "Включите громкую связь рядом с компьютером или воспроизведите либо вставьте текст разговора. Речь распознаётся в браузере, на казахском и русском; звук никогда не покидает устройство. Режим микрофона пока работает в Chrome на компьютере.",
+  "landing.step1_body": "Включите громкую связь рядом с компьютером или воспроизведите либо вставьте текст разговора. Речь распознаётся в браузере, на казахском и русском; звук никогда не покидает устройство. Режим микрофона лучше всего работает на компьютере; на телефоне он облегчённый и пока не проверен на настоящих устройствах.",
   "landing.step2_title": "Оценивает",
   "landing.step2_body": "Многоязычная модель смысла фраз (e5, int8, на устройстве) и шесть понятных признаков: просьба назвать код, «безопасный счёт», удалённый доступ, требование молчать, данные карты — и заверение, которое дают настоящие банки («мы никогда не спрашиваем код»).",
   "landing.step3_title": "Подсказывает",
@@ -226,7 +246,7 @@ const ru = {
   "landing.eval_row_independent": "6 независимых наборов (каз + рус, n=828)",
   "landing.eval_note": "порог 0,59 · откалибровано · точные интервалы Клоппера — Пирсона · модель на устройстве, 25.10.2026 (ADR D76) · пересчёт:",
   "landing.bi_eyebrow": "Два языка, одна модель",
-  "landing.bi_note": "Одна модель для казахского, русского и всего, что между ними, — включая смешанную речь. Звонки на английском тоже разбираются, но хуже: пока не на уровне казахского и русского.",
+  "landing.bi_note": "Одна модель для казахского, русского и всего, что между ними, — включая смешанную речь. На звонки на других языках Qorğan не рассчитан.",
   "landing.try_eyebrow": "Попробуйте",
   "landing.try_title_html": "Проверьте <em>текст разговора</em>.",
   "landing.tw_title": "qorğan · один текст",
@@ -306,6 +326,7 @@ const kk = {
   "replay.script_placeholder": "Мысалы: Бұл банктің қауіпсіздік қызметі…",
   "replay.start": "Тексеруді бастау",
   "replay.running": "Тексеріліп жатыр…",
+  "replay.stop": "Тоқтату",
   "replay.empty": "Үлгіні таңдаңыз немесе кемінде бір фраза жазыңыз.",
   "replay.failed": "Тексеру сәтсіз аяқталды ({error}). Модель әлі жүктеліп жатқан болуы мүмкін — қайталап көріңіз.",
   "replay.scenarios_failed": "Үлгілер жүктелмеді ({error}). Өз мәтініңізді қойыңыз.",
@@ -317,21 +338,28 @@ const kk = {
   "model.preparing": "Талдау моделі дайындалуда…",
   "model.ready": "Модель дайын. Әңгіме тек осы құрылғыда талданады.",
 
-  "mic.copy": "Телефоныңызда динамикті қосып, оны компьютердің жанына қойыңыз. Qorğan компьютердің микрофоны арқылы тыңдап, қазақ және орыс тіліндегі сөзді (ағылшын тілін — сынақ режимінде) осы жерде таниды — дыбыс ешқайда жіберілмейді және жазылмайды. Әзірге бұл тек компьютердегі браузерде жұмыс істейді.",
+  "mic.copy": "Телефоныңызда динамикті қосып, оны осы құрылғының жанына қойыңыз. Qorğan оның микрофоны арқылы тыңдап, қазақ және орыс тіліндегі сөзді осы жерде таниды — дыбыс ешқайда жіберілмейді және жазылмайды. Бұл компьютердегі браузерде ең жақсы жұмыс істейді.",
   "mic.start": "Микрофонды қосу",
   "mic.stop": "Қоңырауды аяқтау",
   "mic.ready": "Сөзді тану осы құрылғыда жұмыс істейді — дыбыс браузерден шықпайды.",
   "mic.unavailable": "Микрофон мұнда қолжетімсіз: {reasons}.",
   "mic.reason_browser": "бұл браузер сөзді құрылғының өзінде тани алмайды — бетті компьютердегі Chrome браузерінде ашыңыз",
   "mic.reason_capture": "браузердің микрофонға қолжетімі жоқ",
-  "mic.reason_phone": "телефондарда бұл режим әзірге өшірулі — оның телефонда қалай жұмыс істейтінін әлі тексерген жоқпыз",
   "mic.loading_runtime": "Сөзді тану жүктелуде…",
   "mic.loading_model": "Сөз моделі жүктелуде ({language}) — тек алғаш рет…",
   "mic.listening": "Тыңдап тұрмыз. Дыбыс осы құрылғыда қалады.",
   "mic.stopped": "Микрофон өшірілді.",
+  "mic.finishing": "Микрофон өшірілді. Соңғы фразаларды анықтап жатырмыз…",
+  "mic.interrupted": "Микрофоннан дыбыс келмей тұр — мүмкін, оны басқа қосымша пайдаланып жатыр. Ол қайтып келгенше ештеңе естімейміз.",
+  "mic.lost": "Микрофон ажыратылды, тексеру тоқтатылды. Қорытынды тек оған дейін естілгенді ескереді.",
+  "mic.light_failing": "Сөзді тану бұл құрылғыда жұмыс істемей қалды, тексеру тоқтатылды. Қорытынды тек оған дейін естілгенді ескереді.",
+  "mic.light_load_failed": "Сөзді тану моделі жүктелмеді ({error}). Байланысты тексеріп, «Микрофонды қосу» түймесін қайта басыңыз.",
   "mic.model_skipped": "Сөйлеу моделі ({language}) жүктелмеді — онсыз жалғастырамыз.",
   "mic.permission": "Браузер терезесінде микрофонға рұқсат беріңіз…",
   "mic.start_failed": "Микрофон қосылмады ({error}).",
+  "mic.err_denied": "микрофонға рұқсат жоқ — браузер баптауларында рұқсат беріп, қайталап көріңіз",
+  "mic.err_no_device": "микрофон табылмады — оны қосып, қайталап көріңіз",
+  "mic.err_busy": "микрофонды басқа бағдарлама пайдаланып тұр — оны жауып, қайталап көріңіз",
   "mic.no_speech": "Сөз танылмады. Дыбыс деңгейін тексеріп, қайталап көріңіз.",
   "mic.analysis_failed": "Фразаны талдау сәтсіз аяқталды ({error}).",
   "mic.recognition_error": "Сөзді тану қатесі ({error}).",
@@ -354,8 +382,6 @@ const kk = {
   "call.live_label": "Қазір айтылып жатыр (алдын ала)",
   "call.line_meta_src": "{language} · {source}",
   "call.source_gigaam": "дәл тану",
-  "call.source_vosk": "жылдам тану",
-  "call.provisional": "алдын ала",
 
   "lang_name.kk": "қазақ тілі",
   "lang_name.ru": "орыс тілі",
@@ -389,6 +415,11 @@ const kk = {
   "summary.why": "Неліктен бұл баға",
   "summary.actions": "Не істеу керек",
   "summary.safe_tip": "Күмәндансаңыз, трубканы қойып, ұйымға ресми нөмір арқылы өзіңіз қоңырау шалыңыз.",
+  "summary.copy": "Қорытындыны көшіру",
+  "summary.copied": "Көшірілді",
+  "summary.copy_failed": "Көшіру мүмкін болмады — мәтінді қолмен белгілеңіз",
+  "summary.copy_score": "Күдік деңгейі: 100-ден {score} — {band}.",
+  "summary.copy_note": "Қоңырауды тексеру қорытындысы, Qorğan. Бағаны жасанды интеллект береді, ол қателесуі мүмкін; шешім адамда.",
 
   "report.title": "Бұл қоңырау туралы хабарлайсыз ба?",
   "report.intro": "Хабарламалар талдаушыларға алаяқтар топтарын табуға көмектеседі. Хабарламаны тексеріп, «Жіберу» түймесін өзіңіз баспайынша, ештеңе жіберілмейді. Кез келген бөлігін өшіре аласыз, ал жіберілген хабарламаны кейін түбіртек нөмірі арқылы жоя аласыз.",
@@ -407,11 +438,20 @@ const kk = {
   "report.deleted": "Хабарлама жойылды: ол енді кезекте де, талдауда да жоқ.",
   "report.send_failed": "Жіберілмеді ({error}).",
   "report.delete_failed": "Жойылмады ({error}).",
-  "report.err_rejected": "сервер хабарламаны қабылдамады: {detail}",
   "report.err_numbers": "сервер қазір телефон нөмірлерін қабылдамайды — нөмірді алып тастап, қайта жіберіңіз",
   "report.err_rate": "бұл құрылғыдан хабарлама тым көп — бір минуттан кейін қайталаңыз",
   "report.err_status": "сервер {status} қатесін қайтарды",
   "report.err_gone": "хабарлама бұрын жойылған",
+  "report.err_number": "қоңырау шалушының нөмірі танылмады: кемінде 7 цифрдан тұратын телефон нөмірі керек",
+  "report.err_too_long": "мәтін тым ұзын — оны қысқартып, қайта жіберіңіз",
+  "report.err_invalid": "сервер хабарламаны қабылдамады — мәтін мен нөмірді тексеріп, қайталап көріңіз",
+  "report.copy_receipt": "Түбіртек нөмірін көшіру",
+  "forget.summary": "Хабарлама жібердіңіз бе? Оны түбіртек бойынша жою",
+  "forget.body": "Жіберген кезде алған түбіртек нөмірін енгізіңіз. Хабарлама талдаушы кезегінен де, талдаудан да жойылады.",
+  "forget.label": "Түбіртек нөмірі",
+  "forget.submit": "Хабарламаны жою",
+  "forget.invalid": "Түбіртек нөмірі — 24 таңба: цифрлар мен a-дан f-ке дейінгі латын әріптері.",
+  "forget.not_found": "мұндай нөмірмен хабарлама жоқ — мүмкін, ол жойылып қойған",
 
   "footer.promise": "Талдау құрылғыңызда жүреді · келісіміңізсіз ештеңе жіберілмейді · шешімді әрқашан өзіңіз қабылдайсыз",
   "footer.tagline": "Qorğan — телефон алаяқтарының тәсілдерін анықтау · қаз · орыс",
@@ -426,7 +466,7 @@ const kk = {
   "landing.eyebrow": "Қоңыраудағы алаяқтық тәсілдері · қаз · орыс",
   "landing.title_html": "Қоңырау шалушының <em>ниетін біліңіз</em>",
   "landing.lede": "Qorğan әңгімені қоңырау барысында қадағалап, алаяқтардың тәсілдерін белгілейді — SMS-тегі кодты сұрау, «қауіпсіз шот», «ешкімге айтпаңыз» — қазақ және орыс тілдерінде. Талдау құрылғыңызда жүреді, әр бағаның қандай нақты фразаларға негізделгені көрсетіледі.",
-  "landing.tagline": "ашық модельдер · нүктелік баға емес, аралықтар · құрылғыңызда жұмыс істейді",
+  "landing.tagline": "модельдің жария салмақтары · нүктелік баға емес, аралықтар · құрылғыңызда жұмыс істейді",
   "landing.fig_aria": "Сурет: талдау қоңырауды қалай қадағалайды",
   "landing.fig_title": "qorğan · қоңырау",
   "landing.fig_right": "құрылғыда",
@@ -434,7 +474,7 @@ const kk = {
   "landing.fig_caption": "1-сурет — қоңыраудың шартты көрінісі · модель дыбысты емес, әңгіме мәтінін оқиды · әр фраза 1 секундқа жетпей бағаланады",
   "landing.how_title_html": "Сөз кіреді, <em>баға</em> шығады.",
   "landing.step1_title": "Тыңдайды",
-  "landing.step1_body": "Қоңырауды динамикке қосып, телефонды компьютердің жанына қойыңыз немесе әңгіме мәтінін ойнатыңыз не қойыңыз. Сөз браузерде, қазақ және орыс тілдерінде танылады; дыбыс құрылғыдан ешқашан шықпайды. Микрофон режимі әзірге компьютердегі Chrome браузерінде жұмыс істейді.",
+  "landing.step1_body": "Қоңырауды динамикке қосып, телефонды компьютердің жанына қойыңыз немесе әңгіме мәтінін ойнатыңыз не қойыңыз. Сөз браузерде, қазақ және орыс тілдерінде танылады; дыбыс құрылғыдан ешқашан шықпайды. Микрофон режимі компьютерде ең жақсы жұмыс істейді; телефонда ол жеңілдетілген және нақты құрылғыларда әлі тексерілмеген.",
   "landing.step2_title": "Бағалайды",
   "landing.step2_body": "Көптілді мағына моделі (e5, int8, құрылғының өзінде) және алты түсінікті белгі: кодты сұрау, «қауіпсіз шот», қашықтан қол жеткізу, құпия сақтауды талап ету, карта деректері — және нақты банктер беретін сендіру («біз кодыңызды ешқашан сұрамаймыз»).",
   "landing.step3_title": "Кеңес береді",
@@ -458,7 +498,7 @@ const kk = {
   "landing.eval_row_independent": "6 тәуелсіз жиын (қаз + орыс, n=828)",
   "landing.eval_note": "шек 0,59 · калибрленген · Клоппер — Пирсонның дәл аралықтары · құрылғыдағы модель, 25.10.2026 (ADR D76) · қайта есептеу:",
   "landing.bi_eyebrow": "Екі тіл, бір модель",
-  "landing.bi_note": "Қазақ пен орыс тіліне және олардың арасындағының бәріне — аралас сөйлеуді қоса — бір модель. Ағылшын тіліндегі қоңыраулар да талданады, бірақ әзірге қазақ және орыс тілдеріндегідей сапада емес.",
+  "landing.bi_note": "Қазақ пен орыс тіліне және олардың арасындағының бәріне — аралас сөйлеуді қоса — бір модель. Басқа тілдердегі қоңырауларға Qorğan арналмаған.",
   "landing.try_eyebrow": "Көріңіз",
   "landing.try_title_html": "<em>Әңгіме мәтінін</em> тексеріңіз.",
   "landing.tw_title": "qorğan · бір мәтін",
@@ -538,6 +578,7 @@ const en = {
   "replay.script_placeholder": "For example: This is your bank’s security service…",
   "replay.start": "Start the check",
   "replay.running": "Checking…",
+  "replay.stop": "Stop",
   "replay.empty": "Pick a sample or write at least one phrase.",
   "replay.failed": "The check failed ({error}). The model may still be downloading — please try again.",
   "replay.scenarios_failed": "Could not load the samples ({error}). Paste your own text.",
@@ -549,21 +590,28 @@ const en = {
   "model.preparing": "Preparing the analysis model…",
   "model.ready": "Model ready. The call is analysed only on this device.",
 
-  "mic.copy": "Put your phone on speaker next to the computer. Qorğan listens through the computer’s microphone and recognises Kazakh and Russian speech (English in test mode) right here — audio is never sent anywhere or recorded. For now this works only in a desktop browser.",
+  "mic.copy": "Put your phone on speaker next to this device. Qorğan listens through its microphone and recognises Kazakh and Russian speech right here — audio is never sent anywhere or recorded. It works best in a desktop browser.",
   "mic.start": "Turn on the microphone",
   "mic.stop": "End the call",
   "mic.ready": "Speech recognition runs on this device — audio never leaves the browser.",
   "mic.unavailable": "The microphone is not available here: {reasons}.",
   "mic.reason_browser": "this browser cannot recognise speech on the device — open the page in Chrome on a computer",
   "mic.reason_capture": "the browser has no access to a microphone",
-  "mic.reason_phone": "on phones this mode is off for now — we have not yet tested how it performs there",
   "mic.loading_runtime": "Loading speech recognition…",
   "mic.loading_model": "Loading the speech model ({language}) — first time only…",
   "mic.listening": "Listening. Audio stays on this device.",
   "mic.stopped": "Microphone off.",
+  "mic.finishing": "The microphone is off. Finishing the last phrases…",
+  "mic.interrupted": "No sound is coming from the microphone: another app may have taken it. Until it comes back we hear nothing.",
+  "mic.lost": "The microphone was disconnected, so the check has stopped. The summary covers only what was heard before that.",
+  "mic.light_failing": "Speech recognition stopped working on this device, so the check has stopped. The summary covers only what was heard before that.",
+  "mic.light_load_failed": "The speech model did not load ({error}). Check the connection and press “Turn on the microphone” again.",
   "mic.model_skipped": "The {language} speech model did not load — continuing without it.",
   "mic.permission": "Allow microphone access in the browser prompt…",
   "mic.start_failed": "Could not turn on the microphone ({error}).",
+  "mic.err_denied": "no permission to use the microphone — allow it in the browser settings and try again",
+  "mic.err_no_device": "no microphone found — connect one and try again",
+  "mic.err_busy": "another program is using the microphone — close it and try again",
   "mic.no_speech": "No speech was recognised. Check the volume and try again.",
   "mic.analysis_failed": "Could not analyse a phrase ({error}).",
   "mic.recognition_error": "Speech recognition error ({error}).",
@@ -586,8 +634,6 @@ const en = {
   "call.live_label": "Being said now (provisional)",
   "call.line_meta_src": "{language} · {source}",
   "call.source_gigaam": "accurate transcript",
-  "call.source_vosk": "quick transcript",
-  "call.provisional": "provisional",
 
   "lang_name.kk": "Kazakh",
   "lang_name.ru": "Russian",
@@ -621,6 +667,11 @@ const en = {
   "summary.why": "Why this score",
   "summary.actions": "What to do",
   "summary.safe_tip": "If in doubt, hang up and call the organisation back yourself on its official number.",
+  "summary.copy": "Copy the summary",
+  "summary.copied": "Copied",
+  "summary.copy_failed": "Could not copy — select the text by hand",
+  "summary.copy_score": "Suspicion level: {score} out of 100 — {band}.",
+  "summary.copy_note": "Call check summary, Qorğan. The assessment comes from an AI and can be wrong; a person decides.",
 
   "report.title": "Report this call?",
   "report.intro": "Reports help analysts find scam groups. Nothing is sent until you have checked the report and pressed “Send” yourself. You can remove any part of it, and delete a sent report later with its receipt number.",
@@ -639,11 +690,20 @@ const en = {
   "report.deleted": "Report deleted — it is gone from the queue and from the analysis.",
   "report.send_failed": "Could not send ({error}).",
   "report.delete_failed": "Could not delete ({error}).",
-  "report.err_rejected": "the server rejected the report: {detail}",
   "report.err_numbers": "the server does not accept caller numbers right now — remove the number and send again",
   "report.err_rate": "too many reports from this device — try again in a minute",
   "report.err_status": "the server answered with error {status}",
   "report.err_gone": "the report was already deleted",
+  "report.err_number": "the caller’s number was not understood: a phone number needs at least 7 digits",
+  "report.err_too_long": "the text is too long — shorten it and send again",
+  "report.err_invalid": "the server did not accept the report — check the text and the number and try again",
+  "report.copy_receipt": "Copy the receipt number",
+  "forget.summary": "Already sent a report? Delete it with its receipt",
+  "forget.body": "Enter the receipt number you received when you sent it. The report disappears from the analyst’s queue and from the analysis.",
+  "forget.label": "Receipt number",
+  "forget.submit": "Delete the report",
+  "forget.invalid": "A receipt number is 24 characters: digits and the letters a to f.",
+  "forget.not_found": "no report has this number — it may already be deleted",
 
   "footer.promise": "Analysis on your device · nothing is sent without your consent · you always decide",
   "footer.tagline": "Qorğan — phone-scam pattern detection · kk · ru",
@@ -658,7 +718,7 @@ const en = {
   "landing.eyebrow": "Scam-pattern detection for calls · KK · RU",
   "landing.title_html": "Know what the <em>caller is doing</em>",
   "landing.lede": "Qorğan follows a phone conversation as it happens and flags the tactics scammers use — the one-time-code request, the “safe account”, the “tell no one” — in Kazakh and Russian. The analysis runs on your device and shows the exact phrases behind every verdict.",
-  "landing.tagline": "open models · intervals, not point estimates · runs on your device",
+  "landing.tagline": "public model weights · intervals, not point estimates · runs on your device",
   "landing.fig_aria": "Illustration: how the analysis follows a call",
   "landing.fig_title": "qorğan · live call",
   "landing.fig_right": "on-device",
@@ -666,7 +726,7 @@ const en = {
   "landing.fig_caption": "fig. 1 — illustrative call-activity view · the detector reads the transcript, never the audio · a verdict per turn in under 1 s",
   "landing.how_title_html": "Words in, <em>verdict</em> out.",
   "landing.step1_title": "Listen",
-  "landing.step1_body": "Put the call on speaker next to a computer, or replay or paste a transcript. Speech is recognised in the browser, in Kazakh and Russian; no audio ever leaves the device. Microphone mode works in desktop Chrome for now.",
+  "landing.step1_body": "Put the call on speaker next to a computer, or replay or paste a transcript. Speech is recognised in the browser, in Kazakh and Russian; no audio ever leaves the device. Microphone mode works best on a computer; on a phone it runs in a lighter form, not yet tested on real devices.",
   "landing.step2_title": "Measure",
   "landing.step2_body": "A multilingual sentence embedding (e5, int8, on the device) plus six interpretable signals: one-time-code request, “safe account”, remote access, secrecy, card credentials — and the reassurance real banks give (“we never ask for your code”).",
   "landing.step3_title": "Decide",
@@ -690,7 +750,7 @@ const en = {
   "landing.eval_row_independent": "6 independent sets (kk + ru, n=828)",
   "landing.eval_note": "threshold 0.59 · calibrated · exact Clopper–Pearson intervals · on-device model, 2026-10-25 (ADR D76) · regenerated by",
   "landing.bi_eyebrow": "Two languages, one model",
-  "landing.bi_note": "One model for Kazakh, Russian and everything in between — code-switching included. English calls are analysed too, but measured weaker: not yet at Kazakh and Russian quality.",
+  "landing.bi_note": "One model for Kazakh, Russian and everything in between — code-switching included. Qorğan is not built for calls in other languages.",
   "landing.try_eyebrow": "Get started",
   "landing.try_title_html": "Run it on <em>a transcript</em>.",
   "landing.tw_title": "qorğan · one transcript",
@@ -745,30 +805,24 @@ export function placeholdersOf(template) {
 const ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 export const escapeHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (ch) => ESCAPES[ch]);
 
-function lookup(locale, key) {
-  return STRINGS[locale]?.[key] ?? STRINGS[DEFAULT_LOCALE][key] ?? key;
-}
-
-function resolveParam(locale, value) {
-  if (Array.isArray(value)) return value.map((v) => resolveParam(locale, v)).join("; ");
-  if (value && typeof value === "object" && typeof value.$ === "string") return t(locale, value.$, value.params ?? null);
-  return String(value ?? "");
-}
-
 /** Does the page have a string for `key`? */
 export const hasKey = (key) => Object.hasOwn(STRINGS[DEFAULT_LOCALE], key);
 
-function fill(locale, template, params, encode) {
-  return template.replace(/\{([a-z_]+)\}/g, (whole, name) =>
-    params && Object.hasOwn(params, name) ? encode(resolveParam(locale, params[name])) : whole);
+/** `t` (plain text, falls back to ru, then to the key itself) and `tHtml` (for `_html` keys; params
+    are escaped) over a `{locale: {key: string}}` dictionary. */
+export function translator(strings) {
+  const lookup = (locale, key) => strings[locale]?.[key] ?? strings[DEFAULT_LOCALE][key] ?? key;
+  const resolveParam = (locale, value) => {
+    if (Array.isArray(value)) return value.map((v) => resolveParam(locale, v)).join("; ");
+    if (value && typeof value === "object" && typeof value.$ === "string") return t(locale, value.$, value.params ?? null);
+    return String(value ?? "");
+  };
+  const fill = (locale, template, params, encode) =>
+    template.replace(/\{([a-z_]+)\}/g, (whole, name) =>
+      params && Object.hasOwn(params, name) ? encode(resolveParam(locale, params[name])) : whole);
+  const t = (locale, key, params = null) => fill(locale, lookup(locale, key), params, (s) => s);
+  const tHtml = (locale, key, params = null) => fill(locale, lookup(locale, key), params, escapeHtml);
+  return { t, tHtml };
 }
 
-/** Plain-text string for `key` (falls back to ru, then to the key itself). */
-export function t(locale, key, params = null) {
-  return fill(locale, lookup(locale, key), params, (s) => s);
-}
-
-/** Markup string for an `_html` key; params are escaped. */
-export function tHtml(locale, key, params = null) {
-  return fill(locale, lookup(locale, key), params, escapeHtml);
-}
+export const { t, tHtml } = translator(STRINGS);

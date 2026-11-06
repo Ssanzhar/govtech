@@ -26,7 +26,6 @@ import threading
 import streamlit as st
 
 from qorgan.asr.capture import AudioQueue, iter_queue, sounddevice_chunks
-from qorgan.asr.stream import CommittedUtterance
 from qorgan.asr.vosk_stream import Partial, recognize_stream
 from qorgan.config import get_config
 from qorgan.live.session import advance, initial_session

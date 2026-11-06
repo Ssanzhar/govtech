@@ -1,25 +1,21 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="only dark">
 <!-- This page holds an analyst key: no inline or third-party script may run here. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
-<title>Qorğan — analyst console</title>
-<meta name="description" content="Qorğan analyst console — scam organizations clustered from consented reports, a priority queue, novelty flags. A human always decides.">
+<title data-i18n="admin.meta_title">Qorğan — кабинет аналитика</title>
+<meta name="description" data-i18n-attr="content:admin.meta_description" content="Кабинет аналитика Qorğan: мошеннические организации, собранные из сообщений, отправленных с согласия граждан, очередь по приоритету, отметки о новых схемах. Решает всегда человек.">
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="%23D6ADF2"/><g fill="%23141414"><rect x="7" y="13" width="2.6" height="6"/><rect x="11.4" y="9" width="2.6" height="14"/><rect x="15.8" y="5" width="2.6" height="22"/><rect x="20.2" y="10" width="2.6" height="12"/><rect x="24.6" y="14" width="2.6" height="4"/></g></svg>'>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Inter and IBM Plex Mono both cover Cyrillic Extended, so Kazakh letters never fall back. -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="admin.css">
 </head>
 <body>
 <header class="nav">
-  <a class="brand" href="index.html" aria-label="Qorğan — home">
+  <a class="brand" href="index.html" data-i18n-attr="aria-label:nav.home_aria" aria-label="Qorğan — на главную">
     <span class="brand-tile">
       <svg class="brand-glyph" viewBox="0 0 26 18" aria-hidden="true">
         <rect x="0"  y="6.5" width="2.4" height="5"/>
@@ -31,16 +27,16 @@
     </span>
     <span class="brand-word">Qorğan</span>
   </a>
-  <nav class="nav-links" data-i18n-attr="aria-label:nav.primary_aria" aria-label="Primary">
-    <a href="index.html#how" data-i18n="nav.how">How it works</a>
-    <a href="admin.html" aria-current="page" data-i18n="nav.analyst">Analyst console</a>
-    <a href="live.html" data-i18n="nav.live">Check a call</a>
+  <nav class="nav-links" data-i18n-attr="aria-label:nav.primary_aria" aria-label="Основное меню">
+    <a href="index.html#how" data-i18n="nav.how">Как это работает</a>
+    <a href="admin.html" aria-current="page" data-i18n="nav.analyst">Кабинет аналитика</a>
+    <a href="live.html" data-i18n="nav.live">Проверка звонка</a>
   </nav>
   <div class="nav-right">
     <div class="lang-switch mono" role="radiogroup" aria-label="Тіл · Язык · Language">
       <label class="lang-opt" lang="kk" title="Қазақша"><input type="radio" name="adm-lang" value="kk" aria-label="Қазақша"><span aria-hidden="true">ҚАЗ</span></label>
-      <label class="lang-opt" lang="ru" title="Русский"><input type="radio" name="adm-lang" value="ru" aria-label="Русский"><span aria-hidden="true">РУС</span></label>
-      <label class="lang-opt" lang="en" title="English"><input type="radio" name="adm-lang" value="en" aria-label="English" checked><span aria-hidden="true">ENG</span></label>
+      <label class="lang-opt" lang="ru" title="Русский"><input type="radio" name="adm-lang" value="ru" aria-label="Русский" checked><span aria-hidden="true">РУС</span></label>
+      <label class="lang-opt" lang="en" title="English"><input type="radio" name="adm-lang" value="en" aria-label="English"><span aria-hidden="true">ENG</span></label>
     </div>
   </div>
 </header>
@@ -48,64 +44,54 @@
 <main id="top" class="adm-main">
 
   <section class="col-wide adm-hero">
-    <p class="eyebrow">Level 2 &middot; analyst console</p>
-    <h1 class="display-2">Scam <em>organizations</em>, ranked.</h1>
-    <p class="body-copy">Incidents from consented reports, clustered by phone-number co-occurrence and
-    tactic profile into a priority queue for the analyst &mdash; never an automatic
-    verdict. A human always decides.</p>
+    <p class="eyebrow" data-i18n="admin.hero_eyebrow">Уровень 2 · кабинет аналитика</p>
+    <h1 class="display-2" data-i18n-html="admin.hero_title_html">Мошеннические <em>организации</em> по приоритету.</h1>
+    <p class="body-copy" data-i18n="admin.hero_body">Инциденты из сообщений, отправленных с согласия граждан, связаны по общим номерам телефонов и набору приёмов и собраны в очередь для аналитика. Это не автоматический вывод: решает всегда человек.</p>
+    <p class="adm-demo-note mono" id="admDemoNote" data-i18n="admin.demo_note" hidden>Это демонстрация: все организации, номера и звонки здесь выдуманы.</p>
     <div class="adm-session mono" id="admSession" hidden>
       <span class="adm-who" id="admWho" aria-live="polite"></span>
-      <button type="button" id="admSignOut" class="tw-chip">sign out</button>
+      <button type="button" id="admSignOut" class="tw-chip" data-i18n="admin.sign_out">выйти</button>
     </div>
     <div class="adm-toolbar mono" id="admToolbar" hidden>
-      <span class="adm-toolbar-label" id="admLocLabel">content language</span>
-      <span class="tw-loc" role="radiogroup" aria-labelledby="admLocLabel">
-        <label class="tw-chip tw-radio" lang="ru"><input type="radio" name="adm-loc" value="ru" checked>ru</label>
-        <label class="tw-chip tw-radio" lang="kk"><input type="radio" name="adm-loc" value="kk">kk</label>
-        <label class="tw-chip tw-radio" lang="en"><input type="radio" name="adm-loc" value="en">en</label>
-      </span>
-      <button type="button" id="admRefresh" class="tw-chip">refresh</button>
-      <button type="button" id="admIngest" class="tw-chip">ingest reports</button>
+      <button type="button" id="admRefresh" class="tw-chip" data-i18n="admin.refresh">обновить</button>
+      <button type="button" id="admIngest" class="tw-chip" data-i18n="admin.ingest">принять сообщения в анализ</button>
       <span id="admIngestNote" class="adm-note" role="status"></span>
     </div>
   </section>
 
   <section class="col-wide adm-signin" id="admSignin" aria-labelledby="admSigninTitle" hidden>
     <form class="adm-signin-card" id="admSigninForm" autocomplete="off" novalidate>
-      <p class="eyebrow" id="admSigninTitle">Analyst sign-in</p>
-      <label class="adm-signin-label mono" for="admKey">analyst key</label>
+      <p class="eyebrow" id="admSigninTitle" data-i18n="admin.signin_title">Вход для аналитика</p>
+      <label class="adm-signin-label mono" for="admKey" data-i18n="admin.key_label">ключ аналитика</label>
       <div class="adm-signin-row">
         <input id="admKey" class="adm-key mono" type="password" autocomplete="off" spellcheck="false"
-          placeholder="paste the key issued to you" aria-describedby="admSigninNote admSigninFine">
-        <button type="submit" class="btn btn-fill" id="admSigninBtn">Sign in</button>
+          data-i18n-attr="placeholder:admin.key_placeholder" placeholder="вставьте выданный вам ключ" aria-describedby="admSigninNote admSigninFine">
+        <button type="submit" class="btn btn-fill" id="admSigninBtn" data-i18n="admin.signin">Войти</button>
       </div>
       <p class="adm-note" id="admSigninNote" role="status"></p>
-      <p class="adm-signin-fine mono" id="admSigninFine">Keys are issued per person by the server operator
-      and carry a role: <b>analyst</b> (aggregates, excerpts, verdicts) or <b>investigator</b> (also opens a
-      full transcript, with a stated purpose). The key stays in this tab only and is cleared when you sign
-      out or close it. Sign-ins, refusals and every opened case are written to a tamper-evident audit log
-      under your id.</p>
+      <p class="adm-signin-fine mono" id="admSigninFine" data-i18n-html="admin.signin_fine_html">Ключи выдаёт оператор сервера каждому сотруднику лично, и у ключа есть роль: <b>аналитик</b> (сводные данные, фрагменты, решения) или <b>следователь</b> (ещё и открывает полную расшифровку, указав цель). Ключ остаётся только в этой вкладке и стирается, когда вы выходите или закрываете её. Входы, отказы и каждое открытое дело записываются под вашим именем в журнал аудита, защищённый от подделки.</p>
     </form>
   </section>
 
   <div id="admConsole" hidden>
-  <section class="col-wide adm-kpis" id="admKpis" aria-label="Dashboard totals" aria-live="polite"></section>
+  <section class="col-wide adm-kpis" id="admKpis" data-i18n-attr="aria-label:admin.kpis_aria" aria-label="Итоги кабинета" aria-live="polite"></section>
 
   <section class="col-wide" id="admNovelWrap" aria-live="polite"></section>
 
   <section class="col-wide section" id="admStatsSection" hidden>
-    <p class="eyebrow">Results &middot; statistics</p>
+    <p class="eyebrow" data-i18n="admin.stats_eyebrow">Результаты · статистика</p>
     <div class="st-grid" id="admStats"></div>
   </section>
 
   <section class="col-wide section" aria-labelledby="admQueueTitle">
-    <p class="eyebrow" id="admQueueTitle">Priority queue</p>
+    <p class="eyebrow" id="admQueueTitle" data-i18n="admin.queue_title">Очередь по приоритету</p>
     <div class="adm-queue-tools mono">
       <input id="admSearch" class="adm-search" type="search"
-        placeholder="search name or number…" aria-label="Search organizations">
-      <span class="tw-loc" role="radiogroup" aria-label="Filter organizations">
-        <label class="tw-chip tw-radio"><input type="radio" name="adm-filter" value="all" checked>all</label>
-        <label class="tw-chip tw-radio"><input type="radio" name="adm-filter" value="novel">new schemes</label>
+        data-i18n-attr="placeholder:admin.search_placeholder;aria-label:admin.search_aria"
+        placeholder="поиск по названию или номеру…" aria-label="Поиск организаций">
+      <span class="tw-loc" role="radiogroup" data-i18n-attr="aria-label:admin.filter_aria" aria-label="Фильтр организаций">
+        <label class="tw-chip tw-radio"><input type="radio" name="adm-filter" value="all" checked><span data-i18n="admin.filter_all">все</span></label>
+        <label class="tw-chip tw-radio"><input type="radio" name="adm-filter" value="novel"><span data-i18n="admin.filter_new">новые схемы</span></label>
       </span>
       <span id="admQueueCount" class="adm-note" aria-live="polite"></span>
     </div>
@@ -120,8 +106,8 @@
   <div class="adm-modal-card panel dd-panel" role="dialog" aria-modal="true" aria-labelledby="admModalTitle">
     <div class="p-head mono">
       <span class="p-dot" id="admModalDot" aria-hidden="true"></span>
-      <span class="p-title" id="admModalTitle">organization</span>
-      <button type="button" class="adm-modal-close mono" id="admModalClose" aria-label="Close">&#10005;</button>
+      <span class="p-title" id="admModalTitle"></span>
+      <button type="button" class="adm-modal-close mono" id="admModalClose" data-i18n-attr="aria-label:admin.close" aria-label="Закрыть">&#10005;</button>
     </div>
     <div class="p-body" id="admDrilldown"></div>
   </div>
@@ -130,7 +116,7 @@
 <footer class="footer">
   <div class="wrap foot-top">
     <div class="foot-brand">
-      <a class="brand" href="index.html" aria-label="Qorğan — home">
+      <a class="brand" href="index.html" data-i18n-attr="aria-label:nav.home_aria" aria-label="Qorğan — на главную">
         <span class="brand-tile">
           <svg class="brand-glyph" viewBox="0 0 26 18" aria-hidden="true">
             <rect x="0"  y="6.5" width="2.4" height="5"/>
@@ -142,23 +128,22 @@
         </span>
         <span class="brand-word">Qorğan</span>
       </a>
-      <p class="foot-statement">Qorğan &mdash; phone-scam pattern detection &middot; kk &middot; ru</p>
+      <p class="foot-statement" data-i18n="footer.tagline">Qorğan — распознавание приёмов телефонных мошенников · қаз · рус</p>
     </div>
-    <nav class="foot-links" aria-label="Footer">
+    <nav class="foot-links" data-i18n-attr="aria-label:footer.aria" aria-label="Нижнее меню">
       <ul>
-        <li><a href="index.html">Home</a></li>
-        <li><a href="live.html">Check a call</a></li>
-        <li><a href="index.html#eval">Evaluation</a></li>
+        <li><a href="index.html" data-i18n="footer.home">Главная</a></li>
+        <li><a href="live.html" data-i18n="nav.live">Проверка звонка</a></li>
+        <li><a href="index.html#eval" data-i18n="footer.eval">Оценка качества</a></li>
       </ul>
     </nav>
   </div>
   <div class="wrap foot-bottom">
     <span>© 2026 Qorğan</span>
-    <span class="foot-status mono"><i aria-hidden="true"></i><span>A human always decides</span></span>
+    <span class="foot-status mono"><i aria-hidden="true"></i><span data-i18n="admin.footer_status">Решает всегда человек</span></span>
   </div>
 </footer>
 
-<script src="admin.js"></script>
-<script type="module" src="admin-lang.js"></script>
+<script type="module" src="admin.js"></script>
 </body>
 </html>

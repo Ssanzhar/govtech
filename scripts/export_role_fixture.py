@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import sys
+from collections.abc import Iterable
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -82,11 +83,12 @@ def _cases() -> list[str]:
     return texts
 
 
-def build() -> dict:
+def build_cases(texts: Iterable[str]) -> list[dict]:
+    """What the Python implementation answers for each transcript, in the fixture's shape."""
     lexicon = load_role_lexicon(REPO / "data/lexicon/roles.yaml")
     templates = {loc: load_templates(loc, REPO / "src/qorgan/explain") for loc in LOCALES}
     cases = []
-    for text in _cases():
+    for text in texts:
         claims = detect_roles(text, lexicon)
         first = claims[0] if claims else None
         cases.append({
@@ -97,7 +99,11 @@ def build() -> dict:
                 for loc in LOCALES
             },
         })
-    return {"version": 1, "cases": cases}
+    return cases
+
+
+def build() -> dict:
+    return {"version": 1, "cases": build_cases(_cases())}
 
 
 def main() -> None:

@@ -49,7 +49,7 @@ def ground_flagged_phrases(
 ) -> tuple[str, ...]:
     kept: list[str] = []
     for phrase in flagged_phrases:
-        candidate = _grounded_form(phrase, scrubbed_transcript, original_transcript) if phrase else None
+        candidate = _grounded_form(phrase, scrubbed_transcript, original_transcript) if phrase.strip() else None
         if candidate is not None and candidate not in kept:
             kept.append(candidate)
     return tuple(kept)

@@ -12,7 +12,6 @@ from qorgan.live.meter import DOUBLE_HARD_SIGNAL_FLOOR
 from qorgan.live.session import (
     MAX_WINDOW_CHARS,
     WINDOW_HEAD_UTTERANCES,
-    LiveSessionState,
     advance,
     initial_session,
 )

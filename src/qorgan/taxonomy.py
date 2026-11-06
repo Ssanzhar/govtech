@@ -46,6 +46,9 @@ class TacticDefinition(BaseModel):
     examples_kk: tuple[str, ...] = ()
     label_spaces: tuple[str, ...] = (_V1_SPACE,)
     superseded_by: tuple[str, ...] = ()
+    # What a queue label or a chart axis shows, per locale (`analytics.presentation`): written by
+    # hand, because cutting a full name at a slash can open a quotation or lose the verb.
+    short: dict[str, str] = {}
 
     @field_validator("label_spaces")
     @classmethod
@@ -59,6 +62,13 @@ class TacticDefinition(BaseModel):
     def _not_blank(cls, value: str) -> str:
         if not value.strip():
             raise ValueError("tactic fields (id/ru/kk/description) must not be blank")
+        return value
+
+    @field_validator("short")
+    @classmethod
+    def _short_covers_every_locale(cls, value: dict[str, str]) -> dict[str, str]:
+        if value and (set(value) != set(_SUPPORTED_LOCALES) or not all(name.strip() for name in value.values())):
+            raise ValueError(f"short names must cover exactly the locales {_SUPPORTED_LOCALES}")
         return value
 
 

@@ -26,6 +26,8 @@ from qorgan.data.schema import Incident, Label, TacticTag
 _INCIDENT_RISK = 0.9
 # Novel-family incidents land in the last fraction of the window (a fresh, growing scheme).
 _NOVEL_RECENT_FRACTION = 0.8
+# How many seeded incidents are the new scheme: small enough to read as new (`novelty`: at most 5).
+NOVEL_SEED_INCIDENTS = 3
 _SECONDS_PER_DAY = 86400
 
 
@@ -78,10 +80,15 @@ def synthesize_incidents(
     family_list = list(families)
     weights = [max(0.0, family.weight) for family in family_list]
     span_seconds = span_days * _SECONDS_PER_DAY
+    novel_family = next((family for family in family_list if family.is_novel), None)
 
     incidents: list[Incident] = []
     for index in range(count):
-        family = rng.choices(family_list, weights=weights, k=1)[0]
+        # The weighted draw still decides everything else; the last few incidents are the new scheme,
+        # whose weight (0.6 against the hundreds of a corpus family) almost never drew it, so the
+        # console's "new schemes" stayed empty on every seed (ADR D86).
+        drawn = rng.choices(family_list, weights=weights, k=1)[0]
+        family = novel_family if novel_family is not None and index >= count - NOVEL_SEED_INCIDENTS else drawn
         # randrange(n) draws exactly what choice(seq) drew (both `_randbelow(n)`): same seeds.
         pick = rng.randrange(len(family.transcripts))
         incidents.append(

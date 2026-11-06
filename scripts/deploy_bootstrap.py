@@ -14,7 +14,7 @@ already exists, so re-running (container restart, local dev) is a fast no-op.
    hash-validation (drift), retrain from the corpus — seconds on CPU.
 5. Level-2 seeds  ← `demo_seed` + `analytics.pipeline`, deterministic (seed 42). The
    fabricated demo phone numbers live only in the running instance, never in git.
-   Then the bundle's exported head weights are copied to `site/models/weights.json`.
+   `site/models/weights.json`, the shipped heads, stays as committed while it is usable (ADR D55).
 6. Speech models   ← the small Vosk KK + RU models as USTAR tarballs under site/models/vosk/
    for the on-device microphone mode (PLAN B9, ADR D25); ~106 MB, from ~/.cache/vosk or
    the official alphacephei zips. Then the GigaAM endpoint pass (ADR D64, optional): the

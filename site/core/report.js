@@ -29,6 +29,8 @@ const RULES = [
   [new RegExp(`${EB}(?:${D}{16}|${D}{4}[ \\-]${D}{4}[ \\-]${D}{4}[ \\-]${D}{4})${EA}`, "gu"), PLACEHOLDERS.card],
   [new RegExp(`${EB}${D}{12}${EA}`, "gu"), PLACEHOLDERS.iin],
   [new RegExp(`(?<!${D})(?:\\+7|8|7)[\\s\\-]?\\(?${D}{3}\\)?[\\s\\-]?${D}{3}[\\s\\-]?${D}{2}[\\s\\-]?${D}{2}(?!${D})`, "gu"), PLACEHOLDERS.phone],
+  [new RegExp(`(?<![\\p{L}\\p{N}_+])\\+${D}(?:[ \\u00a0().\\-]{0,2}${D}){7,14}(?!${D})`, "gu"), PLACEHOLDERS.phone],
+  [new RegExp(`(?<!${D})(?:\\(7${D}{2}\\)[ \\u00a0.\\-]?${D}{3}[ \\u00a0.\\-]?${D}{2}[ \\u00a0.\\-]?${D}{2}|7${D}{2}\\.${D}{3}\\.${D}{2}\\.${D}{2})(?!${D})`, "gu"), PLACEHOLDERS.phone],
 ];
 
 export function scrubText(text) {
@@ -71,13 +73,34 @@ function groundedForm(phrase, redacted, original) {
 export function groundFlaggedPhrases(flaggedPhrases, redacted, original = "") {
   const kept = [];
   for (const phrase of flaggedPhrases) {
-    const candidate = phrase ? groundedForm(phrase, redacted, original) : null;
+    const candidate = phrase?.trim() ? groundedForm(phrase, redacted, original) : null;
     if (candidate !== null && !kept.includes(candidate)) kept.push(candidate);
   }
   return kept;
 }
 
 export class ReportReviewError extends Error {}
+
+// What `POST /api/reports` accepts as flagged evidence (src/qorgan/api_reports.py, pinned by
+// tests_js/report.test.mjs). A phrase over the limit is dropped, never cut: evidence stays verbatim.
+export const REPORT_LIMITS = Object.freeze({ phrases: 50, phraseChars: 300 });
+
+/** The page string (site/i18n.js) for a refused report, from the HTTP 422 body. FastAPI answers a
+    list for request validation and the route a string, in English; neither reaches a citizen. */
+export function rejectionKey(body) {
+  const detail = body?.detail;
+  if (typeof detail === "string") return detail.startsWith("caller number") ? "report.err_number" : "report.err_invalid";
+  const fields = Array.isArray(detail) ? detail.map((item) => item?.loc?.at?.(-1)) : [];
+  if (fields.includes("transcript")) return "report.err_too_long";
+  if (fields.includes("phone_number")) return "report.err_number";
+  return "report.err_invalid";
+}
+
+/** The canonical form of a receipt a citizen pasted (`RECEIPT_ID_PATTERN`), or null. */
+export function normalizeReceipt(value) {
+  const receipt = String(value ?? "").trim().toLowerCase();
+  return /^[0-9a-f]{24}$/.test(receipt) ? receipt : null;
+}
 
 /** The editable view of a post-call draft (`summary.buildReport`). */
 export function reviewDraft(draft) {
@@ -105,7 +128,9 @@ export function finalizeReport(draft, { transcript, phoneNumber, includedTacticI
   return {
     transcript: text,
     phone_number: phone || null,
-    flagged_phrases: groundFlaggedPhrases(draft.flagged_phrases, redacted, text),
+    flagged_phrases: groundFlaggedPhrases(draft.flagged_phrases, redacted, text)
+      .filter((phrase) => phrase.length <= REPORT_LIMITS.phraseChars)
+      .slice(0, REPORT_LIMITS.phrases),
     tactic_ids: draft.tactic_ids.filter((id) => included.has(id)),
     timestamp: draft.timestamp,
     risk_score: draft.risk_score,

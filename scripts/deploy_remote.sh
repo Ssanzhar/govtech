@@ -4,7 +4,7 @@
 #
 #   scripts/deploy_remote.sh user@host [app_port]        # you type the SSH password once
 #
-# What it does (docs/DEPLOY.md, "Team server"):
+# What it does:
 #   1. ships the image build context (the .dockerignore allowlist) -- never .env, keys.md or
 #      runtime data (data/processed, data/synthetic, ...);
 #   2. on the first deploy, writes ~/qorgan/.env on the server: the analyst keys from your local
@@ -27,7 +27,7 @@ trap cleanup EXIT
 echo "==> connecting to $TARGET (one password prompt)"
 "${SSH[@]}" "$TARGET" 'command -v docker >/dev/null || { echo "docker is not installed on the server" >&2; exit 1; }; docker compose version >/dev/null'
 
-echo "==> shipping the build context (~410 MB with the on-device models)"
+echo "==> shipping the build context (up to ~650 MB with the on-device models)"
 tar -czf - \
   --exclude='__pycache__' --exclude='*.pyc' \
   --exclude='data/processed' --exclude='data/synthetic' --exclude='data/raw' --exclude='data/real' \
@@ -42,10 +42,13 @@ else
   grep -E '^QORGAN_ANALYST_KEYS=' .env | "${SSH[@]}" "$TARGET" "umask 077 && cd $REMOTE_DIR && cat > .env && python3 -c 'import secrets; print(\"QORGAN_NUMBER_HMAC_KEY=\" + secrets.token_hex(32)); print(\"QORGAN_AUDIT_CHAIN_KEY=\" + secrets.token_hex(32))' >> .env && printf 'QORGAN_SUPPORTED_LOCALES=ru,kk,en\nQORGAN_DEFAULT_LOCALE=ru\n' >> .env"
 fi
 
+# Compose reads this file as the deploy user and the container as gid 10001; passwordless sudo only.
+"${SSH[@]}" "$TARGET" "cd $REMOTE_DIR && (sudo -n chgrp 10001 .env && chmod 640 .env) || echo 'WARNING: run: sudo chgrp 10001 ~/$REMOTE_DIR/.env && chmod 640 ~/$REMOTE_DIR/.env'"
+
 echo "==> building and starting on port $PORT"
 "${SSH[@]}" "$TARGET" "cd $REMOTE_DIR && QORGAN_BIND_ADDR=0.0.0.0 QORGAN_HOST_PORT=$PORT docker compose up -d --build"
 
-echo "==> waiting for health (the first start seeds the analyst demo data, ~1-2 min)"
+echo "==> waiting for health (the analyst demo data then seeds in the background: minutes on a small server)"
 "${SSH[@]}" "$TARGET" "for i in \$(seq 1 60); do curl -sf http://127.0.0.1:$PORT/api/health && exit 0; sleep 5; done; echo 'not healthy yet: cd $REMOTE_DIR && docker compose logs' >&2; exit 1"
 echo
 echo "==> deployed. Check the public URL your organisers gave you (it forwards to port $PORT)."

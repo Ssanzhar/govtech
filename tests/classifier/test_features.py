@@ -7,13 +7,12 @@ must yield an all-zero cue block, while the RU OTP scam must fire otp_request + 
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
 
 from qorgan.classifier import features as feat
 from qorgan.classifier.cue_lexicon import load_cue_lexicon
 from qorgan.config import get_config
+from qorgan.data.anchors import build_anchor_dialogues
 from qorgan.data.schema import Dialogue
 from qorgan.taxonomy import get_taxonomy
 
@@ -30,13 +29,8 @@ def _lexicon():
 
 
 def _authored_heldout_by_id() -> dict[str, Dialogue]:
-    path = get_config().data_dir / "processed" / "authored_heldout.jsonl"
-    out: dict[str, Dialogue] = {}
-    for line in Path(path).read_text(encoding="utf-8").splitlines():
-        if line.strip():
-            dialogue = Dialogue.model_validate_json(line)
-            out[dialogue.id] = dialogue
-    return out
+    # The committed anchors, not data/processed/ (gitignored): this gate runs on a fresh clone.
+    return {dialogue.id: dialogue for dialogue in build_anchor_dialogues()}
 
 
 def test_exact_match_ru_cue_sets_column_and_verbatim_span():

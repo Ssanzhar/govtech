@@ -90,7 +90,7 @@ test("the GigaAM model and runtime binaries bypass the service worker", () => {
   new Function("self", "caches", "fetch", "URL", source)(self, { open: async () => cache }, async () => ({ ok: false }), URL);
   const intercepted = (path) => {
     let responded = false;
-    handlers.fetch({ request: { url: `https://host${path}`, method: "GET", mode: "cors" }, respondWith: (p) => { responded = true; Promise.resolve(p).catch(() => {}); } });
+    handlers.fetch({ request: { url: `https://host${path}`, method: "GET", mode: "cors" }, respondWith: (p) => { responded = true; Promise.resolve(p).catch(() => {}); }, waitUntil() {} });
     return responded;
   };
   assert.equal(intercepted("/models/gigaam/gigaam-multilingual-220m-ctc-int8/model.int8.onnx"), false);
@@ -117,7 +117,7 @@ test("large binaries are never streamed through the service worker", () => {
   const intercepted = (path) => {
     let responded = false;
     const respondWith = (promise) => { responded = true; Promise.resolve(promise).catch(() => {}); };
-    handlers.fetch({ request: { url: `https://host${path}`, method: "GET", mode: "cors" }, respondWith });
+    handlers.fetch({ request: { url: `https://host${path}`, method: "GET", mode: "cors" }, respondWith, waitUntil() {} });
     return responded;
   };
   assert.equal(intercepted("/models/Xenova/multilingual-e5-base/onnx/model_quantized.onnx"), false);
@@ -125,4 +125,73 @@ test("large binaries are never streamed through the service worker", () => {
   assert.equal(intercepted("/vendor/vosklet/Vosklet.wasm"), false);
   assert.equal(intercepted("/live.js"), true, "the shell stays network-first through the worker");
   assert.equal(intercepted("/models/weights.json"), true);
+});
+
+// A deleted store is a re-download: every update of sw.js used to cost a returning device the 278 MB
+// embedder and the 106 MB speech models (ADR D86). This must ship in the same deploy as the new shell.
+test("an update keeps every store a runtime keeps its models in", async () => {
+  const names = ["qorgan-shell-v1", "qorgan-shell-v15", "qorgan-models-v2", "qorgan-gigaam-gigaam-multilingual-220m-ctc-int8-v1", "transformers-cache", "Vosklet", "qorgan-binaries-v1"];
+  const { deleted } = await activateWith(names);
+  assert.deepEqual(deleted.sort(), ["qorgan-binaries-v1", "qorgan-shell-v1", "qorgan-shell-v15"]);
+});
+
+function fetchHandlerWith({ onLine = true, known = [] } = {}) {
+  const handlers = {};
+  const self = { location: { origin: "https://host" }, navigator: { onLine }, addEventListener: (t, fn) => { handlers[t] = fn; }, skipWaiting() {}, clients: {} };
+  const source = readFileSync(join(REPO, "site", "sw.js"), "utf8");
+  const added = [];
+  const cache = {
+    keys: async () => known.map((path) => ({ url: `https://host${path}` })),
+    match: async () => undefined,
+    put: async () => {},
+    add: async (url) => { added.push(url); },
+  };
+  new Function("self", "caches", "fetch", "URL", source)(self, { open: async () => cache }, async () => ({ ok: false }), URL);
+  const fire = (path) => {
+    const seen = { responded: false, waited: false };
+    const respondWith = (promise) => { seen.responded = true; Promise.resolve(promise).catch(() => {}); };
+    const waitUntil = (promise) => { seen.waited = true; Promise.resolve(promise).catch(() => {}); };
+    handlers.fetch({ request: { url: `https://host${path}`, method: "GET", mode: "cors" }, respondWith, waitUntil });
+    return seen;
+  };
+  return { fire, added };
+}
+
+const WASM = "/vendor/transformers/3.8.1/ort-wasm-simd-threaded.jsep.wasm";
+
+test("a WASM runtime goes to the network the first time, with a copy kept on the side", async () => {
+  const { fire, added } = fetchHandlerWith();
+  await new Promise((resolve) => setTimeout(resolve));
+  assert.deepEqual(fire(WASM), { responded: false, waited: true }, "never streamed through the worker");
+  await new Promise((resolve) => setTimeout(resolve));
+  assert.deepEqual(added, [`https://host${WASM}`]);
+});
+
+test("a kept runtime answers from its copy, so a reload works with no network", async () => {
+  const known = fetchHandlerWith({ known: [WASM] });
+  await new Promise((resolve) => setTimeout(resolve));
+  assert.equal(known.fire(WASM).responded, true, "a local read: nothing to cut off");
+  const offline = fetchHandlerWith({ onLine: false });
+  assert.equal(offline.fire(WASM).responded, true, "offline, before the list of copies is read");
+});
+
+test("the models the loaders cache themselves stay out of the worker, offline too", () => {
+  const { fire } = fetchHandlerWith({ onLine: false });
+  assert.equal(fire("/models/Xenova/multilingual-e5-base/onnx/model_quantized.onnx").responded, false);
+  assert.equal(fire("/models/gigaam/gigaam-multilingual-220m-ctc-int8/model.int8.onnx").responded, false);
+});
+
+test("the weights take the network first: they must follow the code that reads them", async () => {
+  const fetched = [];
+  const handlers = {};
+  const self = { location: { origin: "https://host" }, navigator: { onLine: true }, addEventListener: (t, fn) => { handlers[t] = fn; }, skipWaiting() {}, clients: {} };
+  const source = readFileSync(join(REPO, "site", "sw.js"), "utf8");
+  const fresh = { ok: true, clone() { return this; }, marker: "fresh" };
+  const stale = { ok: true, marker: "stale" };
+  const cache = { keys: async () => [], match: async () => stale, put: async () => {}, add: async () => {} };
+  new Function("self", "caches", "fetch", "URL", source)(self, { open: async () => cache }, async (request) => { fetched.push(request); return fresh; }, URL);
+  let answer;
+  handlers.fetch({ request: { url: "https://host/models/weights.json", method: "GET", mode: "cors" }, respondWith: (p) => { answer = p; }, waitUntil() {} });
+  assert.equal((await answer).marker, "fresh");
+  assert.equal(fetched.length, 1);
 });

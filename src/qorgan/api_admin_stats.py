@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from qorgan.analytics.intake import load_report_drafts, report_incident_id
-from qorgan.analytics.presentation import org_display_name
+from qorgan.analytics.presentation import org_display_names
 from qorgan.analytics.stats import activity_series, weekly_trend
 from qorgan.api_admin import Locale, _load_analysis
 from qorgan.api_admin_auth import require_analyst
@@ -82,10 +82,11 @@ def stats(locale: Locale = "ru") -> StatsResponse:
 
     by_id = {incident.id: incident for incident in analysis.incidents}
     ranked = sorted(analysis.organizations, key=lambda org: -len(org.members))
+    names = org_display_names(analysis.organizations, by_id, locale=locale)
     top = [
         TopOrgOut(
             id=org.id,
-            name=org_display_name(org, by_id, locale=locale),
+            name=names[org.id],
             incidents=len(org.members),
             is_novel=org.is_novel,
         )

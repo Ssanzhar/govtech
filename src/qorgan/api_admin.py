@@ -20,7 +20,7 @@ from typing import Any, Literal
 
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from qorgan.analytics.feedback import (
@@ -43,7 +43,8 @@ from qorgan.analytics.pipeline import load_organizations_jsonl
 from qorgan.analytics.presentation import (
     dashboard_kpis,
     last_activity,
-    org_display_name,
+    org_display_names,
+    org_fingerprint,
     org_tactic_profile,
     short_tactic_name,
 )
@@ -85,6 +86,7 @@ class KpiOut(BaseModel):
 
 class OrgSummaryOut(BaseModel):
     id: str
+    fingerprint: str  # sent back with a verdict: `org_<n>` is positional and changes with the data
     name: str
     priority: float
     incidents: int
@@ -117,6 +119,7 @@ class SampleIncidentOut(BaseModel):
 
 class OrgDetailResponse(BaseModel):
     id: str
+    fingerprint: str
     name: str
     priority: float
     is_novel: bool
@@ -165,6 +168,9 @@ class FeedbackRequest(BaseModel):
 
     action: FeedbackAction
     target_org_id: str | None = None
+    # `OrgSummaryOut.fingerprint` of what the analyst was looking at; a mismatch answers 409.
+    fingerprint: str | None = None
+    target_fingerprint: str | None = None
     note: str | None = Field(default=None, max_length=_MAX_NOTE_CHARS)
 
     @model_validator(mode="after")
@@ -210,6 +216,7 @@ class PlacementOut(BaseModel):
 
 class IngestResponse(BaseModel):
     ingested: int
+    skipped: int = 0  # rows that could not become incidents; they stay pending
     organizations_total: int
     placements: list[PlacementOut]
 
@@ -264,7 +271,8 @@ def overview(locale: Locale = "ru") -> OverviewResponse:
     kpis = dashboard_kpis(
         analysis.organizations, analysis.incidents, pending_reports=analysis.pending
     )
-    orgs_out = [_summary(org, by_id, locale) for org in analysis.organizations]
+    names = org_display_names(analysis.organizations, by_id, locale=locale)
+    orgs_out = [_summary(org, by_id, names[org.id]) for org in analysis.organizations]
     return OverviewResponse(
         available=True,
         kpis=KpiOut(
@@ -310,7 +318,8 @@ def organization_detail(org_id: str, locale: Locale = "ru") -> OrgDetailResponse
 
     return OrgDetailResponse(
         id=org.id,
-        name=org_display_name(org, by_id, locale=locale),
+        fingerprint=org_fingerprint(org),
+        name=org_display_names(analysis.organizations, by_id, locale=locale)[org.id],
         priority=org.priority,
         is_novel=org.is_novel,
         numbers=list(org.numbers),
@@ -348,13 +357,18 @@ def organization_feedback(
             target = by_org.get(body.target_org_id or "")
             if target is None:
                 raise HTTPException(status_code=404, detail=f"unknown target organization {body.target_org_id!r}")
+        # `org_<n>` is re-assigned by every ingest, deletion and purge: a verdict from a queue opened
+        # earlier must not land on whatever now holds that number.
+        for shown, expected in ((org, body.fingerprint), (target, body.target_fingerprint)):
+            if shown is not None and expected is not None and org_fingerprint(shown) != expected:
+                raise HTTPException(status_code=409, detail="the queue has changed since this organization was shown")
         outcome = _with_note("ok", body.note)
         try:
             event = FeedbackEvent(
                 timestamp=datetime.now(UTC), analyst_id=analyst.id, action=body.action, org=snapshot_for(org),
                 target=snapshot_for(target) if target is not None else None, note=body.note,
             )
-            record_analyst_action(analyst.id, f"org.{body.action}", subject=f"org:{org.id}", outcome=outcome)
+            record_analyst_action(analyst.id, f"org.{body.action}", subject=f"org:{org.id}#{org_fingerprint(org)}", outcome=outcome)
         except ValidationError as exc:
             raise HTTPException(status_code=422, detail="feedback must not carry call content or numbers") from exc
         append_feedback(event, get_config().data_dir / "processed" / FEEDBACK_FILENAME)
@@ -365,7 +379,7 @@ def organization_feedback(
     if shown is None:
         raise HTTPException(status_code=500, detail="feedback applied but the organization could not be re-read")
     by_id = {incident.id: incident for incident in refreshed.incidents}
-    return _summary(shown, by_id, locale)
+    return _summary(shown, by_id, org_display_names(refreshed.organizations, by_id, locale=locale)[shown.id])
 
 
 @router.get("/incidents/{incident_id}/analysis", response_model=IncidentAnalysisResponse)
@@ -385,6 +399,7 @@ def incident_analysis(
 def open_case(
     incident_id: str,
     body: OpenCaseRequest,
+    request: Request,
     locale: Locale = "ru",
     backend: str | None = None,
     analyst: Analyst = Depends(require_investigator),
@@ -402,7 +417,7 @@ def open_case(
     except ValidationError as exc:
         raise HTTPException(status_code=422, detail="the note must not carry call content or numbers") from exc
     analysed = _analyse(incident, locale, backend, full=True)  # a failed analysis costs no budget
-    charge_case_open(analyst, subject)
+    charge_case_open(analyst, subject, request)
     record_analyst_action(analyst.id, "case.open", subject=subject, outcome=_with_note("ok", body.note), purpose=body.purpose)
     return OpenCaseResponse(**analysed.model_dump(), transcript=incident.transcript)
 
@@ -437,7 +452,8 @@ def _analyse(incident: Incident, locale: Locale, backend: str | None, *, full: b
 
     withheld = 0
     if not full:
-        visible = tuple(span for span in result.attributions if span.end <= _EXCERPT_CHARS)
+        limit = _excerpt_limit(incident.transcript)
+        visible = tuple(span for span in result.attributions if span.end <= limit)
         withheld = len(result.attributions) - len(visible)
         result = result.model_copy(update={"attributions": visible})
 
@@ -483,6 +499,12 @@ def ingest(locale: Locale = "ru", analyst: Analyst = Depends(require_analyst)) -
     from qorgan.analytics.pipeline import EMBEDDINGS_FILENAME
 
     processed = get_config().data_dir / "processed"
+    # First-start seeding is a separate process that writes these two files in turn, then
+    # overwrites the organizations: ingesting in between would leave a report in none of them.
+    if (processed / "incidents.jsonl").exists() and not (processed / "organizations.jsonl").exists():
+        raise HTTPException(status_code=409, detail="the analysis is still being prepared; try again in a few minutes")
+    # Audited first, like every other console action: what the log cannot record does not happen.
+    record_analyst_action(analyst.id, "reports.ingest", outcome="started")
     try:
         summary = ingest_pending(
             reports_path=processed / REPORTS_FILENAME,
@@ -492,14 +514,17 @@ def ingest(locale: Locale = "ru", analyst: Analyst = Depends(require_analyst)) -
             embedder=_EMBEDDER_OVERRIDE,
         )
     except Exception as exc:
-        _LOGGER.exception("citizen-report ingest failed")
+        # The exception's type only: its text can quote stored transcripts (docs/DEPLOY.md).
+        _LOGGER.error("citizen-report ingest failed (%s)", type(exc).__name__)
         record_analyst_action(analyst.id, "reports.ingest", outcome="failed")
-        raise HTTPException(status_code=503, detail=f"ingest failed: {exc}") from exc
-    record_analyst_action(analyst.id, "reports.ingest", outcome=f"ok:{summary.ingested}")
+        raise HTTPException(status_code=503, detail="ingest failed; the reason is in the server log") from exc
+    outcome = f"ok:{summary.ingested}" if not summary.skipped else f"partial:{summary.ingested}:skipped:{summary.skipped}"
+    record_analyst_action(analyst.id, "reports.ingest", outcome=outcome)
 
     org_names = _org_display_names(locale)
     return IngestResponse(
         ingested=summary.ingested,
+        skipped=summary.skipped,
         organizations_total=summary.organizations_total,
         placements=[
             PlacementOut(
@@ -513,10 +538,11 @@ def ingest(locale: Locale = "ru", analyst: Analyst = Depends(require_analyst)) -
     )
 
 
-def _summary(org: Organization, by_id: dict[str, Incident], locale: Locale) -> OrgSummaryOut:
+def _summary(org: Organization, by_id: dict[str, Incident], name: str) -> OrgSummaryOut:
     return OrgSummaryOut(
         id=org.id,
-        name=org_display_name(org, by_id, locale=locale),
+        fingerprint=org_fingerprint(org),
+        name=name,
         priority=org.priority,
         incidents=len(org.members),
         numbers=list(org.numbers),
@@ -527,7 +553,12 @@ def _summary(org: Organization, by_id: dict[str, Incident], locale: Locale) -> O
 
 
 def _excerpt(text: str) -> str:
-    return text if len(text) <= _EXCERPT_CHARS else text[:_EXCERPT_CHARS] + _ELLIPSIS
+    """Always less than the call: a short call shown whole would pass the investigator's gate."""
+    return text[:_excerpt_limit(text)] + _ELLIPSIS if text else ""
+
+
+def _excerpt_limit(text: str) -> int:
+    return min(_EXCERPT_CHARS, len(text) // 2)
 
 
 def _org_display_names(locale: Locale) -> dict[str, str]:
@@ -536,9 +567,7 @@ def _org_display_names(locale: Locale) -> dict[str, str]:
     if analysis is None:
         return {}
     by_id = {incident.id: incident for incident in analysis.incidents}
-    return {
-        org.id: org_display_name(org, by_id, locale=locale) for org in analysis.organizations
-    }
+    return org_display_names(analysis.organizations, by_id, locale=locale)
 
 
 def _iso_date(value) -> str | None:

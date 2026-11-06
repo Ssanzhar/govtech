@@ -240,6 +240,8 @@ class Config(BaseModel):
     number_hmac_secret: SecretBytes | None
     report_retention_days: int = Field(gt=0)
     # In-process purge cadence; 0 = the server never purges by itself (use cron).
+    # Proxies in front of the server whose X-Forwarded-For entries can be believed (`api_ratelimit`).
+    trusted_proxy_hops: int = Field(default=0, ge=0)
     report_purge_interval_hours: int = Field(ge=0)
 
     # --- Partner intake API (PLAN_2026-09 C5, ADR D19) ---
@@ -512,6 +514,7 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
             report_retention_days=_read_int(
                 source, "QORGAN_REPORT_RETENTION_DAYS", _DEFAULT_REPORT_RETENTION_DAYS
             ),
+            trusted_proxy_hops=_read_int(source, "QORGAN_TRUSTED_PROXY_HOPS", 0),
             report_purge_interval_hours=_read_int(
                 source, "QORGAN_REPORT_PURGE_INTERVAL_HOURS", _DEFAULT_REPORT_PURGE_INTERVAL_HOURS
             ),

@@ -6,8 +6,6 @@ import importlib.util
 import json
 from pathlib import Path
 
-import pytest
-
 from qorgan.data.schema import ScoreResult
 from qorgan.explain.explainer import explain
 
@@ -21,9 +19,13 @@ def _exporter():
     return module
 
 
-@pytest.mark.skipif(not Path("data/processed/train.jsonl").exists(), reason="corpus not bootstrapped")
 def test_committed_role_fixture_is_current():
-    assert json.loads(FIXTURE.read_text(encoding="utf-8")) == _exporter().build()
+    """Re-derive every committed case rather than rebuild the file: its train rows depend on which
+    corpus this machine holds (the published one can lag the last rebuild), the answers do not."""
+    committed = json.loads(FIXTURE.read_text(encoding="utf-8"))["cases"]
+    exporter = _exporter()
+    assert committed == exporter.build_cases(case["transcript"] for case in committed)
+    assert {text for text in exporter.HAND_CASES if text.strip()} <= {case["transcript"] for case in committed}
 
 
 def test_explanation_carries_the_role_slot_and_leaves_the_reason_alone():

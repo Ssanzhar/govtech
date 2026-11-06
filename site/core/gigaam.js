@@ -5,6 +5,8 @@
 
 export const DECODE_TIMEOUT_BASE_MS = 4000;
 export const DECODE_TIMEOUT_PER_AUDIO_S = 2000; // 2x real time on top of the base: RTF 0.23 measured on a laptop
+// A worker that never says it started is hung, not slow: give up after this many phrase budgets.
+export const STARTED_BACKSTOP_FACTOR = 6;
 
 /** How long one phrase's decode may take once the worker has it (ADR D78: queue time never counts). */
 export function decodeTimeoutMs(audioS, { baseMs = DECODE_TIMEOUT_BASE_MS, perAudioS = DECODE_TIMEOUT_PER_AUDIO_S } = {}) {
@@ -25,9 +27,10 @@ export function endpointUrls(endpoint, pageUrl, modelsBase = "models/") {
 /** Start the worker and load the model. Returns `{ready, decode(samples, sampleRate), backlog,
     dispose()}`; `ready` resolves with the worker's load report or rejects (the caller then
     falls back to the Vosk vote). `onProgress({loaded, total})` reports the first download.
-    The worker decodes one phrase at a time, so phrases wait HERE and go to it one by one: a
-    phrase's timeout starts when the worker gets it (ADR D78). On a phone slower than real time
-    phrases queue, and a queue-blind timer would drop every phrase that waited too long. */
+    The worker decodes one phrase at a time, so phrases wait HERE and go to it one by one, and a
+    phrase's timeout starts when the worker says it started (ADR D78). On a phone slower than real
+    time phrases queue, and a queue-blind timer would drop every phrase that waited too long. That
+    includes the phrase after a timeout: the worker is still finishing the one that timed out. */
 export function createGigaamClient({ endpoint, pageUrl, onProgress = () => {}, WorkerImpl = globalThis.Worker, timeout = {} } = {}) {
   const worker = new WorkerImpl(new URL("./gigaam-worker.js", import.meta.url));
   const waiting = []; // [{id, samples, sampleRate, resolve, reject}], oldest first
@@ -44,13 +47,22 @@ export function createGigaamClient({ endpoint, pageUrl, onProgress = () => {}, W
     const job = waiting.shift();
     const audioS = job.samples.length / job.sampleRate;
     const limitMs = decodeTimeoutMs(audioS, timeout);
-    const timer = setTimeout(() => {
+    const expire = () => {
       if (current?.id !== job.id) return;
       current = null; // a late answer for this id is ignored below
       job.reject(failed(`GigaAM took longer than ${Math.round(limitMs)} ms`, "timeout"));
       pump();
-    }, limitMs);
-    current = { id: job.id, resolve: job.resolve, reject: job.reject, timer };
+    };
+    current = {
+      id: job.id,
+      resolve: job.resolve,
+      reject: job.reject,
+      timer: setTimeout(expire, limitMs * STARTED_BACKSTOP_FACTOR),
+      begin() { // the worker has it now: from here the phrase has its own budget
+        clearTimeout(this.timer);
+        this.timer = setTimeout(expire, limitMs);
+      },
+    };
     worker.postMessage({ type: "decode", id: job.id, samples: job.samples, sampleRate: job.sampleRate }, [job.samples.buffer]);
   };
 
@@ -67,6 +79,7 @@ export function createGigaamClient({ endpoint, pageUrl, onProgress = () => {}, W
     const msg = event.data || {};
     if (msg.type === "progress") onProgress({ loaded: msg.loaded, total: msg.total });
     else if (msg.type === "ready") readyResolve(msg);
+    else if (msg.type === "started") { if (current?.id === msg.id) current.begin(); }
     else if (msg.type === "error" && msg.stage === "init") readyReject(new Error(msg.message));
     else if (msg.type === "result") settle(msg.id, (job) => job.resolve({ text: msg.text, decodeMs: msg.decodeMs, audioS: msg.audioS }));
     else if (msg.type === "error") settle(msg.id, (job) => job.reject(failed(msg.message, "failed")));

@@ -8,6 +8,7 @@ testable and reusable by any future view (CLI report, PDF export).
 
 from __future__ import annotations
 
+import hashlib
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from datetime import datetime
@@ -19,6 +20,8 @@ from qorgan.taxonomy import get_taxonomy
 
 # Queue labels stay scannable: at most this many tactic names joined into a display name.
 _TOP_TACTICS_IN_NAME = 2
+_FINGERPRINT_CHARS = 16
+_HEX_TO_LETTERS = str.maketrans("0123456789abcdef", "ghijklmnopqrstuv")
 
 
 class DashboardKpis(BaseModel):
@@ -41,12 +44,10 @@ def org_display_name(
     the id is a last resort, never the normal case. Unknown tactic ids are skipped
     (same convention as the explainer: a future-taxonomy tag must never crash a view).
     """
-    taxonomy = get_taxonomy()
     names: list[str] = []
     for tactic_id in org_tactic_profile(org, incidents_by_id):
-        try:
-            short = _short_name(taxonomy.display_name(tactic_id, locale))
-        except KeyError:
+        short = short_tactic_name(tactic_id, locale=locale)
+        if short is None:
             continue
         if short not in names:
             names.append(short)
@@ -63,6 +64,63 @@ def org_display_name(
     if families:
         return families.most_common(1)[0][0]
     return org.id
+
+
+def org_display_names(
+    organizations: Sequence[Organization],
+    incidents_by_id: Mapping[str, Incident],
+    *,
+    locale: str = "ru",
+) -> dict[str, str]:
+    """`org_display_name` for a whole queue, with no label used twice.
+
+    Two operations can share their dominant tactics (the seeded bank and police scripts both lead
+    with intimidation and fake verification), and an analyst cannot merge or compare what reads the
+    same. A clash gets the tactic that most sets the operation apart; identical profiles get the id.
+    """
+    base = {org.id: org_display_name(org, incidents_by_id, locale=locale) for org in organizations}
+    names = dict(base)
+    for org in organizations:
+        rivals = [o for o in organizations if o.id != org.id and base[o.id] == base[org.id]]
+        if rivals and (extra := _distinguishing_tactic(org, rivals, incidents_by_id, base[org.id], locale)):
+            names[org.id] = f"{base[org.id]} · {extra}"
+    uses = Counter(names.values())
+    return {org_id: f"{name} · {org_id}" if uses[name] > 1 else name for org_id, name in names.items()}
+
+
+def _tactic_shares(org: Organization, incidents_by_id: Mapping[str, Incident]) -> dict[str, float]:
+    """Tactic-id -> the share of the org's incidents carrying it."""
+    members = max(len(_member_incidents(org, incidents_by_id)), 1)
+    return {tactic_id: count / members for tactic_id, count in org_tactic_profile(org, incidents_by_id).items()}
+
+
+def _distinguishing_tactic(
+    org: Organization,
+    rivals: Sequence[Organization],
+    incidents_by_id: Mapping[str, Incident],
+    name: str,
+    locale: str,
+) -> str | None:
+    """The short name of the tactic this org uses most beyond its rivals, or None if none does."""
+    rival_shares = [_tactic_shares(rival, incidents_by_id) for rival in rivals]
+    best: tuple[float, str] | None = None
+    for tactic_id, share in _tactic_shares(org, incidents_by_id).items():
+        short = short_tactic_name(tactic_id, locale=locale)
+        if short is None or short in name:
+            continue
+        lead = share - max(shares.get(tactic_id, 0.0) for shares in rival_shares)
+        if lead > 0 and (best is None or lead > best[0]):
+            best = (lead, short)
+    return best[1] if best else None
+
+
+def org_fingerprint(org: Organization) -> str:
+    """Which operation this is, independent of the positional `org_<n>`: its members. Content-free,
+    and in letters only: it goes into the audit log, whose scrubber reads a run of digits in a hex
+    digest as a phone number and would refuse every verdict on that operation."""
+    joined = "\n".join(sorted(org.members))
+    digest = hashlib.sha256(joined.encode("utf-8")).hexdigest()[:_FINGERPRINT_CHARS]
+    return digest.translate(_HEX_TO_LETTERS)
 
 
 def org_tactic_profile(
@@ -120,9 +178,11 @@ def dashboard_kpis(
 
 
 def short_tactic_name(tactic_id: str, *, locale: str = "ru") -> str | None:
-    """Shortened localized tactic name for chart axes; None for unknown ids."""
+    """Short localized tactic name for queue labels and chart axes; None for unknown ids."""
+    taxonomy = get_taxonomy()
     try:
-        return _short_name(get_taxonomy().display_name(tactic_id, locale))
+        written = taxonomy.get(tactic_id).short.get(locale)
+        return written or _short_name(taxonomy.display_name(tactic_id, locale))
     except KeyError:
         return None
 
@@ -135,5 +195,9 @@ def _member_incidents(
 
 
 def _short_name(display_name: str) -> str:
-    """Truncate a long taxonomy display name at its first slash/parenthesis clause."""
-    return display_name.split("/")[0].split("(")[0].strip()
+    """Truncate a taxonomy display name at its first slash/parenthesis clause, closing any
+    quotation the cut left open. For a tactic without a written `short` name."""
+    short = display_name.split("/")[0].split("(")[0].strip()
+    if short.count('"') % 2:
+        short += '"'
+    return short + "»" * (short.count("«") - short.count("»"))

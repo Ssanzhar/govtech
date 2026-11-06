@@ -282,3 +282,16 @@ test("voiceMode: no microphone, no AudioWorklet, no WASM or not https -> off, wi
 test("voiceMode: an unknown override is ignored", () => {
   assert.equal(voiceMode(desktop, "bogus").mode, "full");
 });
+
+
+// iPadOS Safari reports a Macintosh, so the full mode (about 3.2 GB of renderer memory) reached it.
+test("an iPad counts as a phone even when it says Macintosh", () => {
+  const base = {
+    crossOriginIsolated: true, SharedArrayBuffer: class {}, isSecureContext: true, AudioWorkletNode: class {}, WebAssembly: {}, Worker: class {},
+  };
+  const nav = (userAgent, maxTouchPoints) => ({ userAgent, maxTouchPoints, mediaDevices: { getUserMedia() {} } });
+  const mac = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
+  assert.equal(voiceMode({ ...base, navigator: nav(mac, 5) }).mode, "light");
+  assert.equal(voiceMode({ ...base, navigator: nav(mac, 0) }).mode, "full", "a real Mac keeps the full mode");
+  assert.equal(voiceMode({ ...base, navigator: nav(mac, undefined) }).mode, "full");
+});
