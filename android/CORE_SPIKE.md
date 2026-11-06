@@ -20,7 +20,7 @@ android/qorgan-core/
 | Explanation (templated RU/KK) | `session/Explainer.kt` | `parity.json` | **58/58** identical (role slot of ADR D63 not ported) |
 | Meter, hysteresis, rolling window, evidence, advice | `session/Meter.kt`, `LiveSession.kt`, `Advice.kt` | `parity.json` | **29 sessions, 128 turns** identical; meter max \|Δ\| 4.6e-6 |
 | Cue matcher (bounded edit, ADR D39) | `cue/CueMatcher.kt` | `cue_match.json` | **3200/3200** cases (142 with a span), 0 mismatches |
-| PII scrubber (ADR D66) | `scrub/*.kt` | `scrub.json` | **102/102**, idempotent |
+| PII scrubber (ADR D66) | `scrub/*.kt` | `scrub.json` | **102/102**, idempotent, on the fixture of that day. **Behind since:** the port stops at D66, and `scrub.json` has grown to 124 cases (D72 hesitations, D85 number formats), so `:core:test` fails until those are ported. Do not ship this scrubber. |
 | Tokenizer + int8 ONNX embedder | `embed/DjlTokenizer.kt`, `OnnxEmbedder.kt` | `parity.json` embeddings (`embed_backend: onnx`) | cosine **1.000000**, max \|Δcomponent\| 8.9e-8, risk \|Δ\| 1.65e-7; 145 ms/transcript |
 | Runtime gate, 200 transcripts | `gate/RuntimeGate.kt` | `runtime_gate.json` | vs Python: **0/200 flips**, p95 \|Δrisk\| 0.000, tag Jaccard 1.000, 60–71 ms/transcript (Mac M-series, JVM) |
 | Same gate vs **browser** embeddings | ditto | `runtime_gate_browser.f32` | cosine mean 0.9822 / min 0.9493; **4/200 decision flips**, p95 \|Δrisk\| 0.091, max 0.572 (see the risk below) |

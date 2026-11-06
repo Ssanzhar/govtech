@@ -43,6 +43,7 @@ __all__ = [
     "STORED_RECORD_CONTEXT",
     "is_stored_record",
     "scrub_text",
+    "scrub_until_stable",
 ]
 
 # Bumped whenever a rule change can alter already-scrubbed text. The corpus manifest records the
@@ -50,7 +51,8 @@ __all__ = [
 # rebuild, and `scripts/hf_upload.py` refuses to publish it until then (it is no fixed point).
 # 1 = digits-only rules (D45); 2 = spoken numbers, split digit groups, IBAN, names (D66);
 # 3 = a dictation may continue over a hesitation («940101... эээ... 300123», D72).
-SCRUBBER_VERSION = 3
+SCRUBBER_VERSION = 4
+_MAX_SCRUB_PASSES = 4
 
 PLACEHOLDERS: tuple[str, ...] = (
     PHONE_PLACEHOLDER,
@@ -97,6 +99,13 @@ _IIN_PATTERN = re.compile(rf"{_EDGE_BEFORE}\d{{12}}{_EDGE_AFTER}")
 _PHONE_PATTERN = re.compile(
     r"(?<!\d)(?:\+7|8|7)[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}(?!\d)"
 )
+# Any other way of writing one (ADR D85). A plus sign and 8-15 digits is a phone number in any country.
+_INTERNATIONAL_PHONE_PATTERN = re.compile(r"(?<![\w+])\+\d(?:[ \u00a0().\-]{0,2}\d){7,14}(?!\d)")
+# A local number with its area code in brackets, or grouped by dots: no amount or date is written so.
+# The bare ten digits (7011234567) are in `scrub_numbers`, which knows an amount by its currency.
+_FORMATTED_LOCAL_PHONE_PATTERN = re.compile(
+    r"(?<!\d)(?:\(7\d{2}\)[ \u00a0.\-]?\d{3}[ \u00a0.\-]?\d{2}[ \u00a0.\-]?\d{2}|7\d{2}\.\d{3}\.\d{2}\.\d{2})(?!\d)"
+)
 
 
 def scrub_text(text: str) -> str:
@@ -115,5 +124,20 @@ def scrub_text(text: str) -> str:
     scrubbed = _CARD_PATTERN.sub(CARD_PLACEHOLDER, scrubbed)
     scrubbed = _IIN_PATTERN.sub(IIN_PLACEHOLDER, scrubbed)
     scrubbed = _PHONE_PATTERN.sub(PHONE_PLACEHOLDER, scrubbed)
+    scrubbed = _INTERNATIONAL_PHONE_PATTERN.sub(PHONE_PLACEHOLDER, scrubbed)
+    scrubbed = _FORMATTED_LOCAL_PHONE_PATTERN.sub(PHONE_PLACEHOLDER, scrubbed)
     scrubbed = mask_number_runs(scrubbed)
     return mask_names(scrubbed)
+
+
+def scrub_until_stable(text: str) -> str:
+    """`scrub_text` until nothing changes. One pass nearly always is enough; a mask can expose a
+    number to an earlier rule ("KZ12 300123" read as a name, then as digits), and a stored
+    transcript must be a fixed point."""
+    current = text
+    for _ in range(_MAX_SCRUB_PASSES):
+        scrubbed = scrub_text(current)
+        if scrubbed == current:
+            return scrubbed
+        current = scrubbed
+    return current

@@ -22,6 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validat
 from qorgan.data.schema import Organization
 from qorgan.data.scrub import STORED_RECORD_CONTEXT, is_stored_record, scrub_text
 from qorgan.atomic import write_text_atomic
+from qorgan.jsonl import count_records, read_records
 
 FEEDBACK_FILENAME = "org_feedback.jsonl"
 DISMISSED_PRIORITY_FACTOR = 0.2
@@ -80,11 +81,12 @@ def append_feedback(event: FeedbackEvent, path: Path) -> Path:
     return path
 
 
-def load_feedback(path: Path) -> list[FeedbackEvent]:
+def load_feedback(path: Path, *, skip_corrupt: bool = False) -> list[FeedbackEvent]:
     if not path.exists():
         return []
-    lines = path.read_text(encoding="utf-8").splitlines()
-    return [FeedbackEvent.model_validate_json(line, context=STORED_RECORD_CONTEXT) for line in lines if line.strip()]
+    return read_records(
+        path, lambda line: FeedbackEvent.model_validate_json(line, context=STORED_RECORD_CONTEXT), skip_corrupt=skip_corrupt
+    )
 
 
 def forget_in_feedback(path: Path, *, incident_id: str, number_hash: str | None, live_numbers: set[str]) -> int:
@@ -96,8 +98,9 @@ def forget_in_feedback(path: Path, *, incident_id: str, number_hash: str | None,
     about data that no longer exists. Rewrites the file only if something changed; returns
     how many events were changed or dropped.
     """
-    events = load_feedback(path)
-    if not events:
+    events = load_feedback(path, skip_corrupt=True)  # a broken line must not stop a deletion
+    left_out = path.exists() and len(events) != count_records(path)
+    if not events and not left_out:
         return 0
     drop_number = number_hash is not None and number_hash not in live_numbers
 
@@ -117,7 +120,7 @@ def forget_in_feedback(path: Path, *, incident_id: str, number_hash: str | None,
         cleaned = event.model_copy(update={"org": org, "target": target})
         changed += cleaned != event
         kept.append(cleaned)
-    if changed:
+    if changed or left_out:  # a line left out of `events` leaves the file too
         write_text_atomic(path, "".join(e.model_dump_json() + "\n" for e in kept))
     return changed
 
@@ -140,8 +143,9 @@ def apply_feedback(organizations: Sequence[Organization], events: Sequence[Feedb
             target_index = _match(current, event.target) if event.target is not None else None
             if target_index is None or target_index == index:
                 continue
+            # Both lists, index for index: a merge must not undo verdicts on other organizations.
             base = _merge(base, source=index, target=target_index)
-            current = list(base)
+            current = _merge(current, source=index, target=target_index)
         elif event.action == "dismiss":
             org = base[index]
             current[index] = org.model_copy(

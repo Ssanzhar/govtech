@@ -58,11 +58,11 @@ class BodySizeLimitMiddleware:
             return
         headers = {k.decode("latin-1").lower(): v.decode("latin-1") for k, v in scope.get("headers", [])}
         length = headers.get("content-length")
-        if length is None:
-            if "chunked" in headers.get("transfer-encoding", "").lower():
-                await _reply(send, 411, "request body must declare Content-Length")
-                return
-        elif not length.isdigit() or int(length) > self._max_bytes:
+        # Whatever else is declared: a chunked body's real size is not what Content-Length says.
+        if "chunked" in headers.get("transfer-encoding", "").lower():
+            await _reply(send, 411, "request body must declare Content-Length")
+            return
+        if length is not None and (not length.isdigit() or int(length) > self._max_bytes):
             await _reply(send, 413, f"request body exceeds {self._max_bytes} bytes")
             return
         await self._app(scope, receive, send)
@@ -126,6 +126,7 @@ class SecurityHeadersMiddleware:
 # index.html ran against a stale i18n.js / styles.css (raw i18n keys, unstyled controls).
 # /api/ sets its own policy; /models/ are large, versioned files the service worker caches.
 _UNREVALIDATED_PREFIXES = ("/api/", "/models/")
+_REVALIDATED_MODEL_FILES = frozenset({"/models/weights.json"})  # the shipped heads: they follow the code
 _REVALIDATE = (b"cache-control", b"no-cache")
 
 
@@ -136,7 +137,8 @@ class RevalidateShellMiddleware:
         self._app = app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope.get("type") != "http" or str(scope.get("path", "")).startswith(_UNREVALIDATED_PREFIXES):
+        path = str(scope.get("path", ""))
+        if scope.get("type") != "http" or (path.startswith(_UNREVALIDATED_PREFIXES) and path not in _REVALIDATED_MODEL_FILES):
             await self._app(scope, receive, send)
             return
 

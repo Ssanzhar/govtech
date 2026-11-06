@@ -7,12 +7,15 @@
    The chosen language is one stored value (`STORAGE_KEY`) for every page, so a visitor who
    picks Kazakh on the landing opens the citizen page in Kazakh. */
 
-import { STORAGE_KEY, t, tHtml } from "./i18n.js";
+import { STORAGE_KEY, t as pageT, tHtml as pageTHtml } from "./i18n.js";
+
+const PAGE_TEXT = { t: pageT, tHtml: pageTHtml };
 
 export const I18N_SELECTOR = "[data-i18n],[data-i18n-html],[data-i18n-attr]";
 
-/** Render one element from its data-i18n / data-i18n-html / data-i18n-attr keys. */
-export function renderEl(el, locale) {
+/** Render one element from its data-i18n / data-i18n-html / data-i18n-attr keys. `text` is the
+    dictionary's `{t, tHtml}` (the citizen pages' by default; the console has its own). */
+export function renderEl(el, locale, { t, tHtml } = PAGE_TEXT) {
   const params = el.dataset.i18nParams ? JSON.parse(el.dataset.i18nParams) : null;
   // A key the loaded strings lack (t() echoes it back) keeps the markup's own text, so a page
   // newer than its i18n.js degrades to Russian instead of showing "landing.title_html".
@@ -34,9 +37,9 @@ export function renderEl(el, locale) {
 }
 
 /** Render `root` (the document, or one element and its subtree). */
-export function localize(root, locale) {
-  if (root !== document && root.matches?.(I18N_SELECTOR)) renderEl(root, locale);
-  root.querySelectorAll(I18N_SELECTOR).forEach((el) => renderEl(el, locale));
+export function localize(root, locale, text = PAGE_TEXT) {
+  if (root !== document && root.matches?.(I18N_SELECTOR)) renderEl(root, locale, text);
+  root.querySelectorAll(I18N_SELECTOR).forEach((el) => renderEl(el, locale, text));
 }
 
 export function readStoredLocale() {

@@ -450,7 +450,9 @@ def test_dismiss_feedback_decays_priority_everywhere_and_is_audited(client: Test
     [event] = load_feedback(tmp_path / "processed" / "org_feedback.jsonl")
     assert event.analyst_id == ANALYST_ID and event.action == "dismiss" and event.org.numbers == (hashed("+7 701 202 30 40"),)
     [entry] = load_audit(tmp_path / "processed" / "audit_log.jsonl")
-    assert (entry.actor_kind, entry.actor_id, entry.action, entry.subject) == ("analyst", ANALYST_ID, "org.dismiss", "org:org_1")
+    assert (entry.actor_kind, entry.actor_id, entry.action) == ("analyst", ANALYST_ID, "org.dismiss")
+    # `org_1` alone is positional and names another operation after the next ingest (ADR D85).
+    assert entry.subject.startswith("org:org_1#") and len(entry.subject) > len("org:org_1#")
 
 
 def test_merge_feedback_unions_organizations(client: TestClient, tmp_path, monkeypatch) -> None:

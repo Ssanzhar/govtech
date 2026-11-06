@@ -160,8 +160,9 @@ def test_ingest_is_an_audited_analyst_action(client, tmp_path, monkeypatch):
 
     monkeypatch.setattr(api_admin, "_EMBEDDER_OVERRIDE", _NoEmbed())
     assert client.post("/api/admin/ingest", headers=as_analyst()).status_code == 200
-    [entry] = _audit(tmp_path)
-    assert (entry.actor_id, entry.action, entry.outcome) == (ANALYST_ID, "reports.ingest", "ok:0")
+    started, finished = _audit(tmp_path)  # audited first, like every other console action
+    assert (started.actor_id, started.action, started.outcome) == (ANALYST_ID, "reports.ingest", "started")
+    assert (finished.actor_id, finished.action, finished.outcome) == (ANALYST_ID, "reports.ingest", "ok:0")
 
 
 # --- the full transcript: investigator role + declared purpose ------------------------------

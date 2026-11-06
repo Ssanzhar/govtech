@@ -7,13 +7,10 @@
 <title data-i18n="meta.title">Qorğan — проверка звонка</title>
 <meta name="description" data-i18n-attr="content:meta.description" content="Проверьте, не звонят ли вам мошенники. Анализ идёт на вашем устройстве, решение всегда за вами.">
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="%23D6ADF2"/><g fill="%23141414"><rect x="7" y="13" width="2.6" height="6"/><rect x="11.4" y="9" width="2.6" height="14"/><rect x="15.8" y="5" width="2.6" height="22"/><rect x="20.2" y="10" width="2.6" height="12"/><rect x="24.6" y="14" width="2.6" height="4"/></g></svg>'>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Inter and IBM Plex Mono both cover Cyrillic Extended, so Kazakh letters never fall back. -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" crossorigin="anonymous">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="live.css">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="theme-color" content="#1A1A1A">
 </head>
 <body>
@@ -128,11 +125,11 @@
         </span>
       </div>
       <ol class="lv-how-steps">
-        <li data-i18n="how.step1">Речь распознаётся в браузере: пока вы говорите, три быстрые модели Vosk (казахская, русская, английская) показывают слова с пометкой языка; когда фраза закончена, модель GigaAM расшифровывает её заново, точнее, и анализ получает уже эту расшифровку.</li>
+        <li data-i18n="how.step1">Речь распознаётся в браузере: пока вы говорите, две быстрые модели Vosk (казахская и русская) показывают слова с пометкой языка; когда фраза закончена, модель GigaAM расшифровывает её заново, точнее, и анализ получает уже эту расшифровку.</li>
         <li data-i18n="how.step2">Каждая новая фраза добавляется к «окну» разговора (его начало и последние фразы); нейросеть e5 прямо на устройстве превращает его в набор чисел.</li>
         <li data-i18n="how.step3">Классификатор оценивает риск и находит признаки — 15 приёмов мошенников, например просьбу назвать код из SMS.</li>
         <li data-i18n="how.step4">Шкала 0–100 меняется плавно, чтобы одна фраза не вызывала ложную тревогу; сильные признаки (код из SMS, «безопасный счёт») поднимают её сразу.</li>
-        <li data-i18n="how.step5">Советы и объяснения не пишет генеративная модель: они берутся из проверенных шаблонов на казахском и русском языках.</li>
+        <li data-i18n="how.step5">Советы и объяснения не пишет генеративная модель: они берутся из проверенных шаблонов на казахском, русском и английском языках.</li>
       </ol>
     </details>
   </section>
@@ -163,12 +160,13 @@
         <p class="lv-disclosure mono" id="lvDlReplay">При первом запуске загрузится модель анализа — около 300 МБ. Это один раз: потом она хранится на этом устройстве. Лучше через Wi-Fi.</p>
         <div class="lv-setup-actions">
           <button type="button" id="lvStart" class="btn btn-paper" data-i18n="replay.start">Начать проверку</button>
+          <button type="button" id="lvStop" class="btn btn-ghost" hidden data-i18n="replay.stop">Остановить</button>
           <span id="lvSetupNote" class="lv-note mono" role="status"></span>
         </div>
       </div>
 
       <div class="lv-setup" id="lvSetupMic" hidden>
-        <p class="lv-mic-copy mono" data-i18n="mic.copy">Включите на телефоне громкую связь и положите его рядом с компьютером. Qorğan слушает через микрофон компьютера и распознаёт казахскую и русскую речь прямо здесь — звук никуда не отправляется и не записывается. Пока это работает только в браузере на компьютере.</p>
+        <p class="lv-mic-copy mono" data-i18n="mic.copy">Включите на телефоне громкую связь и положите его рядом с этим устройством. Qorğan слушает через его микрофон и распознаёт казахскую и русскую речь прямо здесь — звук никуда не отправляется и не записывается. Лучше всего это работает в браузере на компьютере.</p>
         <p class="lv-note mono lv-voice-mode-note" id="lvVoiceModeNote" role="note" hidden></p>
         <p class="lv-disclosure mono" id="lvDlMicSpeech">При первом включении микрофона загрузятся модели распознавания речи — около 106 МБ, один раз; потом они хранятся на этом устройстве.</p>
         <p class="lv-disclosure mono" id="lvDlMicEndpoint" hidden></p>
@@ -216,6 +214,19 @@
 
       <p class="try-note mono" data-i18n="footer.promise">Анализ на вашем устройстве · без вашего согласия ничего не отправляется · решение всегда за вами</p>
     </div>
+  </section>
+
+  <section class="col-wide lv-forget-section">
+    <details class="lv-how" id="lvForget">
+      <summary class="mono" data-i18n="forget.summary">Уже отправили сообщение? Удалить его по квитанции</summary>
+      <p class="lv-forget-body" data-i18n="forget.body">Введите номер квитанции, который вы получили при отправке. Сообщение исчезнет и из очереди аналитика, и из анализа.</p>
+      <form class="lv-report-row lv-forget-form" id="lvForgetForm" novalidate>
+        <input id="lvForgetReceipt" class="lv-report-phone mono" type="text" autocomplete="off" spellcheck="false" maxlength="64"
+          data-i18n-attr="aria-label:forget.label;placeholder:forget.label" aria-label="Номер квитанции" placeholder="Номер квитанции">
+        <button type="submit" class="btn btn-ghost" id="lvForgetSend" data-i18n="forget.submit">Удалить сообщение</button>
+      </form>
+      <p class="lv-report-note lv-forget-note" id="lvForgetNote" role="status"></p>
+    </details>
   </section>
 
 </main>

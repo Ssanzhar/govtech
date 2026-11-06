@@ -11,15 +11,22 @@ from __future__ import annotations
 import contextlib
 import os
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
+from typing import BinaryIO
 
 
 def write_text_atomic(path: Path, text: str) -> None:
+    write_binary_atomic(path, lambda handle: handle.write(text.encode("utf-8")))
+
+
+def write_binary_atomic(path: Path, write: Callable[[BinaryIO], object]) -> None:
+    """Whatever `write` puts in the handle replaces `path` in one step, or `path` is untouched."""
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            handle.write(text)
+        with os.fdopen(fd, "wb") as handle:
+            write(handle)
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temp, path)

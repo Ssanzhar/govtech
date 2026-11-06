@@ -268,7 +268,9 @@ def _followed_by_currency(text: str, end: int, next_token: Token | None) -> bool
 
 
 def _digit_groups_qualify(text: str, run: Sequence[Token], digits: str) -> bool:
-    if len(run) < 2 or _placeholder_for(digits) == NUMBER_PLACEHOLDER:
+    # One token only counts as a bare local phone number (ten digits, 7...): a longer one is
+    # handled by the patterns in scrub.py, a shorter one is just a number.
+    if _placeholder_for(digits) == NUMBER_PLACEHOLDER or (len(run) < 2 and not (len(digits) == 10 and digits[0] == "7")):
         return False
     gaps = [text[a.end : b.start] for a, b in zip(run, run[1:])]
     if not all(gap in _DIGIT_GROUP_GAPS or _is_hesitation(gap) for gap in gaps):

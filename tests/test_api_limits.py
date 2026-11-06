@@ -104,3 +104,14 @@ def test_the_self_hosted_worker_runtime_is_cross_origin_isolated(client):
         res = client.get(path)
         assert res.headers["cross-origin-embedder-policy"] == "require-corp", path
         assert res.headers["cross-origin-opener-policy"] == "same-origin", path
+
+
+def test_the_weights_are_revalidated_like_the_code_that_reads_them() -> None:
+    """A browser that kept old weights next to new code failed every run (ADR D86)."""
+    from fastapi.testclient import TestClient
+
+    from qorgan.api import app
+
+    res = TestClient(app).get("/models/weights.json")
+    assert res.status_code == 200
+    assert res.headers["cache-control"] == "no-cache"

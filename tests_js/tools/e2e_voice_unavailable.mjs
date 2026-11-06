@@ -16,7 +16,10 @@ const BASE = opt("--base", "http://127.0.0.1:8410");
 const OUT = resolve(opt("--out", "e2e-voice-unavailable"));
 mkdirSync(OUT, { recursive: true });
 
-const browser = await chromium.launch({ args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] });
+const browser = await chromium.launch({
+  ...(process.env.QORGAN_E2E_CHANNEL ? { channel: process.env.QORGAN_E2E_CHANNEL } : {}), // the installed Chrome
+  args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"],
+});
 const context = await browser.newContext({ viewport: { width: 900, height: 1300 } });
 await context.grantPermissions(["microphone"], { origin: BASE });
 const page = await context.newPage();

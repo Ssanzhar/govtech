@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { finalizeReport, ReportReviewError, reviewDraft, scrubText } from "../site/core/report.js";
+import { finalizeReport, normalizeReceipt, rejectionKey, REPORT_LIMITS, ReportReviewError, reviewDraft, scrubText } from "../site/core/report.js";
 import { REPO } from "./helpers.mjs";
 
 const scrubFixture = JSON.parse(readFileSync(join(REPO, "tests_js", "fixtures", "scrub.json"), "utf8"));
@@ -106,4 +106,45 @@ test("a phrase whose name needs the words before it is sent masked (ADR D66)", (
 test("the caller number is trimmed and optional", () => {
   assert.equal(approve({ phoneNumber: "  +7 700 101 20 30 " }).phone_number, "+7 700 101 20 30");
   assert.equal(approve({ phoneNumber: "  " }).phone_number, null);
+});
+
+// A refused report used to read "сервер отклонил сообщение: [object Object]": FastAPI's request
+// validation answers `detail` as a list, and the route's own refusals are English.
+test("rejectionKey names a refusal in the page's words, whatever shape the server used", () => {
+  assert.equal(rejectionKey({ detail: "caller number not understood: expected a phone number with at least 7 digits" }), "report.err_number");
+  assert.equal(rejectionKey({ detail: "timestamp is in the future or older than the retention period" }), "report.err_invalid");
+  assert.equal(rejectionKey({ detail: [{ type: "string_too_long", loc: ["body", "transcript"], msg: "too long" }] }), "report.err_too_long");
+  assert.equal(rejectionKey({ detail: [{ type: "string_too_long", loc: ["body", "phone_number"], msg: "too long" }] }), "report.err_number");
+  assert.equal(rejectionKey({ detail: [{ type: "value_error", loc: ["body", "tactic_ids"], msg: "unknown" }] }), "report.err_invalid");
+  for (const junk of [null, undefined, {}, { detail: 5 }, { detail: [null] }]) assert.equal(rejectionKey(junk), "report.err_invalid");
+});
+
+test("normalizeReceipt accepts what the server issued and tolerates a careless paste", () => {
+  assert.equal(normalizeReceipt("0123456789abcdef01234567"), "0123456789abcdef01234567");
+  assert.equal(normalizeReceipt("  0123456789ABCDEF01234567\n"), "0123456789abcdef01234567");
+  for (const bad of ["", "abc", "0123456789abcdef0123456", "0123456789abcdef012345678", "g123456789abcdef01234567", "../../etc/passwd", null, undefined]) {
+    assert.equal(normalizeReceipt(bad), null, String(bad));
+  }
+});
+
+// A long call flags whole sentences; one over the route's limit made the whole report a 422 that
+// no edit of the visible text could fix.
+test("finalizeReport never sends more flagged evidence than the server accepts", () => {
+  const long = "Назовите код ".repeat(40).trim();
+  assert.ok(long.length > REPORT_LIMITS.phraseChars);
+  const many = Array.from({ length: REPORT_LIMITS.phrases + 10 }, (_, i) => `фраза номер ${"п".repeat(i + 1)}`);
+  const payload = finalizeReport(
+    { ...draft, transcript: `${long}\n${many.join("\n")}`, flagged_phrases: [long, ...many] },
+    { transcript: `${long}\n${many.join("\n")}`, phoneNumber: "", includedTacticIds: [], consent: true },
+  );
+  assert.ok(!payload.flagged_phrases.includes(long), "an over-long phrase is dropped, not cut: evidence stays verbatim");
+  assert.equal(payload.flagged_phrases.length, REPORT_LIMITS.phrases);
+  assert.ok(payload.flagged_phrases.every((phrase) => phrase.length <= REPORT_LIMITS.phraseChars));
+});
+
+test("the client's report limits are the route's limits", () => {
+  const route = readFileSync(join(REPO, "src", "qorgan", "api_reports.py"), "utf8");
+  const limit = (name) => Number(route.match(new RegExp(`^${name} = ([\\d_]+)`, "m"))?.[1].replaceAll("_", ""));
+  assert.equal(REPORT_LIMITS.phrases, limit("_MAX_PHRASES"));
+  assert.equal(REPORT_LIMITS.phraseChars, limit("_MAX_PHRASE_CHARS"));
 });

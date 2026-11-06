@@ -31,7 +31,7 @@
 
 Масштаб подтверждается и уголовной статистикой: за январь–ноябрь 2025 года в Казахстане
 зарегистрировано **26,3 тыс. уголовных правонарушений**, связанных с интернет-мошенничеством —
-рекорд, при официально зафиксированном ущербе около 12,2 млрд ₸
+рекорд, при официально зафиксированном ущербе 11,2 млрд ₸
 ([informburo.kz](https://informburo.kz/novosti/rekordnoe-kolicestvo-skolko-slucaev-mosennicestva-v-seti-zaregistrirovali-v-kazaxstane-v-2025-godu)).
 
 Существующие меры работают с транзакциями и номерами — **до или после разговора, но не во
@@ -107,8 +107,8 @@ Qorğan закрывает именно этот разрыв: он работа
 **Что реализовано:**
 
 - **Уровень 1, на устройстве** — PWA: распознавание речи в браузере (два движка Vosk,
-  KK + RU, с пометкой языка каждого слова в реальном времени; после каждой фразы её может
-  уточнить GigaAM, когда его сборка будет размещена, D64/D70), скользящее окно, калиброванная шкала подозрительности
+  KK + RU, с пометкой языка каждого слова в реальном времени; после каждой фразы её заново
+  расшифровывает GigaAM, D64/D70, на демо с D79), скользящее окно, калиброванная шкала подозрительности
   0–100, подсвеченные дословные триггер-фразы, теги тактик, объяснение и советы на
   KK / RU / EN, итог звонка и **редактируемое обращение с явным согласием**.
 - **Уровень 2, для аналитика** — очередь организаций по номерному графу, флаг новой схемы,
@@ -128,9 +128,12 @@ Qorğan закрывает именно этот разрыв: он работа
 - **Правовая оценка** — `docs/LEGAL_ASSESSMENT.md`: разбор ЗРК «О персональных данных»
   (ст. 7, 9, 12, 16, 17, 19-1), Закона об ИИ № 230-VIII и Цифрового кодекса применительно
   к нашим потокам данных, со списком разрывов до пилота.
-- **Качество**: 1790 тестов Python + 159 JS (включая пословную сверку браузерного и
-  серверного расчёта на золотых фикстурах), 72 решения, номера D1–D76 (D11, D15, D16, D69
+- **Качество**: 1851 тест Python + 206 JS (включая пословную сверку браузерного и
+  серверного расчёта на золотых фикстурах; на чистой копии репозитория оба набора проходят без
+  данных и ключей), проверки в настоящем Chrome, 82 решения, номера D1–D86 (D11, D15, D16, D69
   пропущены) в `docs/DECISIONS.md`.
+- **Без интернета**: после первого открытия пример считается и с выключенным сервером, и после
+  перезапуска браузера; страницы ничего не загружают с чужих серверов (D83, D86).
 
 ---
 
@@ -298,7 +301,6 @@ proposition, продумал product narrative. Сатжан провёл ау�
 | 2 | Признак «рассказ о мошенничестве против самого мошенничества» — после него выпустить одно из готовых переобучений (лучшее, v3.1: 0.618 пойманных на независимом наборе). |
 | 3 | Измерение на настоящем Android-телефоне (память, задержка, звук громкой связи). |
 | 4 | Правовой блок M1–M11 до любого пилота (мнение адвоката по данным звонящего — на критическом пути). |
-| 5 | Размещение браузерной сборки GigaAM, чтобы демо получило уточнение фраз (D64). |
 
 ---
 
@@ -307,7 +309,8 @@ proposition, продумал product narrative. Сатжан провёл ау�
 | Документ | О чём |
 |---|---|
 | [`docs/STATUS.md`](docs/STATUS.md) | Текущее состояние и передача дел — читать первым |
-| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Решения D1–D76 (D11, D15, D16, D69 пропущены), с датами и измерениями |
+| [`docs/DEMO_RUNBOOK.md`](docs/DEMO_RUNBOOK.md) | Что сделать перед показом, что показывать, что делать, если что-то сломалось |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Решения D1–D86 (D11, D15, D16, D69 пропущены), с датами и измерениями |
 | [`docs/eval_report.md`](docs/eval_report.md) | Все числа с интервалами, источник истины |
 | [`docs/LEGAL_ASSESSMENT.md`](docs/LEGAL_ASSESSMENT.md) | Правовая оценка по законодательству РК |
 | [`docs/PLAN_2026-10.md`](docs/PLAN_2026-10.md) | **Рабочий план до демо-дня (октябрь 2026): что сделано, честные числа, стратегия, задачи команды** |
@@ -329,7 +332,7 @@ not read it as the product.)
 | Page | Persona | What happens |
 |---|---|---|
 | **Landing** (`index.html`) | citizen | What the tool does and does not do, in KK / RU / EN, with the AI disclosure and the download-size notice before the first model fetch. |
-| **Live call** (`live.html`) | citizen | The call is analysed **turn by turn, in the browser**: utterances (replayed script, or the microphone via dual Vosk KK+RU with per-utterance voting) → rolling window → int8 `multilingual-e5-base` in a web worker → **0–100 suspicion meter** (hysteresis, hard-signal floors) → verbatim trigger phrases, tactic tags, a templated reason and tactic-specific advice in the chosen language → post-call summary → **reviewed, editable, consent-gated report** with a redaction preview. Nothing leaves the device until the citizen sends it. |
+| **Live call** (`live.html`) | citizen | The call is analysed **turn by turn, in the browser**: utterances (replayed script, or the microphone: Vosk KK+RU show live words and GigaAM re-transcribes each phrase) → rolling window → int8 `multilingual-e5-base` in a web worker → **0–100 suspicion meter** (hysteresis, hard-signal floors) → verbatim trigger phrases, tactic tags, a templated reason and tactic-specific advice in the chosen language → post-call summary → **reviewed, editable, consent-gated report** with a redaction preview. Nothing leaves the device until the citizen sends it. |
 | **Analyst console** (`admin.html`) | gov analyst | Fed **only** by consented reports. KPI row, priority queue of scam organizations named by dominant tactics, novel-scheme flags, drill-down. Per-person keys, analyst vs investigator roles, a stated purpose code and an hourly budget to open a full transcript, and an HMAC-chained audit log (ADR D46). |
 
 ## Quick start
@@ -340,11 +343,12 @@ python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"         # runtime + tests; ".[all]" adds the cloud tier, Streamlit harness, research paths
 cp .env.example .env             # set the number-HMAC, analyst and audit-chain secrets (see the file); GEMINI_API_KEY only for the cloud tier / data-gen
 
-# 2. Models + demo data in one go (idempotent; ~300 MB download on first run):
-#    corpus splits + trained head weights from Hugging Face, the int8 ONNX embedder the
-#    browser ships (self-hosted under site/models/), and the Level-2 demo seeds.
+# 2. Models + demo data in one go (idempotent; ~690 MB download on first run):
+#    the corpus splits from Hugging Face, the int8 ONNX embedder the browser ships (self-hosted
+#    under site/models/), the Vosk and GigaAM speech models, and the Level-2 demo seeds. The heads
+#    served are the committed site/models/weights.json.
 python scripts/deploy_bootstrap.py
-#    ...or retrain the heads from the committed corpus (seconds, CPU):
+#    ...and, once the bootstrap has written the dialogue pool, retrain if you need to (seconds, CPU):
 python -m qorgan.data.build_corpus && python -m qorgan.classifier.linear_train
 
 # 3. Run the site (landing + live call + analyst dashboard) -- analysis runs ON THE DEVICE
@@ -357,8 +361,10 @@ streamlit run app/streamlit_app.py
 int8 ONNX graph and the exported head weights (`site/models/`) and score transcripts in
 the browser (`site/core/`, a 1:1 port of the Python classifier — `npm test` proves parity
 on golden fixtures). The server embeds with the *same* int8 graph
-(`QORGAN_EMBED_BACKEND=onnx`), so a verdict is identical wherever it is computed. No
-route accepts audio; call content leaves the device only on an explicit report.
+(`QORGAN_EMBED_BACKEND=onnx`) on its native ONNX Runtime, a documented proxy of the browser (cosine
+about 0.98, ADR D33), so a verdict can differ near the threshold. No route accepts audio; call
+content leaves the device only on an explicit report. After the first visit the replay works with no
+network at all (ADR D86).
 
 **No model, no key?** The app still runs — it degrades to a deterministic `mock` backend
 so the demo scripts work out of the box.
@@ -378,17 +384,20 @@ All three ship in `site/core/scenarios.json` and were verified in real Chrome.
    trigger. False-positive discipline is the product's core metric.
 
 Then the **analyst flow**: submit the report from scene 1 (use a number from a seeded org,
-e.g. `+7 700 101 20 30`), open `admin.html` with an analyst key and click **Ingest into
-analysis** — it lands inside that organization.
+e.g. `+7 700 101 20 30`), open `admin.html` with an analyst key and click **ingest reports**
+(«принять сообщения в анализ») — it lands inside that organization. The queue also holds a new
+scheme, flagged NEW: a small operation the seeds always include (ADR D86).
 
 ## Evaluate
 
 ```bash
 # FPR-first tables, per language. The shift_local* batches are the independent judges (local
 # only, never published); the other splits share a generator with training and read high.
-QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.run \
+# The published numbers use the browser's own embeddings and the committed weights:
+#   npm run device:serve -- --pages 4 &    (the embedding bridge, ADR D33)
+QORGAN_CLASSIFIER_BACKEND=linear QORGAN_EMBED_BACKEND=device QORGAN_LINEAR_WEIGHTS=web python -m qorgan.eval.run \
     --split test --split authored_heldout --split ood --split shift --split shift_local --by-language
-QORGAN_CLASSIFIER_BACKEND=linear python scripts/pooled_judges.py   # the headline: all six judges, kk+ru
+QORGAN_CLASSIFIER_BACKEND=linear QORGAN_EMBED_BACKEND=device QORGAN_LINEAR_WEIGHTS=web python scripts/pooled_judges.py   # the headline: all six judges, kk+ru
 
 # Streaming eval: false-latch rate (live FPR analog), time-to-alert
 QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.stream \
@@ -408,7 +417,7 @@ QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.adversarial --split adver
 # punctuation, numerals as words), paired; --drop-latin is the worst case for «SMS»/«CVV»
 QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.asr_realism [--drop-latin]
 
-pytest -q        # 1,790 tests, all offline
+pytest -q        # offline; tests that need the bootstrapped corpus or local-only judges skip on a fresh clone
 npm test         # JS core parity with Python + the DEVICE gate (browser embeddings, seconds)
 npm run gate:browser   # re-capture the browser's embeddings of the gate set (headless Chromium;
                        # `npx playwright install chromium` once) after a model/runtime change
@@ -430,7 +439,7 @@ Three points that belong with the numbers rather than in the table:
 - **They describe the device.** Heads are trained and evaluated on the **browser's own
   embeddings** (ADR D33), so the figures describe what the citizen's device decides, not a
   server approximation. The server's native runtime is a cosine-0.98 proxy and disagrees on
-  6/200 borderline calls — reported, not hidden.
+  4/200 borderline calls at the shipped weights — reported, not hidden.
 - **The independent judges are the number to lead with.** The six `shift_local*` batches (828
   kk/ru calls) were written offline by a local model from another family that never saw the
   corpus, the prompts or the lexicons, all after v1's weights were frozen:
@@ -448,17 +457,16 @@ Three points that belong with the numbers rather than in the table:
 ## Microphone mode (on-device speech recognition)
 
 On desktop browsers the live page can listen to a call directly: Kazakh and Russian Vosk
-models run in the browser (Vosklet/WASM, one instance each), each word gets a live kk/ru chip,
-the best hypothesis wins per utterance, and the transcript feeds the same on-device classifier
-and meter as replay — **no audio or text leaves the device** (ADR D26). English left the voice
-pipeline in ADR D70 (calls are kk/ru only). Where the self-built GigaAM browser runtime is
-hosted, each phrase is re-transcribed by it (D64); deployments run the Vosk vote until then. Requirements the server already meets:
+models run in the browser (Vosklet/WASM, one instance each) and each word gets a live kk/ru chip;
+when a phrase ends, GigaAM re-transcribes it, and that text feeds the same on-device classifier
+and meter as replay (D64, D70, on the demo since D79) — **no audio or text leaves the device** (ADR
+D26). Phones and Android WebView get the light mode: GigaAM only, no live words (D67). It has never
+run on a real phone. English left the voice pipeline in ADR D70 (calls are kk/ru only). Requirements the server already meets:
 `/live.html`, `/core/*` and `/vendor/*` are served cross-origin isolated (COOP/COEP) because the
 recogniser needs SharedArrayBuffer; `python scripts/deploy_bootstrap.py` installs the
 hash-pinned Vosklet and transformers.js/onnxruntime-web runtimes under `site/vendor/` (ADR D61)
 and packages the model tarballs (downloaded once by the browser) — nothing is
-loaded live from a CDN, which Safari would block under COEP. Phones are disabled until the
-Android bench passes (`scripts/spikes/vosklet_bench/`).
+loaded live from a CDN, which Safari would block under COEP.
 
 ## Real calls (when they arrive)
 
@@ -536,8 +544,8 @@ curl -s http://localhost:8000/api/v1/organizations?locale=ru -H "X-API-Key: repl
 curl -s -X DELETE http://localhost:8000/api/v1/reports/<receipt_id> -H "X-API-Key: replace-with-a-32-char-secret-00000000"
 ```
 
-Signals-only reports (no transcript) are stored, receipted, deletable and counted; placing
-them into organizations through the number graph alone is the next Level-2 item (PLAN C9).
+Signals-only reports (no transcript) are stored, receipted, deletable and counted, and are
+placed into organizations through the number graph alone (ADR D23).
 
 ## Publish model/data updates (maintainers)
 
@@ -556,10 +564,10 @@ asr · eval) · `app/` (Streamlit: `streamlit_app.py`, `live_view.py`, `mic_live
 ## Status & limits
 **Level 1 analysis already runs on the device** — `site/` is a static PWA that loads the int8
 ONNX embedder and the exported heads and scores in the browser; no route accepts audio. What
-remains roadmap is **mobile** (phones are gated on the Android Vosklet benchmark, ADR D26) and
-**carrier integration** ([`DOCUMENTATION.md`](DOCUMENTATION.md)).
+remains unproven is **mobile**: the light voice mode has never run on a real phone (PLAN C2).
+Operator-level interception is off the roadmap for good (ADR D12).
 
-The live-mic path is real (dual Vosk KK+RU streaming, per-utterance voting) but
+The live-mic path is real (Vosk KK+RU live words, a GigaAM pass per phrase) but
 speakerphone-quality ASR — especially Kazakh — is the accuracy bottleneck; the meter's
 confidence weighting absorbs some of it. Transient mid-call latching on legitimate calls is
 measured by `eval.stream` rather than estimated: currently **3/60 on `test`** and **1/19 on the

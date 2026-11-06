@@ -191,7 +191,8 @@ function followedByCurrency(chars, end, nextToken) {
 }
 
 function digitGroupsQualify(chars, run, digits) {
-  if (run.length < 2 || placeholderFor(digits) === PLACEHOLDERS.number) return false;
+  // One token only counts as a bare local phone number (ten digits, 7...).
+  if (placeholderFor(digits) === PLACEHOLDERS.number || (run.length < 2 && !(digits.length === 10 && digits[0] === "7"))) return false;
   for (let i = 1; i < run.length; i += 1) {
     const gap = chars.slice(run[i - 1].end, run[i].start);
     if (!DIGIT_GROUP_GAPS.has(gap.join("")) && !isHesitation(gap)) return false;

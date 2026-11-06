@@ -15,6 +15,8 @@ from collections.abc import Sequence
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
+from qorgan.data.scrub import scrub_text
+
 PARTNER_ID_PATTERN = r"^[a-z][a-z0-9_-]{1,31}$"
 MIN_SECRET_CHARS = 16
 DEFAULT_PARTNER_DAILY_QUOTA = 200
@@ -59,6 +61,8 @@ def _parse_entry(entry: str, default_quota: int) -> PartnerCredential:
     partner_id, secret = fields[0].strip(), fields[1].strip()
     if not _PARTNER_ID_RE.fullmatch(partner_id):
         raise ValueError(f"partner id {partner_id!r} must match {PARTNER_ID_PATTERN}")
+    if scrub_text(partner_id) != partner_id:
+        raise ValueError(f"partner id {partner_id!r} looks like personal data (a phone number?) and would be refused by the audit log")
     if len(secret) < MIN_SECRET_CHARS:
         raise ValueError(f"partner {partner_id!r}: secret must be at least {MIN_SECRET_CHARS} characters")
     quota = default_quota

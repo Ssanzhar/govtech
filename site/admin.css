@@ -3,7 +3,6 @@
 
 .adm-hero{padding-top:clamp(56px,9vh,96px)}
 .adm-toolbar{display:flex;align-items:center;gap:.9rem;margin-top:1.8rem}
-.adm-toolbar-label{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
 .adm-toolbar .tw-loc{margin-left:0}
 .adm-toolbar .tw-chip,.adm-queue-tools .tw-chip{color:var(--ink-soft);border-color:var(--hairline)}
 .adm-toolbar .tw-chip:hover,.adm-queue-tools .tw-chip:hover{color:var(--ink);border-color:var(--ink-soft)}
@@ -241,7 +240,12 @@ th.is-sorted .sort-ind{opacity:1}
 .queue-badge.fb-merged{background:#9BB4E0;color:#0B0F0C}
 
 /* ── analyst sign-in + session (the console is closed until a key is accepted) ── */
-.adm-toolbar[hidden],.adm-session[hidden]{display:none}
+.adm-toolbar[hidden],.adm-session[hidden],.adm-demo-note[hidden]{display:none}
+.adm-demo-note{
+  display:inline-block;margin-top:1.4rem;padding:.5rem 1rem;border-radius:12px;font-size:.8rem;line-height:1.5;
+  border:1px solid color-mix(in srgb,var(--yellow) 60%,transparent);
+  background:color-mix(in srgb,var(--yellow) 10%,transparent);color:var(--yellow);
+}
 .adm-session{display:flex;align-items:center;flex-wrap:wrap;gap:.7rem;margin-top:1.6rem;font-size:.76rem;color:var(--ink-soft)}
 .adm-session .tw-chip{color:var(--ink-soft);border-color:var(--hairline)}
 .adm-session .tw-chip:hover{color:var(--ink);border-color:var(--ink-soft)}

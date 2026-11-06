@@ -82,9 +82,8 @@ async function init({ runtimeBase, modelUrl, tokensUrl, cacheName }) {
   const base = sameOrigin(runtimeBase);
   importScripts(sameOrigin(`${base}sherpa-onnx-asr.js`), sameOrigin(`${base}sherpa-onnx-wasm-web.js`));
   wasm = await SherpaOnnx({ locateFile: (path) => sameOrigin(`${base}${path}`) });
-  const [{ blob: model, fromCache }, tokensResponse] = await Promise.all([cachedBlob(modelUrl, cacheName), fetchSameOrigin(tokensUrl)]);
-  if (!tokensResponse.ok) throw new Error(`HTTP ${tokensResponse.status} for the GigaAM tokens`);
-  const tokens = await tokensResponse.blob();
+  // Tokens too: stored with the model, or a reload with no network has a model and no way to read it.
+  const [{ blob: model, fromCache }, { blob: tokens }] = await Promise.all([cachedBlob(modelUrl, cacheName), cachedBlob(tokensUrl, cacheName)]);
   wasm.FS.mkdir(MOUNT);
   wasm.FS.mount(wasm.FS.filesystems.WORKERFS, { blobs: [{ name: "model.int8.onnx", data: model }, { name: "tokens.txt", data: tokens }] }, MOUNT);
   recognizer = new OfflineRecognizer({
@@ -97,6 +96,7 @@ async function init({ runtimeBase, modelUrl, tokensUrl, cacheName }) {
 }
 
 function decode({ id, samples, sampleRate }) {
+  self.postMessage({ type: "started", id }); // the client's timeout counts from here (ADR D78)
   const started = performance.now();
   const stream = recognizer.createStream();
   try {

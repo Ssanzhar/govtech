@@ -21,7 +21,7 @@ from fastapi import Depends, HTTPException, Request, Response, Security
 from fastapi.security import APIKeyHeader
 
 from qorgan.analysts import PUBLIC_DEMO_ID, Analyst, AnalystRegistry
-from qorgan.api_ratelimit import SlidingWindowLimiter
+from qorgan.api_ratelimit import SlidingWindowLimiter, client_key
 from qorgan.audit import (
     AUDIT_FILENAME,
     AccessPurpose,
@@ -93,7 +93,7 @@ def require_analyst(request: Request, response: Response, api_key: str | None = 
         raise HTTPException(
             status_code=401, detail="missing or invalid analyst key", headers={"WWW-Authenticate": "ApiKey"}
         )
-    if not _ANALYST_LIMITER.allow(analyst.id):
+    if not _ANALYST_LIMITER.allow(_budget_key(analyst, request)):
         raise HTTPException(status_code=429, detail="request budget for this analyst exceeded; try again in a minute")
     response.headers.update(_NO_STORE)
     return analyst
@@ -110,9 +110,15 @@ def require_investigator(request: Request, analyst: Analyst = Depends(require_an
     return analyst
 
 
-def charge_case_open(analyst: Analyst, subject: str) -> None:
+def _budget_key(analyst: Analyst, request: Request) -> str:
+    """Whose budget a request spends. Everyone on the open demo is the one identity `public-demo`
+    (ADR D59), so that identity's budget is per visitor: one script must not lock out the room."""
+    return f"{analyst.id}:{_client(request)}" if analyst.id == PUBLIC_DEMO_ID else analyst.id
+
+
+def charge_case_open(analyst: Analyst, subject: str, request: Request) -> None:
     """Charge one full-transcript open to the investigator's hourly budget (429 + audited)."""
-    if not _OPEN_LIMITER.allow(analyst.id):
+    if not _OPEN_LIMITER.allow(_budget_key(analyst, request)):
         record_analyst_action(analyst.id, "access.denied", subject=subject, outcome="denied:open_rate_limited")
         raise HTTPException(
             status_code=429, detail="hourly limit of opened transcripts reached; the refusal was logged"
@@ -156,4 +162,4 @@ def _route(request: Request) -> str:
 
 
 def _client(request: Request) -> str:
-    return request.client.host if request.client else "unknown"
+    return client_key(request)

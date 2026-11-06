@@ -3,7 +3,7 @@
 import numpy as np
 
 from qorgan.analytics.cluster import cluster_incidents
-from support.numbers import hashed, prefix, stored_report
+from support.numbers import hashed, prefix
 
 from qorgan.data.schema import Incident, Label
 

@@ -1,0 +1,38 @@
+# The offline suites on every push and pull request. Neither needs the corpus, the models or any
+# secret: tests that need bootstrapped data skip on a clean checkout. Browser checks
+# (tests_js/tools/e2e_*.mjs) and the model gates stay local: they need the 300 MB embedder.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11" # the Dockerfile's version
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: ruff check --select F,E9,PLE --exclude scripts/spikes src scripts tests app
+      - run: pytest -q
+
+  javascript:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --ignore-scripts # no native download: the JS suite runs without the embedder
+      - run: npm test

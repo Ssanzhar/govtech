@@ -89,7 +89,8 @@ def test_seed_incidents_produces_incidents_from_corpus():
     incidents = seed_incidents(_corpus(), count=50, seed=42, start_time=_START, hmac_key=TEST_HMAC_KEY)
     assert len(incidents) == 50
     assert all(isinstance(i, Incident) for i in incidents)
-    assert any(i.script_family == "crypto_giveaway_new" for i in incidents) or True  # novel may or may not sample
+    novel = [i for i in incidents if i.script_family == "crypto_giveaway_new"]
+    assert len(novel) >= 3, "the demo always has a new scheme to find"
 
 
 def test_write_and_load_incidents_round_trips(tmp_path):

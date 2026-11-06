@@ -16,6 +16,7 @@
    Pure functions (`parseVoskResult`, `voteFinal`, `reduceAsrEvent`, `isSupported`) are
    unit-tested in Node; `createDeviceAsr` is the browser runtime. */
 
+import { startAudioContext } from "./audio-context.js";
 import { createEndpointPass } from "./endpoint-runtime.js";
 import { createSpanVoter } from "./span-vote.js";
 import { createInheritingTagger } from "./word-align.js";
@@ -313,12 +314,15 @@ export function supportIssues(env = globalThis) {
   if (!env.isSecureContext) codes.push("secure_context");
   if (typeof env.AudioWorkletNode === "undefined") codes.push("audio_worklet");
   if (!env.navigator?.mediaDevices?.getUserMedia) codes.push("capture");
-  if (/Android|iPhone|iPad|Mobile/i.test(env.navigator?.userAgent || "")) codes.push("phone");
+  const userAgent = env.navigator?.userAgent || "";
+  // iPadOS Safari reports a Macintosh; only its touch screen gives it away.
+  const iPad = /Macintosh/.test(userAgent) && (env.navigator?.maxTouchPoints ?? 0) > 1;
+  if (iPad || /Android|iPhone|iPad|Mobile/i.test(userAgent)) codes.push("phone");
   return codes;
 }
 
 /** Which voice mode this browser gets (ADR D67) -> `{mode, issues, downgradedBy}`:
-    - "full": the word-level mode (three Vosklet recognisers + GigaAM, D64). Needs everything
+    - "full": the word-level mode (a Vosklet recogniser per language + GigaAM, D64). Needs everything
       `supportIssues` checks, including cross-origin isolation, and is still off on phones (D25);
     - "light": GigaAM only, phrases cut by an energy VAD (site/core/vad.js). Needs no isolation
       and no SharedArrayBuffer, so it is what an Android WebView (eGov Mobile) and, for now, a
@@ -356,6 +360,7 @@ export function loadVoskletScript(url = VOSKLET_SCRIPT_URL, doc = globalThis.doc
       tag.onerror = () => reject(new Error("could not load the speech-recognition runtime"));
       doc.head.appendChild(tag);
     });
+    scriptPromise.catch(() => { scriptPromise = null; }); // the next Start tries again
   }
   return scriptPromise;
 }
@@ -373,7 +378,7 @@ export function loadVoskletScript(url = VOSKLET_SCRIPT_URL, doc = globalThis.doc
     committed utterance and its text replaces the Vosk text before `onUtterance` -- if GigaAM
     is loading or unavailable the Vosk vote is passed on, marked `source: "vosk"` with a
     `fallback` reason. `onEndpointStatus({status, ...})` reports the endpoint pass. */
-export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus = () => {}, onError = () => {}, onRaw = null, lock = null, handicap = null, optional = [], wordLevel = null, onLive = null, endpoint = null, onEndpointStatus = () => {}, createEndpointClient = undefined }) {
+export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus = () => {}, onError = () => {}, onRaw = null, lock = null, handicap = null, optional = [], wordLevel = null, onLive = null, endpoint = null, onEndpointStatus = () => {}, onInterrupted = () => {}, createEndpointClient = undefined }) {
   if (!Object.keys(models).length) throw new Error("no ASR models configured");
   const loadVosklet = await loadVoskletScript();
   onStatus("loading the speech-recognition runtime…", { code: "runtime" });
@@ -388,7 +393,11 @@ export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus
     } catch (err) {
       // An optional language that cannot load is left out; kk and ru are both required (ADR D70).
       try { await module.cleanUp(); } catch {}
-      if (!optional.includes(language)) throw err;
+      if (!optional.includes(language)) {
+        // Each loaded module holds ~315 MB of shared memory: a failed start must not keep them.
+        for (const loadedModule of Object.values(modules)) { try { await loadedModule.cleanUp(); } catch {} }
+        throw err;
+      }
       onStatus(`the ${language.toUpperCase()} speech model is unavailable; continuing without it`, { code: "model_skipped", language });
     }
   }
@@ -435,29 +444,37 @@ export async function createDeviceAsr({ models, onPartial, onUtterance, onStatus
   return {
     languages,
     async start(stream) {
-      ctx = new AudioContext();
-      state = initialAsrState(languages);
-      pass.reset(ctx.sampleRate); // Vosk word times and the audio ring both count from here
-      for (const language of languages) {
-        const rec = await modules[language].createRecognizer(loaded[language], ctx.sampleRate);
-        rec.setWords(true);
-        rec.setPartialWords(true);
-        rec.addEventListener("result", (ev) => dispatch({ type: "result", language, detail: ev.detail }));
-        rec.addEventListener("partialResult", (ev) => dispatch({ type: "partial", language, detail: ev.detail }));
-        recognizers[language] = rec;
+      ctx = await startAudioContext(onInterrupted);
+      try {
+        state = initialAsrState(languages);
+        pass.reset(ctx.sampleRate); // Vosk word times and the audio ring both count from here
+        for (const language of languages) {
+          const rec = await modules[language].createRecognizer(loaded[language], ctx.sampleRate);
+          rec.setWords(true);
+          rec.setPartialWords(true);
+          rec.addEventListener("result", (ev) => dispatch({ type: "result", language, detail: ev.detail }));
+          rec.addEventListener("partialResult", (ev) => dispatch({ type: "partial", language, detail: ev.detail }));
+          recognizers[language] = rec;
+        }
+        transferer = await modules[languages[0]].createTransferer(ctx, TRANSFERER_BUFFER);
+        transferer.port.onmessage = (ev) => {
+          // `state.languages`, not `languages`: once the reducer locks a language the other
+          // recognizer stops being fed, which is the whole compute win (ADR D40). Its instance
+          // stays loaded, so this saves decode work, not memory.
+          for (const language of state.languages) recognizers[language].acceptWaveform(ev.data.slice()); // a copy each: buffers may be transferred
+          pass.push(ev.data); // the endpoint pass re-decodes committed utterances from here (ADR D64)
+        };
+        source = ctx.createMediaStreamSource(stream);
+        source.connect(transferer);
+        ticker = setInterval(() => dispatch({ type: "tick" }), 100);
+        onStatus("listening — audio stays on this device", { code: "listening" });
+      } catch (err) {
+        for (const rec of Object.values(recognizers)) { try { await rec.delete(false); } catch {} }
+        recognizers = {};
+        try { await ctx.close(); } catch {}
+        ctx = null;
+        throw err;
       }
-      transferer = await modules[languages[0]].createTransferer(ctx, TRANSFERER_BUFFER);
-      transferer.port.onmessage = (ev) => {
-        // `state.languages`, not `languages`: once the reducer locks a language the other
-        // recognizer stops being fed, which is the whole compute win (ADR D40). Its instance
-        // stays loaded, so this saves decode work, not memory.
-        for (const language of state.languages) recognizers[language].acceptWaveform(ev.data.slice()); // a copy each: buffers may be transferred
-        pass.push(ev.data); // the endpoint pass re-decodes committed utterances from here (ADR D64)
-      };
-      source = ctx.createMediaStreamSource(stream);
-      source.connect(transferer);
-      ticker = setInterval(() => dispatch({ type: "tick" }), 100);
-      onStatus("listening — audio stays on this device", { code: "listening" });
     },
     async stop() {
       if (ticker) clearInterval(ticker);

@@ -7,6 +7,7 @@
 
 import { contentLocale, escapeHtml as esc, t } from "./i18n.js";
 import { displayName, explain } from "./core/explain.js";
+import { markSpans } from "./core/highlight.js";
 
 const SAMPLES = {
   scam_ru: "Здравствуйте, это служба безопасности банка. По вашему счёту зафиксирована подозрительная операция. Чтобы спасти деньги, переведите их на безопасный счёт. Никому не говорите об этом звонке и назовите код из сообщения.",
@@ -39,19 +40,6 @@ const loadConfig = async () => {
   return config;
 };
 
-// Character-offset spans (verbatim, validated by the classifier) wrapped in <mark>.
-const highlight = (text, spans) => {
-  const sorted = [...spans].sort((a, b) => a.start - b.start);
-  let html = "";
-  let cur = 0;
-  for (const s of sorted) {
-    if (s.start < cur || s.end > text.length) continue;
-    html += esc(text.slice(cur, s.start)) + "<mark>" + esc(text.slice(s.start, s.end)) + "</mark>";
-    cur = s.end;
-  }
-  return html + esc(text.slice(cur));
-};
-
 const renderWhere = () => {
   if (where) where.textContent = tr(serverBox?.checked ? "landing.tw_where_server" : "landing.tw_where_device");
 };
@@ -75,7 +63,7 @@ const renderResult = ({ r, transcript, onServer, raw, explanation, explanationLo
     `<div class="tw-verdict ${r.flagged ? "tone-oxide" : "tone-moss"}"><b>${esc(tr(r.flagged ? "landing.tw_verdict_scam" : "landing.tw_verdict_clear"))}</b>` +
     `&nbsp;·&nbsp;${esc(tr("landing.tw_risk", { risk: r.risk.toFixed(2), threshold: r.threshold.toFixed(2) }))}</div>` +
     `<div class="tw-tags">${tags}</div>` +
-    (r.spans.length ? `<div class="tw-transcript">${highlight(transcript, r.spans)}</div>` : "") +
+    (r.spans.length ? `<div class="tw-transcript">${markSpans(transcript, r.spans, esc)}</div>` : "") +
     `<p class="tw-reason" lang="${lang}">${esc(text.reason)}</p>` +
     `<p class="tw-dim" lang="${lang}">${esc(text.caveat)} ${esc(text.human_note)}</p>` +
     (lang !== locale() ? `<p class="tw-dim">${esc(tr("landing.tw_explanation_lang", { language: { $: `lang_name.${lang}` } }))}</p>` : "") +
@@ -95,7 +83,12 @@ const render = () => {
 
 // On-device by default: the transcript never leaves the browser.
 let runtimePromise = null;
+let activeRuntime = null;
 const deviceRuntime = () => {
+  if (activeRuntime && !activeRuntime.alive()) { // its worker died: the next check starts a new one
+    activeRuntime = null;
+    runtimePromise = null;
+  }
   if (!runtimePromise) {
     runtimePromise = import("./core/device.js").then(async ({ createDeviceRuntime }) => {
       const runtime = await createDeviceRuntime({
@@ -107,6 +100,7 @@ const deviceRuntime = () => {
         },
       });
       await runtime.warmup();
+      activeRuntime = runtime;
       return runtime;
     });
     runtimePromise.catch(() => { runtimePromise = null; }); // a failed download can be retried

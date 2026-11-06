@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { REPO } from "./helpers.mjs";
 
@@ -16,6 +16,28 @@ test("the analyst console keeps its script lockdown", () => {
   const inline = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>/g)];
   assert.deepEqual(inline.map((m) => m[0]), [], "no inline script on the page that holds a key");
   assert.doesNotMatch(html, /\son[a-z]+="/, "no inline event handlers");
+});
+
+// A page that promises the call stays on the device tells no third party it was opened, and a
+// slow CDN cannot hold it up (a font CDN stalled the live page for 26 s on bad Wi-Fi, ADR D83).
+test("no page, stylesheet or script fetches anything from another origin", () => {
+  for (const page of PAGES) {
+    const html = read(page);
+    const fetched = [...html.matchAll(/<(?:link|script|img|iframe|source)\b[^>]*\b(?:href|src)="([^"]+)"/g)].map((m) => m[1]);
+    assert.deepEqual(fetched.filter((url) => /^(https?:)?\/\//.test(url)), [], page);
+  }
+  for (const sheet of ["styles.css", "landing.css", "live.css", "admin.css"]) {
+    assert.doesNotMatch(read(sheet), /url\(["']?(https?:)?\/\//, sheet);
+    assert.doesNotMatch(read(sheet), /@import/, sheet);
+  }
+});
+
+test("every self-hosted font a stylesheet names is in the site", () => {
+  const css = read("styles.css");
+  const files = [...css.matchAll(/url\("(fonts\/[^"]+)"\)/g)].map((m) => m[1]);
+  assert.ok(files.length >= 16, "4 Inter + 12 Plex Mono subsets");
+  for (const file of files) assert.ok(existsSync(join(REPO, "site", file)), file);
+  for (const licence of ["LICENSE-Inter.txt", "LICENSE-IBM-Plex-Mono.txt"]) assert.ok(existsSync(join(REPO, "site", "fonts", licence)), licence);
 });
 
 test("every page declares the one deliberate theme", () => {
@@ -36,20 +58,35 @@ test("in-page and cross-page anchors point at elements that exist", () => {
   }
 });
 
+// The Russian in the markup is what a visitor sees before the scripts run. It had drifted: the live
+// page still promised three speech models, the landing English calls.
+test("the markup's fallback text is the Russian string it stands for", async () => {
+  const { STRINGS } = await import("../site/i18n.js");
+  const { ADMIN_STRINGS } = await import("../site/i18n-admin.js");
+  const known = { ...STRINGS.ru, ...ADMIN_STRINGS.ru };
+  const stale = [];
+  for (const page of PAGES) {
+    for (const [, , , key, inner] of read(page).matchAll(/<([a-z0-9]+)\b[^>]*?\bdata-i18n(-html)?="([^"]+)"[^>]*>([\s\S]*?)<\/\1>/g)) {
+      const want = known[key];
+      if (want !== undefined && !want.includes("{") && inner !== want) stale.push(`${page}: ${key}`);
+    }
+  }
+  assert.deepEqual(stale, []);
+});
+
 test("the landing sends citizens to the citizen page", () => {
   const html = read("index.html");
   assert.ok((html.match(/href="live\.html" data-i18n="landing\.cta_check"/g) || []).length >= 2, "header + hero call to action");
 });
 
-// admin-lang.js applies the stored/browser language on load by firing "change" on the content
-// radios. Before sign-in that must not load the console: a keyless request is a 401, which the
-// console reads as a revoked key ("Your key is no longer accepted") on a first visit.
-test("a content-language change reloads the console only for a signed-in analyst", () => {
+// The language is applied on load too. Before sign-in that must not load the console: a keyless
+// request is a 401, which the console reads as a revoked key ("Your key is no longer accepted") on
+// a first visit.
+test("a language change reloads the console only for a signed-in analyst", () => {
   const js = read("admin.js");
-  const wiring = js.match(/querySelectorAll\('input\[name="adm-loc"\]'\)[\s\S]*?\);\n/)?.[0] || "";
-  assert.ok(wiring, "the adm-loc wiring exists");
-  assert.doesNotMatch(wiring, /addEventListener\("change", load\)/, "guard the reload with the session");
-  assert.match(wiring, /if \(me\) load\(\)/);
+  const apply = js.match(/const applyLanguage = \(next[\s\S]*?\n {2}\};\n/)?.[0] || "";
+  assert.ok(apply, "the language wiring exists");
+  assert.match(apply, /if \(me\) \{\s*showConsole\(\);\s*load\(\);/);
 });
 
 // Loads overlap (sign-in completing while the stored language is applied): only the newest

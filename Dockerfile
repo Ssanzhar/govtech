@@ -95,8 +95,8 @@ ENV HF_HUB_OFFLINE=1 \
     PORT=8000
 USER 10001:10001
 EXPOSE 8000
-# Liveness: the API answers. The first start also seeds Level 2 (embeds ~500 demo
-# transcripts), hence the long start period.
+# Liveness: the API answers. Seeding Level 2 (embeds ~500 demo transcripts) runs in the background
+# after the server listens (ADR D60), but the bootstrap before it can still take a while.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=300s --retries=3 \
     CMD ["python", "-c", "import json, os, sys, urllib.request as u; r = u.urlopen('http://127.0.0.1:%s/api/health' % os.environ.get('PORT', '8000'), timeout=4); sys.exit(0 if json.load(r).get('status') == 'ok' else 1)"]
 ENTRYPOINT ["/app/scripts/deploy_entrypoint.sh"]

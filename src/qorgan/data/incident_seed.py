@@ -17,6 +17,7 @@ from qorgan.data.incidents import ScriptFamily, synthesize_incidents
 from qorgan.data.schema import Dialogue, Incident
 from qorgan.data.scrub import scrub_text
 from qorgan.atomic import write_text_atomic
+from qorgan.jsonl import read_records
 
 # (family id, tactic ids that define it, operating phone numbers). Each family operates
 # from its own line(s), disjoint across families, so the phone-number co-occurrence graph
@@ -121,8 +122,8 @@ def write_incidents_jsonl(incidents: Sequence[Incident], path: Path) -> None:
     write_text_atomic(path, "\n".join(i.model_dump_json() for i in incidents) + "\n")
 
 
-def load_incidents_jsonl(path: Path) -> list[Incident]:
+def load_incidents_jsonl(path: Path, *, skip_corrupt: bool = False) -> list[Incident]:
     """Load an incidents JSONL written by `write_incidents_jsonl`."""
     if not path.exists():
         raise FileNotFoundError(f"Incidents not found: {path}. Run scripts/demo_seed.py first.")
-    return [Incident.model_validate_json(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return read_records(path, Incident.model_validate_json, skip_corrupt=skip_corrupt)

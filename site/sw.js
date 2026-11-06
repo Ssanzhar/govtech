@@ -7,7 +7,7 @@
    - /api/ and anything cross-origin: never cached, never intercepted -- the only network
      traffic with call content is the explicit report submit, and it must stay live. */
 
-const SHELL_CACHE = "qorgan-shell-v15"; // v15: every page in the openbot.run look (shared styles.css + landing.css, D80/D81); v14: embedding cache (core/embed-cache.js) + one-at-a-time GigaAM queue (D78); v13: scrubber v3, dictation over hesitations (core/scrub-numbers.js, D72); v12: kk/ru voice mode + live tags kept at the endpoint (core/word-align.js, D70); v11: role slot precache (core/role.js, D63) + light voice mode (D67) + scrubber v2 modules (D66); v10: D67/D66 alone, or D63 + D64; v9: word-level voice mode + GigaAM endpoint pass (D64); v8: large binaries bypass the worker (D61); v7: reload pages a cache-first worker rendered; v6: network-first shell (no mixed versions after a deploy); v5: landing in kk/ru/en (landing.js, i18n-dom.js); v4: live page in kk/ru/en; v3: report review (D44); v2: COOP/COEP (B9)
+const SHELL_CACHE = "qorgan-shell-v16"; // v16: keeps the models over an update, works offline, self-hosted fonts, console in kk/ru/en (ADRs D82-D86); v15: every page in the openbot.run look (shared styles.css + landing.css, D80/D81); v14: embedding cache (core/embed-cache.js) + one-at-a-time GigaAM queue (D78); v13: scrubber v3, dictation over hesitations (core/scrub-numbers.js, D72); v12: kk/ru voice mode + live tags kept at the endpoint (core/word-align.js, D70); v11: role slot precache (core/role.js, D63) + light voice mode (D67) + scrubber v2 modules (D66); v10: D67/D66 alone, or D63 + D64; v9: word-level voice mode + GigaAM endpoint pass (D64); v8: large binaries bypass the worker (D61); v7: reload pages a cache-first worker rendered; v6: network-first shell (no mixed versions after a deploy); v5: landing in kk/ru/en (landing.js, i18n-dom.js); v4: live page in kk/ru/en; v3: report review (D44); v2: COOP/COEP (B9)
 // v2: the ONNX model is no longer kept here (transformers.js caches it itself); bumping the name
 // deletes the v1 copy (~278 MB) on activation.
 const MODEL_CACHE = "qorgan-models-v2";
@@ -15,12 +15,12 @@ const SHELL = [
   "/", "/index.html", "/live.html", "/styles.css", "/landing.css", "/live.css", "/main.js", "/live.js", "/try.js",
   "/landing.js", "/i18n.js", "/i18n-dom.js", "/manifest.webmanifest",
   "/core/index.js", "/core/score.js", "/core/head.js", "/core/lexicon.js", "/core/attribution.js",
-  "/core/explain.js", "/core/recommend.js", "/core/meter.js", "/core/session.js",
+  "/core/explain.js", "/core/highlight.js", "/core/recommend.js", "/core/meter.js", "/core/session.js",
   "/core/embedder.js", "/core/embed-cache.js", "/core/embed-worker.js", "/core/qorgan-config.json", "/core/device.js",
   "/core/summary.js", "/core/asr.js", "/core/scenarios.json", "/core/cue-match.js", "/core/report.js",
   "/core/role.js",
   "/core/word-lid.js", "/core/span-vote.js", "/core/asr-wordlevel.json", "/core/endpoint.js",
-  "/core/endpoint-runtime.js", "/core/audio-ring.js", "/core/gigaam.js", "/core/gigaam-worker.js", "/core/word-runs.js", "/core/word-align.js",
+  "/core/endpoint-runtime.js", "/core/audio-context.js", "/core/audio-ring.js", "/core/gigaam.js", "/core/gigaam-worker.js", "/core/word-runs.js", "/core/word-align.js",
   "/core/vad.js", "/core/voice-light.js", "/core/capture-worklet.js",
   "/core/scrub-tokens.js", "/core/scrub-numbers.js", "/core/scrub-names.js",
 ];
@@ -31,8 +31,18 @@ const OPTIONAL_SHELL = [
   "/vendor/vosklet/Vosklet.js", "/vendor/vosklet/Vosklet.wasm",
   "/vendor/sherpa-onnx/1.13.8/sherpa-onnx-wasm-web.js", "/vendor/sherpa-onnx/1.13.8/sherpa-onnx-asr.js",
 ];
-// The GigaAM worker keeps its 225 MB model in its own Cache API store (ADR D64): never deleted here.
-const OWN_MODEL_CACHE = /^qorgan-gigaam-/;
+// Stores the runtimes keep for themselves: the 278 MB embedder (transformers.js), the 106 MB speech
+// models (Vosklet), the 225 MB GigaAM model (ADR D64). Never deleted here: deleting them made every
+// update of this file cost a returning device 384 MB, venue Wi-Fi included (ADR D86).
+const OWN_MODEL_CACHE = /^(?:qorgan-gigaam-|transformers-cache$|Vosklet$)/;
+// The WASM runtimes, kept at first use so a reload works with no network (see the fetch handler).
+// Named after the shell: their paths can outlive their contents, and a new shell refreshes them.
+const BINARY_CACHE = SHELL_CACHE.replace("shell", "binaries");
+const knownBinaries = new Set();
+(async () => {
+  const kept = await (await caches.open(BINARY_CACHE)).keys();
+  for (const request of kept) knownBinaries.add(new URL(request.url).pathname);
+})().catch(() => {}); // storage blocked: every binary simply stays network-only
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -59,7 +69,7 @@ self.addEventListener("activate", (event) => {
 });
 
 async function activate() {
-  const stale = (await caches.keys()).filter((k) => ![SHELL_CACHE, MODEL_CACHE].includes(k) && !OWN_MODEL_CACHE.test(k));
+  const stale = (await caches.keys()).filter((k) => ![SHELL_CACHE, MODEL_CACHE, BINARY_CACHE].includes(k) && !OWN_MODEL_CACHE.test(k));
   await Promise.all(stale.map((k) => caches.delete(k)));
   await self.clients.claim();
   return stale;
@@ -76,17 +86,41 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/api/")) return; // live, never cached
   if (url.pathname.startsWith("/models/vosk/")) return; // the speech recogniser keeps its own model cache
   if (url.pathname.startsWith("/models/gigaam/")) return; // so does the GigaAM worker (ADR D64)
-  // Large binaries go straight to the network (ADR D61). Firefox stops a service worker ~30 s into
-  // an event and cuts off whatever it is still streaming: the 278 MB model failed with "Error in
-  // input stream", and the 21 MB WASM runtimes can on a slow connection. transformers.js keeps
-  // the model in its own Cache API store; the browser's HTTP cache holds the rest.
-  if (LARGE_BINARY.test(url.pathname)) return;
+  // Large binaries are never streamed through here (ADR D61). Firefox stops a service worker ~30 s
+  // into an event and cuts off whatever it is still streaming: the 278 MB model failed with "Error
+  // in input stream", and the 21 MB WASM runtimes can on a slow connection. transformers.js keeps
+  // the model in its own Cache API store. The runtimes go to the network the first time, with a
+  // copy kept on the side; after that the copy answers, which is a local read and works offline.
+  if (LARGE_BINARY.test(url.pathname)) {
+    if (!url.pathname.startsWith("/vendor/")) return;
+    if (knownBinaries.has(url.pathname) || self.navigator?.onLine === false) event.respondWith(fromBinaryCache(event.request));
+    else event.waitUntil(keepBinary(url));
+    return;
+  }
+  // The weights must follow the code that reads them (ADR D86): a stale copy next to a new cue
+  // matcher fails every run. They are small, so they take the shell's path.
+  if (url.pathname === "/models/weights.json") {
+    event.respondWith(networkFirst(MODEL_CACHE, event.request));
+    return;
+  }
   if (url.pathname.startsWith("/models/")) {
     event.respondWith(cacheFirst(MODEL_CACHE, event.request));
     return;
   }
   event.respondWith(networkFirst(SHELL_CACHE, event.request));
 });
+
+async function fromBinaryCache(request) {
+  const hit = await (await caches.open(BINARY_CACHE)).match(request);
+  return hit || fetch(request);
+}
+
+async function keepBinary(url) {
+  try {
+    await (await caches.open(BINARY_CACHE)).add(url.href);
+    knownBinaries.add(url.pathname);
+  } catch { /* not this time: the page has its own copy from the network */ }
+}
 
 async function cacheFirst(cacheName, request) {
   const cache = await caches.open(cacheName);

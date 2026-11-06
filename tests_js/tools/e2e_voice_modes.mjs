@@ -91,6 +91,7 @@ async function runScene(scene) {
   const wav = joinWavs(scene.files, join(OUT, `${scene.name}.wav`), { leadS: LEAD_S, gapS: GAP_S });
   const userDataDir = mkdtempSync(join(tmpdir(), "qorgan-voice-"));
   const launch = () => chromium.launchPersistentContext(userDataDir, {
+    ...(process.env.QORGAN_E2E_CHANNEL ? { channel: process.env.QORGAN_E2E_CHANNEL } : {}), // the installed Chrome
     ...(MOBILE
       ? { viewport: { width: 412, height: 915 }, deviceScaleFactor: 2.625, isMobile: true, hasTouch: true, userAgent: WEBVIEW_UA }
       : { viewport: { width: 1280, height: 1400 } }),

@@ -34,8 +34,9 @@ Web-first, Python-only, L1-centric. This supersedes the two-subsystem/on-device 
 >
 > Modules: `api_reports.py` · `api_partner.py` + `api_partner_export.py` · `partners.py`
 > (credential registry) · `audit.py` · `reports/` (store, purge, partner views) ·
-> `privacy/numbers.py`. The rest of this file is the July design and still describes the
-> classifier, explainer and Level-2 internals.
+> `privacy/numbers.py`. The rest of this file is the July design, kept as history; it does not
+> describe what ships (the classifier is `linear`, XLM-R is abandoned, Level 2 links by the number
+> graph, there is no FAISS, and Streamlit is a dev harness, ADR D4).
 
 ## Flow
 

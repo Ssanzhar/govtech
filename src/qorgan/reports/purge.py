@@ -22,7 +22,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
-from qorgan.analytics.intake import forget_report
+from qorgan.analytics.intake import forget_orphan_incidents, forget_report
 from qorgan.config import Config, get_config
 from qorgan.reports.retention import is_expired
 from qorgan.reports.store import REPORTS_FILENAME, REPORTS_LOCK, load_reports
@@ -33,7 +33,10 @@ _LOGGER = logging.getLogger(__name__)
 def expired_receipts(reports_path: Path, *, retention_days: int, now: datetime) -> list[str]:
     if retention_days <= 0:
         raise ValueError(f"retention_days must be > 0, got {retention_days}")
-    return [r.receipt_id for r in load_reports(reports_path) if is_expired(r, now=now, retention_days=retention_days)]
+    return [
+        r.receipt_id for r in load_reports(reports_path, skip_corrupt=True)
+        if is_expired(r, now=now, retention_days=retention_days)
+    ]
 
 
 def purge(
@@ -48,15 +51,27 @@ def purge(
     """Forget every expired report everywhere; returns the receipts removed."""
     removed: list[str] = []
     for receipt_id in expired_receipts(reports_path, retention_days=retention_days, now=now):
-        if forget_report(
-            receipt_id,
-            reports_path=reports_path,
-            incidents_path=incidents_path,
-            organizations_path=organizations_path,
-            embeddings_path=embeddings_path,
-            now=now.replace(tzinfo=None),
-        ):
+        try:
+            forgotten = forget_report(
+                receipt_id,
+                reports_path=reports_path,
+                incidents_path=incidents_path,
+                organizations_path=organizations_path,
+                embeddings_path=embeddings_path,
+                now=now.replace(tzinfo=None),
+            )
+        except Exception as exc:  # noqa: BLE001 -- one that fails must not keep the rest past retention
+            _LOGGER.error("a report past retention could not be forgotten (%s); retrying at the next run", type(exc).__name__)
+            continue
+        if forgotten:
             removed.append(receipt_id)
+    forget_orphan_incidents(
+        reports_path=reports_path,
+        incidents_path=incidents_path,
+        organizations_path=organizations_path,
+        embeddings_path=embeddings_path,
+        now=now.replace(tzinfo=None),
+    )
     return removed
 
 

@@ -2,9 +2,10 @@
 # Container entrypoint (Dockerfile; operations in docs/DEPLOY.md).
 #
 #   (no arguments, or uvicorn options)  serve: refresh the published corpus in the data volume,
-#                                       run the idempotent bootstrap (the FIRST start seeds
-#                                       Level 2 with the runtime number key), then exec ONE
-#                                       uvicorn worker; options are passed on to uvicorn.
+#                                       run the idempotent bootstrap, seed Level 2 in the
+#                                       background on the FIRST start (ADR D60, with the runtime
+#                                       number key), then exec ONE uvicorn worker; options are
+#                                       passed on to uvicorn.
 #   <command> [args]                    run that command instead, e.g. an operations tool:
 #                                       docker compose run --rm qorgan python -m qorgan.audit verify
 set -eu
@@ -38,6 +39,13 @@ fi
 # there. The image's copy wins, so a volume created by an older image gets the current,
 # scrubbed splits and nothing is fetched from the network. Runtime state is never in this copy.
 cp /opt/qorgan/corpus/* "$state_dir"/
+
+# Railway's edge fronts every request and the container is not reachable any other way: without this
+# every per-client limit counts the proxy, and one visitor could use up the whole room's. Elsewhere
+# the operator decides (docs/DEPLOY.md).
+if [ -n "${RAILWAY_ENVIRONMENT:-}${RAILWAY_ENVIRONMENT_NAME:-}" ]; then
+    export QORGAN_TRUSTED_PROXY_HOPS="${QORGAN_TRUSTED_PROXY_HOPS:-1}"
+fi
 
 python /app/scripts/deploy_bootstrap.py --phase serve
 # Seeding Level 2 embeds ~500 transcripts: minutes on a shared vCPU, longer than a platform's

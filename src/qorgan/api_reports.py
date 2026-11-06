@@ -18,7 +18,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from qorgan.analytics.intake import forget_report, report_incident_id
-from qorgan.api_ratelimit import SlidingWindowLimiter
+from qorgan.api_ratelimit import SlidingWindowLimiter, client_key
 from qorgan.config import get_config
 from qorgan.privacy.numbers import MissingHmacKeyError
 from qorgan.reports.model import CITIZEN_CONSENT_VERSIONS, RECEIPT_ID_PATTERN
@@ -109,7 +109,7 @@ class ReportReceipt(BaseModel):
 
 @router.post("", response_model=ReportReceipt, status_code=201)
 def submit(req: ReportSubmission, request: Request) -> ReportReceipt:
-    if not _LIMITER.allow(_client_key(request)):
+    if not _LIMITER.allow(client_key(request)):
         raise HTTPException(status_code=429, detail="too many reports from this client; try again in a minute")
     cfg = get_config()
     now = datetime.now(UTC)
@@ -173,7 +173,3 @@ def delete(receipt_id: str) -> Response:
     if summary is None:
         raise HTTPException(status_code=404, detail="unknown receipt")
     return Response(status_code=204)
-
-
-def _client_key(request: Request) -> str:
-    return request.client.host if request.client else "unknown"

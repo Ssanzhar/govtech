@@ -70,7 +70,11 @@ def test_repo_ledger_ids_exist_in_an_evaluation_split():
     """Every ledger id must name a real evaluated record -- an authored anchor or a row of an
     evaluation split -- so the `(inspected)` subsets can never be built from phantom ids. The
     ledger is not anchors-only: `eval.run` applies it to any split, and `shift` rows have been
-    read too (ADR D43)."""
+    read too (ADR D43).
+
+    The anchors are committed, so their ids are always checked. Rows of the published corpus can
+    only be checked once it is bootstrapped, and `shift_local` rows (`sl_*`) only on the laptop
+    that holds that local-only judge (ADR D65): a fresh clone has neither."""
     import json
     from pathlib import Path as _Path
 
@@ -81,7 +85,12 @@ def test_repo_ledger_ids_exist_in_an_evaluation_split():
         path = processed / f"{split}.jsonl"
         if path.exists():
             known |= {json.loads(l)["id"] for l in path.read_text(encoding="utf-8").splitlines() if l.strip()}
-    assert ledger.ids <= known, ledger.ids - known
+    checkable = {i for i in ledger.ids if i.startswith("real_")}
+    if (processed / "test.jsonl").exists():
+        checkable |= {i for i in ledger.ids if not i.startswith("sl_")}
+    if (processed / "shift_local.jsonl").exists():
+        checkable = set(ledger.ids)
+    assert checkable <= known, checkable - known
     assert ledger.ids >= {
         # the five authored negatives read during the July feature engineering
         "real_neg_bank_fraud_alert_ru",

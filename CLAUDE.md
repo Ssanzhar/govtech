@@ -12,8 +12,8 @@
 Decision support for **phone-scam (social-engineering) detection in Kazakh, Russian and
 code-switched calls**. A human always decides: nothing auto-blocks, auto-reports or hangs up.
 - **Level 1 (citizen), on the device:** `site/` is a static PWA. It transcribes a
-  speakerphone call in the browser (Vosklet KK + RU, voted per utterance) or replays/pastes a
-  transcript, embeds it with `multilingual-e5-base` int8 ONNX in a web worker, and shows a
+  speakerphone call in the browser (Vosklet KK + RU live word tags plus a GigaAM pass per phrase;
+  GigaAM only on phones and in WebView, ADRs D64/D67/D70) or replays/pastes a transcript, embeds it with `multilingual-e5-base` int8 ONNX in a web worker, and shows a
   calibrated 0–100 suspicion meter, verbatim trigger spans with tactic tags, templated RU/KK
   reasons, advice, a post-call summary and a **reviewed, consent-gated, editable report**.
 - **Level 2 (analyst / partner):** fed only by consented reports. Numbers are HMAC-hashed,
@@ -62,9 +62,10 @@ mic mode uploads audio. Never present it as the product.
 ## Evaluation rules
 - **FPR first**, with Clopper–Pearson intervals, per split and per language. No change ships
   if it moves FPR on test / authored / ood / ASR-styled data or the browser gate without an ADR.
-- **The honest number is `shift`** (66 calls from a second generator): recall 0.455, FPR 0.030
-  (ADR D54). Every other split shares its generator with train. English has no held-out set; its
-  independent-generator FPR is 0.227 (D54). Real calls (`docs/DATA_INTAKE.md`) do not exist yet.
+- **The headline is v1 on the six independent `shift_local*` judges** (828 kk/ru calls,
+  `scripts/pooled_judges.py`): FPR 22/417 = 0.053 [0.033, 0.079], recall 187/411 = 0.455
+  [0.406, 0.505] (ADR D76). Every other split shares its generator with training data; `shift` is
+  validation-grade (D65). Real calls (`docs/DATA_INTAKE.md`) do not exist yet.
 - **Never tune on held-out data**; never extend the lexicon from `shift` or `authored_heldout`
   (ADRs D35/D43). Any held-out row you read goes into `data/anchors/inspection_ledger.yaml`.
   Paste numbers from harness output, never by hand.
@@ -83,8 +84,11 @@ QORGAN_CLASSIFIER_BACKEND=linear python -m qorgan.eval.stream --split test --spl
 python -m qorgan.data.build_corpus && python -m qorgan.classifier.linear_train   # after ANY data/lexicon change
 python -m qorgan.web.client_config && python scripts/export_parity_fixtures.py  # refresh JS config + fixtures
 ```
-Browser checks use Playwright (`tests_js/tools/`); set `QORGAN_E2E_CHANNEL=chrome` to drive an
-installed Chrome when Playwright's own Chromium is unavailable.
+Browser checks use Playwright (`tests_js/tools/e2e_*.mjs`; `e2e_offline.mjs` runs its own server);
+set `QORGAN_E2E_CHANNEL=chrome` to drive an installed Chrome when Playwright's own Chromium is
+unavailable. Before a demo: `python scripts/preflight.py --base <url>` (read-only) and
+`docs/DEMO_RUNBOOK.md`. CI (`.github/workflows/ci.yml`) runs the two offline suites; they pass on a
+fresh clone with no corpus, models or secrets.
 
 ## Working rules
 - Record every decision as the next ADR in `docs/DECISIONS.md` and update `docs/STATUS.md`.
@@ -95,7 +99,10 @@ installed Chrome when Playwright's own Chromium is unavailable.
 - Secrets live only in `.env` / the deployment's secret store (see `.env.example`): the server
   refuses to link numbers without `QORGAN_NUMBER_HMAC_KEY`, and closes `/api/admin` and `/api/v1`
   without `QORGAN_ANALYST_KEYS` / `QORGAN_AUDIT_CHAIN_KEY`.
-- The citizen page's text lives in `site/i18n.js` (kk / ru / en); model content (advice, tactic
-  names, reasons) stays in the reviewed YAML and is never copied there.
+- The citizen page's text lives in `site/i18n.js` and the analyst console's in `site/i18n-admin.js`
+  (kk / ru / en); model content (advice, tactic names, reasons) stays in the reviewed YAML and is
+  never copied there. No page loads anything from another origin (`tests_js/pages.test.mjs`).
+- JSONL stores are read through `qorgan.jsonl.read_records`: never `str.splitlines()`, which breaks
+  on U+2028 inside a stored transcript (ADR D85).
 - Ask before anything outward-facing: pushing, opening PRs, publishing to Hugging Face
   (`sanzh-ts/govtech`, `sanzh-ts/govtech_ds`), deploying.

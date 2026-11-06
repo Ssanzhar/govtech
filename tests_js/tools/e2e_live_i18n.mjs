@@ -209,7 +209,11 @@ try {
     assert.equal(await page.title(), STRINGS.kk["meta.title"]);
     assert.equal(await page.inputValue("#lvScenario"), "live_scam_bank_kk");
     assert.equal((await page.textContent("#lvDlReplay")).trim(), t("kk", "download.model_first", { mb: MODEL_MB }));
-    assert.equal((await page.textContent("#lvModeNote")).trim(), t("kk", "mic.unavailable", { reasons: [{ $: "mic.reason_phone" }] }));
+    // A phone gets the light voice mode (ADR D67), not a disabled microphone.
+    await page.waitForFunction(() => document.querySelector("#lvMicNote").dataset.i18n === "mic.ready_light");
+    assert.equal(await page.isVisible("#lvModeNote"), false, "no 'microphone unavailable' note on a phone");
+    assert.equal(await page.isDisabled('input[name="lv-mode"][value="mic"]'), false);
+    assert.equal((await page.textContent("#lvVoiceModeNote")).trim(), t("kk", "mic.light_mode"));
     await assertNoEnglish(page, "B/load");
     assert.deepEqual(await overflowing(page), [], "B/load: horizontal overflow at 360 px");
     if (SHOTS) await page.locator("#lvSetupReplay").screenshot({ path: shot("disclosure-kk-360.png") });

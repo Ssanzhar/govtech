@@ -19,6 +19,7 @@ import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { ADMIN_STRINGS } from "../../site/i18n-admin.js";
 
 const arg = (name, fallback) => {
   const i = process.argv.indexOf(name);
@@ -45,6 +46,8 @@ const results = {};
 const browser = await chromium.launch(process.env.QORGAN_E2E_CHANNEL ? { channel: process.env.QORGAN_E2E_CHANNEL } : {});
 try {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  // The console follows the visitor's language; the wording asserted below is its English.
+  await context.addInitScript(() => { if (!localStorage.getItem("qorgan.locale")) localStorage.setItem("qorgan.locale", "en"); });
   const page = await context.newPage();
   const adminRequests = [];
   page.on("request", (req) => {
@@ -79,11 +82,17 @@ try {
     [401, 401, 401, 401, 403],
   );
 
-  // 2. Signed out: only the sign-in panel; the page asks the API for nothing.
+  // 2. Signed out: only the sign-in panel. The page asks the API one thing, keyless: whether this
+  // server admits visitors without a key (open demo access, ADR D59). It does not here (401).
   await page.goto(`${BASE}/admin.html`);
   await page.waitForSelector("#admSignin:not([hidden])");
   assert.equal(await page.isVisible("#admConsole"), false, "console hidden before sign-in");
-  assert.equal(adminRequests.length, 0, "no /api/admin request before sign-in");
+  assert.deepEqual(
+    adminRequests.map((r) => [new URL(r.url).pathname, r.headers["x-analyst-key"] ?? null]),
+    [["/api/admin/session", null]],
+    "only the keyless open-access probe before sign-in",
+  );
+  adminRequests.length = 0; // from here on, every console request must carry the key
   await shot(page, "01-signin.png");
 
   await page.fill("#admKey", "definitely-not-a-valid-key-000000");
@@ -127,6 +136,22 @@ try {
   results.console_requests_with_key = adminRequests.length;
 
   await page.click("#admModalClose");
+
+  // The whole console follows the one language control, and asks the server in that language.
+  for (const lang of ["kk", "ru", "en"]) {
+    const strings = ADMIN_STRINGS[lang];
+    await page.locator(`label:has(input[name="adm-lang"][value="${lang}"])`).click();
+    await page.waitForFunction((want) => document.querySelector(".kpi-label")?.textContent === want, strings["admin.kpi_incidents"]);
+    await page.waitForFunction((want) => document.querySelector("#admQueueWrap th")?.textContent.startsWith(want), strings["admin.col_organization"]);
+    assert.equal(await page.evaluate(() => document.documentElement.lang), lang);
+    assert.equal((await page.textContent("#admQueueTitle")).trim(), strings["admin.queue_title"]);
+    assert.equal(await page.title(), strings["admin.meta_title"]);
+    assert.equal(await page.getAttribute("#admSearch", "placeholder"), strings["admin.search_placeholder"]);
+    assert.ok((await page.textContent("#admWho")).includes(strings[`admin.role_analyst`]), lang);
+    assert.ok(await page.isHidden("#admDemoNote"), "signed in with a key: no public-demo note");
+    await shot(page, `05-console-${lang}.png`);
+  }
+
   await page.click("#admSignOut");
   await page.waitForSelector("#admSignin:not([hidden])");
   assert.equal(await page.evaluate(() => sessionStorage.getItem("qorgan.analystKey")), null, "sign-out forgets the key");

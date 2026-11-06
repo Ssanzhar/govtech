@@ -16,8 +16,14 @@ const WEIGHTS_URL = new URL("../models/weights.json", import.meta.url);
 export async function createDeviceRuntime({ onProgress } = {}) {
   const [config, weights] = await Promise.all([fetchJson(CONFIG_URL), fetchJson(WEIGHTS_URL)]);
   const embedder = createWorkerEmbedder({ onProgress, embedder: config.embedder });
-  // Cached: a live turn re-embeds every earlier utterance for its evidence spans (ADR D78).
-  const score = createScorer({ weights, config, embed: cachedEmbed(embedder.embed) });
+  let score;
+  try {
+    // Cached: a live turn re-embeds every earlier utterance for its evidence spans (ADR D78).
+    score = createScorer({ weights, config, embed: cachedEmbed(embedder.embed) });
+  } catch (err) {
+    embedder.terminate(); // every failed retry would otherwise leave a worker running
+    throw err;
+  }
 
   return {
     config,
@@ -35,6 +41,7 @@ export async function createDeviceRuntime({ onProgress } = {}) {
     transcriptOf: (state) => transcriptOf(state, config),
     summarize: (state) => summarize(state, config),
     buildReport: (state, opts) => buildReport(state, config, opts),
+    alive: () => embedder.alive(),
     dispose: () => embedder.terminate(),
   };
 }

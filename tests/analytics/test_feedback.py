@@ -4,7 +4,7 @@ numbers, else its members) rather than the re-assigned `org_<n>` id."""
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from pydantic import ValidationError
@@ -120,3 +120,23 @@ def test_events_round_trip_through_the_file(tmp_path):
     append_feedback(second, path)
     assert load_feedback(path) == [first, second]
     assert load_feedback(tmp_path / "missing.jsonl") == []
+
+
+def test_a_merge_keeps_the_verdicts_on_other_organizations():
+    """`current = list(base)` used to throw every earlier confirm and dismiss away."""
+    orgs = [
+        *_orgs(),
+        Organization(id="org_3", members=("d0",), numbers=(N3,), priority=0.4),
+    ]
+    events = [
+        _event("dismiss", orgs[0], at=NOW),
+        _event("confirm", orgs[1], at=NOW + timedelta(minutes=1)),
+        _event("merge", orgs[3], target=orgs[2], at=NOW + timedelta(minutes=2)),
+    ]
+    shown = {org.id: org for org in apply_feedback(orgs, events)}
+
+    assert shown["org_0"].feedback == "dismissed"
+    assert shown["org_0"].priority == pytest.approx(0.9 * DISMISSED_PRIORITY_FACTOR)
+    assert shown["org_1"].feedback == "confirmed"
+    assert shown["org_2"].feedback == "merged" and set(shown["org_2"].members) == {"c0", "d0"}
+    assert "org_3" not in shown

@@ -126,6 +126,14 @@ class PartnerReportIn(BaseModel):
         default=None, pattern=PARTNER_REFERENCE_PATTERN, description="Your case id; retries with the same id are no-ops."
     )
 
+    @field_validator("partner_reference")
+    @classmethod
+    def _reference_is_not_personal_data(cls, value: str | None) -> str | None:
+        # Stored and audited in clear, so it must not be able to carry a number (ADR D85).
+        if value is not None and scrub_text(value) != value:
+            raise ValueError("partner_reference must not look like personal data")
+        return value
+
     @field_validator("flagged_phrases")
     @classmethod
     def _phrases_bounded(cls, value: tuple[str, ...]) -> tuple[str, ...]:

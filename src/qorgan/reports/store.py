@@ -8,27 +8,82 @@ file it is given; the default path is resolved by callers from config.
 
 from __future__ import annotations
 
+import logging
 import secrets
 import threading
 from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import IO
 
-from qorgan.data.scrub import STORED_RECORD_CONTEXT, scrub_text
+from qorgan.config import get_config
+from qorgan.data.scrub import STORED_RECORD_CONTEXT, scrub_until_stable
 from qorgan.privacy.numbers import display_prefix, hash_phone_number
 from qorgan.data.span_grounding import ground_flagged_phrases
 from qorgan.reports.model import CITIZEN_CONSENT_BASIS, ReportSource, StoredReport
 from qorgan.reports.retention import is_expired
 from qorgan.atomic import write_text_atomic
+from qorgan.jsonl import read_records
+
+try:  # POSIX: also exclude other processes (see `_ReportsLock`)
+    import fcntl
+except ImportError:  # pragma: no cover - Windows dev boxes: the in-process lock still holds
+    fcntl = None  # type: ignore[assignment]
 
 # Citizen and partner reports share one file under `<data_dir>/processed/`; the `source`
 # field tells them apart.
 REPORTS_FILENAME = "citizen_reports.jsonl"
 _RECEIPT_BYTES = 12  # 24 hex chars, matches RECEIPT_ID_PATTERN
-# Serialises every write to a reports file inside the (single-worker) server: request threads
-# append and delete while the scheduled purge rewrites. Re-entrant so a caller can hold it
-# around a read-modify-write that itself calls these helpers.
-REPORTS_LOCK = threading.RLock()
+_LOCK_FILENAME = ".reports.lock"
+_LOGGER = logging.getLogger(__name__)
+
+
+class _ReportsLock:
+    """Serialises every write to the report stores. Re-entrant, so a caller can hold it around a
+    read-modify-write that itself calls these helpers. A thread lock covers the server's request
+    threads and scheduled purge; a file lock covers other processes (a cron purge, an ops script),
+    whose appends were otherwise lost when the whole file was rewritten."""
+
+    def __init__(self) -> None:
+        self._thread = threading.RLock()
+        self._depth = 0
+        self._handle: IO[str] | None = None
+
+    def __enter__(self) -> "_ReportsLock":
+        self._thread.acquire()
+        try:
+            if self._depth == 0 and fcntl is not None:
+                self._handle = self._lock_file()
+        except BaseException:  # `__exit__` does not run when `__enter__` raises
+            self._thread.release()
+            raise
+        self._depth += 1
+        return self
+
+    def __exit__(self, *_exc: object) -> None:
+        self._depth -= 1
+        if self._depth == 0 and self._handle is not None:
+            self._handle.close()  # closing releases the lock
+            self._handle = None
+        self._thread.release()
+
+    @staticmethod
+    def _lock_file() -> IO[str] | None:
+        processed = get_config().data_dir / "processed"
+        handle = None
+        try:
+            processed.mkdir(parents=True, exist_ok=True)
+            handle = (processed / _LOCK_FILENAME).open("a", encoding="utf-8")
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+            return handle
+        except OSError as exc:  # a read-only data dir, a volume without locks: the thread lock remains
+            _LOGGER.warning("no file lock for the report stores (%s)", type(exc).__name__)
+            if handle is not None:
+                handle.close()
+            return None
+
+
+REPORTS_LOCK = _ReportsLock()
 
 
 def new_receipt_id() -> str:
@@ -63,7 +118,7 @@ def prepare_report(
     `received_at` is the server's clock at storage (defaults to now, UTC): retention and quotas
     anchor on it, never on the client's `timestamp`.
     """
-    scrubbed = scrub_text(transcript)
+    scrubbed = scrub_until_stable(transcript)
     kept_phrases = ground_flagged_phrases(flagged_phrases, scrubbed, transcript)
     number = (phone_number or "").strip() or None
     return StoredReport(
@@ -92,15 +147,14 @@ def append_report(report: StoredReport, path: Path) -> Path:
     return path
 
 
-def load_reports(path: Path) -> list[StoredReport]:
-    """All stored reports; a missing file means none yet. Raises `ValueError` on a corrupt line."""
+def load_reports(path: Path, *, skip_corrupt: bool = False) -> list[StoredReport]:
+    """All stored reports; a missing file means none yet. Raises `ValueError` on a corrupt line,
+    unless a deletion asks to go on without it (`jsonl.read_records`)."""
     if not path.exists():
         return []
-    return [
-        StoredReport.model_validate_json(line, context=STORED_RECORD_CONTEXT)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
+    return read_records(
+        path, lambda line: StoredReport.model_validate_json(line, context=STORED_RECORD_CONTEXT), skip_corrupt=skip_corrupt
+    )
 
 
 def _rewrite(reports: Sequence[StoredReport], path: Path) -> None:
@@ -110,7 +164,7 @@ def _rewrite(reports: Sequence[StoredReport], path: Path) -> None:
 def remove_report(receipt_id: str, path: Path) -> StoredReport | None:
     """Delete the report with `receipt_id` (rewriting the file); returns it, or `None`."""
     with REPORTS_LOCK:
-        reports = load_reports(path)
+        reports = load_reports(path, skip_corrupt=True)  # a broken line must not stop a deletion
         match = next((r for r in reports if r.receipt_id == receipt_id), None)
         if match is None:
             return None
