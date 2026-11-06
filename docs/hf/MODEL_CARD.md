@@ -51,8 +51,8 @@ voice, emotion or identity.
 ## How it works
 
 1. The transcript's head + tail rolling window, prefixed `query: `, is embedded by e5-base
-   (int8 ONNX; the server pins `onnxruntime` to the version transformers.js bundles, so server
-   and browser embeddings are bit-identical).
+   (int8 ONNX; the server pins `onnxruntime` to the version transformers.js bundles. The browser is
+   the reference and the server's native runtime a documented proxy, cosine about 0.98, ADR D33).
 2. Six interpretable features are appended: five hard-signal request cues (`secrecy`,
    `otp_request`, `credentials_request`, `safe_account`, `remote_access`), matched with a
    bounded-edit matcher that survives speech-recognition errors, and one *reassurance* flag
@@ -71,8 +71,9 @@ published alongside it.
 ## Evaluation (threshold 0.59, device embeddings, 2026-10-25)
 
 False-positive rate first — a false alarm on a real bank call destroys trust. Intervals are
-Clopper–Pearson 95 %. The weights are those of `site/models/weights.json` (last changed
-2026-09-28, ADR D54). Source: ADR D76, harness `python -m qorgan.eval.run` and
+Clopper–Pearson 95 %. The evaluated weights are `site/models/weights.json` in the code repository
+(sha256 f0659e7c…, last changed 2026-09-28, ADR D54); `web/weights.json` here is the 2026-09-24
+upload until the next publish. Source: ADR D76, harness `python -m qorgan.eval.run` and
 `scripts/pooled_judges.py`.
 
 | Split | What it is | FPR [95 % CI] | Recall [95 % CI] | N |
@@ -123,3 +124,5 @@ on the never-read subset), alert-hit 0.889, median 3 utterances to alert.
 | `intfloat/multilingual-e5-base` / `Xenova/multilingual-e5-base` | MIT |
 | transformers.js, onnxruntime | Apache-2.0 / MIT |
 | Vosk models used by the page's microphone mode | Apache-2.0 |
+| GigaAM-Multilingual, the page's phrase re-transcription (ADR D64) | MIT |
+| sherpa-onnx browser runtime (ADR D77) | Apache-2.0 |

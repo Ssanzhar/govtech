@@ -23,7 +23,7 @@ host 127.0.0.1:8000 ──► container qorgan-qorgan-1 (uid 10001, read-only ro
 ```
 
 - **The image holds no secrets and no personal data.** It holds the code, the pages, the
-  int8 embedder and the Vosk models (from the build context), the committed head weights
+  int8 embedder, the Vosk models and GigaAM with its runtime, the committed head weights
   `site/models/weights.json`, and the published corpus from `sanzh-ts/govtech_ds`. The build
   needs no secret. `.env`, `data/processed`, `data/synthetic`, `models/`, `node_modules`,
   the tests and the Streamlit harness never enter the build context.
@@ -49,17 +49,20 @@ host 127.0.0.1:8000 ──► container qorgan-qorgan-1 (uid 10001, read-only ro
 ## 2. Deploy
 
 Prerequisites:
-- Docker Engine with Compose v2.24 or later (Docker Desktop on macOS works).
+- Docker Engine 25 or later with Compose v2.24 or later (Docker Desktop on macOS works).
 - About 4 GB of free disk.
-- `site/models/` populated: the int8 embedder under `Xenova/` and the Vosk tarballs under
-  `vosk/`. If they are missing, the build downloads them once, from Hugging Face (the
-  embedder) and alphacephei.com (the Vosk models).
+- `site/models/` populated: the int8 embedder under `Xenova/`, the Vosk tarballs under `vosk/` and
+  the GigaAM model under `gigaam/`. If they are missing, the build downloads them once, pinned
+  and hash-checked: from Hugging Face (the embedder, GigaAM and its runtime) and alphacephei.com
+  (the Vosk models).
 
 ```bash
 cd govtech
-# 1. Secrets: the env file (never committed; see .env.example for every variable).
+# 1. Secrets: the env file (never committed; .env.example names the settings).
 cp .env.example .env && chmod 600 .env      # skip the copy if .env already exists
 #    Required: QORGAN_NUMBER_HMAC_KEY, QORGAN_AUDIT_CHAIN_KEY, QORGAN_ANALYST_KEYS (§3).
+#    On a Linux host both you (Compose reads this file) and the container's user must read it:
+#    sudo chgrp 10001 .env && chmod 640 .env
 # 2. Build and start.
 docker compose up -d --build
 docker compose ps                     # wait for "(healthy)"
@@ -69,8 +72,9 @@ curl -s http://127.0.0.1:8000/api/health
 
 Open the pages:
 - Landing page: `http://127.0.0.1:8000/`
-- Live call: `http://127.0.0.1:8000/live.html`. The first visit downloads the ~280 MB
-  embedder, plus ~106 MB of speech models if you use the microphone.
+- Live call: `http://127.0.0.1:8000/live.html`. The first visit downloads about 300 MB (the
+  embedder). The microphone adds ~106 MB of Vosk models plus 239 MB for GigaAM on a computer, or the
+  239 MB alone on a phone. After that the replay works with no network (ADR D86).
 - Analyst console: `http://127.0.0.1:8000/admin.html`
 - API docs: `http://127.0.0.1:8000/docs`
 
@@ -84,7 +88,7 @@ Open the pages:
 | Rebuild after a code or page edit | ~6 s | |
 
 **Resources:**
-- Image: ~1.7 GB.
+- Image: ~1.9 GB (1.7 GB measured 2026-09-29, plus ~240 MB for GigaAM, ADR D79; not re-measured).
 - Memory peaks at ~0.8 GB during the first-start seeding and idles at ~140 MB.
 - Limits: 4 CPUs, 2 GB RAM, 512 PIDs.
 
@@ -153,8 +157,9 @@ docker compose up -d --force-recreate
 ## 4. Operations
 
 **Health.** `docker compose ps` shows the state from the image's `HEALTHCHECK`
-(`GET /api/health` every 30 s). The start period is 300 s, because the first start seeds
-Level 2. Check the model source as well:
+(`GET /api/health` every 30 s). The server answers while Level 2 seeds in the background (ADR
+D60). Check the model source as well, or run the whole pre-demo check, read-only, from a checkout of
+the deployed commit: `python scripts/preflight.py --base <url>`.
 
 ```bash
 curl -s http://127.0.0.1:8000/api/health        # linear_model_source must be "web"
@@ -271,10 +276,9 @@ right for a laptop demo and wrong for citizens' data. A public deployment needs:
      `docs/LEGAL_ASSESSMENT.md` §2.4).
    - That covers backups and logs too.
    - Hugging Face and GitHub may hold only code and synthetic data.
-   - Cloud storage of special-category data needs keys controlled by a KZ entity (Law 231-VIII).
 2. **TLS** at a reverse proxy (Caddy or nginx) in front of the container, with HSTS.
-   - Set `FORWARDED_ALLOW_IPS` to the proxy's address, so rate limits see real client
-     addresses and not the proxy.
+   - Set `QORGAN_TRUSTED_PROXY_HOPS=1`, so rate limits see real client addresses and not the proxy.
+     Entries are counted from the right of `X-Forwarded-For`, so a client cannot forge them.
    - The microphone mode needs a secure context (HTTPS, or `localhost`).
    - The app already sets COOP/COEP on `live.html`.
 3. **Analyst SSO with MFA and RBAC.**
@@ -317,8 +321,8 @@ deploy it failed. `tests/test_dockerfile_portability.py` keeps these rules:
 - **No `COPY --exclude` and no `HEALTHCHECK --start-interval`.** Older Dockerfile frontends
   reject both (*"unknown flag: exclude"*). Railway ignores `HEALTHCHECK` anyway. Configure the
   health check in the service settings instead.
-- **The clone has no models.** `site/models/Xenova`, `site/models/vosk` and `site/vendor` are
-  gitignored. On Railway, the bootstrap step of the build downloads them: the embedder from
+- **The clone has no models.** `site/models/Xenova`, `site/models/vosk`, `site/models/gigaam` and
+  `site/vendor` are gitignored. On Railway, the bootstrap step of the build downloads them: the embedder from
   the Hub, and the Vosk models and runtime pinned and hash-checked. It also downloads the
   browser embedder's runtime (transformers.js plus the ONNX-runtime WASM, also pinned and
   hash-checked, ADR D61). That download is **required**: a CDN import is blocked by COEP in
@@ -329,7 +333,7 @@ Service settings:
 | Setting | Value |
 |---|---|
 | Variables | `QORGAN_NUMBER_HMAC_KEY`, `QORGAN_AUDIT_CHAIN_KEY`, `QORGAN_ANALYST_KEYS` (§3). Railway passes them as environment variables, and there is no `.env` file in the container. `PORT` is set by Railway. |
-| Health check | path `/api/health`. The first start seeds Level 2 before the server listens (about 25 s on a laptop CPU). |
+| Health check | path `/api/health`. The server listens within about 20 s and seeds Level 2 in the background: minutes on a shared vCPU (ADR D60). Until then the console says the analysis is not ready. Without a volume this repeats after every redeploy, so **redeploy at least 15 minutes before a demo**, and within 7 days of it, or the console's trend reads "0 this week". |
 | Open demo access (optional) | `QORGAN_ADMIN_OPEN_ACCESS=investigator` (or `analyst`) lets visitors without a key, such as a jury, into the console as `public-demo`. It is still audited. Use it only with fabricated data, and remove it to require keys again (ADR D59). |
 | Replicas | **1** (§1: in-process state) |
 | Volume (optional) | mount it at **`/app/data/processed`**, never at `/app/data`, which holds the lexicons and the taxonomy. Set **`RAILWAY_RUN_UID=0`**. |

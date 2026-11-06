@@ -95,8 +95,8 @@ and every span's `text` is a verbatim substring of it (validated at construction
 
 Every utterance is scrubbed (phone → `[PHONE]`, card → `[CARD]`, IIN → `[IIN]`, e-mail →
 `[EMAIL]`) and the upload script refuses to publish a split that is not a scrub fixed point
-(ADR D45). An earlier upload of `ood.jsonl` carried one synthetic 12-digit IIN next to an
-invented name; the repaired file replaces it.
+(ADR D45). The copy of `ood.jsonl` published on 2026-09-24 still carries one fabricated 12-digit IIN
+next to an invented name (ADR D50); the repair awaits the owner's approval to publish.
 
 ## Evaluation hygiene
 

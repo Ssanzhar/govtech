@@ -49,8 +49,9 @@ and grants the page the microphone only: audio capture, that origin, and only af
 
 ## TWA (Bubblewrap)
 
-Not built. What is missing: (1) a public **HTTPS host** serving `site/` with the production
-headers, to replace `qorgan.example.kz` (Bubblewrap fetches the web manifest and icons from it);
+Not built. What is missing: (1) the **host** in `twa-manifest.json` is still `qorgan.example.kz`,
+which does not resolve (Bubblewrap fetches the web manifest and icons from it): the Railway demo
+already serves them with the production headers, so it is the owner's choice (PLAN C3);
 (2) an **upload keystore** created and kept outside git; (3) its SHA-256 in
 `site/.well-known/assetlinks.json`, deployed. Without (3) the app still runs, as a Custom Tab with
 a URL bar. `@bubblewrap/cli` itself is not installed (it is a global npm package). The JDK and SDK it
