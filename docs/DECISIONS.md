@@ -4025,3 +4025,25 @@ byte-identical, and all three demo scenes score exactly as before (`docs/researc
   gives 98 / 19 / 97, the same as light mode. No word is lost.
 - Fresh seeds through the real embedder: 6 organizations, 1 novel, purity 1.0, ARI 1.0.
 - A real phone remains the open number (PLAN C2).
+
+### D87 — the Android wrappers are buildable; the Kotlin scrubber catches up (2026-11-09)
+**Decision.** (1) `android/twa/twa-manifest.json` takes `minSdkVersion` 24. (2) The Kotlin scrubber
+(`android/qorgan-core/.../scrub/`) ports D72 (a dictation continues over «эээ» / «...») and D85
+(international numbers, `(7xx)` and dotted local numbers, a bare ten-digit `7…`) from `site/core/`.
+(3) `tests/test_android_packaging.py` pins the TWA facts CI cannot build: minSdk, the asset-links
+package, the start / icon / manifest URLs existing under `site/`, one host, no keystore in the repo.
+
+**Rationale.** A readiness pass with no phone, domain or key: prove every artefact builds. The TWA had
+never been built; with Bubblewrap 1.24.1 the generated project pulls `androidbrowserhelper` 2.7.4, whose
+minSdk 24 makes the manifest merger fail at 21, so the app could not have been built as committed.
+Android 7.0+ is no real loss: the page needs WASM threads and a modern Chrome anyway. The scrubber
+gap was known (CORE_SPIKE) and blocked shipping the native core's report path.
+
+**Evidence.** `./gradlew :core:test -PruntimeGate=true`: 16 tests, 0 failures; `ScrubTest` 124 cases,
+0 mismatches; runtime gate unchanged (0/200 flips vs Python, 4/200 vs browser). TWA: signed release APK
+902,593 B (`apksigner verify` OK, targetSdk 36) and `app-release.aab` 935,372 B, built with a
+throwaway key against the Railway demo host. `webview-shell` debug + release build, lint clean.
+The new test fails on the old manifest and passes now.
+
+**Not changed.** Model, site, server. The native core is still not a citizen-facing scorer (D33 drift:
+4/200 decisions differ from the browser). **Revisit:** when a real host, key and phone exist.

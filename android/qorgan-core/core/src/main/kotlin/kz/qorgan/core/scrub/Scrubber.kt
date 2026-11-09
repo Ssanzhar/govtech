@@ -16,6 +16,7 @@ object Scrubber {
     // JavaScript's `\s` (the JS port is the reference implementation here).
     private const val S = "\\t\\n\\u000B\\f\\r \\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000\\uFEFF"
     private const val GAP = "[$S\\-]?" // JS `[\\s\\-]?`
+    private const val LOCAL_GAP = "[ \\u00A0.\\-]?"
 
     // Most specific first, so a longer digit run is never half-consumed (same order as Python).
     private val RULES: List<Pair<Regex, String>> = listOf(
@@ -24,6 +25,12 @@ object Scrubber {
         Regex("$EB(?:$D{16}|$D{4}[ \\-]$D{4}[ \\-]$D{4}[ \\-]$D{4})$EA") to PLACEHOLDERS.getValue("card"),
         Regex("$EB$D{12}$EA") to PLACEHOLDERS.getValue("iin"),
         Regex("(?<!$D)(?:\\+7|8|7)$GAP\\(?$D{3}\\)?$GAP$D{3}$GAP$D{2}$GAP$D{2}(?!$D)") to PLACEHOLDERS.getValue("phone"),
+        // ADR D85: a plus sign and 8-15 digits is a phone number in any country.
+        Regex("(?<![\\p{L}\\p{N}_+])\\+$D(?:[ \\u00A0().\\-]{0,2}$D){7,14}(?!$D)") to PLACEHOLDERS.getValue("phone"),
+        // ADR D85: a local number with its area code in brackets, or grouped by dots.
+        Regex(
+            "(?<!$D)(?:\\(7$D{2}\\)$LOCAL_GAP$D{3}$LOCAL_GAP$D{2}$LOCAL_GAP$D{2}|7$D{2}\\.$D{3}\\.$D{2}\\.$D{2})(?!$D)",
+        ) to PLACEHOLDERS.getValue("phone"),
     )
 
     // JavaScript's String.prototype.trim() whitespace set (WhiteSpace + LineTerminator).

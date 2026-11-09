@@ -9,7 +9,9 @@ Two containers for the citizen page, for two different questions.
 | Voice mode the page picks | full on desktop-class devices; on a phone, **light** until the B9 phone bench passes (D25), `?voice=full` to force | **light** (GigaAM-only + energy VAD) |
 | Signed with | your upload key (never in this repo) | the SDK's local debug key (debug builds only) |
 
-**Status (2026-10-21):** JDK 17 (`brew install openjdk@17`), the Android SDK (platform-tools,
+**Status (2026-11-09):** all three Android artefacts build on the dev Mac: the TWA (signed APK + AAB,
+see below), `webview-shell/` (debug and release, release lint clean) and the `qorgan-core` AAR with its
+on-device test APK. None has run on a real phone. **Status (2026-10-21):** JDK 17 (`brew install openjdk@17`), the Android SDK (platform-tools,
 `platforms;android-35`, `build-tools;35.0.0`, no system images) and a Gradle 8.11.1 wrapper are set
 up on the dev Mac. `webview-shell/` **builds** (`./gradlew assembleDebug`, 15 KB debug APK). It has
 not been installed on a phone yet. The TWA is **not built**: see "Placeholders" below. The native
@@ -49,7 +51,17 @@ and grants the page the microphone only: audio capture, that origin, and only af
 
 ## TWA (Bubblewrap)
 
-Not built. What is missing: (1) the **host** in `twa-manifest.json` is still `qorgan.example.kz`,
+**Builds (2026-11-09, ADR D87).** With the host pointed at the Railway demo and a throwaway key,
+`bubblewrap update` generated the project and Gradle built it: a signed release APK (0.9 MB, `apksigner
+verify` OK, targetSdk 36) and a Play bundle `app-release.aab` (0.9 MB). This needed `minSdkVersion` 24:
+the Android Browser Helper library that Bubblewrap pulls in declares 24, and 21 failed the manifest
+merger. `tests/test_android_packaging.py` pins that and the asset-links package. If `bubblewrap build`
+says *"The provided androidSdk isn't correct"*, build the generated project with `./gradlew
+assembleRelease bundleRelease` and sign with `apksigner` (that is all `bubblewrap build` does).
+The generated project was not committed: it bakes the host in, so generate it once the real host is
+known.
+
+What is still missing (all owner-side): (1) the **host** in `twa-manifest.json` is still `qorgan.example.kz`,
 which does not resolve (Bubblewrap fetches the web manifest and icons from it): the Railway demo
 already serves them with the production headers, so it is the owner's choice (PLAN C3);
 (2) an **upload keystore** created and kept outside git; (3) its SHA-256 in
