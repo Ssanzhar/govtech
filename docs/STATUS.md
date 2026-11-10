@@ -13,6 +13,13 @@ intervals). For the show itself: `docs/DEMO_RUNBOOK.md`. The July sprint log bel
     weeks 8–9), the English reference to `docs/TECHNICAL_REFERENCE_EN.md`.
   - Checked: all 7 Mermaid diagrams render (Mermaid 11.4.1 in headless Chromium), every relative link
     resolves, API limits and defaults read from the code. Python 1883 passed, JS 206/206. No code changed.
+  - Second pass, corrected against the code and ADRs: the real-bank replay scene ends at **26/100** (Medium 37/33,
+    then Low), not 19 (19 is the spoken version, D86); the meter is visible from turn 1 and only the *alert* waits
+    for turn 3 (D29); hard-signal floors 61/81; a bank's own «never share the code» warning can trip the meter (D56,
+    now stated in the CJM and both limits sections); taxonomy is 15 shipped / 23 v2 / 28 v3 tactics and 26 schemes;
+    unverified corpus totals replaced by split sizes; the CJM persona's computer owner made consistent.
+  - GitHub's own renderer: every table and diagram block renders (README 9 tables, CJM 7, TECHNICAL 16).
+    The live demo serves `ab95329` (shell v16), so D82–D86 are deployed.
 - **2026-11-09 — Android readiness pass: everything code-side builds (ADR D87).**
   - **Standalone app (TWA):** never built before. Built today with a throwaway key and the demo host: signed APK
     + Play bundle, 0.9 MB each. It had a real bug: `minSdkVersion` 21 cannot build (the helper library needs 24);
