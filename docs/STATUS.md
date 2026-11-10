@@ -1,10 +1,18 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: **2026-11-09**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
+_Last updated: **2026-11-10**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
 day (what is shipped, the honest numbers, the strategy, who does what). Then read this file
 (the dated log), `docs/DECISIONS.md` (ADRs; newest first) and `docs/eval_report.md` (numbers, with
 intervals). For the show itself: `docs/DEMO_RUNBOOK.md`. The July sprint log below is kept as history._
 
+- **2026-11-10 — final-submission documents.**
+  - New: `docs/CJM.md` (citizen, analyst and partner journeys; emotions and pains marked as hypotheses,
+    no interviews yet) and `docs/TECHNICAL.md` (architecture, stack, modules, API with the real limits,
+    integrations, deployment, configuration, operations, tests).
+  - `README.md` is now a technical README in Russian. The weekly history moved to `docs/HISTORY.md` (plus
+    weeks 8–9), the English reference to `docs/TECHNICAL_REFERENCE_EN.md`.
+  - Checked: all 7 Mermaid diagrams render (Mermaid 11.4.1 in headless Chromium), every relative link
+    resolves, API limits and defaults read from the code. Python 1883 passed, JS 206/206. No code changed.
 - **2026-11-09 — Android readiness pass: everything code-side builds (ADR D87).**
   - **Standalone app (TWA):** never built before. Built today with a throwaway key and the demo host: signed APK
     + Play bundle, 0.9 MB each. It had a real bug: `minSdkVersion` 21 cannot build (the helper library needs 24);
