@@ -11,6 +11,12 @@ internal object ScrubNumbers {
     private const val MAX_GAP_CHARS = 3
     private val GAP_CHARS = setOf(" ", "\t", "\r", "\n", "\u00A0", ",", "-")
     private val DIGIT_GROUP_GAPS = setOf(" ", "-")
+    // ADR D72: a dictation may continue over a hesitation («940101... эээ... 300123»).
+    private val FILLER = Regex("^(?:э+|э+м+|ә+|аа+|мм+|хм+|uh+|um+|hm+)$")
+    private const val MAX_FILLERS = 2
+    private const val MAX_HESITATION_PIECE_CHARS = 5
+    private val HESITATION_CHARS = GAP_CHARS + setOf(".", "…")
+    private val ELLIPSES = listOf("..", "…")
     private val ASCII_WORD = Regex("^[A-Za-z0-9_]$")
     private val CURRENCY_WORDS = setOf(
         "тенге", "теңге", "тг", "tenge", "kzt", "рублей", "рубля", "руб", "долларов", "доллара",
@@ -122,12 +128,29 @@ internal object ScrubNumbers {
         return digits.toString()
     }
 
-    private fun joinable(gap: List<String>) = gap.size <= MAX_GAP_CHARS && gap.all { it in GAP_CHARS }
+    private fun isFiller(token: Token) = token.kind == Kind.LETTERS && FILLER.matches(token.folded)
+
+    private fun isHesitation(gap: List<String>): Boolean {
+        val fillers = ScrubTokens.tokenize(gap)
+        if (fillers.size > MAX_FILLERS || !fillers.all(::isFiller)) return false
+        val bounds = listOf(0) + fillers.flatMap { listOf(it.start, it.end) } + listOf(gap.size)
+        for (i in bounds.indices step 2) {
+            val piece = gap.subList(bounds[i], bounds[i + 1])
+            if (piece.size > MAX_HESITATION_PIECE_CHARS || !piece.all { it in HESITATION_CHARS }) return false
+        }
+        val text = gap.joinToString("")
+        return fillers.isNotEmpty() || ELLIPSES.any { it in text }
+    }
+
+    private fun joinable(gap: List<String>) =
+        (gap.size <= MAX_GAP_CHARS && gap.all { it in GAP_CHARS }) || isHesitation(gap)
 
     private fun runs(chars: List<String>, tokens: List<Token>): List<List<Int>> {
         val found = ArrayList<List<Int>>()
         var current = ArrayList<Int>()
         tokens.forEachIndexed { index, token ->
+            // A filler inside a dictation is judged with its gap when the next number arrives.
+            if (current.isNotEmpty() && isFiller(token)) return@forEachIndexed
             if (numberKind(token) == null) {
                 if (current.isNotEmpty()) found.add(current)
                 current = ArrayList()
@@ -160,9 +183,12 @@ internal object ScrubNumbers {
     }
 
     private fun digitGroupsQualify(chars: List<String>, run: List<Token>, digits: String): Boolean {
-        if (run.size < 2 || placeholderFor(digits) == PLACEHOLDERS.getValue("number")) return false
+        // One token only counts as a bare local phone number (ten digits, 7...), ADR D85.
+        val bareLocalPhone = digits.length == 10 && digits[0] == '7'
+        if (placeholderFor(digits) == PLACEHOLDERS.getValue("number") || (run.size < 2 && !bareLocalPhone)) return false
         for (i in 1 until run.size) {
-            if (ScrubTokens.slice(chars, run[i - 1].end, run[i].start) !in DIGIT_GROUP_GAPS) return false
+            val gap = chars.subList(run[i - 1].end, run[i].start)
+            if (gap.joinToString("") !in DIGIT_GROUP_GAPS && !isHesitation(gap)) return false
         }
         val before = if (run[0].start > 0) chars[run[0].start - 1] else ""
         val after = if (run.last().end < chars.size) chars[run.last().end] else ""

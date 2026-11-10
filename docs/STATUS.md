@@ -1,10 +1,34 @@
 # Project Status & Handoff — Qorğan
 
-_Last updated: **2026-11-06**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
+_Last updated: **2026-11-10**. **Start with `docs/PLAN_2026-10.md`**: the working plan to demo
 day (what is shipped, the honest numbers, the strategy, who does what). Then read this file
 (the dated log), `docs/DECISIONS.md` (ADRs; newest first) and `docs/eval_report.md` (numbers, with
 intervals). For the show itself: `docs/DEMO_RUNBOOK.md`. The July sprint log below is kept as history._
 
+- **2026-11-10 — final-submission documents.**
+  - New: `docs/CJM.md` (citizen, analyst and partner journeys; emotions and pains marked as hypotheses,
+    no interviews yet) and `docs/TECHNICAL.md` (architecture, stack, modules, API with the real limits,
+    integrations, deployment, configuration, operations, tests).
+  - `README.md` is now a technical README in Russian. The weekly history moved to `docs/HISTORY.md` (plus
+    weeks 8–9), the English reference to `docs/TECHNICAL_REFERENCE_EN.md`.
+  - Checked: all 7 Mermaid diagrams render (Mermaid 11.4.1 in headless Chromium), every relative link
+    resolves, API limits and defaults read from the code. Python 1883 passed, JS 206/206. No code changed.
+  - Second pass, corrected against the code and ADRs: the real-bank replay scene ends at **26/100** (Medium 37/33,
+    then Low), not 19 (19 is the spoken version, D86); the meter is visible from turn 1 and only the *alert* waits
+    for turn 3 (D29); hard-signal floors 61/81; a bank's own «never share the code» warning can trip the meter (D56,
+    now stated in the CJM and both limits sections); taxonomy is 15 shipped / 23 v2 / 28 v3 tactics and 26 schemes;
+    unverified corpus totals replaced by split sizes; the CJM persona's computer owner made consistent.
+  - GitHub's own renderer: every table and diagram block renders (README 9 tables, CJM 7, TECHNICAL 16).
+    The live demo serves `ab95329` (shell v16), so D82–D86 are deployed.
+- **2026-11-09 — Android readiness pass: everything code-side builds (ADR D87).**
+  - **Standalone app (TWA):** never built before. Built today with a throwaway key and the demo host: signed APK
+    + Play bundle, 0.9 MB each. It had a real bug: `minSdkVersion` 21 cannot build (the helper library needs 24);
+    fixed and pinned by `tests/test_android_packaging.py` (red on the old manifest, green now).
+  - **Kotlin core:** the scrubber caught up with D72/D85: `scrub.json` 124/124 (was failing). Runtime gate
+    unchanged: 0/200 flips vs Python, 4/200 vs browser embeddings (the D33 drift; not a scrubber matter).
+  - **WebView shell:** debug + release build, release lint clean. AAR + its device-test APK build.
+  - **Not changed:** the model, the site, the server. **Needs the owner:** domain, signing key + its SHA-256 in
+    `assetlinks.json`, a phone (C2), and NITEC's choice of route. **Native core still not a citizen scorer** (D33 drift).
 - **2026-11-06 — finalization pass: three audits, every finding fixed or listed (ADRs D82–D86).**
   - **Not changed:** the model. `weights.json` and `qorgan-config.json` are byte-identical and the demo scenes score
     exactly as before, so no eval number moved and D76 stays the headline.
@@ -18,7 +42,7 @@ intervals). For the show itself: `docs/DEMO_RUNBOOK.md`. The July sprint log bel
   - **Needs the owner:** a deploy (the live demo's data is 8 days old, and its "new schemes" is empty until then);
     uploading the HF cards, heads and dataset (HF heads and dataset are from 2026-09-24); a LICENSE (pyproject says
     Proprietary, the repo is public); the TWA host and signing key; native review of the new Kazakh strings.
-  - **Still open:** a real phone (C2), real calls (A3), the Kotlin scrubber is behind D72/D85 (`android/CORE_SPIKE.md`).
+  - **Still open:** a real phone (C2), real calls (A3), the native core's embedding drift vs the browser (D33; `android/CORE_SPIKE.md`).
 - **2026-10-29 — landing metrics brought up to the D76 headline.**
   - The landing table still showed the D54 (2026-09-28) numbers. It now quotes shipped v1 from
     `models/final_v1/run.txt` (test, authored, ood, shift: shift FPR is now 0.000 [0.000, 0.106])
