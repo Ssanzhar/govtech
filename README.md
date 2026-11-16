@@ -117,7 +117,7 @@ flowchart LR
 
 ## 4. Быстрый старт
 
-**Веса моделей:** обученная модель — [`site/models/weights.json`](site/models/weights.json) (276 КБ, в репозитории) и [huggingface.co/sanzh-ts/govtech](https://huggingface.co/sanzh-ts/govtech); где лежат все модели и ресурсы и как проверить результаты — [`docs/MODELS.md`](docs/MODELS.md).
+**Веса моделей:** поставляемая обученная модель — [`site/models/weights.json`](site/models/weights.json) (276 КБ, в репозитории). Где лежат все модели и ресурсы, как запустить и какие результаты ожидать — [`docs/MODELS.md`](docs/MODELS.md).
 
 ```bash
 # 1. Окружение (Python 3.11+)
