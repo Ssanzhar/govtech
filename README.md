@@ -117,6 +117,8 @@ flowchart LR
 
 ## 4. Быстрый старт
 
+**Веса моделей:** обученная модель — [`site/models/weights.json`](site/models/weights.json) (276 КБ, в репозитории) и [huggingface.co/sanzh-ts/govtech](https://huggingface.co/sanzh-ts/govtech); где лежат все модели и ресурсы и как проверить результаты — [`docs/MODELS.md`](docs/MODELS.md).
+
 ```bash
 # 1. Окружение (Python 3.11+)
 python3.11 -m venv .venv && source .venv/bin/activate
@@ -294,6 +296,7 @@ request — на чистой копии без корпуса, моделей �
 | Документ | О чём |
 |---|---|
 | [`docs/TECHNICAL.md`](docs/TECHNICAL.md) | **Техническая документация:** архитектура, стек, модули, API, интеграции, развёртывание, конфигурация, эксплуатация |
+| [`docs/MODELS.md`](docs/MODELS.md) | **Модели и ресурсы:** где лежат веса, датасет и предобученные модели; команды запуска и проверки |
 | [`docs/CJM.md`](docs/CJM.md) | **Карта пути пользователя:** гражданин, аналитик, партнёр |
 | [`docs/STATUS.md`](docs/STATUS.md) | текущее состояние, журнал по датам |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | 83 архитектурных решения, номера D1–D87 (D11, D15, D16, D69 пропущены), с датами и измерениями |
